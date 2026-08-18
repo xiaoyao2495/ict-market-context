@@ -1296,6 +1296,23 @@ test('11L.1：buildWindowedLegIndex —— 与 Live 引擎同一实现（含 qua
     assert.strictEqual(idx.d1.mssQuality, 'NO_MSS');
 });
 
+/* ---------- Phase 11L.2：Top 成交量 symbol ---------- */
+
+var binanceRest = require('../data/binanceRest');
+
+test('11L.2：parseTopCandidates —— 过滤 PERPETUAL/USDT/TRADING（季度合约与非 USDT 排除）', function () {
+    var cands = binanceRest.parseTopCandidates([
+        { symbol: 'BTCUSDT', status: 'TRADING', quoteAsset: 'USDT', contractType: 'PERPETUAL' },
+        { symbol: 'ETHUSDT', status: 'TRADING', quoteAsset: 'USDT', contractType: 'PERPETUAL' },
+        { symbol: 'BTCUSDT_250926', status: 'TRADING', quoteAsset: 'USDT', contractType: 'CURRENT_QUARTER' },
+        { symbol: 'SHIBUSDT', status: 'TRADING', quoteAsset: 'BUSD', contractType: 'PERPETUAL' },
+        { symbol: 'XRPUSDT', status: 'BREAK', quoteAsset: 'USDT', contractType: 'PERPETUAL' },
+        { symbol: 'SOLUSDT', status: 'TRADING', quoteAsset: 'USDT' } // spot 源（无 contractType）→ 允许
+    ]);
+    var syms = cands.map(function (c) { return c.symbol; });
+    assert.deepStrictEqual(syms, ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'], '季度/非USDT/非TRADING 排除，spot 无 contractType 放行');
+});
+
 console.log('');
 console.log('narrativeBoundary: ' + passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

@@ -1,10 +1,16 @@
 {
   "symbols": ["BTCUSDT"],
+  "symbolsMode": "top10",
   "warmupDays": 3,
   "pollMs": 30000,
   "snapshotInterval": 12,
   "dataDir": ".live-state",
   "replayTailBars": 400,
+  "topSymbols": {
+    "count": 10,
+    "refreshHourUTC": 8,
+    "refreshIntervalMs": 3600000
+  },
   "dingtalk": {
     "webhook": "https://oapi.dingtalk.com/robot/send?access_token=YOUR_ACCESS_TOKEN",
     "secret": "",

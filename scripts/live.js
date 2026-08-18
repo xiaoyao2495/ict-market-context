@@ -14,6 +14,7 @@ var fs = require('fs');
 var path = require('path');
 var liveEngineMod = require('../live/liveEngine');
 var dataSource = require('../live/dataSource');
+var binanceRest = require('../data/binanceRest');
 var persistence = require('../live/persistence');
 var dingTalk = require('../notify/dingTalk');
 
@@ -146,11 +147,11 @@ function createRunner(symbol) {
     return { initFromHistory: initFromHistory, tick: tick };
 }
 
-// ---------- 主流程 ----------
+// ---------- 主流程（Phase 11L.2：top10 动态监控 + 每日刷新） ----------
 function main() {
     persistence.ensureDir(CONFIG.dataDir);
     log('=== Live Opportunity Radar 启动 ===');
-    log('symbols=' + CONFIG.symbols.join(',') + ' pollMs=' + CONFIG.pollMs + ' warmupDays=' + CONFIG.warmupDays);
+    log('symbolsMode=' + CONFIG.symbolsMode + ' pollMs=' + CONFIG.pollMs + ' warmupDays=' + CONFIG.warmupDays);
     if (!CONFIG.dingtalk.webhook || CONFIG.dingtalk.webhook.indexOf('YOUR_') !== -1) {
         log('⚠️ 未配置钉钉 webhook（config/live.json 或 DINGTALK_WEBHOOK）——机会将只记录日志不推送');
     }
@@ -163,30 +164,74 @@ function main() {
         log('钉钉安全模式：自定义关键词「' + (CONFIG.dingtalk.keyword || '监测') + '」（secret 未配置，消息必须包含该关键词）');
     }
 
-    var runners = {};
-    var ready = Promise.resolve();
-    CONFIG.symbols.forEach(function (sym) {
-        ready = ready.then(function () {
-            log(sym + ' 拉取初始历史（可能从本地缓存命中）...');
+    var runners = {}; // sym -> { runner, interval }
+    var startSequence = Promise.resolve(); // 串行启动（避免并发拉历史压代理）
+    var refreshDate = null; // 上次名单刷新日期（YYYY-MM-DD，UTC）
+
+    function startSymbol(sym) {
+        startSequence = startSequence.then(function () {
+            log(sym + ' 加入监控：拉取初始历史（可能命中本地缓存）...');
             return dataSource.fetchInitial(sym, CONFIG.warmupDays).then(function (data) {
                 var r = createRunner(sym);
-                runners[sym] = r;
+                var interval = setInterval(function () { r.tick(); }, CONFIG.pollMs);
+                runners[sym] = { runner: r, interval: interval };
                 return r.initFromHistory(data);
+            }).then(function () {
+                runners[sym].runner.tick(); // 立即先跑一轮
+                log(sym + ' 监控就绪');
+            }).catch(function (e) {
+                log(sym + ' 启动失败: ' + (e && e.message || e) + '（跳过，下轮刷新重试）');
             });
         });
-    });
+        return startSequence;
+    }
 
-    ready.then(function () {
-        log('=== 全部 symbol 就绪，开始轮询（Ctrl+C 停止） ===');
-        CONFIG.symbols.forEach(function (sym) {
-            setInterval(function () { runners[sym].tick(); }, CONFIG.pollMs);
+    function stopSymbol(sym) {
+        if (!runners[sym]) return;
+        clearInterval(runners[sym].interval);
+        delete runners[sym];
+        log(sym + ' 移出监控（状态文件保留，重回 top' + (CONFIG.topSymbols.count || 10) + ' 可恢复）');
+    }
+
+    function ensureSymbols(list) {
+        var want = {};
+        list.forEach(function (s) { want[s] = true; });
+        Object.keys(runners).forEach(function (sym) { if (!want[sym]) stopSymbol(sym); });
+        list.forEach(function (sym) { if (!runners[sym]) startSymbol(sym); });
+        return startSequence;
+    }
+
+    function refreshTop() {
+        return binanceRest.fetchTopVolumeSymbols(CONFIG.topSymbols.count).then(function (list) {
+            var syms = list.map(function (x) { return x.symbol; });
+            refreshDate = new Date().toISOString().slice(0, 10);
+            log('Top' + syms.length + ' 名单刷新（' + refreshDate + '）: ' + syms.join(', '));
+            log('  成交量榜首: ' + (list[0] ? list[0].symbol + ' ' + Math.round(list[0].quoteVolume) : '-'));
+            return ensureSymbols(syms);
+        }).catch(function (e) {
+            log('Top 名单刷新失败: ' + (e && e.message || e) + '（保留现有监控）');
         });
-        // 立即先 tick 一轮
-        CONFIG.symbols.forEach(function (sym) { runners[sym].tick(); });
-    }).catch(function (e) {
-        log('启动失败: ' + (e && e.stack || e));
-        process.exit(1);
-    });
+    }
+
+    function checkDailyRefresh() {
+        if (CONFIG.symbolsMode !== 'top10') return;
+        var now = new Date();
+        var today = now.toISOString().slice(0, 10);
+        if (refreshDate === today) return; // 今天已刷新
+        if (now.getUTCHours() < CONFIG.topSymbols.refreshHourUTC) return; // 未到刷新时刻
+        refreshTop();
+    }
+
+    if (CONFIG.symbolsMode === 'top10') {
+        refreshTop().then(function () {
+            log('=== 每日 ' + CONFIG.topSymbols.refreshHourUTC + ':00 UTC 自动刷新 Top' + CONFIG.topSymbols.count + ' ===');
+            setInterval(checkDailyRefresh, CONFIG.topSymbols.refreshIntervalMs);
+        });
+    } else {
+        ensureSymbols(CONFIG.symbols || []).then(function () {
+            log('=== 全部 symbol 就绪，开始轮询（Ctrl+C 停止） ===');
+        });
+    }
 }
 
 main();

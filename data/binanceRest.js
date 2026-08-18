@@ -276,9 +276,83 @@ function loadHistory(symbol, interval, startTime, endTime, options) {
     return page();
 }
 
+/**
+ * Phase 11L.2 — 过滤合法永续合约候选（纯函数，可测）
+ * TRADING + USDT 计价 + （无 contractType（spot 源）或 PERPETUAL）
+ */
+function parseTopCandidates(symbols) {
+    return (symbols || []).filter(function (s) {
+        if (s.status !== 'TRADING' || s.quoteAsset !== 'USDT') return false;
+        if (s.contractType !== undefined && s.contractType !== 'PERPETUAL') return false;
+        return true;
+    });
+}
+
+/**
+ * Phase 11L.2 — Top 成交量 symbol
+ * 1. exchangeInfo（/fapi/v1/exchangeInfo）→ 合法 PERPETUAL + TRADING + USDT 名单
+ *    （fapi exchangeInfo 不包含成交量字段，仅作合约名单来源）
+ * 2. 24hr ticker（/fapi/v1/ticker/24hr）→ quoteVolume 补成交量
+ * 3. 按 quoteVolume 降序取前 count
+ * @param {number} [count] 默认 10
+ * @returns {Promise<Array>} [{ symbol, quoteVolume, source }]
+ */
+function fetchTopVolumeSymbols(count) {
+    var n = count || 10;
+    var forceFallback = shouldUseFallback();
+
+    function fetchCandidates(useFallback) {
+        var url = useFallback ? network.fallbackBaseUrl : network.baseUrl;
+        var path = useFallback ? '/api/v3/exchangeInfo' : '/fapi/v1/exchangeInfo';
+        var source = useFallback ? 'spot-mirror' : 'futures';
+        var cfg = proxyConfig();
+        cfg.timeout = 10000;
+        return axios.get(url + path, cfg).then(function (response) {
+            var symbols = (response.data && response.data.symbols) || [];
+            return { candidates: parseTopCandidates(symbols), source: source, useFallback: useFallback };
+        });
+    }
+
+    function fetchVolumes(useFallback) {
+        var url = useFallback ? network.fallbackBaseUrl : network.baseUrl;
+        var path = useFallback ? '/api/v3/ticker/24hr' : '/fapi/v1/ticker/24hr';
+        var cfg = proxyConfig();
+        cfg.timeout = 10000;
+        return axios.get(url + path, cfg).then(function (r) {
+            var map = {};
+            (r.data || []).forEach(function (t) {
+                if (t.symbol && t.quoteVolume !== undefined) {
+                    map[t.symbol] = parseFloat(t.quoteVolume) || 0;
+                }
+            });
+            return map;
+        }).catch(function () { return {}; }); // 成交量失败 → 保持 exchangeInfo 顺序兜底
+    }
+
+    function rank(info) {
+        return fetchVolumes(info.useFallback).then(function (volMap) {
+            var withVol = info.candidates.map(function (s) {
+                return {
+                    symbol: s.symbol,
+                    quoteVolume: volMap[s.symbol] !== undefined ? volMap[s.symbol] : 0,
+                    source: info.source
+                };
+            });
+            withVol.sort(function (a, b) { return b.quoteVolume - a.quoteVolume; });
+            return withVol.slice(0, n);
+        });
+    }
+
+    return fetchCandidates(forceFallback).then(rank).catch(function () {
+        return fetchCandidates(!forceFallback).then(rank); // 另一个源兜底
+    });
+}
+
 module.exports = {
     getKlines: getKlines,
     getExchangeInfo: getExchangeInfo,
     loadHistory: loadHistory,
-    parseExchangeInfo: parseExchangeInfo
+    parseExchangeInfo: parseExchangeInfo,
+    fetchTopVolumeSymbols: fetchTopVolumeSymbols,
+    parseTopCandidates: parseTopCandidates
 };
