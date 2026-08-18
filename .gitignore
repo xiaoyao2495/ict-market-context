@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Local data cache (historical market data, re-downloadable)
+data-cache/
+
+# WorkBuddy project data (memories, configs)
+.workbuddy/
+
+# Logs / temp
+*.log
+*.tmp
+/tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
