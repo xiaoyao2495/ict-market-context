@@ -24,6 +24,22 @@ var CONFIG = require('../config/live.json');
 if (process.env.DINGTALK_WEBHOOK) CONFIG.dingtalk.webhook = process.env.DINGTALK_WEBHOOK;
 if (process.env.DINGTALK_SECRET) CONFIG.dingtalk.secret = process.env.DINGTALK_SECRET;
 
+// Fix 6（11L.2 Security）：gitignored 的 config/live.local.json 覆盖（token 不进 tracked 文件）
+try {
+    var fsLocal = require('fs');
+    var localCfgPath = require('path').join(__dirname, '..', 'config', 'live.local.json');
+    if (fsLocal.existsSync(localCfgPath)) {
+        var local = JSON.parse(fsLocal.readFileSync(localCfgPath, 'utf8'));
+        if (local.dingtalk) {
+            if (local.dingtalk.webhook) CONFIG.dingtalk.webhook = local.dingtalk.webhook;
+            if (local.dingtalk.secret) CONFIG.dingtalk.secret = local.dingtalk.secret;
+            if (local.dingtalk.keyword) CONFIG.dingtalk.keyword = local.dingtalk.keyword;
+        }
+    }
+} catch (e) {}
+
+var BAR_MS = 300000; // 5m
+
 // ---------- 工具 ----------
 function fmt(ms) {
     var d = new Date(ms + 8 * 3600000);
@@ -61,15 +77,19 @@ function createRunner(symbol) {
 
     var engine = null;
     var lastCloseTime = 0;
+    var lastOpenTime = null;
     var historyLoaded = false;
-    var runnerData = null; // 初始数据（structureCandles/calendarCandles 引用，HTF 增量共用）
+    var runnerData = null; // Fix 1：{ raw, structureCandles, calendarCandles }（HTF 增量共用同一对象）
 
     function loadPushed() {
         return persistence.loadJson(pushedFile, {});
     }
 
     function initFromHistory(data) {
-        runnerData = data;
+        // Fix 1 (P0)：runnerData 保存组装后的 HTF 引用（fetchHtfIncrement 增量更新同一对象）
+        var structureCandles = { '1d': data['1d'], '4h': data['4h'], '1h': data['1h'] };
+        var calendarCandles = { '1d': data['1d'], '1w': data['1w'], '1M': data['1M'] };
+        runnerData = { raw: data, structureCandles: structureCandles, calendarCandles: calendarCandles };
         var candles5m = (data['5m'] || []).slice();
         log(symbol + ' 初始历史 ' + candles5m.length + ' 根 5m（' + fmt(candles5m[0].closeTime) + ' → ' + fmt(candles5m[candles5m.length - 1].closeTime) + '）');
         // 持久化历史（追加，幂等：跳过已存在的 openTime）
@@ -80,8 +100,14 @@ function createRunner(symbol) {
         if (fresh.length > 0) persistence.appendCandles(candlesFile, fresh);
         var all = existing.concat(fresh);
 
-        var structureCandles = { '1d': data['1d'], '4h': data['4h'], '1h': data['1h'] };
-        var calendarCandles = { '1d': data['1d'], '1w': data['1w'], '1M': data['1M'] };
+        // Fix 3 (P0/P1)：requireFutures 时历史数据纯度检查（init 为回放，警告但不阻塞；tick 严格）
+        if (CONFIG.requireFutures) {
+            var nonFutures = all.filter(function (c) { return c.source && c.source !== 'futures'; }).length;
+            if (nonFutures > 0) {
+                log(symbol + ' ⚠️ DATA_SOURCE_DEGRADED: 历史 ' + nonFutures + '/' + all.length + ' 根非 futures（warmup 回放不产生推送，但 tick 将要求 futures-only）');
+            }
+        }
+
         engine = liveEngineMod.createLiveEngine({
             symbol: symbol,
             exchangeInfo: data.exchangeInfo,
@@ -100,6 +126,7 @@ function createRunner(symbol) {
         });
         return chain.then(function () {
             lastCloseTime = all[all.length - 1].closeTime;
+            lastOpenTime = all[all.length - 1].openTime;
             historyLoaded = true;
             var p = engine.getPushed();
             persistence.saveJson(pushedFile, p);
@@ -108,37 +135,69 @@ function createRunner(symbol) {
         });
     }
 
+    function processCandles(list) {
+        // Fix 3（P0/P1）：requireFutures → futures-only fail-closed（tick 严格）
+        if (CONFIG.requireFutures) {
+            var bad = list.filter(function (c) { return c.source && c.source !== 'futures'; });
+            if (bad.length > 0) {
+                log(symbol + ' DATA_SOURCE_DEGRADED: ' + bad.length + ' 根非 futures（' + bad[0].source + '）——不推进 engine，等待 Futures 恢复');
+                return Promise.resolve();
+            }
+        }
+        log(symbol + ' 新收盘 ' + list.length + ' 根（' + fmt(list[0].openTime) + ' … ' + fmt(list[list.length - 1].closeTime) + '）');
+        var chain = Promise.resolve();
+        list.forEach(function (c) {
+            chain = chain.then(function () {
+                return engine.onBar(c, engine.getWindowLength()).then(function (opp) {
+                    if (opp && opp.tier === 'HIGH_QUALITY') {
+                        var msg = buildMessage(opp, symbol);
+                        log('🔥 HIGH 机会: ' + symbol + ' ' + opp.direction + ' ' + opp.mssQuality + '|' + opp.legQuality +
+                            ' near ' + (opp.nearDistPct !== null ? opp.nearDistPct.toFixed(2) + '%' : '-') + ' id=' + opp.id);
+                        return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {
+                            log('   钉钉推送响应: errcode=' + (res ? res.errcode : '?') + ' errmsg=' + (res ? res.errmsg : '?'));
+                        }).catch(function (e) {
+                            log('   钉钉推送失败: ' + e.message);
+                        });
+                    }
+                    return null;
+                });
+            });
+        });
+        return chain.then(function () {
+            lastCloseTime = list[list.length - 1].closeTime;
+            lastOpenTime = list[list.length - 1].openTime;
+            persistence.appendCandles(candlesFile, list);
+            persistence.saveJson(pushedFile, engine.getPushed());
+            persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength() });
+        });
+    }
+
     function tick() {
         if (!historyLoaded) return Promise.resolve();
         return dataSource.fetchHtfIncrement(symbol, runnerData.structureCandles, runnerData.calendarCandles).then(function () {
             return dataSource.pollNew5m(symbol, lastCloseTime);
-        }).then(function (newCandles) {
-            if (newCandles.length === 0) return;
-            log(symbol + ' 新收盘 ' + newCandles.length + ' 根（' + fmt(newCandles[0].openTime) + ' … ' + fmt(newCandles[newCandles.length - 1].closeTime) + '）');
-            var chain = Promise.resolve();
-            newCandles.forEach(function (c) {
-                chain = chain.then(function () {
-                    return engine.onBar(c, engine.getWindowLength()).then(function (opp) {
-                        if (opp && opp.tier === 'HIGH_QUALITY') {
-                            var msg = buildMessage(opp, symbol);
-                            log('🔥 HIGH 机会: ' + symbol + ' ' + opp.direction + ' ' + opp.mssQuality + '|' + opp.legQuality +
-                                ' near ' + (opp.nearDistPct !== null ? opp.nearDistPct.toFixed(2) + '%' : '-') + ' id=' + opp.id);
-                            return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {
-                                log('   钉钉推送响应: errcode=' + (res ? res.errcode : '?') + ' errmsg=' + (res ? res.errmsg : '?'));
-                            }).catch(function (e) {
-                                log('   钉钉推送失败: ' + e.message);
-                            });
-                        }
-                        return null;
-                    });
+        }).then(function (res) {
+            // Fix 4（P1）：区分 NO_NEW_BAR / NETWORK_ERROR（不吞错）
+            if (!res.ok) {
+                log(symbol + ' NETWORK_ERROR: ' + res.error + '（跳过本轮，等待恢复）');
+                return;
+            }
+            var newCandles = res.candles;
+            if (newCandles.length === 0) return; // NO_NEW_BAR（正常）
+            // Fix 4（P1）：5m 连续性检查（前一根 openTime + 5m === 当前 openTime）
+            if (lastOpenTime !== null && newCandles[0].openTime !== lastOpenTime + BAR_MS) {
+                log(symbol + ' DATA_GAP: 期望 openTime=' + (lastOpenTime + BAR_MS) + ' 实际=' + newCandles[0].openTime + '（暂停推进，补历史...）');
+                return dataSource.backfill5m(symbol, lastCloseTime).then(function (backfill) {
+                    var merged = (backfill || []).filter(function (c) {
+                        return c.closed && c.closeTime > lastCloseTime && c.openTime < newCandles[0].openTime;
+                    }).sort(function (a, b) { return a.openTime - b.openTime; });
+                    var full = merged.concat(newCandles);
+                    if (full.length === 0) return;
+                    log(symbol + ' 补历史 ' + merged.length + ' 根后恢复推进');
+                    return processCandles(full);
                 });
-            });
-            return chain.then(function () {
-                lastCloseTime = newCandles[newCandles.length - 1].closeTime;
-                persistence.appendCandles(candlesFile, newCandles);
-                persistence.saveJson(pushedFile, engine.getPushed());
-                persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength() });
-            });
+            }
+            return processCandles(newCandles);
         }).catch(function (e) {
             log(symbol + ' tick 错误: ' + e.message);
         });

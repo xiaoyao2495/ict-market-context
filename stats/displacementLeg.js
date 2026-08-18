@@ -213,7 +213,27 @@ function createLegBuilder() {
         open = null;
         return closed;
     }
-    return { feed: feed, close: close, isOpen: function () { return open !== null; }, getOpen: function () { return open; } };
+    /**
+     * Fix 2（11L.2）：按时间过期关闭 —— 若 open leg 的 lastConfirmedAt 距今 >= mergeMs，
+     * 说明"过去一个窗口内没有新的同向 displacement"，leg 已结束，应关闭并评估机会。
+     * Live 常驻进程没有"数据结束"，必须每根收盘调用（避免 LATE/永不推送）。
+     * 等价于 Replay 批处理中"排序 feed 后 close tail"的窗口语义。
+     * @param {number} evaluationTime 当前 5m 收盘时间
+     * @returns {Object|null} 关闭的 leg；未到过期时间返回 null
+     */
+    function closeExpired(evaluationTime) {
+        if (!open) return null;
+        if (evaluationTime - open.lastConfirmedAt >= MS) {
+            var expired = open;
+            open = null;
+            return expired;
+        }
+        return null;
+    }
+    return {
+        feed: feed, close: close, closeExpired: closeExpired,
+        isOpen: function () { return open !== null; }, getOpen: function () { return open; }
+    };
 }
 
 /**
@@ -255,7 +275,27 @@ function createWindowedLegBuilder(mergeMs) {
         open = null;
         return closed;
     }
-    return { feed: feed, close: close, isOpen: function () { return open !== null; }, getOpen: function () { return open; } };
+    /**
+     * Fix 2（11L.2）：按时间过期关闭 —— 若 open leg 的 lastConfirmedAt 距今 >= mergeMs，
+     * 说明"过去一个窗口内没有新的同向 displacement"，leg 已结束，应关闭并评估机会。
+     * Live 常驻进程没有"数据结束"，必须每根收盘调用（避免 LATE/永不推送）。
+     * 等价于 Replay 批处理中"排序 feed 后 close tail"的窗口语义。
+     * @param {number} evaluationTime 当前 5m 收盘时间
+     * @returns {Object|null} 关闭的 leg；未到过期时间返回 null
+     */
+    function closeExpired(evaluationTime) {
+        if (!open) return null;
+        if (evaluationTime - open.lastConfirmedAt >= MS) {
+            var expired = open;
+            open = null;
+            return expired;
+        }
+        return null;
+    }
+    return {
+        feed: feed, close: close, closeExpired: closeExpired,
+        isOpen: function () { return open !== null; }, getOpen: function () { return open; }
+    };
 }
 
 /**

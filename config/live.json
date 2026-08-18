@@ -1,11 +1,12 @@
 {
   "symbols": ["BTCUSDT"],
   "symbolsMode": "top10",
-  "warmupDays": 3,
+  "warmupDays": 30,
   "pollMs": 30000,
   "snapshotInterval": 12,
   "dataDir": ".live-state",
   "replayTailBars": 400,
+  "requireFutures": true,
   "topSymbols": {
     "count": 10,
     "refreshHourUTC": 8,

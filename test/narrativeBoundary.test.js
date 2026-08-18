@@ -1278,6 +1278,29 @@ test('11L.1：createWindowedLegBuilder —— 15min 窗合并（与 buildOpportu
     assert.ok(tail && tail.ids.length === 1);
 });
 
+test('11L.1：createWindowedLegBuilder.closeExpired —— 按时间过期关闭（Live 常驻无数据结束）', function () {
+    var dl = require('../stats/displacementLeg');
+    var b = dl.createWindowedLegBuilder(900000); // 15min
+    b.feed({ id: 'd1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 10000000, metadata: { atr: 1 } });
+    // 差 10min < 15min → 不关闭
+    assert.strictEqual(b.closeExpired(10600000), null, '10min 未到期');
+    assert.ok(b.isOpen());
+    // 差 16min >= 15min → 关闭并返回 leg
+    var closed = b.closeExpired(11600000);
+    assert.ok(closed && closed.ids.length === 1, '16min 到期关闭');
+    assert.strictEqual(closed.lastIndex, 10);
+    assert.ok(!b.isOpen());
+    // 再次调用 → null（已关闭）
+    assert.strictEqual(b.closeExpired(13000000), null);
+    // 与 feed 合并语义互补：leg 内位移后不合并窗口边界
+    var b2 = dl.createWindowedLegBuilder(900000);
+    b2.feed({ id: 'x1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 10000000, metadata: { atr: 1 } });
+    b2.feed({ id: 'x2', direction: 'BULLISH', candleIndex: 11, confirmedAt: 10600000, metadata: { atr: 1 } }); // 合并，lastConfirmedAt=10:10
+    assert.strictEqual(b2.closeExpired(11400000), null, '10:10+8min < 15min 未到期');
+    var c2 = b2.closeExpired(12500000);
+    assert.ok(c2 && c2.ids.length === 2, '10:10 + 15min = 10:25 到期关闭（2 根合并 leg）');
+});
+
 test('11L.1：buildWindowedLegIndex —— 与 Live 引擎同一实现（含 quality/mssQuality）', function () {
     var dl = require('../stats/displacementLeg');
     var candles = [];

@@ -146,6 +146,15 @@ function createLiveEngine(data, options) {
                     }
                 }
             });
+            // Fix 2（11L.2）：每根收盘检查 leg 是否已过期（过去 15min 无同向 displacement）
+            // 避免 LATE notification / 永不评估（Live 常驻无"数据结束"）
+            var expired = legBuilder.closeExpired(evaluationTime);
+            if (expired) {
+                var anchorCandle2 = window[expired.lastIndex];
+                if (anchorCandle2) {
+                    opp = evaluateOpportunity(expired, expired.lastIndex, anchorCandle2) || opp;
+                }
+            }
             return opp;
         });
     }

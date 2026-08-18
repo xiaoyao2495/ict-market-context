@@ -72,13 +72,11 @@ Binance REST (5m closed)
 
 ## 网络注意
 
-- Binance API（fapi.binance.com）在服务器上需可达。若需代理：
-  ```
-  set HTTP_PROXY=http://127.0.0.1:7890
-  set HTTPS_PROXY=http://127.0.0.1:7890
-  pm2 restart ict-radar
-  ```
-  （Node 22 fetch 会读取 HTTP_PROXY/HTTPS_PROXY 环境变量）
+- Binance API（fapi.binance.com）在服务器上需可达。代理已环境化（config/network.js）：
+  - 服务器可直连：`set ICT_PROXY_ENABLED=0`（不用改代码）
+  - 需要代理：`set ICT_PROXY_ENABLED=1` + `set ICT_PROXY_HOST=127.0.0.1` + `set ICT_PROXY_PORT=7890`
+- **网络健康日志**：运行日志区分 `NO_NEW_BAR`（正常）/ `NETWORK_ERROR`（网络失败，跳过本轮）/
+  `DATA_GAP`（5m 不连续，自动补历史后恢复）/ `DATA_SOURCE_DEGRADED`（requireFutures 下非 futures 数据，不推进）
 - 首次下载数据较慢属正常；之后 `data-cache/` 命中 + 增量轮询，开销极小。
 
 ## 验证（可选，需网络/缓存）
@@ -106,5 +104,7 @@ Near Draw: 0.36% 距离（target 64513.2）
 - leg 机会语义 = 共享 15min 时间窗 builder（`createWindowedLegBuilder`，Replay/Live 单一实现，
   与 `buildOpportunities` 合并规则一致）；无 FVG 归属的 leg 不构成机会（与 Replay 身份一致）。
 - 快照（bias/draw）每 12 根重建一次（与回测 SNAPSHOT_INTERVAL 一致）。
-- 长期运行内存：candles 窗口随运行时间增长（每根 ~100B，1 年约 3MB/币），
-  如需无限运行可定期重启（重启会从 candles.jsonl 尾部重放，幂等）。
+- 长期运行内存：candles 窗口随运行时间增长（每根 ~100B，1 年约 3MB/币）。
+- **重启恢复（当前实现）**：`candles.jsonl` 全量加载并重放（幂等，重启安全），
+  但跑半年后重启会重放全部 5m（启动变慢）——`replayTailBars` 目前未启用，
+  长期方案（定期 state snapshot + 有限 tail replay）挂账，第一版不影响。

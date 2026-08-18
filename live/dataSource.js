@@ -16,15 +16,31 @@ function fetchInitial(symbol, warmupDays) {
 }
 
 /**
- * 轮询最新已收盘 5m K（closeTime > lastCloseTime）。
- * @returns {Promise<Array>} 新 K（按 openTime 升序）
+ * Fix 4（11L.2）：轮询最新已收盘 5m K（closeTime > lastCloseTime）。
+ * 结构化返回以区分 NO_NEW_BAR（正常）/ NETWORK_ERROR（网络失败，不吞错）。
+ * @returns {Promise<{ok: boolean, candles: Array, error?: string}>}
  */
 function pollNew5m(symbol, lastCloseTime) {
     var now = Date.now();
     return binanceRest.getKlines(symbol, '5m', 5, lastCloseTime + 1, now).then(function (candles) {
-        return (candles || []).filter(function (c) {
-            return c.closed && c.closeTime > lastCloseTime;
-        }).sort(function (a, b) { return a.openTime - b.openTime; });
+        return {
+            ok: true,
+            candles: (candles || []).filter(function (c) {
+                return c.closed && c.closeTime > lastCloseTime;
+            }).sort(function (a, b) { return a.openTime - b.openTime; })
+        };
+    }).catch(function (e) {
+        return { ok: false, error: (e && e.message) || 'network', candles: [] };
+    });
+}
+
+/**
+ * Fix 4（11L.2）：数据缺口补历史（从 lastCloseTime 之后拉全段已收盘 5m）。
+ */
+function backfill5m(symbol, lastCloseTime) {
+    var now = Date.now();
+    return binanceRest.loadHistory(symbol, '5m', lastCloseTime + 1, now).then(function (c) {
+        return c || [];
     }).catch(function () { return []; });
 }
 
@@ -80,6 +96,7 @@ function makeFetcher(calendarCandles) {
 module.exports = {
     fetchInitial: fetchInitial,
     pollNew5m: pollNew5m,
+    backfill5m: backfill5m,
     fetchHtfIncrement: fetchHtfIncrement,
     makeFetcher: makeFetcher
 };

@@ -15,13 +15,19 @@
  * - axios 通过 proxy 配置直接走代理（无需额外依赖）
  * - 环境变量 HTTP_PROXY/HTTPS_PROXY 会覆盖代码内配置（沙箱/CI 场景可整体禁用）
  */
+// Fix 5（11L.2）：代理环境化 —— 服务器部署用环境变量覆盖，不硬编码开发机配置
+//   ICT_PROXY_ENABLED=0  → 直连（服务器无代理时）
+//   ICT_PROXY_ENABLED=1  → 走代理（默认，本机开发）
+//   ICT_PROXY_HOST / ICT_PROXY_PORT → 覆盖代理地址（默认 127.0.0.1:7890）
 module.exports = {
     baseUrl: 'https://fapi.binance.com',
     fallbackBaseUrl: 'https://data-api.binance.vision',
-    useFallback: false,
+    useFallback: process.env.ICT_USE_FALLBACK === '1',
     proxy: {
-        enabled: true,
-        host: '127.0.0.1',
-        port: 7890
+        enabled: process.env.ICT_PROXY_ENABLED !== undefined
+            ? process.env.ICT_PROXY_ENABLED === '1'
+            : true,
+        host: process.env.ICT_PROXY_HOST || '127.0.0.1',
+        port: parseInt(process.env.ICT_PROXY_PORT || '7890', 10)
     }
 };

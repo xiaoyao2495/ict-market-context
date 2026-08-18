@@ -12,6 +12,11 @@ data-cache/
 *.tmp
 /tmp/
 
+# Phase 11L runtime state (market data logs, pushed dedup, secrets)
+.live-state/
+config/live.local.json
+.env
+
 # OS
 .DS_Store
 Thumbs.db
