@@ -23,6 +23,7 @@ var dataSource = require('../live/dataSource');
 var binanceRest = require('../data/binanceRest');
 var persistence = require('../live/persistence');
 var dingTalk = require('../notify/dingTalk');
+var continuityChecker = require('../replay/continuityChecker');
 
 var CONFIG = require('../config/live.json');
 
@@ -62,13 +63,16 @@ function buildMessage(opp, symbol) {
     var dir = opp.direction === 'BULLISH' ? 'LONG (BULLISH)' : 'SHORT (BEARISH)';
     var mss = opp.mssQuality === 'NO_MSS' ? 'no MSS chain' : opp.mssQuality.replace('_SWING', '');
     var keyword = CONFIG.dingtalk.keyword || '监测';
+    // 11L.4：时间 = 真正通知时点（availableAt = 系统首次能确认 leg 结束），
+    // 不是 leg 最后位移 K 的 anchorTime（那是 leg 本身的研究锚点）
+    var notified = opp.availableAt !== undefined && opp.availableAt !== null ? opp.availableAt : opp.anchorTime;
     var lines = [
         '🔴 ' + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
         dir,
         'MSS: ' + mss + (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? ' · Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : ' · Leg: ' + opp.legQuality),
         opp.nearTarget !== null ? 'Near Draw: ' + opp.nearDistPct.toFixed(2) + '% 距离（target ' + opp.nearTarget.toFixed(1) + '）' : 'Near Draw: -',
-        '历史同级机会：1h Near Draw Hit 88%',
-        '时间: ' + fmt(opp.anchorTime)
+        '历史同级机会：1h Near Draw Hit 81%（通知时点修正后）',
+        '通知: ' + fmt(notified) + '（leg 锚 ' + fmt(opp.anchorTime) + '）'
     ];
     return lines.join('\n');
 }
@@ -80,6 +84,7 @@ function createRunner(symbol) {
     var candlesFile = path.join(dir, 'candles.jsonl');
     var pushedFile = path.join(dir, 'pushed.json');
     var stateFile = path.join(dir, 'cursor.json');
+    var outboxFile = path.join(dir, 'outbox.json');
 
     var engine = null;
     var lastCloseTime = 0;
@@ -87,10 +92,16 @@ function createRunner(symbol) {
     var historyLoaded = false;
     var runnerData = null; // Fix 1：{ raw, structureCandles, calendarCandles }（HTF 增量共用同一对象）
     var delivered = {}; // Fix 3（11L.3）：oppId -> anchorIndex（钉钉确认投递成功才写入；持久化跨重启）
-    var pending = []; // Fix 3（11L.3）：投递失败的 HIGH 机会（每轮 tick 重试）
+    // Fix 4（11L.4）：pending 改 transactional outbox —— outbox.json 持久化，
+    // 崩溃/重启后仍保留未投递机会（DETECTED → DELIVERY_PENDING → DELIVERED），不漏 HIGH
+    var pending = persistence.loadJson(outboxFile, []); // [{ opp, attempts }]
 
     function loadPushed() {
         return persistence.loadJson(pushedFile, {});
+    }
+
+    function saveOutbox() {
+        persistence.saveJson(outboxFile, pending);
     }
 
     function initFromHistory(data) {
@@ -105,12 +116,13 @@ function createRunner(symbol) {
             }
         }
         // Fix 1（11L.3 P0）：candles.jsonl 既有持久化数据也必须是 futures（旧版本污染的存量同样拒绝）
+        // 11L.4：严格 source presence —— source 必须 === 'futures'（undefined 视为来源不明，拒绝）
         var existing = persistence.loadCandles(candlesFile);
         if (CONFIG.requireFutures) {
-            var badExisting = existing.filter(function (c) { return c.source && c.source !== 'futures'; });
+            var badExisting = existing.filter(function (c) { return c.source !== 'futures'; });
             if (badExisting.length > 0) {
                 throw new Error('DATA_SOURCE_DEGRADED: ' + symbol + ' candles.jsonl 存在 ' + badExisting.length +
-                    ' 根非 futures（source=' + badExisting[0].source + '）——请清理 .live-state 后重启');
+                    ' 根非 futures/无 source（source=' + (badExisting[0].source || 'undefined') + '）——请清理 .live-state 后重启');
             }
         }
         // Fix 1 (P0)：runnerData 保存组装后的 HTF 引用（fetchHtfIncrement 增量更新同一对象）
@@ -125,6 +137,15 @@ function createRunner(symbol) {
         var fresh = candles5m.filter(function (c) { return !known[c.openTime]; });
         if (fresh.length > 0) persistence.appendCandles(candlesFile, fresh);
         var all = existing.concat(fresh);
+
+        // Fix 4（11L.4 P1）：初始化（restart 重放）前必须验证持久化 5m 历史本身连续——
+        // candles.jsonl 磁盘/旧版本/人工拷贝导致缺根时，不得用不连续历史重建状态
+        var continuity = continuityChecker.checkContinuity(all, '5m');
+        if (!continuity.valid) {
+            throw new Error('DATA_GAP: ' + symbol + ' 持久化 5m 历史不连续（gaps=' + continuity.gaps.length +
+                ' dup=' + continuity.duplicates.length + ' ooo=' + continuity.outOfOrder.length +
+                '）——请清理 .live-state 后重启重新 bootstrap');
+        }
 
         engine = liveEngineMod.createLiveEngine({
             symbol: symbol,
@@ -154,13 +175,15 @@ function createRunner(symbol) {
 
     /**
      * Fix 3（11L.3 P1）：钉钉投递（确认 errcode===0 才记 delivered 并持久化；失败保留重试）。
+     * 11L.4：outbox 语义 —— 调用方负责 pending 入队/出队 + saveOutbox()。
      * @returns {Promise<boolean>} 是否投递成功
      */
     function deliver(opp) {
         if (delivered[opp.id]) return Promise.resolve(true); // 已投递（跨重启去重）
         var msg = buildMessage(opp, symbol);
         log('🔥 HIGH 机会: ' + symbol + ' ' + opp.direction + ' ' + opp.mssQuality + '|' + opp.legQuality +
-            ' near ' + (opp.nearDistPct !== null ? opp.nearDistPct.toFixed(2) + '%' : '-') + ' id=' + opp.id);
+            ' near ' + (opp.nearDistPct !== null ? opp.nearDistPct.toFixed(2) + '%' : '-') + ' id=' + opp.id +
+            ' 通知=' + fmt(opp.availableAt) + ' 锚=' + fmt(opp.anchorTime));
         return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {
             // 双保险：sendText 内部已把 errcode!==0 视为失败，此处再确认一次
             if (!res || res.errcode !== 0) {
@@ -171,12 +194,12 @@ function createRunner(symbol) {
             log(symbol + ' 钉钉投递成功 id=' + opp.id + '（errcode=0），已记 delivered');
             return true;
         }).catch(function (e) {
-            log(symbol + ' 钉钉投递失败 id=' + opp.id + '：' + e.message + '（保留 pending，下轮重试）');
+            log(symbol + ' 钉钉投递失败 id=' + opp.id + '：' + e.message + '（保留 outbox，自动重试）');
             return false;
         });
     }
 
-    /** Fix 3（11L.3 P1）：重试上一轮未投递成功的机会 */
+    /** Fix 3+4（11L.3/11L.4）：重试 outbox 中未投递成功的机会（崩溃/重启后从 outbox.json 恢复） */
     function retryPending() {
         if (pending.length === 0) return Promise.resolve();
         var list = pending.slice();
@@ -184,17 +207,23 @@ function createRunner(symbol) {
         return list.reduce(function (chain2, item) {
             return chain2.then(function () {
                 return deliver(item.opp).then(function (ok) {
-                    if (!ok) pending.push(item); // 仍失败 → 下轮继续
+                    if (!ok) {
+                        pending.push(item); // 仍失败 → 留在 outbox，下轮继续
+                    }
+                    saveOutbox(); // 每次出队/回队都落盘（崩溃恢复点）
                 });
             });
         }, Promise.resolve());
     }
 
-    /** 新 HIGH 机会入口：尝试投递，失败自动进入 pending */
+    /** 新 HIGH 机会入口：尝试投递，失败进入 outbox（持久化，重启不丢） */
     function handleHigh(opp) {
         if (delivered[opp.id]) return Promise.resolve(null);
         return deliver(opp).then(function (ok) {
-            if (!ok) pending.push({ opp: opp });
+            if (!ok) {
+                pending.push({ opp: opp, attempts: 0 });
+                saveOutbox();
+            }
             return null;
         });
     }

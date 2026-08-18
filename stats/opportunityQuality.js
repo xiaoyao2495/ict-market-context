@@ -108,6 +108,11 @@ function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace) {
             mssQuality: best.mssQuality, legQuality: best.quality,
             anchorIndex: best.endIndex, nearTarget: nearTarget, hasLeg: true,
             fvgIds: o.fvgIds || [],
+            // 11L.4：通知可用时点（leg 关闭确认时间）。leg.availableIndex 缺失（旧构造）时回退
+            // anchorIndex 保持兼容；authoritative 路径（buildWindowedLegIndex）必有该字段。
+            availableIndex: best.availableIndex !== undefined && best.availableIndex !== null
+                ? best.availableIndex
+                : best.endIndex,
             // 暴露 best leg 引用（Alert Replay 人工核对：rangeAtr/bodyEff/MSS reference 等）
             dispId: best.ids && best.ids.length > 0 ? best.ids[0] : null
         };
@@ -115,7 +120,9 @@ function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace) {
 }
 
 /**
- * 1h Direction Validation（锚 = leg 完成下一根，最早 N+1）。
+ * 1h Direction Validation（Phase 11L.4：锚 = 通知可用时点 availableIndex 的下一根，
+ * 不再用 leg 完成根 anchorIndex —— 修正"事件完成时间超前于系统可确认时间"的
+ * information-availability leakage；availableIndex 缺失时回退 anchorIndex 保持兼容）。
  * @param {Array} items buildTierIndex 输出
  * @param {Array} candles 5m candles
  * @param {number} [windowBars] 默认 12（1h）
@@ -132,7 +139,9 @@ function validateTiers(items, candles, windowBars) {
     }
     (items || []).forEach(function (it) {
         if (!it.hasLeg || it.anchorIndex === null || it.anchorIndex === undefined) return;
-        var start = it.anchorIndex + 1; // leg 完成下一根才允许观察（无 future leakage）
+        // 11L.4：通知可用时点（availableIndex 优先；旧调用无该字段时回退 anchorIndex）
+        var availIdx = it.availableIndex !== undefined && it.availableIndex !== null ? it.availableIndex : it.anchorIndex;
+        var start = availIdx + 1; // 通知后最早 N+1 才允许观察（无 information-availability leakage）
         if (start >= candles.length) return;
         var anchor = candles[it.anchorIndex];
         if (!anchor) return;

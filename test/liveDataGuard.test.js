@@ -89,14 +89,17 @@ test('checkFuturesPurity: exchangeInfo spot / unavailable → 不通过', functi
     assert.strictEqual(ds.checkFuturesPurity(Object.assign({}, base, { exchangeInfo: { source: 'unavailable' } })).ok, false);
 });
 
-test('checkFuturesPurity: 无 source 字段（旧数据）不误报', function () {
+test('checkFuturesPurity: 无 source 字段（来源不明）→ 不通过（11L.4 严格 source presence）', function () {
     var ds = loadDataSourceWithMock({});
     var data = {
         '5m': [{ openTime: 1000, closeTime: 1299999, close: 1 }],
         '1h': [], '4h': [], '1d': [], '1w': [], '1M': [],
         exchangeInfo: { tickSize: 1 }
     };
-    assert.strictEqual(ds.checkFuturesPurity(data).ok, true);
+    var r = ds.checkFuturesPurity(data);
+    assert.strictEqual(r.ok, false, 'source=undefined 视为来源不明 → 严格模式拒绝');
+    assert.ok(r.issues[0].indexOf('5m[0]') === 0);
+    assert.ok(r.issues[0].indexOf('undefined') !== -1);
 });
 
 // ---------- validate5mContinuity ----------

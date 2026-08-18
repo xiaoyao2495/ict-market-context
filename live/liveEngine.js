@@ -138,13 +138,14 @@ function createLiveEngine(data, options) {
 
             // ---- 7. Leg 检测 + 机会评估（共享 builder：与 Replay 单一实现） ----
             // anchor = leg.lastIndex 的蜡烛（leg 真正完成那根），不是当前新 displacement 根
+            // 11L.4：availableIndex = 当前推进根 index（= 系统首次能确认 leg 结束的时点）
             var opp = null;
             (newEvents.displacements || []).forEach(function (d) {
                 var r = legBuilder.feed(d);
                 if (r.closed) {
                     var anchorCandle = window[r.closed.lastIndex];
                     if (anchorCandle) {
-                        opp = evaluateOpportunity(r.closed, r.closed.lastIndex, anchorCandle) || opp;
+                        opp = evaluateOpportunity(r.closed, r.closed.lastIndex, anchorCandle, i) || opp;
                     }
                 }
             });
@@ -154,7 +155,7 @@ function createLiveEngine(data, options) {
             if (expired) {
                 var anchorCandle2 = window[expired.lastIndex];
                 if (anchorCandle2) {
-                    opp = evaluateOpportunity(expired, expired.lastIndex, anchorCandle2) || opp;
+                    opp = evaluateOpportunity(expired, expired.lastIndex, anchorCandle2, i) || opp;
                 }
             }
             return opp;
@@ -163,8 +164,10 @@ function createLiveEngine(data, options) {
 
     /**
      * 评估已完成的 leg → 返回机会（含 tier）。去重/投递由调用方负责（Fix 3，11L.3）。
+     * @param {number} [availableIndex] 11L.4：系统首次能确认 leg 结束的根 index
+     *   （feed/closeExpired 关闭时 = 当前推进根 i；flushLeg 无上下文时回退 anchorIndex）
      */
-    function evaluateOpportunity(leg, anchorIndex, anchorCandle) {
+    function evaluateOpportunity(leg, anchorIndex, anchorCandle, availableIndex) {
         var oppId = leg.mssId || ('LEG:' + leg.ids[0]);
         // 机会身份与 Replay 的 buildOpportunities 一致：只有 FVG 归属到 leg 才构成机会
         // （buildOpportunities 遍历 fvgs → fvg.displacementEventId → leg → opp；无 FVG 的 leg 不成机会）
@@ -221,6 +224,13 @@ function createLiveEngine(data, options) {
             return f.displacementEventId && leg.ids.indexOf(f.displacementEventId) !== -1;
         }).length;
 
+        // 11L.4：通知可用时点（系统首次能确认 leg 结束）——
+        //   availableIndex 优先（调用方当前根）；builder timeout 场景由调用方传入；
+        //   flushLeg（无上下文）回退 leg.availableIndex / anchorIndex
+        var availIdx = availableIndex !== undefined && availableIndex !== null
+            ? availableIndex
+            : (leg.availableIndex !== undefined && leg.availableIndex !== null ? leg.availableIndex : anchorIndex);
+        var availCandle = window[availIdx];
         var opp = {
             id: oppId,
             tier: tier,
@@ -231,6 +241,9 @@ function createLiveEngine(data, options) {
             anchorIndex: anchorIndex,
             anchorTime: anchorCandle.closeTime,
             anchorPrice: anchorPrice,
+            availableIndex: availIdx,
+            availableAt: availCandle ? availCandle.closeTime : (leg.availableAt !== undefined ? leg.availableAt : anchorCandle.closeTime),
+            closeReason: leg.closeReason || 'timeout',
             nearTarget: nearTarget,
             nearDistPct: nearDistPct,
             fvgCount: fvgCount

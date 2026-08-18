@@ -110,18 +110,25 @@ pm2 save
   下轮继续补）/ `DATA_SOURCE_DEGRADED`（requireFutures 下非 futures 数据，不推进）
 - 首次下载数据较慢属正常；之后 `data-cache/` 命中 + 增量轮询，开销极小。
 
-## 生产保护（11L.3，上线前必须）
+## 生产保护（11L.3 + 11L.4，上线前必须）
 
 - **Futures-only fail-closed**：`requireFutures=true` 时——
-  - 初始化历史（5m/1h/4h/1d/1w/1M + exchangeInfo）只要发现非 futures 源 → 该 symbol **拒绝启动**
-    （抛 `DATA_SOURCE_DEGRADED`，不 warmup 不建引擎），绝不带污染状态上线
+  - 初始化历史（5m/1h/4h/1d/1w/1M + exchangeInfo）只要发现非 futures 源或 source 缺失
+    （来源不明）→ 该 symbol **拒绝启动**（抛 `DATA_SOURCE_DEGRADED`，不 warmup 不建引擎），
+    绝不带污染状态上线
   - HTF 增量返回非 futures → **拒绝 append**（Bias/Draw 不被 spot 污染），网络失败明确记
     `HTF_NETWORK_ERROR`（保留旧 snapshot，标记 stale，不吞错）
   - Top10 名单刷新同样要求 futures 源，否则保留现有监控
 - **DATA_GAP 严格验证**：backfill 后必须通过 `validate5mContinuity`（首根紧接 + 逐根连续），
-  任何缺口 → `DATA_GAP_UNRESOLVED` 不推进 engine，下轮继续补
-- **钉钉确认投递**：`res.errcode === 0` 才算投递成功并记入去重集合（pushed.json）；
-  失败（网络 / errcode!=0）→ 机会保留 pending，每轮 tick 自动重试，**不会漏掉 HIGH 通知**
+  任何缺口 → `DATA_GAP_UNRESOLVED` 不推进 engine，下轮继续补；**重启时同样验证持久化
+  5m 历史（candles.jsonl）连续**，缺根 → 拒绝启动（清理 .live-state 重新 bootstrap）
+- **钉钉确认投递 + outbox**：`res.errcode === 0` 才算投递成功并记入去重集合（pushed.json）；
+  失败（网络 / errcode!=0）→ 机会进入 **outbox.json**（transactional outbox，持久化），
+  每轮 tick 自动重试——**崩溃/重启也不漏 HIGH 通知**
+- **通知时点语义（11L.4）**：消息与统计的时间 = `availableAt`（系统首次能确认 leg 结束：
+  下一个 displacement 触发关闭 = 触发 K 收盘；timeout = lastConfirmedAt + 15min），
+  不再是 leg 最后位移 K 的 `anchorTime`。历史 post-alert 统计从 availableAt 之后 N+1 开始，
+  修正 information-availability leakage 后 **HIGH 1h Near Draw Hit = 81%（90d，n=539）**
 
 ## 验证（可选，需网络/缓存）
 
@@ -139,9 +146,12 @@ Live 逐根推进 HIGH 546 —— 30d parity 100% / 90d 98.7%，同一机会完�
 LONG (BULLISH)
 MSS: PROTECTED_SWING · Leg: EXPLOSIVE (3.0 ATR)
 Near Draw: 0.36% 距离（target 64513.2）
-历史同级机会：1h Near Draw Hit 88%
-时间: 2026-08-18 14:20 (UTC+8)
+历史同级机会：1h Near Draw Hit 81%（通知时点修正后）
+通知: 2026-08-18 14:20 (UTC+8)（leg 锚 2026-08-18 14:05）
 ```
+
+（11L.4：`通知` = 系统首次能确认 leg 结束的时点（availableAt），`leg 锚` = 最后位移 K 收盘
+（anchorTime，仅描述 leg 本身）。历史 81% 就是从通知时点之后统计的 post-alert 表现。）
 
 ## 已知边界
 

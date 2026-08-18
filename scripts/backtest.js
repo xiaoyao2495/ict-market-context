@@ -570,9 +570,9 @@ function reportOpportunityQuality(result, candles) {
         });
     });
 
-    // 3. 1h validation（锚 = leg 完成下一根）
+    // 3. 1h validation（11L.4：锚 = 通知可用时点 availableAt 之后 N+1）
     var agg = opportunityQuality.validateTiers(items, candles || [], 12);
-    console.log('  1H VALIDATION（锚 = leg 完成下一根，最早 N+1）');
+    console.log('  1H VALIDATION（11L.4：锚 = 通知可用时点 availableAt 之后 N+1）');
     console.log('  ' + pad('tier', 14) + pad('n', 5) + pad('dirHit', 8) + pad('MFE', 9) + pad('MAE', 9) + pad('nearHit', 9));
     tierOrder.forEach(function (t) {
         var a = agg[t];
@@ -624,12 +624,13 @@ function reportAlertReplay(result, candles) {
         return;
     }
     console.log('  通知总数 ' + alerts.length + ' | 覆盖 ' + a.days + ' 天 | 平均 ' + a.perDay.toFixed(1) + ' 条/天' +
-        ' | HIGH ' + (a.byTier.HIGH_QUALITY || 0) + ' (每周 ' + a.perWeekHigh.toFixed(1) + ')');
+        ' | HIGH ' + (a.byTier.HIGH_QUALITY || 0) + ' (每周 ' + a.perWeekHigh.toFixed(1) + ')' +
+        ' | 不可评估（通知点超出数据）' + a.incomplete);
     console.log('  byTier：HIGH ' + (a.byTier.HIGH_QUALITY || 0) + ' | WATCH ' + (a.byTier.WATCH || 0) +
         ' | LOW ' + (a.byTier.LOW_QUALITY || 0));
 
-    // 通知质量（30m/1h）
-    console.log('  通知质量（锚 = leg 完成下一根，最早 N+1）');
+    // 通知质量（30m/1h）—— 11L.4：锚 = 通知可用时点 availableAt 之后 N+1
+    console.log('  通知质量（11L.4：锚 = 通知可用时点 availableAt 之后 N+1，修正 information-availability leakage）');
     console.log('  ' + pad('tier', 14) + pad('n', 5) +
         pad('nearHit30m', 11) + pad('nearHit1h', 11) + pad('MFE1h', 9) + pad('MAE1h', 9));
     ['HIGH_QUALITY', 'WATCH', 'LOW_QUALITY'].forEach(function (t) {
@@ -666,13 +667,14 @@ function reportAlertReplay(result, candles) {
     console.log('  (若 >0.5% 距离桶 HIGH 仍明显 >> WATCH/LOW → 信号硬；若仅 <0.25% 近桶占优 → 距离幻觉)');
     console.log('');
 
-    // 最近 25 条通知（真实时间顺序）
-    console.log('  最近 25 条通知（时间升序，同一 Opportunity 仅一次）');
+    // 最近 25 条通知（真实时间顺序；11L.4：time = 通知可用时点 availableAt）
+    console.log('  最近 25 条通知（时间升序，同一 Opportunity 仅一次；time = notifiedAt）');
     console.log('  ' + pad('#', 4) + pad('time', 17) + pad('dir', 8) + pad('tier', 14) +
         pad('mss|leg', 24) + pad('near%', 8) + pad('fvg', 5) + pad('sweep', 18) + pad('price', 12));
     alerts.slice(-25).forEach(function (al, k) {
         var idx = alerts.length - 25 + k;
-        console.log('  ' + pad(idx + 1, 4) + pad(fmt(al.anchorTime + 8 * 3600000), 17) +
+        var notifyTime = al.availableAt !== undefined && al.availableAt !== null ? al.availableAt : al.anchorTime;
+        console.log('  ' + pad(idx + 1, 4) + pad(fmt(notifyTime + 8 * 3600000), 17) +
             pad(al.direction === 'BULLISH' ? 'LONG' : 'SHORT', 8) +
             pad(al.tier.replace('_QUALITY', ''), 14) +
             pad((al.mssQuality === 'NO_MSS' ? 'noMSS' : al.mssQuality.replace('_SWING', '')) + '|' + al.legQuality, 24) +
@@ -683,9 +685,9 @@ function reportAlertReplay(result, candles) {
     });
     console.log('');
 
-    // 人工抽查清单：HIGH_QUALITY 均匀抽样 25 条（TradingView 核对）
+    // 人工抽查清单：HIGH_QUALITY 均匀抽样 25 条（TradingView 核对；11L.4：time = notifiedAt）
     var highs = alerts.filter(function (al) { return al.tier === 'HIGH_QUALITY'; });
-    console.log('  人工抽查清单（HIGH_QUALITY 均匀抽样 ' + Math.min(25, highs.length) + ' 条，TradingView 核对）');
+    console.log('  人工抽查清单（HIGH_QUALITY 均匀抽样 ' + Math.min(25, highs.length) + ' 条，TradingView 核对；time = notifiedAt）');
     console.log('  ' + pad('#', 4) + pad('time(UTC+8)', 17) + pad('dir', 6) + pad('price', 11) +
         pad('mssRef', 12) + pad('break%', 8) + pad('legAtr', 8) + pad('near%', 8) + pad('fvgZone', 18));
     var step = Math.max(1, Math.floor(highs.length / 25));
@@ -694,7 +696,8 @@ function reportAlertReplay(result, candles) {
         sampled.push(highs[i]);
     }
     sampled.forEach(function (al, k) {
-        console.log('  ' + pad(k + 1, 4) + pad(fmt(al.anchorTime + 8 * 3600000), 17) +
+        var notifyTime = al.availableAt !== undefined && al.availableAt !== null ? al.availableAt : al.anchorTime;
+        console.log('  ' + pad(k + 1, 4) + pad(fmt(notifyTime + 8 * 3600000), 17) +
             pad(al.direction === 'BULLISH' ? 'LONG' : 'SHORT', 6) +
             pad(al.anchorPrice.toFixed(1), 11) +
             pad(al.mssRefPrice !== null && al.mssRefPrice !== undefined ? al.mssRefPrice.toFixed(1) : '-', 12) +
@@ -710,7 +713,7 @@ function reportAlertReplay(result, candles) {
 
 /**
  * Phase 11D.9 — Delivery Alignment Audit（纯诊断）
- * 人工复核（#10）暴露：HIGH_QUALITY 88% nearHit 但 41% dirHit 的根因 =
+ * 人工复核（#10）暴露：HIGH_QUALITY 81% nearHit（11L.4 通知时点修正前 88%）但 41% dirHit 的根因 =
  * "强局部结构" ≠ "主导方向"。本段把 HIGH 拆成 A/B/C 三类，验证 4 个
  * alignment 维度能否把 dirHit 拉高。
  */

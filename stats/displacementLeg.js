@@ -174,8 +174,18 @@ function classifyLegQuality(leg) {
  * 语义与 buildDisplacementLegs 完全一致（连续同向、candleIndex 相邻、最多 MAX_LEG_BARS 根）：
  *   feed(displacement) → 合并到 openLeg，或关闭旧 leg 并返回 { closed, opened }。
  * 实时引擎与离线批处理调用同一实现 → 消除 Live/Replay leg 边界差异。
+ *
+ * Phase 11L.4（Alert Availability-Time）：
+ *   每个关闭的 leg 附带【通知可用时点】字段，修正"事件完成时间超前于系统可确认时间"：
+ *     - closeReason 'new-displacement'：leg 被下一个 displacement 触发关闭，
+ *       availableAt = 触发 K 的 confirmedAt（availableIndex = 触发 K 的 candleIndex）
+ *     - closeReason 'timeout'：leg 因超过窗口无新同向 displacement 而过期关闭，
+ *       availableAt = lastConfirmedAt + mergeMs（live：调用方把 availableIndex 设为
+ *       首次满足条件的当前根 index；replay：buildWindowedLegIndex 按 closeTime 反查）
+ *   anchorTime / anchorIndex（最后位移 K）保留，仅描述 leg 本身，不代表通知时点。
  */
-function createLegBuilder() {
+function createLegBuilder(mergeMs) {
+    var MS = mergeMs || 900000; // 默认 15 分钟（修复：此前 closeExpired 引用未定义 MS）
     var open = null;
     function feed(d) {
         var closed = null;
@@ -194,6 +204,10 @@ function createLegBuilder() {
         if (open) {
             closed = open;
             open = null;
+            // 11L.4：新 displacement 触发关闭 —— 通知可用时点 = 触发 K
+            closed.availableAt = d.confirmedAt;
+            closed.availableIndex = d.candleIndex;
+            closed.closeReason = 'new-displacement';
         }
         open = {
             ids: [d.id],
@@ -211,6 +225,11 @@ function createLegBuilder() {
     function close() {
         var closed = open;
         open = null;
+        if (closed) {
+            // 11L.4：数据末尾 flush —— 模拟 timeout（live 进程持续运行时等同 closeExpired）
+            closed.availableAt = (closed.lastConfirmedAt || 0) + MS;
+            closed.closeReason = 'timeout';
+        }
         return closed;
     }
     /**
@@ -226,6 +245,9 @@ function createLegBuilder() {
         if (evaluationTime - open.lastConfirmedAt >= MS) {
             var expired = open;
             open = null;
+            // 11L.4：timeout 关闭 —— 通知可用时点 = 过期时刻（调用方补 availableIndex）
+            expired.availableAt = (expired.lastConfirmedAt || 0) + MS;
+            expired.closeReason = 'timeout';
             return expired;
         }
         return null;
@@ -240,6 +262,9 @@ function createLegBuilder() {
  * Phase 11L.1 — 共享 15min 时间窗 Leg Builder（authoritative，与 buildOpportunities 合并语义一致）
  * 合并条件：同向 && confirmedAt 差 <= mergeMs（不限根数，允许 gap）。
  * Replay（机会身份）与 Live（增量）用同一实现 → 消除 Live/Replay leg 边界差异。
+ *
+ * Phase 11L.4：关闭时标记 availableAt / availableIndex / closeReason（通知可用时点，
+ * 见 createLegBuilder 注释）。anchor（lastIndex/lastConfirmedAt）仅描述 leg 本身。
  */
 function createWindowedLegBuilder(mergeMs) {
     var MS = mergeMs || 900000; // 默认 15 分钟
@@ -256,7 +281,14 @@ function createWindowedLegBuilder(mergeMs) {
             if (!open.mssId && d.metadata && d.metadata.mssEventId) open.mssId = d.metadata.mssEventId;
             return { closed: null, opened: open, merged: true };
         }
-        if (open) { closed = open; open = null; }
+        if (open) {
+            closed = open;
+            open = null;
+            // 11L.4：新 displacement 触发关闭 —— 通知可用时点 = 触发 K
+            closed.availableAt = d.confirmedAt;
+            closed.availableIndex = d.candleIndex;
+            closed.closeReason = 'new-displacement';
+        }
         open = {
             ids: [d.id],
             direction: d.direction,
@@ -273,6 +305,11 @@ function createWindowedLegBuilder(mergeMs) {
     function close() {
         var closed = open;
         open = null;
+        if (closed) {
+            // 11L.4：数据末尾 flush —— 模拟 timeout
+            closed.availableAt = (closed.lastConfirmedAt || 0) + MS;
+            closed.closeReason = 'timeout';
+        }
         return closed;
     }
     /**
@@ -288,6 +325,9 @@ function createWindowedLegBuilder(mergeMs) {
         if (evaluationTime - open.lastConfirmedAt >= MS) {
             var expired = open;
             open = null;
+            // 11L.4：timeout 关闭 —— 通知可用时点 = 过期时刻（调用方补 availableIndex）
+            expired.availableAt = (expired.lastConfirmedAt || 0) + MS;
+            expired.closeReason = 'timeout';
             return expired;
         }
         return null;
@@ -298,6 +338,15 @@ function createWindowedLegBuilder(mergeMs) {
     };
 }
 
+/** 按 closeTime 反查 5m index（availableAt 转 availableIndex；找不到 → null） */
+function indexOfCloseTime(candles, closeTime) {
+    var list = candles || [];
+    for (var i = 0; i < list.length; i++) {
+        if (list[i].closeTime === closeTime) return i;
+    }
+    return null;
+}
+
 /**
  * Phase 11L.1 — 共享 leg 索引（Replay 报告层与 Live 共用的 authoritative 构建）
  * displacementEvents（按 confirmedAt 排序）→ windowed legs → legByDispId
@@ -305,15 +354,20 @@ function createWindowedLegBuilder(mergeMs) {
  * @returns {Object} dispId → leg
  */
 function buildWindowedLegIndex(displacements, candles, mssEvents, swings, mergeMs) {
+    var MS = mergeMs || 900000;
     var sorted = (displacements || []).slice().sort(function (a, b) { return a.confirmedAt - b.confirmedAt; });
     var builder = createWindowedLegBuilder(mergeMs);
     var legs = [];
     sorted.forEach(function (d) {
         var r = builder.feed(d);
-        if (r.closed) legs.push(r.closed);
+        if (r.closed) legs.push(r.closed); // 11L.4：availableAt/availableIndex/closeReason 已由 builder 设置
     });
     var tail = builder.close();
-    if (tail) legs.push(tail);
+    if (tail) {
+        // 11L.4：数据末尾 tail → timeout 语义；availableIndex 按 lastConfirmedAt+mergeMs 反查（数据不足 → null）
+        tail.availableIndex = indexOfCloseTime(candles, tail.availableAt);
+        legs.push(tail);
+    }
     var mssById = {};
     (mssEvents || []).forEach(function (m) { mssById[m.id] = m; });
     var idx = {};
@@ -338,5 +392,6 @@ module.exports = {
     createLegBuilder: createLegBuilder,
     createWindowedLegBuilder: createWindowedLegBuilder,
     buildWindowedLegIndex: buildWindowedLegIndex,
+    indexOfCloseTime: indexOfCloseTime,
     MAX_LEG_BARS: MAX_LEG_BARS
 };

@@ -4,10 +4,16 @@
  * 目的：验证"过去 90 天如果系统已部署，我会收到什么通知、这些通知值不值得看"。
  * 不接钉钉、不写 client —— 先把通知时点、内容、质量全部离线回放。
  *
- * 通知时点 = opportunity 信息完备时刻（最后一个 leg 完成，anchorIndex）：
- *   - 此时 MSS quality / leg quality / near draw / distance 全部可知
- *   - 同一 opportunity 只通知一次（fvgIds 已合并，天然去重）
- * 通知后质量 = 锚后最早 N+1 起 30m(6)/1h(12) 根：
+ * Phase 11L.4（Alert Availability-Time Fix）：
+ *   通知时点 ≠ leg 完成根（anchorIndex）。15min 时间窗 leg 的"系统首次能确认 leg 已结束"
+ *   时刻是 availableAt（= availableIndex 对应 K 收盘）：
+ *     - 下一个 displacement 触发关闭：availableAt = 触发 K closeTime
+ *     - timeout 过期关闭：availableAt = lastConfirmedAt + 15min
+ *   历史统计必须从 availableAt 之后的最早 N+1 开始（否则把"通知发出前已发生的行情"
+ *   算进 post-alert 表现 —— information-availability leakage，会虚高 near draw hit 率）。
+ *   anchorTime/anchorIndex 保留，仅描述 displacement leg 本身。
+ *
+ * 通知后质量 = availableIndex+1 起 30m(6)/1h(12) 根：
  *   - Near Draw Hit（窗口内触达 near target）
  *   - MFE / MAE（顺向 / 逆向最大幅度，相对 %）
  *
@@ -49,6 +55,7 @@ function distBucketOf(pct) {
  * @returns {Array} alerts [{ id, tier, direction, mssQuality, legQuality, anchorIndex, anchorTime,
  *                           anchorPrice, nearTarget, nearDistPct, fvgCount, fvgIds,
  *                           legRangeAtr, legNetMoveAtr, legBodyEff, mssRefPrice, mssBreakPct,
+ *                           availableIndex, availableAt, closeReason,
  *                           sweep: { price, side, barsAgo } | null }]
  */
 function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, candles, mssEvents) {
@@ -62,6 +69,11 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
         if (!it.hasLeg || it.anchorIndex === null || it.anchorIndex === undefined) return;
         var anchor = candles[it.anchorIndex];
         if (!anchor) return;
+        // 11L.4：通知可用时点（availableIndex 优先；旧调用无该字段回退 anchorIndex）
+        var availIdx = it.availableIndex !== undefined && it.availableIndex !== null
+            ? it.availableIndex
+            : it.anchorIndex;
+        var availCandle = candles[availIdx];
         var anchorPrice = anchor.close;
         var nearDistPct = it.nearTarget !== null && it.nearTarget !== undefined && anchorPrice > 0
             ? Math.abs(it.nearTarget - anchorPrice) / anchorPrice * 100
@@ -93,6 +105,10 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
             anchorIndex: it.anchorIndex,
             anchorTime: anchor.closeTime,
             anchorPrice: anchorPrice,
+            // 11L.4：真实通知时点（系统首次能确认 leg 结束）
+            availableIndex: availIdx,
+            availableAt: availCandle ? availCandle.closeTime : (it.availableAt !== undefined ? it.availableAt : anchor.closeTime),
+            closeReason: it.closeReason || (legObj ? (legObj.closeReason || 'timeout') : 'timeout'),
             nearTarget: it.nearTarget,
             nearDistPct: nearDistPct,
             fvgCount: fvgCount,
@@ -124,7 +140,10 @@ function assessAlerts(alerts, candles) {
         total: alerts.length,
         byTier: { HIGH_QUALITY: 0, WATCH: 0, LOW_QUALITY: 0 },
         tierStats: {},
-        distBuckets: {}
+        distBuckets: {},
+        // 11L.4：无有效通知时点（数据末尾 timeout，availableAt 超出历史数据）的样本——
+        // 真实运行会被通知，但历史数据里没有"通知后"行情可验证，不计入 hit 率（避免稀释）
+        incomplete: 0
     };
     var firstIdx = alerts.length > 0 ? alerts[0].anchorIndex : null;
     var lastIdx = alerts.length > 0 ? alerts[alerts.length - 1].anchorIndex : null;
@@ -146,6 +165,15 @@ function assessAlerts(alerts, candles) {
 
     alerts.forEach(function (al) {
         out.byTier[al.tier] = (out.byTier[al.tier] || 0) + 1;
+        // 11L.4：通知后最早 N+1 = availableIndex + 1（锚不再用 anchorIndex）。
+        // availableIndex 字段缺失（旧调用）→ 回退 anchorIndex；显式 null（tail 超界，
+        // 历史数据里没有"通知后"行情可验证）→ 计 incomplete，不计入 hit 率
+        var availIdx = al.availableIndex !== undefined ? al.availableIndex : al.anchorIndex;
+        var start = availIdx !== null && availIdx !== undefined ? availIdx + 1 : null;
+        if (start === null || start >= candles.length) {
+            out.incomplete++;
+            return;
+        }
         var a = tacc(al.tier);
         a.n++;
         // 距离桶
@@ -154,7 +182,6 @@ function assessAlerts(alerts, candles) {
         var b = out.distBuckets[bucket];
         if (!b[al.tier]) b[al.tier] = { n: 0, nearHit30m: 0, nearHit1h: 0, nearCnt30m: 0, nearCnt1h: 0 };
         b[al.tier].n++;
-        var start = al.anchorIndex + 1;
         WINDOWS.forEach(function (w) {
             var lastJ = Math.min(start + w.bars - 1, candles.length - 1);
             var bullish = al.direction === 'BULLISH';

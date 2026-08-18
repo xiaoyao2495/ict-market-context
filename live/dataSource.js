@@ -16,9 +16,12 @@ var BAR_MS = 300000; // 5m
 var HTF_TIMEFRAMES = ['5m', '1h', '4h', '1d', '1w', '1M'];
 
 /**
- * Fix 1（11L.3 P0）：初始化 futures purity 检查（纯函数，可测）
- * 检查 fetchInitial 返回的全部 timeframe 与 exchangeInfo：
- * 任何 candle.source / exchangeInfo.source !== 'futures' → 不通过。
+ * Fix 1（11L.3 P0）+ 11L.4：初始化 futures purity 检查（纯函数，可测）
+ * 严格 source presence：source 必须显式 === 'futures'。
+ *   - source === 'spot-mirror' → 明确污染，拒绝
+ *   - source === undefined → 来源不明（旧格式/未知源），生产严格模式同样拒绝
+ *     （宁可要求清理 .live-state 重新 bootstrap，也不为兼容旧格式降低 production purity）
+ * 检查 fetchInitial 返回的全部 timeframe 与 exchangeInfo。
  * @param {Object} data { '5m','1h','4h','1d','1w','1M', exchangeInfo }
  * @returns {{ok: boolean, issues: Array<string>}}
  */
@@ -27,13 +30,13 @@ function checkFuturesPurity(data) {
     HTF_TIMEFRAMES.forEach(function (tf) {
         var arr = (data && data[tf]) || [];
         arr.forEach(function (c, i) {
-            if (c.source && c.source !== 'futures') {
-                issues.push(tf + '[' + i + '] source=' + c.source + ' openTime=' + c.openTime);
+            if (!c.source || c.source !== 'futures') {
+                issues.push(tf + '[' + i + '] source=' + (c.source || 'undefined') + ' openTime=' + c.openTime);
             }
         });
     });
-    if (data && data.exchangeInfo && data.exchangeInfo.source && data.exchangeInfo.source !== 'futures') {
-        issues.push('exchangeInfo source=' + data.exchangeInfo.source);
+    if (data && data.exchangeInfo && (!data.exchangeInfo.source || data.exchangeInfo.source !== 'futures')) {
+        issues.push('exchangeInfo source=' + (data.exchangeInfo.source || 'undefined'));
     }
     return { ok: issues.length === 0, issues: issues };
 }
