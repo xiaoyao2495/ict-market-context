@@ -18,10 +18,12 @@ function buildUrl(webhook, secret) {
 
 /**
  * 发送文本消息。
+ * Fix 3（11L.3 P1）：HTTP 成功但业务失败（res.errcode !== 0，如 310000 关键词不匹配）
+ * 一律视为【投递失败】reject —— resolve 的唯一语义 = 钉钉确认收到（errcode === 0）。
  * @param {string} webhook 钉钉机器人 webhook（含 access_token）
  * @param {string} secret 加签密钥
  * @param {string} content 消息文本
- * @returns {Promise<Object>} 钉钉响应 { errcode, errmsg }
+ * @returns {Promise<Object>} 钉钉响应 { errcode: 0, errmsg }
  */
 function sendText(webhook, secret, content) {
     var url = buildUrl(webhook, secret);
@@ -29,7 +31,16 @@ function sendText(webhook, secret, content) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ msgtype: 'text', text: { content: content } })
-    }).then(function (r) { return r.json(); });
+    }).then(function (r) { return r.json(); }).then(function (res) {
+        if (!res || res.errcode !== 0) {
+            var code = res && res.errcode !== undefined ? res.errcode : 'none';
+            var msg = res && res.errmsg !== undefined ? res.errmsg : 'no-response';
+            var err = new Error('dingtalk errcode=' + code + ' errmsg=' + msg);
+            err.res = res;
+            throw err;
+        }
+        return res;
+    });
 }
 
 module.exports = {

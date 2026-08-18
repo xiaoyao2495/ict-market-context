@@ -3,12 +3,18 @@
  *
  * 流程（每根 5m 收盘）：
  *   Binance 5m closed → HTF 维护 → 状态推进 → DisplacementLeg 完成 →
- *   Opportunity tier → HIGH_QUALITY 去重 → 钉钉推送
+ *   Opportunity tier → HIGH_QUALITY 投递（钉钉确认 errcode=0 才记 delivered）→ 失败重试
+ *
+ * Phase 11L.3（Final Production Guardrails）：
+ *   1. requireFutures → 初始化 + HTF 增量 futures-only fail-closed（spot 绝不进入）
+ *   2. DATA_GAP backfill 后严格 continuity 验证（不通过不推进，下轮继续补）
+ *   3. 钉钉投递确认后才去重（失败保留 pending 自动重试）
+ *   4. 第一版默认 fixed 模式（只监控 symbols 列表，默认 BTCUSDT）
  *
  * 无下单/仓位/交易执行。Windows/Linux 通用（纯 Node 22，fs + fetch）。
  * 部署：node scripts/live.js（建议 pm2 或计划任务保活）
  *
- * 重启恢复：candles.jsonl（最近 N 根重放重建状态，幂等）+ pushed.json（去重集合）
+ * 重启恢复：candles.jsonl（最近 N 根重放重建状态，幂等）+ pushed.json（已投递去重集合）
  */
 var fs = require('fs');
 var path = require('path');
@@ -80,12 +86,33 @@ function createRunner(symbol) {
     var lastOpenTime = null;
     var historyLoaded = false;
     var runnerData = null; // Fix 1：{ raw, structureCandles, calendarCandles }（HTF 增量共用同一对象）
+    var delivered = {}; // Fix 3（11L.3）：oppId -> anchorIndex（钉钉确认投递成功才写入；持久化跨重启）
+    var pending = []; // Fix 3（11L.3）：投递失败的 HIGH 机会（每轮 tick 重试）
 
     function loadPushed() {
         return persistence.loadJson(pushedFile, {});
     }
 
     function initFromHistory(data) {
+        // Fix 1（11L.3 P0）：requireFutures → 初始化 futures-only fail-closed。
+        // 任何 timeframe（5m/1h/4h/1d/1w/1M）或 exchangeInfo 出现非 futures 源
+        // → 初始化失败（throw），不启动该 symbol（不 warmup、不建 engine、不留 interval）。
+        if (CONFIG.requireFutures) {
+            var purity = dataSource.checkFuturesPurity(data);
+            if (!purity.ok) {
+                throw new Error('DATA_SOURCE_DEGRADED: ' + symbol + ' 初始数据含非 futures（' +
+                    purity.issues[0] + '，共 ' + purity.issues.length + ' 处）——requireFutures 下拒绝启动');
+            }
+        }
+        // Fix 1（11L.3 P0）：candles.jsonl 既有持久化数据也必须是 futures（旧版本污染的存量同样拒绝）
+        var existing = persistence.loadCandles(candlesFile);
+        if (CONFIG.requireFutures) {
+            var badExisting = existing.filter(function (c) { return c.source && c.source !== 'futures'; });
+            if (badExisting.length > 0) {
+                throw new Error('DATA_SOURCE_DEGRADED: ' + symbol + ' candles.jsonl 存在 ' + badExisting.length +
+                    ' 根非 futures（source=' + badExisting[0].source + '）——请清理 .live-state 后重启');
+            }
+        }
         // Fix 1 (P0)：runnerData 保存组装后的 HTF 引用（fetchHtfIncrement 增量更新同一对象）
         var structureCandles = { '1d': data['1d'], '4h': data['4h'], '1h': data['1h'] };
         var calendarCandles = { '1d': data['1d'], '1w': data['1w'], '1M': data['1M'] };
@@ -93,20 +120,11 @@ function createRunner(symbol) {
         var candles5m = (data['5m'] || []).slice();
         log(symbol + ' 初始历史 ' + candles5m.length + ' 根 5m（' + fmt(candles5m[0].closeTime) + ' → ' + fmt(candles5m[candles5m.length - 1].closeTime) + '）');
         // 持久化历史（追加，幂等：跳过已存在的 openTime）
-        var existing = persistence.loadCandles(candlesFile);
         var known = {};
         existing.forEach(function (c) { known[c.openTime] = true; });
         var fresh = candles5m.filter(function (c) { return !known[c.openTime]; });
         if (fresh.length > 0) persistence.appendCandles(candlesFile, fresh);
         var all = existing.concat(fresh);
-
-        // Fix 3 (P0/P1)：requireFutures 时历史数据纯度检查（init 为回放，警告但不阻塞；tick 严格）
-        if (CONFIG.requireFutures) {
-            var nonFutures = all.filter(function (c) { return c.source && c.source !== 'futures'; }).length;
-            if (nonFutures > 0) {
-                log(symbol + ' ⚠️ DATA_SOURCE_DEGRADED: 历史 ' + nonFutures + '/' + all.length + ' 根非 futures（warmup 回放不产生推送，但 tick 将要求 futures-only）');
-            }
-        }
 
         engine = liveEngineMod.createLiveEngine({
             symbol: symbol,
@@ -117,7 +135,7 @@ function createRunner(symbol) {
             thresholds: require('../config/thresholds')
         }, { snapshotInterval: CONFIG.snapshotInterval, baseIndex: 0 });
 
-        engine.setPushed(loadPushed());
+        delivered = loadPushed();
 
         // 逐根推进历史（warmup 段机会不推送：已过去）
         var chain = Promise.resolve();
@@ -128,10 +146,56 @@ function createRunner(symbol) {
             lastCloseTime = all[all.length - 1].closeTime;
             lastOpenTime = all[all.length - 1].openTime;
             historyLoaded = true;
-            var p = engine.getPushed();
-            persistence.saveJson(pushedFile, p);
+            persistence.saveJson(pushedFile, delivered);
             persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: all.length });
-            log(symbol + ' 状态就绪，已推进 ' + all.length + ' 根，去重集合 ' + Object.keys(p).length + ' 个已推机会');
+            log(symbol + ' 状态就绪，已推进 ' + all.length + ' 根，去重集合 ' + Object.keys(delivered).length + ' 个已投递机会');
+        });
+    }
+
+    /**
+     * Fix 3（11L.3 P1）：钉钉投递（确认 errcode===0 才记 delivered 并持久化；失败保留重试）。
+     * @returns {Promise<boolean>} 是否投递成功
+     */
+    function deliver(opp) {
+        if (delivered[opp.id]) return Promise.resolve(true); // 已投递（跨重启去重）
+        var msg = buildMessage(opp, symbol);
+        log('🔥 HIGH 机会: ' + symbol + ' ' + opp.direction + ' ' + opp.mssQuality + '|' + opp.legQuality +
+            ' near ' + (opp.nearDistPct !== null ? opp.nearDistPct.toFixed(2) + '%' : '-') + ' id=' + opp.id);
+        return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {
+            // 双保险：sendText 内部已把 errcode!==0 视为失败，此处再确认一次
+            if (!res || res.errcode !== 0) {
+                throw new Error('errcode=' + (res ? res.errcode : 'none') + ' errmsg=' + (res ? res.errmsg : 'no-response'));
+            }
+            delivered[opp.id] = opp.anchorIndex;
+            persistence.saveJson(pushedFile, delivered);
+            log(symbol + ' 钉钉投递成功 id=' + opp.id + '（errcode=0），已记 delivered');
+            return true;
+        }).catch(function (e) {
+            log(symbol + ' 钉钉投递失败 id=' + opp.id + '：' + e.message + '（保留 pending，下轮重试）');
+            return false;
+        });
+    }
+
+    /** Fix 3（11L.3 P1）：重试上一轮未投递成功的机会 */
+    function retryPending() {
+        if (pending.length === 0) return Promise.resolve();
+        var list = pending.slice();
+        pending = [];
+        return list.reduce(function (chain2, item) {
+            return chain2.then(function () {
+                return deliver(item.opp).then(function (ok) {
+                    if (!ok) pending.push(item); // 仍失败 → 下轮继续
+                });
+            });
+        }, Promise.resolve());
+    }
+
+    /** 新 HIGH 机会入口：尝试投递，失败自动进入 pending */
+    function handleHigh(opp) {
+        if (delivered[opp.id]) return Promise.resolve(null);
+        return deliver(opp).then(function (ok) {
+            if (!ok) pending.push({ opp: opp });
+            return null;
         });
     }
 
@@ -144,20 +208,20 @@ function createRunner(symbol) {
                 return Promise.resolve();
             }
         }
+        // Fix 2（11L.3 P0）：严格 5m continuity —— 首根必须紧接 lastOpenTime 且内部逐根连续；
+        // 不通过 → DATA_GAP_UNRESOLVED 不推进 engine（下轮继续 backfill）
+        var cont = dataSource.validate5mContinuity(lastOpenTime, list);
+        if (!cont.ok) {
+            log(symbol + ' DATA_GAP_UNRESOLVED: ' + cont.reason + '（backfill 未补全，不推进 engine，下轮继续 backfill）');
+            return Promise.resolve();
+        }
         log(symbol + ' 新收盘 ' + list.length + ' 根（' + fmt(list[0].openTime) + ' … ' + fmt(list[list.length - 1].closeTime) + '）');
         var chain = Promise.resolve();
         list.forEach(function (c) {
             chain = chain.then(function () {
                 return engine.onBar(c, engine.getWindowLength()).then(function (opp) {
                     if (opp && opp.tier === 'HIGH_QUALITY') {
-                        var msg = buildMessage(opp, symbol);
-                        log('🔥 HIGH 机会: ' + symbol + ' ' + opp.direction + ' ' + opp.mssQuality + '|' + opp.legQuality +
-                            ' near ' + (opp.nearDistPct !== null ? opp.nearDistPct.toFixed(2) + '%' : '-') + ' id=' + opp.id);
-                        return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {
-                            log('   钉钉推送响应: errcode=' + (res ? res.errcode : '?') + ' errmsg=' + (res ? res.errmsg : '?'));
-                        }).catch(function (e) {
-                            log('   钉钉推送失败: ' + e.message);
-                        });
+                        return handleHigh(opp);
                     }
                     return null;
                 });
@@ -167,14 +231,25 @@ function createRunner(symbol) {
             lastCloseTime = list[list.length - 1].closeTime;
             lastOpenTime = list[list.length - 1].openTime;
             persistence.appendCandles(candlesFile, list);
-            persistence.saveJson(pushedFile, engine.getPushed());
+            persistence.saveJson(pushedFile, delivered);
             persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength() });
         });
     }
 
     function tick() {
         if (!historyLoaded) return Promise.resolve();
-        return dataSource.fetchHtfIncrement(symbol, runnerData.structureCandles, runnerData.calendarCandles).then(function () {
+        return retryPending().then(function () {
+            // Fix 1（11L.3 P0）：HTF 增量 futures-only（spot 不 append）+ 错误不吞
+            return dataSource.fetchHtfIncrement(symbol, runnerData.structureCandles, runnerData.calendarCandles, CONFIG.requireFutures);
+        }).then(function (htf) {
+            (htf.issues || []).forEach(function (iss) {
+                if (iss.kind === 'DEGRADED') {
+                    log(symbol + ' HTF DATA_SOURCE_DEGRADED: ' + iss.tf + ' 返回 ' + iss.source +
+                        '（openTime=' + iss.openTime + '）——已拒绝 append，绝不污染 futures context');
+                } else if (iss.kind === 'NETWORK_ERROR') {
+                    log(symbol + ' HTF_NETWORK_ERROR: ' + iss.tf + ' ' + (iss.error || 'network') + '（保留旧 HTF snapshot，stale 状态）');
+                }
+            });
             return dataSource.pollNew5m(symbol, lastCloseTime);
         }).then(function (res) {
             // Fix 4（P1）：区分 NO_NEW_BAR / NETWORK_ERROR（不吞错）
@@ -193,8 +268,8 @@ function createRunner(symbol) {
                     }).sort(function (a, b) { return a.openTime - b.openTime; });
                     var full = merged.concat(newCandles);
                     if (full.length === 0) return;
-                    log(symbol + ' 补历史 ' + merged.length + ' 根后恢复推进');
-                    return processCandles(full);
+                    log(symbol + ' 补历史 ' + merged.length + ' 根，等待 continuity 验证...');
+                    return processCandles(full); // 内部严格验证：不通过 → DATA_GAP_UNRESOLVED 不推进
                 });
             }
             return processCandles(newCandles);
@@ -232,15 +307,17 @@ function main() {
             log(sym + ' 加入监控：拉取初始历史（可能命中本地缓存）...');
             return dataSource.fetchInitial(sym, CONFIG.warmupDays).then(function (data) {
                 var r = createRunner(sym);
-                var interval = setInterval(function () { r.tick(); }, CONFIG.pollMs);
-                runners[sym] = { runner: r, interval: interval };
-                return r.initFromHistory(data);
-            }).then(function () {
-                runners[sym].runner.tick(); // 立即先跑一轮
-                log(sym + ' 监控就绪');
-            }).catch(function (e) {
-                log(sym + ' 启动失败: ' + (e && e.message || e) + '（跳过，下轮刷新重试）');
+                // Fix 1（11L.3 P0）：initFromHistory 内部 purity fail-closed（throw）——
+                // 必须初始化成功后才创建轮询 interval，失败不留半启动状态
+                return r.initFromHistory(data).then(function () {
+                    var interval = setInterval(function () { r.tick(); }, CONFIG.pollMs);
+                    runners[sym] = { runner: r, interval: interval };
+                    r.tick(); // 立即先跑一轮
+                    log(sym + ' 监控就绪');
+                });
             });
+        }).catch(function (e) {
+            log(sym + ' 启动失败: ' + (e && e.message || e) + '（跳过，下轮刷新重试）');
         });
         return startSequence;
     }
@@ -262,6 +339,11 @@ function main() {
 
     function refreshTop() {
         return binanceRest.fetchTopVolumeSymbols(CONFIG.topSymbols.count).then(function (list) {
+            // Fix 1（11L.3 P0）：Top 名单 futures-only（spot 源排序的名单拒绝刷新，保留现有监控）
+            if (CONFIG.requireFutures && list.some(function (x) { return x.source && x.source !== 'futures'; })) {
+                log('DATA_SOURCE_DEGRADED: Top 名单来源非 futures（' + list[0].source + '）——拒绝刷新，保留现有监控');
+                return;
+            }
             var syms = list.map(function (x) { return x.symbol; });
             refreshDate = new Date().toISOString().slice(0, 10);
             log('Top' + syms.length + ' 名单刷新（' + refreshDate + '）: ' + syms.join(', '));
@@ -286,10 +368,14 @@ function main() {
             log('=== 每日 ' + CONFIG.topSymbols.refreshHourUTC + ':00 UTC 自动刷新 Top' + CONFIG.topSymbols.count + ' ===');
             setInterval(checkDailyRefresh, CONFIG.topSymbols.refreshIntervalMs);
         });
-    } else {
+    } else if (CONFIG.symbolsMode === 'fixed') {
+        // Fix 4（11L.3）：第一版 fixed 模式 —— 只监控 symbols 列表（默认 BTCUSDT），
+        // 等验证通过后再切 top10
         ensureSymbols(CONFIG.symbols || []).then(function () {
             log('=== 全部 symbol 就绪，开始轮询（Ctrl+C 停止） ===');
         });
+    } else {
+        throw new Error('未知 symbolsMode=' + CONFIG.symbolsMode + '（可选 top10 / fixed）');
     }
 }
 

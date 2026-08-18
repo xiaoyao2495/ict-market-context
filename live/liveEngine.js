@@ -47,7 +47,9 @@ function createLiveEngine(data, options) {
     var prevAtr = null;
     state.atrSeries = atrSeries;
     var snapshot = null;
-    var pushed = {}; // oppId -> anchorIndex（去重；由调用方持久化/恢复）
+    // Fix 3（11L.3 P1）：engine 不再维护 pushed/去重集合 —— 机会只负责"检测并返回"，
+    // 投递确认（钉钉 errcode=0）与去重（delivered）由 scripts/live.js 负责：
+    //   钉钉失败 → 机会保留 pending，下轮重试；确认成功才记 delivered（跨重启持久化）。
     var window = []; // 全局 index 对齐的已收盘 5m 序列（window.length === 最后 index + 1）
 
     var fullData = {
@@ -160,11 +162,10 @@ function createLiveEngine(data, options) {
     }
 
     /**
-     * 评估已完成的 leg → 若 HIGH_QUALITY 且未推送，标记并返回机会。
+     * 评估已完成的 leg → 返回机会（含 tier）。去重/投递由调用方负责（Fix 3，11L.3）。
      */
     function evaluateOpportunity(leg, anchorIndex, anchorCandle) {
         var oppId = leg.mssId || ('LEG:' + leg.ids[0]);
-        if (pushed[oppId]) return null; // 去重（同一机会只推一次）
         // 机会身份与 Replay 的 buildOpportunities 一致：只有 FVG 归属到 leg 才构成机会
         // （buildOpportunities 遍历 fvgs → fvg.displacementEventId → leg → opp；无 FVG 的 leg 不成机会）
         var legFvgs = state.fvgReg.getAll(symbol).filter(function (f) {
@@ -234,21 +235,14 @@ function createLiveEngine(data, options) {
             nearDistPct: nearDistPct,
             fvgCount: fvgCount
         };
-        if (tier === 'HIGH_QUALITY') {
-            pushed[oppId] = anchorIndex;
-        }
         return opp;
     }
 
-    function getPushed() { return pushed; }
-    function setPushed(map) { pushed = map || {}; return engine; }
     function getState() { return state; }
     function getWindowLength() { return window.length; }
 
     var engine = {
         onBar: onBar,
-        getPushed: getPushed,
-        setPushed: setPushed,
         getState: getState,
         getWindowLength: getWindowLength,
         flushLeg: function () {

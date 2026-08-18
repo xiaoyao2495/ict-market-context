@@ -44,7 +44,7 @@ Binance REST (5m closed)
      ```json
      {
        "symbols": ["BTCUSDT"],
-       "symbolsMode": "top10",
+       "symbolsMode": "fixed",
        "warmupDays": 30,
        "pollMs": 30000,
        "dataDir": ".live-state",
@@ -56,9 +56,11 @@ Binance REST (5m closed)
        }
      }
      ```
+   - **第一版建议 fixed 模式（只监控 `symbols` 列表，默认 BTCUSDT）**：先验证单币
+     通知质量，跑稳一周后再切 `"symbolsMode": "top10"`（自动监控成交量前 10 永续，
+     每日 UTC 8:00 刷新名单，新进自动加入、掉出自动停掉并保留状态）。
 
-5. **首次启动**（top10 模式：自动拉取成交量前 10 的永续合约并逐个初始化，约 3-10 分钟；
-   每日 UTC 8:00 自动刷新名单，新进 top10 的币自动加入监控，掉出的自动停掉并保留状态）：
+5. **首次启动**（fixed 模式只初始化 `symbols` 列表，约 1-3 分钟；top10 模式约 3-10 分钟）：
    ```
    node scripts/live.js
    ```
@@ -72,6 +74,8 @@ Binance REST (5m closed)
    ```
    开机自启：`pm2 startup`（按提示执行生成的命令；Windows 用管理员 PowerShell）。
    或不用 pm2：任务计划程序 → 创建任务 → 触发器"系统启动" → 操作 `node scripts/live.js`（工作目录设为项目目录）。
+   （若服务器需要代理，pm2 场景请用 ecosystem 文件把 `ICT_PROXY_ENABLED=1` 等写入进程环境，
+   而不是临时 CMD 的 set。）
 
 ## 网络注意
 
@@ -80,8 +84,22 @@ Binance REST (5m closed)
   - 需要代理（受限网络 / 本机开发）：`set ICT_PROXY_ENABLED=1` + `set ICT_PROXY_HOST=127.0.0.1` + `set ICT_PROXY_PORT=7890`
     （macOS/Linux 用 `export`；仅本机开发需开启，服务器不要开）
 - **网络健康日志**：运行日志区分 `NO_NEW_BAR`（正常）/ `NETWORK_ERROR`（网络失败，跳过本轮）/
-  `DATA_GAP`（5m 不连续，自动补历史后恢复）/ `DATA_SOURCE_DEGRADED`（requireFutures 下非 futures 数据，不推进）
+  `DATA_GAP`（5m 不连续，自动补历史后恢复）/ `DATA_GAP_UNRESOLVED`（backfill 未补全，不推进 engine，
+  下轮继续补）/ `DATA_SOURCE_DEGRADED`（requireFutures 下非 futures 数据，不推进）
 - 首次下载数据较慢属正常；之后 `data-cache/` 命中 + 增量轮询，开销极小。
+
+## 生产保护（11L.3，上线前必须）
+
+- **Futures-only fail-closed**：`requireFutures=true` 时——
+  - 初始化历史（5m/1h/4h/1d/1w/1M + exchangeInfo）只要发现非 futures 源 → 该 symbol **拒绝启动**
+    （抛 `DATA_SOURCE_DEGRADED`，不 warmup 不建引擎），绝不带污染状态上线
+  - HTF 增量返回非 futures → **拒绝 append**（Bias/Draw 不被 spot 污染），网络失败明确记
+    `HTF_NETWORK_ERROR`（保留旧 snapshot，标记 stale，不吞错）
+  - Top10 名单刷新同样要求 futures 源，否则保留现有监控
+- **DATA_GAP 严格验证**：backfill 后必须通过 `validate5mContinuity`（首根紧接 + 逐根连续），
+  任何缺口 → `DATA_GAP_UNRESOLVED` 不推进 engine，下轮继续补
+- **钉钉确认投递**：`res.errcode === 0` 才算投递成功并记入去重集合（pushed.json）；
+  失败（网络 / errcode!=0）→ 机会保留 pending，每轮 tick 自动重试，**不会漏掉 HIGH 通知**
 
 ## 验证（可选，需网络/缓存）
 
