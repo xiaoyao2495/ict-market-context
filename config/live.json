@@ -1,0 +1,12 @@
+{
+  "symbols": ["BTCUSDT"],
+  "warmupDays": 3,
+  "pollMs": 30000,
+  "snapshotInterval": 12,
+  "dataDir": ".live-state",
+  "replayTailBars": 400,
+  "dingtalk": {
+    "webhook": "https://oapi.dingtalk.com/robot/send?access_token=YOUR_ACCESS_TOKEN",
+    "secret": "YOUR_SECRET"
+  }
+}

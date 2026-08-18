@@ -1,0 +1,254 @@
+/**
+ * Phase 11L — Live Engine（实时机会雷达核心）
+ *
+ * 把回测的单根状态推进（liquidity / snapshot / ATR / events / AMD / FVG）
+ * 复用到实时：每根 5m 收盘推进一次，检测 DisplacementLeg 完成 →
+ * 评估 Opportunity tier（MSS × Leg × Near Draw）→ 返回新 HIGH_QUALITY 机会。
+ *
+ * 与回测 11D.8 的一致性保证：
+ *   - 复用同一批检测器（incrementalLiquidity / incrementalEvents / incrementalFvg /
+ *     mssDetector / displacementDetector / amdState / rebuildSnapshot）
+ *   - 内部维护全局 index 对齐的 candles 窗口（window.length === index+1，
+ *     与回测 candles.slice(0, index+1) 语义完全一致）
+ *   - leg 合并语义与 buildDisplacementLegs 一致（连续同向、相邻 index、最多 3 根）
+ *   - tier 判定复用 classifyOpportunityTier（同一阈值）
+ *   - near target 取 snapshot.draw 的 near（与 drawTrace 同源）
+ *
+ * 不包含：gate / scenario 决策 / 交易执行 / 下单 —— 纯机会发现。
+ */
+var replayState = require('../replay/replayState');
+var eventRegistry = require('../events/eventRegistry');
+var mssDetector = require('../events/mssDetector');
+var displacementDetector = require('../events/displacementDetector');
+var amdState = require('../amd/amdState');
+var replayEngine = require('../replay/replayEngine');
+var mssReference = require('../stats/mssReference');
+var displacementLeg = require('../stats/displacementLeg');
+var opportunityQuality = require('../stats/opportunityQuality');
+var thresholds = require('../config/thresholds');
+
+var LEG_MAX_BARS = 3;
+
+/**
+ * @param {Object} data { symbol, exchangeInfo, structureCandles, calendarCandles, fetcher, thresholds }
+ * @param {Object} [options] { snapshotInterval, baseIndex }
+ * @returns {Object} engine
+ */
+function createLiveEngine(data, options) {
+    var opts = options || {};
+    var cfg = data.thresholds || thresholds;
+    var symbol = data.symbol;
+    var snapshotInterval = opts.snapshotInterval !== undefined ? opts.snapshotInterval : 12;
+    var baseIndex = opts.baseIndex !== undefined ? opts.baseIndex : 0;
+
+    var state = replayState.createReplayState({ symbol: symbol, timeframe: '5m', snapshotInterval: snapshotInterval });
+    state.eventRegistry = eventRegistry.createEventRegistry();
+    var atrSeries = {};
+    var prevAtr = null;
+    state.atrSeries = atrSeries;
+    var snapshot = null;
+    var pushed = {}; // oppId -> anchorIndex（去重；由调用方持久化/恢复）
+    var window = []; // 全局 index 对齐的已收盘 5m 序列（window.length === 最后 index + 1）
+
+    var fullData = {
+        symbol: symbol,
+        fetcher: data.fetcher,
+        structureCandles: data.structureCandles,
+        calendarCandles: data.calendarCandles,
+        exchangeInfo: data.exchangeInfo,
+        thresholds: cfg
+    };
+
+    // 当前开放 leg（displacement 连续段）——与 buildDisplacementLegs 语义一致
+    var openLeg = null;
+
+    function endLeg() {
+        if (!openLeg) return null;
+        var leg = openLeg;
+        openLeg = null;
+        return leg;
+    }
+
+    /**
+     * 单根推进（5m 已收盘，index 必须 == window.length 且连续）。
+     * 内部把 candle push 进 window 后，用完整 window 驱动检测器（全局 index 语义）。
+     * @returns {Promise<Object|null>} 该根完成评估的新 HIGH 机会（若 leg 结束且 tier=HIGH 且未推送）
+     */
+    function onBar(candle, index) {
+        if (index !== window.length) {
+            throw new Error('liveEngine.onBar: index ' + index + ' != window.length ' + window.length + '（必须连续推进）');
+        }
+        window.push(candle);
+        var i = index;
+        var evaluationTime = candle.closeTime;
+
+        // ---- 1. 增量 liquidity（全局 slice 语义） ----
+        replayState.incrementalLiquidity(state, window, i, data.exchangeInfo, evaluationTime);
+
+        // ---- 2. 慢变量快照（每 snapshotInterval 根） ----
+        var doSnapshot = (i === baseIndex) || (i - (state.lastSnapshotIndex !== undefined ? state.lastSnapshotIndex : baseIndex - snapshotInterval)) >= snapshotInterval;
+        var snapshotPromise = doSnapshot
+            ? replayEngine.rebuildSnapshot(state, window, i, evaluationTime, fullData).then(function (sn) {
+                snapshot = sn;
+                state.snapshot = sn;
+                state.lastSnapshotIndex = i;
+            })
+            : Promise.resolve();
+
+        return snapshotPromise.then(function () {
+            // ---- 3. 增量 ATR ----
+            prevAtr = replayEngine._updateAtrIncremental(atrSeries, window, i, prevAtr, 14);
+
+            // ---- 4. 增量事件 ----
+            var newMssRaw = mssDetector.detectMss([candle], state.swings, {
+                symbol: symbol, timeframe: '5m', baseIndex: i,
+                consumedRefs: state.consumedMssRefs || (state.consumedMssRefs = {}),
+                thresholds: cfg
+            });
+            var newDispRaw = displacementDetector.detectDisplacement([candle], newMssRaw, {
+                symbol: symbol, timeframe: '5m', baseIndex: i,
+                atrSeries: atrSeries, thresholds: cfg
+            });
+            var newEvents = replayState.incrementalEvents(state, candle, i, evaluationTime, newMssRaw, newDispRaw);
+
+            // ---- 5. 持久 AMD ----
+            amdState.updateAmdState(state.amd, {
+                candle: candle, candleIndex: i,
+                candles: window,
+                evaluationTime: evaluationTime,
+                symbol: symbol, timeframe: '5m',
+                registry: state.registry,
+                draw: snapshot ? snapshot.draw : null,
+                newSweeps: newEvents.sweeps,
+                newMss: newEvents.mss,
+                newDisplacements: newEvents.displacements
+            }, { thresholds: cfg });
+
+            // ---- 6. 增量 FVG（全局 candles） ----
+            var allDisp = state.eventRegistry.getByType(symbol, 'DISPLACEMENT');
+            replayState.incrementalFvg(state, window, candle, i, evaluationTime, data.exchangeInfo, allDisp);
+
+            // ---- 7. Leg 检测 + 机会评估 ----
+            var opp = null;
+            (newEvents.displacements || []).forEach(function (d) {
+                if (openLeg &&
+                    openLeg.direction === d.direction &&
+                    d.candleIndex === openLeg.lastIndex + 1 &&
+                    openLeg.count < LEG_MAX_BARS) {
+                    openLeg.ids.push(d.id);
+                    openLeg.lastIndex = d.candleIndex;
+                    openLeg.count++;
+                    if (d.metadata && d.metadata.atr !== undefined) openLeg.atr = d.metadata.atr;
+                    if (!openLeg.mssId && d.metadata && d.metadata.mssEventId) openLeg.mssId = d.metadata.mssEventId;
+                    return;
+                }
+                var finished = endLeg();
+                if (finished) {
+                    opp = evaluateOpportunity(finished, i, candle) || opp;
+                }
+                openLeg = {
+                    ids: [d.id],
+                    direction: d.direction,
+                    startIndex: d.candleIndex,
+                    lastIndex: d.candleIndex,
+                    count: 1,
+                    mssId: d.metadata && d.metadata.mssEventId ? d.metadata.mssEventId : null,
+                    atr: d.metadata && d.metadata.atr !== undefined ? d.metadata.atr : null
+                };
+            });
+            return opp;
+        });
+    }
+
+    /**
+     * 评估已完成的 leg → 若 HIGH_QUALITY 且未推送，标记并返回机会。
+     */
+    function evaluateOpportunity(leg, anchorIndex, anchorCandle) {
+        var oppId = leg.mssId || ('LEG:' + leg.ids[0]);
+        if (pushed[oppId]) return null; // 去重（同一机会只推一次）
+
+        // leg 价量维度（用全局窗口补全；enrich 期望 endIndex 字段）
+        leg.endIndex = leg.lastIndex;
+        if (leg.startIndex >= 0 && leg.lastIndex < window.length && window[leg.lastIndex]) {
+            displacementLeg.enrichLegWithCandles(leg, window);
+        }
+        var legQuality = displacementLeg.classifyLegQuality(leg);
+
+        // mss quality
+        var mssQuality = 'NO_MSS';
+        if (leg.mssId) {
+            var mssEvent = null;
+            state.eventRegistry.getByType(symbol, 'MSS').some(function (m) {
+                if (m.id === leg.mssId) { mssEvent = m; return true; }
+                return false;
+            });
+            if (mssEvent) {
+                mssQuality = mssReference.classifyMssReference(mssEvent, state.swings || []).quality;
+            }
+        }
+
+        // near draw（snapshot.draw 的 near target，方向匹配）
+        var nearTarget = null;
+        if (snapshot && snapshot.draw) {
+            nearTarget = leg.direction === 'BULLISH'
+                ? (snapshot.draw.bsl && snapshot.draw.bsl.near ? snapshot.draw.bsl.near.targetPrice : null)
+                : (snapshot.draw.ssl && snapshot.draw.ssl.near ? snapshot.draw.ssl.near.targetPrice : null);
+        }
+        var anchorPrice = anchorCandle.close;
+        var nearDistPct = nearTarget !== null && nearTarget !== undefined && anchorPrice > 0
+            ? Math.abs(nearTarget - anchorPrice) / anchorPrice * 100
+            : null;
+
+        var tier = opportunityQuality.classifyOpportunityTier({
+            mssQuality: mssQuality,
+            legQuality: legQuality,
+            nearDrawAvailable: nearTarget !== null && nearTarget !== undefined,
+            directionConflict: false
+        });
+
+        // FVG 结构证据数（leg 关联的 FVG）
+        var fvgCount = state.fvgReg.getAll(symbol).filter(function (f) {
+            return f.displacementEventId && leg.ids.indexOf(f.displacementEventId) !== -1;
+        }).length;
+
+        var opp = {
+            id: oppId,
+            tier: tier,
+            direction: leg.direction,
+            mssQuality: mssQuality,
+            legQuality: legQuality,
+            legRangeAtr: leg.rangeAtr,
+            anchorIndex: anchorIndex,
+            anchorTime: anchorCandle.closeTime,
+            anchorPrice: anchorPrice,
+            nearTarget: nearTarget,
+            nearDistPct: nearDistPct,
+            fvgCount: fvgCount
+        };
+        if (tier === 'HIGH_QUALITY') {
+            pushed[oppId] = anchorIndex;
+        }
+        return opp;
+    }
+
+    function getPushed() { return pushed; }
+    function setPushed(map) { pushed = map || {}; return engine; }
+    function getState() { return state; }
+    function getWindowLength() { return window.length; }
+
+    var engine = {
+        onBar: onBar,
+        getPushed: getPushed,
+        setPushed: setPushed,
+        getState: getState,
+        getWindowLength: getWindowLength,
+        endLeg: endLeg,
+        symbol: symbol
+    };
+    return engine;
+}
+
+module.exports = {
+    createLiveEngine: createLiveEngine,
+    LEG_MAX_BARS: LEG_MAX_BARS
+};

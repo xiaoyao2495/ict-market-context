@@ -1215,6 +1215,44 @@ test('11D.10：sweepLevelOf —— BULLISH 扫 1H low → 1H_SWING；未扫 → 
     assert.strictEqual(sw2.level, '5M_INTERNAL', '无 HTF 命中 → 5m sweep');
 });
 
+/* ---------- Phase 11L：Live 管线基础单元 ---------- */
+
+var dingTalk = require('../notify/dingTalk');
+var persistence = require('../live/persistence');
+
+test('11L：钉钉加签 —— 确定性向量（URL 编码 HMAC-SHA256）', function () {
+    var ts = '1717674471240';
+    var secret = 'SEC0000000000000000000000000000000000000000000000000000000000000000';
+    var s = dingTalk.sign(secret, ts);
+    assert.ok(s.length > 10, '签名非空');
+    assert.ok(s.indexOf('+') === -1, 'URL 编码（+ → %2B）');
+    assert.ok(s.indexOf('%') !== -1 || s.indexOf('=') !== -1, '含编码特征');
+    // 确定性：同输入同输出
+    assert.strictEqual(dingTalk.sign(secret, ts), dingTalk.sign(secret, ts));
+});
+
+test('11L：persistence —— candles JSONL 追加 + 恢复 round-trip', function () {
+    var os = require('os');
+    var path = require('path');
+    var fs = require('fs');
+    var dir = fs.mkdtempSync(path.join(os.tmpdir(), 'live-test-'));
+    var file = path.join(dir, 'candles.jsonl');
+    persistence.appendCandles(file, [
+        { openTime: 1, close: 100, high: 101, low: 99 },
+        { openTime: 2, close: 101, high: 102, low: 100 }
+    ]);
+    persistence.appendCandles(file, [{ openTime: 3, close: 102, high: 103, low: 101 }]);
+    var candles = persistence.loadCandles(file);
+    assert.strictEqual(candles.length, 3, '追加式恢复');
+    assert.strictEqual(candles[2].openTime, 3);
+    // JSON round-trip
+    var pfile = path.join(dir, 'pushed.json');
+    persistence.saveJson(pfile, { opp1: 100 });
+    assert.deepStrictEqual(persistence.loadJson(pfile, {}), { opp1: 100 });
+    // 清理
+    fs.rmSync(dir, { recursive: true, force: true });
+});
+
 console.log('');
 console.log('narrativeBoundary: ' + passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

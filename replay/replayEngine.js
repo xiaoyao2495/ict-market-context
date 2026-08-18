@@ -944,5 +944,7 @@ function pendingCancelCheck(state, candle, index) {
 module.exports = {
     runReplay: runReplay,
     amdView: amdView,
-    _updateAtrIncremental: updateAtrIncremental
+    _updateAtrIncremental: updateAtrIncremental,
+    // Phase 11L（live）：实时引擎复用快照构建（bias/draw 与回测完全一致）
+    rebuildSnapshot: rebuildSnapshot
 };
