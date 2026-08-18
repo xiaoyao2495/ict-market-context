@@ -38,8 +38,9 @@ function log(msg) {
 function buildMessage(opp, symbol) {
     var dir = opp.direction === 'BULLISH' ? 'LONG (BULLISH)' : 'SHORT (BEARISH)';
     var mss = opp.mssQuality === 'NO_MSS' ? 'no MSS chain' : opp.mssQuality.replace('_SWING', '');
+    var keyword = CONFIG.dingtalk.keyword || '监测';
     var lines = [
-        '🔴 HIGH QUALITY WATCH · ' + symbol,
+        '🔴 ' + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
         dir,
         'MSS: ' + mss + (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? ' · Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : ' · Leg: ' + opp.legQuality),
         opp.nearTarget !== null ? 'Near Draw: ' + opp.nearDistPct.toFixed(2) + '% 距离（target ' + opp.nearTarget.toFixed(1) + '）' : 'Near Draw: -',
@@ -151,7 +152,15 @@ function main() {
     log('=== Live Opportunity Radar 启动 ===');
     log('symbols=' + CONFIG.symbols.join(',') + ' pollMs=' + CONFIG.pollMs + ' warmupDays=' + CONFIG.warmupDays);
     if (!CONFIG.dingtalk.webhook || CONFIG.dingtalk.webhook.indexOf('YOUR_') !== -1) {
-        log('⚠️ 未配置钉钉 webhook（config/live.json）——机会将只记录日志不推送');
+        log('⚠️ 未配置钉钉 webhook（config/live.json 或 DINGTALK_WEBHOOK）——机会将只记录日志不推送');
+    }
+    if (CONFIG.dingtalk.secret && CONFIG.dingtalk.secret.indexOf('YOUR_') !== -1) {
+        CONFIG.dingtalk.secret = '';
+    }
+    if (CONFIG.dingtalk.secret) {
+        log('钉钉安全模式：加签（secret 已配置）');
+    } else {
+        log('钉钉安全模式：自定义关键词「' + (CONFIG.dingtalk.keyword || '监测') + '」（secret 未配置，消息必须包含该关键词）');
     }
 
     var runners = {};
