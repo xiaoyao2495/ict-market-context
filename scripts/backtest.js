@@ -345,18 +345,10 @@ function reportNarrativeDirection(result, candles) {
     // 构建 DisplacementLeg（连续同向 displacement 合并）+ 补 candles 维度 + Leg Quality
     var mssById = {};
     (result.mssEvents || []).forEach(function (m) { mssById[m.id] = m; });
-    var legs = displacementLeg.buildDisplacementLegs(result.displacementEvents || [], result.swings || []);
-    legs.forEach(function (leg) {
-        if (leg.mssId && mssById[leg.mssId]) {
-            leg.mssEvent = mssById[leg.mssId];
-        }
-        displacementLeg.enrichLegWithCandles(leg, candles);
-        displacementLeg.classifyLegQuality(leg);
-    });
+    // Phase 11L.1：共享 15min 窗 authoritative leg 索引（与 Live 单一实现）
+    var windowedLegs = displacementLeg.buildWindowedLegIndex(result.displacementEvents || [], candles || [], result.mssEvents || [], result.swings || []);
     var legQualityByDispId = {};
-    legs.forEach(function (leg) {
-        leg.ids.forEach(function (id) { legQualityByDispId[id] = leg.quality; });
-    });
+    Object.keys(windowedLegs).forEach(function (id) { legQualityByDispId[id] = windowedLegs[id].quality; });
     var fvgToMssQuality = {};
     var fvgToLegQuality = {};
     (result.fvgs || []).forEach(function (f) {
@@ -540,20 +532,8 @@ function reportOpportunityQuality(result, candles) {
     // 1. legs：displacement → leg（+ candles 价量维度 + leg quality + mss quality 重算）
     var mssById = {};
     (result.mssEvents || []).forEach(function (m) { mssById[m.id] = m; });
-    var legs = displacementLeg.buildDisplacementLegs(result.displacementEvents || [], result.swings || []);
-    legs.forEach(function (l) {
-        displacementLeg.enrichLegWithCandles(l, candles);
-        displacementLeg.classifyLegQuality(l);
-        if (l.mssId && mssById[l.mssId]) {
-            l.mssQuality = mssReference.classifyMssReference(mssById[l.mssId], result.swings || []).quality;
-        } else {
-            l.mssQuality = 'NO_MSS';
-        }
-    });
-    var legByDispId = {};
-    legs.forEach(function (l) {
-        (l.ids || []).forEach(function (id) { legByDispId[id] = l; });
-    });
+    // Phase 11L.1：共享 15min 窗 authoritative leg 索引（与 Live 单一实现）
+    var legByDispId = displacementLeg.buildWindowedLegIndex(result.displacementEvents || [], candles || [], result.mssEvents || [], result.swings || []);
 
     // 2. opportunities → tier index
     var opps = opportunity.buildOpportunities(result.symbol, result.fvgs || [], {
@@ -626,20 +606,8 @@ function reportAlertReplay(result, candles) {
     // legs（与 11D.7 同构）
     var mssById = {};
     (result.mssEvents || []).forEach(function (m) { mssById[m.id] = m; });
-    var legs = displacementLeg.buildDisplacementLegs(result.displacementEvents || [], result.swings || []);
-    legs.forEach(function (l) {
-        displacementLeg.enrichLegWithCandles(l, candles);
-        displacementLeg.classifyLegQuality(l);
-        if (l.mssId && mssById[l.mssId]) {
-            l.mssQuality = mssReference.classifyMssReference(mssById[l.mssId], result.swings || []).quality;
-        } else {
-            l.mssQuality = 'NO_MSS';
-        }
-    });
-    var legByDispId = {};
-    legs.forEach(function (l) {
-        (l.ids || []).forEach(function (id) { legByDispId[id] = l; });
-    });
+    // Phase 11L.1：共享 15min 窗 authoritative leg 索引（与 Live 单一实现）
+    var legByDispId = displacementLeg.buildWindowedLegIndex(result.displacementEvents || [], candles || [], result.mssEvents || [], result.swings || []);
 
     var opps = opportunity.buildOpportunities(result.symbol, result.fvgs || [], {
         DISPLACEMENT: result.displacementEvents || [],
@@ -756,20 +724,8 @@ function reportDeliveryAlignment(result, candles) {
     // legs（与 11D.8 同构）
     var mssById = {};
     (result.mssEvents || []).forEach(function (m) { mssById[m.id] = m; });
-    var legs = displacementLeg.buildDisplacementLegs(result.displacementEvents || [], result.swings || []);
-    legs.forEach(function (l) {
-        displacementLeg.enrichLegWithCandles(l, candles);
-        displacementLeg.classifyLegQuality(l);
-        if (l.mssId && mssById[l.mssId]) {
-            l.mssQuality = mssReference.classifyMssReference(mssById[l.mssId], result.swings || []).quality;
-        } else {
-            l.mssQuality = 'NO_MSS';
-        }
-    });
-    var legByDispId = {};
-    legs.forEach(function (l) {
-        (l.ids || []).forEach(function (id) { legByDispId[id] = l; });
-    });
+    // Phase 11L.1：共享 15min 窗 authoritative leg 索引（与 Live 单一实现）
+    var legByDispId = displacementLeg.buildWindowedLegIndex(result.displacementEvents || [], candles || [], result.mssEvents || [], result.swings || []);
 
     var opps = opportunity.buildOpportunities(result.symbol, result.fvgs || [], {
         DISPLACEMENT: result.displacementEvents || [],
@@ -850,20 +806,8 @@ function reportHtfLiquidityContext(result, candles, data) {
     // legs + alerts（与 11D.8/11D.9 同构）
     var mssById = {};
     (result.mssEvents || []).forEach(function (m) { mssById[m.id] = m; });
-    var legs = displacementLeg.buildDisplacementLegs(result.displacementEvents || [], result.swings || []);
-    legs.forEach(function (l) {
-        displacementLeg.enrichLegWithCandles(l, candles);
-        displacementLeg.classifyLegQuality(l);
-        if (l.mssId && mssById[l.mssId]) {
-            l.mssQuality = mssReference.classifyMssReference(mssById[l.mssId], result.swings || []).quality;
-        } else {
-            l.mssQuality = 'NO_MSS';
-        }
-    });
-    var legByDispId = {};
-    legs.forEach(function (l) {
-        (l.ids || []).forEach(function (id) { legByDispId[id] = l; });
-    });
+    // Phase 11L.1：共享 15min 窗 authoritative leg 索引（与 Live 单一实现）
+    var legByDispId = displacementLeg.buildWindowedLegIndex(result.displacementEvents || [], candles || [], result.mssEvents || [], result.swings || []);
     var opps = opportunity.buildOpportunities(result.symbol, result.fvgs || [], {
         DISPLACEMENT: result.displacementEvents || [],
         MSS: result.mssEvents || []

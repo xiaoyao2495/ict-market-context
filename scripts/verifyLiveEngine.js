@@ -57,10 +57,10 @@ dataSource.fetchInitial(SYMBOL, DAYS).then(function (data) {
         console.log('LIVE tier 分布: ' + JSON.stringify(counts));
         console.log('DIAG mss=' + JSON.stringify(hist.mss) + ' leg=' + JSON.stringify(hist.leg));
         console.log('DIAG atrNull=' + hist.atrNull + ' atrOk=' + hist.atrOk + ' nearNull=' + hist.nearNull + ' nearOk=' + hist.nearOk + ' total=' + hist.total);
-        console.log('（回测 11D.8 参考: HIGH 420 / WATCH 899 / LOW 1410）');
+        console.log('（回测 11D.8 共享实现参考: HIGH 539 / WATCH 935 / LOW 2773）');
         if (counts.HIGH_QUALITY > 0) {
-            var ratio = counts.HIGH_QUALITY / 420;
-            console.log('HIGH 对比: ' + (ratio * 100).toFixed(0) + '% of backtest（±25% 内视为一致）');
+            var ratio = counts.HIGH_QUALITY / 539;
+            console.log('HIGH 对比: ' + (ratio * 100).toFixed(0) + '% of backtest（±5% 内视为 parity）');
         }
         highSamples.forEach(function (o) {
             console.log('  HIGH 样本: ' + o.direction + ' ' + o.mssQuality + '|' + o.legQuality +

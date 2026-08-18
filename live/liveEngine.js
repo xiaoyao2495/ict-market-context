@@ -59,15 +59,8 @@ function createLiveEngine(data, options) {
         thresholds: cfg
     };
 
-    // 当前开放 leg（displacement 连续段）——与 buildDisplacementLegs 语义一致
-    var openLeg = null;
-
-    function endLeg() {
-        if (!openLeg) return null;
-        var leg = openLeg;
-        openLeg = null;
-        return leg;
-    }
+    // 共享增量 Leg builder（Phase 11L.1：15min 时间窗 = buildOpportunities 语义，Replay/Live 单一实现）
+    var legBuilder = displacementLeg.createWindowedLegBuilder();
 
     /**
      * 单根推进（5m 已收盘，index 必须 == window.length 且连续）。
@@ -128,33 +121,30 @@ function createLiveEngine(data, options) {
             var allDisp = state.eventRegistry.getByType(symbol, 'DISPLACEMENT');
             replayState.incrementalFvg(state, window, candle, i, evaluationTime, data.exchangeInfo, allDisp);
 
-            // ---- 7. Leg 检测 + 机会评估 ----
+            // ---- 6.5 逐根 drawTrace（评估用 leg 完成那根的 near，与回测 drawTrace[anchor] 对齐） ----
+            if (!state.drawTrace) state.drawTrace = [];
+            if (snapshot && snapshot.draw) {
+                state.drawTrace[i] = {
+                    bslNear: snapshot.draw.bsl && snapshot.draw.bsl.near ? snapshot.draw.bsl.near.targetPrice : null,
+                    bslMacro: snapshot.draw.bsl && snapshot.draw.bsl.macro ? snapshot.draw.bsl.macro.targetPrice : null,
+                    sslNear: snapshot.draw.ssl && snapshot.draw.ssl.near ? snapshot.draw.ssl.near.targetPrice : null,
+                    sslMacro: snapshot.draw.ssl && snapshot.draw.ssl.macro ? snapshot.draw.ssl.macro.targetPrice : null
+                };
+            } else {
+                state.drawTrace[i] = { bslNear: null, bslMacro: null, sslNear: null, sslMacro: null };
+            }
+
+            // ---- 7. Leg 检测 + 机会评估（共享 builder：与 Replay 单一实现） ----
+            // anchor = leg.lastIndex 的蜡烛（leg 真正完成那根），不是当前新 displacement 根
             var opp = null;
             (newEvents.displacements || []).forEach(function (d) {
-                if (openLeg &&
-                    openLeg.direction === d.direction &&
-                    d.candleIndex === openLeg.lastIndex + 1 &&
-                    openLeg.count < LEG_MAX_BARS) {
-                    openLeg.ids.push(d.id);
-                    openLeg.lastIndex = d.candleIndex;
-                    openLeg.count++;
-                    if (d.metadata && d.metadata.atr !== undefined) openLeg.atr = d.metadata.atr;
-                    if (!openLeg.mssId && d.metadata && d.metadata.mssEventId) openLeg.mssId = d.metadata.mssEventId;
-                    return;
+                var r = legBuilder.feed(d);
+                if (r.closed) {
+                    var anchorCandle = window[r.closed.lastIndex];
+                    if (anchorCandle) {
+                        opp = evaluateOpportunity(r.closed, r.closed.lastIndex, anchorCandle) || opp;
+                    }
                 }
-                var finished = endLeg();
-                if (finished) {
-                    opp = evaluateOpportunity(finished, i, candle) || opp;
-                }
-                openLeg = {
-                    ids: [d.id],
-                    direction: d.direction,
-                    startIndex: d.candleIndex,
-                    lastIndex: d.candleIndex,
-                    count: 1,
-                    mssId: d.metadata && d.metadata.mssEventId ? d.metadata.mssEventId : null,
-                    atr: d.metadata && d.metadata.atr !== undefined ? d.metadata.atr : null
-                };
             });
             return opp;
         });
@@ -166,6 +156,12 @@ function createLiveEngine(data, options) {
     function evaluateOpportunity(leg, anchorIndex, anchorCandle) {
         var oppId = leg.mssId || ('LEG:' + leg.ids[0]);
         if (pushed[oppId]) return null; // 去重（同一机会只推一次）
+        // 机会身份与 Replay 的 buildOpportunities 一致：只有 FVG 归属到 leg 才构成机会
+        // （buildOpportunities 遍历 fvgs → fvg.displacementEventId → leg → opp；无 FVG 的 leg 不成机会）
+        var legFvgs = state.fvgReg.getAll(symbol).filter(function (f) {
+            return f.displacementEventId && leg.ids.indexOf(f.displacementEventId) !== -1;
+        });
+        if (legFvgs.length === 0) return null;
 
         // leg 价量维度（用全局窗口补全；enrich 期望 endIndex 字段）
         leg.endIndex = leg.lastIndex;
@@ -187,9 +183,13 @@ function createLiveEngine(data, options) {
             }
         }
 
-        // near draw（snapshot.draw 的 near target，方向匹配）
+        // near draw（drawTrace[anchorIndex] 的 near target，与回测 drawTrace[anchor] 同源；snapshot 兜底）
         var nearTarget = null;
-        if (snapshot && snapshot.draw) {
+        var dt = state.drawTrace && state.drawTrace[anchorIndex] ? state.drawTrace[anchorIndex] : null;
+        if (dt) {
+            nearTarget = leg.direction === 'BULLISH' ? dt.bslNear : dt.sslNear;
+        }
+        if (nearTarget === null && snapshot && snapshot.draw) {
             nearTarget = leg.direction === 'BULLISH'
                 ? (snapshot.draw.bsl && snapshot.draw.bsl.near ? snapshot.draw.bsl.near.targetPrice : null)
                 : (snapshot.draw.ssl && snapshot.draw.ssl.near ? snapshot.draw.ssl.near.targetPrice : null);
@@ -242,7 +242,13 @@ function createLiveEngine(data, options) {
         setPushed: setPushed,
         getState: getState,
         getWindowLength: getWindowLength,
-        endLeg: endLeg,
+        flushLeg: function () {
+            var closed = legBuilder.close();
+            if (!closed) return null;
+            var anchorCandle = window[closed.lastIndex];
+            if (!anchorCandle) return null;
+            return evaluateOpportunity(closed, closed.lastIndex, anchorCandle);
+        },
         symbol: symbol
     };
     return engine;

@@ -169,9 +169,134 @@ function classifyLegQuality(leg) {
     return leg.quality;
 }
 
+/**
+ * Phase 11L.1 — 共享增量 Leg Builder（Live/Replay 单一实现）
+ * 语义与 buildDisplacementLegs 完全一致（连续同向、candleIndex 相邻、最多 MAX_LEG_BARS 根）：
+ *   feed(displacement) → 合并到 openLeg，或关闭旧 leg 并返回 { closed, opened }。
+ * 实时引擎与离线批处理调用同一实现 → 消除 Live/Replay leg 边界差异。
+ */
+function createLegBuilder() {
+    var open = null;
+    function feed(d) {
+        var closed = null;
+        if (open &&
+            open.direction === d.direction &&
+            d.candleIndex === open.lastIndex + 1 &&
+            open.count < MAX_LEG_BARS) {
+            open.ids.push(d.id);
+            open.lastIndex = d.candleIndex;
+            open.lastConfirmedAt = d.confirmedAt;
+            open.count++;
+            if (d.metadata && d.metadata.atr !== undefined) open.atr = d.metadata.atr;
+            if (!open.mssId && d.metadata && d.metadata.mssEventId) open.mssId = d.metadata.mssEventId;
+            return { closed: null, opened: open, merged: true };
+        }
+        if (open) {
+            closed = open;
+            open = null;
+        }
+        open = {
+            ids: [d.id],
+            direction: d.direction,
+            startIndex: d.candleIndex,
+            lastIndex: d.candleIndex,
+            firstConfirmedAt: d.confirmedAt,
+            lastConfirmedAt: d.confirmedAt,
+            count: 1,
+            mssId: d.metadata && d.metadata.mssEventId ? d.metadata.mssEventId : null,
+            atr: d.metadata && d.metadata.atr !== undefined ? d.metadata.atr : null
+        };
+        return { closed: closed, opened: open, merged: false };
+    }
+    function close() {
+        var closed = open;
+        open = null;
+        return closed;
+    }
+    return { feed: feed, close: close, isOpen: function () { return open !== null; }, getOpen: function () { return open; } };
+}
+
+/**
+ * Phase 11L.1 — 共享 15min 时间窗 Leg Builder（authoritative，与 buildOpportunities 合并语义一致）
+ * 合并条件：同向 && confirmedAt 差 <= mergeMs（不限根数，允许 gap）。
+ * Replay（机会身份）与 Live（增量）用同一实现 → 消除 Live/Replay leg 边界差异。
+ */
+function createWindowedLegBuilder(mergeMs) {
+    var MS = mergeMs || 900000; // 默认 15 分钟
+    var open = null;
+    function feed(d) {
+        var closed = null;
+        if (open && open.direction === d.direction &&
+            (d.confirmedAt - open.lastConfirmedAt) <= MS) {
+            open.ids.push(d.id);
+            open.lastIndex = d.candleIndex;
+            open.lastConfirmedAt = d.confirmedAt;
+            open.count++;
+            if (d.metadata && d.metadata.atr !== undefined) open.atr = d.metadata.atr;
+            if (!open.mssId && d.metadata && d.metadata.mssEventId) open.mssId = d.metadata.mssEventId;
+            return { closed: null, opened: open, merged: true };
+        }
+        if (open) { closed = open; open = null; }
+        open = {
+            ids: [d.id],
+            direction: d.direction,
+            startIndex: d.candleIndex,
+            lastIndex: d.candleIndex,
+            firstConfirmedAt: d.confirmedAt,
+            lastConfirmedAt: d.confirmedAt,
+            count: 1,
+            mssId: d.metadata && d.metadata.mssEventId ? d.metadata.mssEventId : null,
+            atr: d.metadata && d.metadata.atr !== undefined ? d.metadata.atr : null
+        };
+        return { closed: closed, opened: open, merged: false };
+    }
+    function close() {
+        var closed = open;
+        open = null;
+        return closed;
+    }
+    return { feed: feed, close: close, isOpen: function () { return open !== null; }, getOpen: function () { return open; } };
+}
+
+/**
+ * Phase 11L.1 — 共享 leg 索引（Replay 报告层与 Live 共用的 authoritative 构建）
+ * displacementEvents（按 confirmedAt 排序）→ windowed legs → legByDispId
+ * （含 enrich 价量维度 + legQuality + mssQuality 重算，与 live 评估完全一致）
+ * @returns {Object} dispId → leg
+ */
+function buildWindowedLegIndex(displacements, candles, mssEvents, swings, mergeMs) {
+    var sorted = (displacements || []).slice().sort(function (a, b) { return a.confirmedAt - b.confirmedAt; });
+    var builder = createWindowedLegBuilder(mergeMs);
+    var legs = [];
+    sorted.forEach(function (d) {
+        var r = builder.feed(d);
+        if (r.closed) legs.push(r.closed);
+    });
+    var tail = builder.close();
+    if (tail) legs.push(tail);
+    var mssById = {};
+    (mssEvents || []).forEach(function (m) { mssById[m.id] = m; });
+    var idx = {};
+    legs.forEach(function (l) {
+        l.endIndex = l.lastIndex; // enrichLegWithCandles 期望 endIndex
+        enrichLegWithCandles(l, candles || []);
+        classifyLegQuality(l);
+        if (l.mssId && mssById[l.mssId]) {
+            l.mssQuality = mssReference.classifyMssReference(mssById[l.mssId], swings || []).quality;
+        } else {
+            l.mssQuality = 'NO_MSS';
+        }
+        (l.ids || []).forEach(function (id) { idx[id] = l; });
+    });
+    return idx;
+}
+
 module.exports = {
     buildDisplacementLegs: buildDisplacementLegs,
     enrichLegWithCandles: enrichLegWithCandles,
     classifyLegQuality: classifyLegQuality,
+    createLegBuilder: createLegBuilder,
+    createWindowedLegBuilder: createWindowedLegBuilder,
+    buildWindowedLegIndex: buildWindowedLegIndex,
     MAX_LEG_BARS: MAX_LEG_BARS
 };

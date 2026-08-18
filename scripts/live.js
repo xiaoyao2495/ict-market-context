@@ -19,6 +19,10 @@ var dingTalk = require('../notify/dingTalk');
 
 var CONFIG = require('../config/live.json');
 
+// 环境变量覆盖（Windows: set DINGTALK_WEBHOOK=... / set DINGTALK_SECRET=...）
+if (process.env.DINGTALK_WEBHOOK) CONFIG.dingtalk.webhook = process.env.DINGTALK_WEBHOOK;
+if (process.env.DINGTALK_SECRET) CONFIG.dingtalk.secret = process.env.DINGTALK_SECRET;
+
 // ---------- 工具 ----------
 function fmt(ms) {
     var d = new Date(ms + 8 * 3600000);

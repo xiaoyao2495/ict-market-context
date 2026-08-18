@@ -11,6 +11,7 @@ function sign(secret, timestamp) {
 }
 
 function buildUrl(webhook, secret) {
+    if (!secret) return webhook; // 未配置加签（关键词模式）：直接使用 webhook
     var ts = Date.now();
     return webhook + '&timestamp=' + ts + '&sign=' + sign(secret, ts);
 }

@@ -1253,6 +1253,49 @@ test('11L：persistence —— candles JSONL 追加 + 恢复 round-trip', functi
     fs.rmSync(dir, { recursive: true, force: true });
 });
 
+/* ---------- Phase 11L.1：共享 Windowed Leg Builder ---------- */
+
+test('11L.1：createWindowedLegBuilder —— 15min 窗合并（与 buildOpportunities 语义一致）', function () {
+    var dl = require('../stats/displacementLeg');
+    var b = dl.createWindowedLegBuilder(900000); // 15min
+    // 同向、confirmedAt 差 10min → 合并（即使 candleIndex 不相邻）
+    var r1 = b.feed({ id: 'd1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 1000000, metadata: { atr: 1 } });
+    var r2 = b.feed({ id: 'd2', direction: 'BULLISH', candleIndex: 13, confirmedAt: 1600000, metadata: { atr: 1, mssEventId: 'm1' } });
+    assert.strictEqual(r1.closed, null);
+    assert.strictEqual(r2.merged, true, '10min 差 → 同 leg');
+    assert.strictEqual(r2.opened.ids.length, 2);
+    assert.strictEqual(r2.opened.lastIndex, 13);
+    assert.strictEqual(r2.opened.mssId, 'm1');
+    // 反方向 → 关旧开新
+    var r3 = b.feed({ id: 'd3', direction: 'BEARISH', candleIndex: 20, confirmedAt: 1900000, metadata: { atr: 1 } });
+    assert.ok(r3.closed && r3.closed.ids.length === 2, '反向 → 关闭 2 根的 leg');
+    assert.strictEqual(r3.opened.direction, 'BEARISH');
+    // 同向但 20min 差 → 关旧开新
+    var r4 = b.feed({ id: 'd4', direction: 'BEARISH', candleIndex: 30, confirmedAt: 3100000, metadata: { atr: 1 } });
+    assert.ok(r4.closed, '20min 差 → 新 leg');
+    assert.ok(r4.closed.ids.length === 1);
+    var tail = b.close();
+    assert.ok(tail && tail.ids.length === 1);
+});
+
+test('11L.1：buildWindowedLegIndex —— 与 Live 引擎同一实现（含 quality/mssQuality）', function () {
+    var dl = require('../stats/displacementLeg');
+    var candles = [];
+    for (var i = 0; i < 30; i++) candles.push(m5(100, 101, 99, 100.5, i));
+    candles[10] = m5(100, 102.5, 99.9, 102.2, 10);
+    candles[11] = m5(102.2, 104.5, 102.1, 104.2, 11);
+    var disp = [
+        { id: 'd1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 1000000, metadata: { atr: 1 } },
+        { id: 'd2', direction: 'BULLISH', candleIndex: 11, confirmedAt: 1300000, metadata: { atr: 1 } }
+    ];
+    var idx = dl.buildWindowedLegIndex(disp, candles, [], []);
+    assert.ok(idx.d1 && idx.d2, '两个 disp 映射到同一 leg');
+    assert.strictEqual(idx.d1, idx.d2, '同一 leg 对象');
+    assert.ok(idx.d1.rangeAtr > 0, 'enrich 生效');
+    assert.ok(['STRONG', 'EXPLOSIVE', 'NORMAL'].indexOf(idx.d1.quality) !== -1);
+    assert.strictEqual(idx.d1.mssQuality, 'NO_MSS');
+});
+
 console.log('');
 console.log('narrativeBoundary: ' + passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

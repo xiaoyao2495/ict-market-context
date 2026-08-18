@@ -86,8 +86,8 @@ Binance REST (5m closed)
 node scripts/verifyLiveEngine.js BTCUSDT 90
 ```
 用历史数据逐根推进 live 引擎，输出 tier 分布并与回测 11D.8 对比
-（回测参考：BTC 90d HIGH 420 / WATCH 899 / LOW 1410；live 因 leg 边界语义差异
-约 HIGH 526 / WATCH 1447 / LOW 3162——推送频率 ~5.8 HIGH/天，量级一致）。
+（回测参考（共享 15min 窗实现）：BTC 90d HIGH 539 / WATCH 935 / LOW 2773；
+Live 逐根推进 HIGH 546 —— 30d parity 100% / 90d 98.7%，同一机会完全一致）。
 
 ## 消息示例
 
@@ -102,8 +102,8 @@ Near Draw: 0.36% 距离（target 64513.2）
 
 ## 已知边界
 
-- leg 机会语义以 `buildDisplacementLegs`（连续同向相邻 index、≤3 根）为准，
-  与回测 11D.8 的 `buildOpportunities`（15min 时间窗）边界略有差异 → HIGH 数量约 +25%。
+- leg 机会语义 = 共享 15min 时间窗 builder（`createWindowedLegBuilder`，Replay/Live 单一实现，
+  与 `buildOpportunities` 合并规则一致）；无 FVG 归属的 leg 不构成机会（与 Replay 身份一致）。
 - 快照（bias/draw）每 12 根重建一次（与回测 SNAPSHOT_INTERVAL 一致）。
 - 长期运行内存：candles 窗口随运行时间增长（每根 ~100B，1 年约 3MB/币），
   如需无限运行可定期重启（重启会从 candles.jsonl 尾部重放，幂等）。
