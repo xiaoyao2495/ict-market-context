@@ -110,25 +110,32 @@ pm2 save
   下轮继续补）/ `DATA_SOURCE_DEGRADED`（requireFutures 下非 futures 数据，不推进）
 - 首次下载数据较慢属正常；之后 `data-cache/` 命中 + 增量轮询，开销极小。
 
-## 生产保护（11L.3 + 11L.4，上线前必须）
+## 生产保护（11L.3 + 11L.4 + 11L.5，上线前必须）
 
 - **Futures-only fail-closed**：`requireFutures=true` 时——
   - 初始化历史（5m/1h/4h/1d/1w/1M + exchangeInfo）只要发现非 futures 源或 source 缺失
     （来源不明）→ 该 symbol **拒绝启动**（抛 `DATA_SOURCE_DEGRADED`，不 warmup 不建引擎），
     绝不带污染状态上线
+  - HTF 增量 / 实时 5m / Top10 名单统一严格判定 `source === 'futures'`（undefined 拒绝）
   - HTF 增量返回非 futures → **拒绝 append**（Bias/Draw 不被 spot 污染），网络失败明确记
     `HTF_NETWORK_ERROR`（保留旧 snapshot，标记 stale，不吞错）
-  - Top10 名单刷新同样要求 futures 源，否则保留现有监控
 - **DATA_GAP 严格验证**：backfill 后必须通过 `validate5mContinuity`（首根紧接 + 逐根连续），
   任何缺口 → `DATA_GAP_UNRESOLVED` 不推进 engine，下轮继续补；**重启时同样验证持久化
   5m 历史（candles.jsonl）连续**，缺根 → 拒绝启动（清理 .live-state 重新 bootstrap）
 - **钉钉确认投递 + outbox**：`res.errcode === 0` 才算投递成功并记入去重集合（pushed.json）；
   失败（网络 / errcode!=0）→ 机会进入 **outbox.json**（transactional outbox，持久化），
-  每轮 tick 自动重试——**崩溃/重启也不漏 HIGH 通知**
+  每轮 tick 自动重试（按 oppId 去重）——**崩溃/重启也不漏 HIGH 通知**
 - **通知时点语义（11L.4）**：消息与统计的时间 = `availableAt`（系统首次能确认 leg 结束：
   下一个 displacement 触发关闭 = 触发 K 收盘；timeout = lastConfirmedAt + 15min），
   不再是 leg 最后位移 K 的 `anchorTime`。历史 post-alert 统计从 availableAt 之后 N+1 开始，
   修正 information-availability leakage 后 **HIGH 1h Near Draw Hit = 81%（90d，n=539）**
+- **tick 并发锁（11L.5）**：setTimeout 串行链 + 互斥双保险——上一轮 tick 未完成时新轮 skip，
+  杜绝 setInterval 重入导致的 index mismatch / 重复推进
+- **HTF 失败暂停 5m（11L.5）**：任一 HTF（1h/4h/1d/1w/1M）更新异常 → 本轮不推进 5m engine，
+  避免基于 stale HTF context 发 HIGH；恢复后自动 gap → backfill → 连续推进
+- **Near Draw 触及观察（11L.5）**：90d 数据结论——通知前 near 被触及/穿越的机会 1h hit 反而
+  更高（81% vs 剔除后 33-41%），触及 ≠ 失效（近端流动性被测试恰是机会生效标志）。
+  **放弃 suppress**：HIGH 一律发送，`opp.nearConsumed` 仅日志观察（日志中 `[near 通知前已触及·观察]`）
 
 ## 验证（可选，需网络/缓存）
 

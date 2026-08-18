@@ -129,9 +129,11 @@ function fetchHtfIncrement(symbol, structureCandles, calendarCandles, requireFut
         var last = arr.length > 0 ? arr[arr.length - 1].closeTime : 0;
         tasks.push(binanceRest.loadHistory(symbol, tf, last + 1, Date.now()).then(function (newC) {
             (newC || []).forEach(function (c) {
-                if (requireFutures && c.source && c.source !== 'futures') {
-                    issues.push({ tf: tf, kind: 'DEGRADED', source: c.source, openTime: c.openTime });
-                    return; // 绝不把 spot HTF 塞进 futures context
+                // 11L.5（P1-1）：统一严格 source presence —— source 必须显式 === 'futures'
+                // （undefined 视为来源不明，与 checkFuturesPurity 一致，拒绝 append）
+                if (requireFutures && c.source !== 'futures') {
+                    issues.push({ tf: tf, kind: 'DEGRADED', source: (c.source || 'undefined'), openTime: c.openTime });
+                    return; // 绝不把 spot/未知来源 HTF 塞进 futures context
                 }
                 var dup = arr.some(function (x) { return x.openTime === c.openTime; });
                 if (!dup) arr.push(c);

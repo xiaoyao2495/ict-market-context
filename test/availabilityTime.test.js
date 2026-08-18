@@ -171,6 +171,25 @@ test('assessAlerts: 无有效通知时点（availableIndex null）→ incomplete
     assert.strictEqual(a.tierStats.WATCH.w1h.nearHit, 1, 'index 6 起 high 100.5+ 触达 100.6？需看窗口——窗口内高 101 ≥ 100.6 → hit');
 });
 
+test('assessAlerts: HIGH 且 near 通知前已触及 → 仅观察计数，不剔除样本（11L.5 用户决策：触及≠失效）', function () {
+    var candles = [];
+    for (var i = 0; i < 60; i++) candles.push(m5(100, 101, 99, 100.5, i));
+    // alert A：HIGH，anchor 10，available 13；index 11 high 104 >= near 103 → 通知前已触及（观察标记）
+    // alert B：HIGH，anchor 20，available 23；窗口 21-23 未触及 103 → 无标记
+    candles[11] = m5(100.5, 104, 100.4, 103.5, 11); // A 的 near 在 available 前被触及
+    candles[12] = m5(103.5, 103.6, 100.8, 101.0, 12);
+    candles[13] = m5(101.0, 101.2, 99.5, 99.8, 13);
+    var alerts = [
+        { id: 'a', tier: 'HIGH_QUALITY', direction: 'BULLISH', anchorIndex: 10, anchorPrice: 100.5, nearTarget: 103, nearDistPct: 2.49, availableIndex: 13, availableAt: candles[13].closeTime, closeReason: 'timeout', staleNear: true, staleTouchIndex: 11 },
+        { id: 'b', tier: 'HIGH_QUALITY', direction: 'BULLISH', anchorIndex: 20, anchorPrice: 100.5, nearTarget: 103, nearDistPct: 2.49, availableIndex: 23, availableAt: candles[23].closeTime, closeReason: 'timeout', staleNear: false, staleTouchIndex: null }
+    ];
+    var a = alertReplay.assessAlerts(alerts, candles);
+    assert.strictEqual(a.byTier.HIGH_QUALITY, 2, '检测计数含全部 HIGH');
+    assert.strictEqual(a.staleNearSuppressed, 1, '观察计数');
+    assert.strictEqual(a.tierStats.HIGH_QUALITY.n, 2, '不剔除：两个样本都计入 post-alert 统计');
+    assert.strictEqual(a.tierStats.HIGH_QUALITY.w1h.nearCnt, 2);
+});
+
 // ---------- 异步 runner（保持一致性；本文件同步为主） ----------
 var chain = Promise.resolve();
 tests.forEach(function (t) {

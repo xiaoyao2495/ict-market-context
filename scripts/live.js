@@ -183,7 +183,8 @@ function createRunner(symbol) {
         var msg = buildMessage(opp, symbol);
         log('🔥 HIGH 机会: ' + symbol + ' ' + opp.direction + ' ' + opp.mssQuality + '|' + opp.legQuality +
             ' near ' + (opp.nearDistPct !== null ? opp.nearDistPct.toFixed(2) + '%' : '-') + ' id=' + opp.id +
-            ' 通知=' + fmt(opp.availableAt) + ' 锚=' + fmt(opp.anchorTime));
+            ' 通知=' + fmt(opp.availableAt) + ' 锚=' + fmt(opp.anchorTime) +
+            (opp.nearConsumed ? ' [near 通知前已触及·观察]' : ''));
         return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {
             // 双保险：sendText 内部已把 errcode!==0 视为失败，此处再确认一次
             if (!res || res.errcode !== 0) {
@@ -216,9 +217,14 @@ function createRunner(symbol) {
         }, Promise.resolve());
     }
 
+    /** 11L.5（P1-3）：outbox 按 oppId 去重（崩溃/重启重放边缘不产生同 id 重复条目） */
+    function isPending(id) {
+        return pending.some(function (x) { return x.opp && x.opp.id === id; });
+    }
+
     /** 新 HIGH 机会入口：尝试投递，失败进入 outbox（持久化，重启不丢） */
     function handleHigh(opp) {
-        if (delivered[opp.id]) return Promise.resolve(null);
+        if (delivered[opp.id] || isPending(opp.id)) return Promise.resolve(null);
         return deliver(opp).then(function (ok) {
             if (!ok) {
                 pending.push({ opp: opp, attempts: 0 });
@@ -229,11 +235,12 @@ function createRunner(symbol) {
     }
 
     function processCandles(list) {
-        // Fix 3（P0/P1）：requireFutures → futures-only fail-closed（tick 严格）
+        // Fix 3 + 11L.5（P1-1）：requireFutures → futures-only fail-closed。
+        // 统一严格语义：source 必须 === 'futures'（undefined 视为来源不明，拒绝）
         if (CONFIG.requireFutures) {
-            var bad = list.filter(function (c) { return c.source && c.source !== 'futures'; });
+            var bad = list.filter(function (c) { return c.source !== 'futures'; });
             if (bad.length > 0) {
-                log(symbol + ' DATA_SOURCE_DEGRADED: ' + bad.length + ' 根非 futures（' + bad[0].source + '）——不推进 engine，等待 Futures 恢复');
+                log(symbol + ' DATA_SOURCE_DEGRADED: ' + bad.length + ' 根非 futures/无 source（' + (bad[0].source || 'undefined') + '）——不推进 engine，等待 Futures 恢复');
                 return Promise.resolve();
             }
         }
@@ -265,8 +272,15 @@ function createRunner(symbol) {
         });
     }
 
-    function tick() {
-        if (!historyLoaded) return Promise.resolve();
+    /**
+     * 11L.5（P0-1）：tick 并发锁 —— 互斥 + setTimeout 串行链双保险。
+     * 上一轮 tick 未完成时的新一轮直接 skip（返回 resolved，不重入）；
+     * 由 startLoop 的 setTimeout 链保证 tick 完成后才调度下一轮。
+     */
+    var tickRunning = false;
+    var loopTimer = null;
+
+    function doTick() {
         return retryPending().then(function () {
             // Fix 1（11L.3 P0）：HTF 增量 futures-only（spot 不 append）+ 错误不吞
             return dataSource.fetchHtfIncrement(symbol, runnerData.structureCandles, runnerData.calendarCandles, CONFIG.requireFutures);
@@ -279,9 +293,17 @@ function createRunner(symbol) {
                     log(symbol + ' HTF_NETWORK_ERROR: ' + iss.tf + ' ' + (iss.error || 'network') + '（保留旧 HTF snapshot，stale 状态）');
                 }
             });
+            // 11L.5（P1-2）：HTF 更新异常 → 本轮暂停 5m 推进。
+            // Near Draw/Liquidity/Snapshot 依赖 HTF context，stale HTF 下不应发 HIGH；
+            // 下轮 HTF 恢复后 poll 自动检测 gap → backfill → 连续推进（Live/Replay 状态一致）
+            if (!htf.ok) {
+                log(symbol + ' HTF 更新异常（' + htf.issues.length + ' 处）——本轮暂停 5m 推进，避免基于 stale HTF 发通知');
+                return;
+            }
             return dataSource.pollNew5m(symbol, lastCloseTime);
         }).then(function (res) {
             // Fix 4（P1）：区分 NO_NEW_BAR / NETWORK_ERROR（不吞错）
+            if (!res) return; // HTF 异常分支已提前返回
             if (!res.ok) {
                 log(symbol + ' NETWORK_ERROR: ' + res.error + '（跳过本轮，等待恢复）');
                 return;
@@ -302,12 +324,47 @@ function createRunner(symbol) {
                 });
             }
             return processCandles(newCandles);
-        }).catch(function (e) {
-            log(symbol + ' tick 错误: ' + e.message);
         });
     }
 
-    return { initFromHistory: initFromHistory, tick: tick };
+    function tick() {
+        if (!historyLoaded) return Promise.resolve();
+        if (tickRunning) {
+            log(symbol + ' tick skipped: previous tick still running');
+            return Promise.resolve();
+        }
+        tickRunning = true;
+        return doTick().then(function () {
+            tickRunning = false;
+        }, function (e) {
+            tickRunning = false;
+            log(symbol + ' tick 错误: ' + (e && e.message || e));
+        });
+    }
+
+    /** 11L.5（P0-1）：setTimeout 串行链 —— tick 完成后再等 pollMs 调度下一轮（无重入） */
+    function startLoop() {
+        function schedule() {
+            loopTimer = setTimeout(function () {
+                tick().then(schedule);
+            }, CONFIG.pollMs);
+        }
+        schedule();
+    }
+
+    function stopLoop() {
+        if (loopTimer) {
+            clearTimeout(loopTimer);
+            loopTimer = null;
+        }
+    }
+
+    return {
+        initFromHistory: initFromHistory,
+        tick: tick,
+        startLoop: startLoop,
+        stopLoop: stopLoop
+    };
 }
 
 // ---------- 主流程（Phase 11L.2：top10 动态监控 + 每日刷新） ----------
@@ -337,10 +394,10 @@ function main() {
             return dataSource.fetchInitial(sym, CONFIG.warmupDays).then(function (data) {
                 var r = createRunner(sym);
                 // Fix 1（11L.3 P0）：initFromHistory 内部 purity fail-closed（throw）——
-                // 必须初始化成功后才创建轮询 interval，失败不留半启动状态
+                // 必须初始化成功后才启动轮询循环，失败不留半启动状态
                 return r.initFromHistory(data).then(function () {
-                    var interval = setInterval(function () { r.tick(); }, CONFIG.pollMs);
-                    runners[sym] = { runner: r, interval: interval };
+                    r.startLoop(); // 11L.5：setTimeout 串行链（tick 完成后再调度下一轮，无重入）
+                    runners[sym] = { runner: r };
                     r.tick(); // 立即先跑一轮
                     log(sym + ' 监控就绪');
                 });
@@ -353,7 +410,7 @@ function main() {
 
     function stopSymbol(sym) {
         if (!runners[sym]) return;
-        clearInterval(runners[sym].interval);
+        runners[sym].runner.stopLoop(); // 11L.5：清掉 setTimeout 链
         delete runners[sym];
         log(sym + ' 移出监控（状态文件保留，重回 top' + (CONFIG.topSymbols.count || 10) + ' 可恢复）');
     }
@@ -368,9 +425,10 @@ function main() {
 
     function refreshTop() {
         return binanceRest.fetchTopVolumeSymbols(CONFIG.topSymbols.count).then(function (list) {
-            // Fix 1（11L.3 P0）：Top 名单 futures-only（spot 源排序的名单拒绝刷新，保留现有监控）
-            if (CONFIG.requireFutures && list.some(function (x) { return x.source && x.source !== 'futures'; })) {
-                log('DATA_SOURCE_DEGRADED: Top 名单来源非 futures（' + list[0].source + '）——拒绝刷新，保留现有监控');
+            // Fix 1 + 11L.5（P1-1）：Top 名单 futures-only 且 source 必须显式 === 'futures'
+            // （undefined 视为来源不明，拒绝刷新，保留现有监控）
+            if (CONFIG.requireFutures && list.some(function (x) { return x.source !== 'futures'; })) {
+                log('DATA_SOURCE_DEGRADED: Top 名单来源非 futures/无 source（' + (list[0].source || 'undefined') + '）——拒绝刷新，保留现有监控');
                 return;
             }
             var syms = list.map(function (x) { return x.symbol; });

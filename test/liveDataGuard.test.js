@@ -170,6 +170,22 @@ test('fetchHtfIncrement: requireFutures + spot HTF → 不 append + DEGRADED', f
     });
 });
 
+test('fetchHtfIncrement: requireFutures + 无 source（来源不明）→ 拒绝 append + DEGRADED（11L.5 严格 source presence）', function () {
+    var ds = loadDataSourceWithMock({
+        loadHistory: function () {
+            return Promise.resolve([{ openTime: 3600000, closeTime: 7199999, close: 1 }]); // 无 source
+        }
+    });
+    var structure = { '1h': [], '4h': [] };
+    var calendar = { '1d': [], '1w': [], '1M': [] };
+    return ds.fetchHtfIncrement('BTCUSDT', structure, calendar, true).then(function (res) {
+        assert.strictEqual(res.ok, false);
+        assert.strictEqual(res.issues[0].kind, 'DEGRADED');
+        assert.strictEqual(res.issues[0].source, 'undefined', 'source 缺失 → 明确标记 undefined');
+        assert.strictEqual(structure['1h'].length, 0, '来源不明的 HTF 不 append');
+    });
+});
+
 test('fetchHtfIncrement: requireFutures=false + spot → 照旧 append（兼容模式）', function () {
     var ds = loadDataSourceWithMock({
         loadHistory: function () {

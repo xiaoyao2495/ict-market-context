@@ -25,6 +25,7 @@ var replayEngine = require('../replay/replayEngine');
 var mssReference = require('../stats/mssReference');
 var displacementLeg = require('../stats/displacementLeg');
 var opportunityQuality = require('../stats/opportunityQuality');
+var nearStaleness = require('../stats/nearStaleness');
 var thresholds = require('../config/thresholds');
 
 var LEG_MAX_BARS = 3;
@@ -219,18 +220,18 @@ function createLiveEngine(data, options) {
             directionConflict: false
         });
 
-        // FVG 结构证据数（leg 关联的 FVG）
-        var fvgCount = state.fvgReg.getAll(symbol).filter(function (f) {
-            return f.displacementEventId && leg.ids.indexOf(f.displacementEventId) !== -1;
-        }).length;
-
-        // 11L.4：通知可用时点（系统首次能确认 leg 结束）——
+        // 11L.5：通知可用时点（系统首次能确认 leg 结束）——
         //   availableIndex 优先（调用方当前根）；builder timeout 场景由调用方传入；
         //   flushLeg（无上下文）回退 leg.availableIndex / anchorIndex
         var availIdx = availableIndex !== undefined && availableIndex !== null
             ? availableIndex
             : (leg.availableIndex !== undefined && leg.availableIndex !== null ? leg.availableIndex : anchorIndex);
         var availCandle = window[availIdx];
+
+        // FVG 结构证据数（leg 关联的 FVG）
+        var fvgCount = state.fvgReg.getAll(symbol).filter(function (f) {
+            return f.displacementEventId && leg.ids.indexOf(f.displacementEventId) !== -1;
+        }).length;
         var opp = {
             id: oppId,
             tier: tier,
@@ -246,8 +247,18 @@ function createLiveEngine(data, options) {
             closeReason: leg.closeReason || 'timeout',
             nearTarget: nearTarget,
             nearDistPct: nearDistPct,
-            fvgCount: fvgCount
+            fvgCount: fvgCount,
+            nearConsumed: false
         };
+
+        // 11L.5（P0-2）Near Draw stale-at-notification —— 数据结论（90d）：
+        // "通知前 near 被触及/穿越"的机会 1h hit 反而更高（81% vs 剔除后 33-41%），
+        // 触及 ≠ 失效（近端流动性被测试恰是机会生效标志）→ 用户决策【放弃 suppress】。
+        // 仅标记 nearConsumed 供日志观察，不拦截任何 HIGH。
+        if (tier === 'HIGH_QUALITY' && nearTarget !== null && nearTarget !== undefined && availIdx > anchorIndex) {
+            var cons = nearStaleness.checkNearConsumed(nearTarget, leg.direction, window, anchorIndex + 1, availIdx);
+            opp.nearConsumed = cons.consumed;
+        }
         return opp;
     }
 

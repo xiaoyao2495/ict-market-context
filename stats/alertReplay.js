@@ -19,8 +19,16 @@
  *
  * 防统计幻觉：Near Draw 距离分层（<0.1 / 0.1-0.25 / 0.25-0.5 / 0.5-1 / >1 %）
  * —— 若 >0.5% 距离桶的 HIGH 仍明显优于 WATCH/LOW，信号才硬。
+ *
+ * Phase 11L.5（P0-2，target staleness）：
+ *   81% 统计使用 anchor 时刻冻结的 nearTarget；anchor+1..availableIndex 之间价格可能已
+ *   TOUCHED/SWEPT/BROKEN 该 target。**数据结论（90d）**：被触及/穿越的机会 1h hit 反而
+ *   更高（81% vs 剔除后 33-41%）——触及 ≠ 失效，近端流动性被测试恰是机会生效标志。
+ *   用户决策【放弃 suppress】：Live 不拦截（仅 opp.nearConsumed 标记观察），
+ *   历史统计不剔除样本，staleNearSuppressed 仅作为观察计数输出。
  */
 var opportunityQuality = require('./opportunityQuality');
+var nearStaleness = require('./nearStaleness');
 
 var WINDOWS = [
     { key: 'w30m', bars: 6 },
@@ -75,6 +83,16 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
             : it.anchorIndex;
         var availCandle = candles[availIdx];
         var anchorPrice = anchor.close;
+        // 11L.5（P0-2）：target staleness 观察标记 —— near target 是 anchor 时刻冻结的；
+        // anchor+1..availableIndex 之间若已触及（TOUCHED/SWEPT/BROKEN）→ 仅标记观察，
+        // 不剔除统计、不拦截 Live（用户决策：触及 ≠ 失效，见文件头注释）
+        var staleNear = false;
+        var staleTouchIndex = null;
+        if (it.nearTarget !== null && it.nearTarget !== undefined && availIdx > it.anchorIndex) {
+            var cons = nearStaleness.checkNearConsumed(it.nearTarget, it.direction, candles, it.anchorIndex + 1, availIdx);
+            staleNear = cons.consumed;
+            staleTouchIndex = cons.firstTouchIndex;
+        }
         var nearDistPct = it.nearTarget !== null && it.nearTarget !== undefined && anchorPrice > 0
             ? Math.abs(it.nearTarget - anchorPrice) / anchorPrice * 100
             : null;
@@ -109,6 +127,9 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
             availableIndex: availIdx,
             availableAt: availCandle ? availCandle.closeTime : (it.availableAt !== undefined ? it.availableAt : anchor.closeTime),
             closeReason: it.closeReason || (legObj ? (legObj.closeReason || 'timeout') : 'timeout'),
+            // 11L.5（P0-2）：通知前 near 已被价格消费（Live 将 STALE_NEAR_SUPPRESSED）
+            staleNear: staleNear,
+            staleTouchIndex: staleTouchIndex,
             nearTarget: it.nearTarget,
             nearDistPct: nearDistPct,
             fvgCount: fvgCount,
@@ -143,7 +164,9 @@ function assessAlerts(alerts, candles) {
         distBuckets: {},
         // 11L.4：无有效通知时点（数据末尾 timeout，availableAt 超出历史数据）的样本——
         // 真实运行会被通知，但历史数据里没有"通知后"行情可验证，不计入 hit 率（避免稀释）
-        incomplete: 0
+        incomplete: 0,
+        // 11L.5（P0-2）：HIGH 且 near 在通知前已被触及 —— 观察计数（不剔除样本）
+        staleNearSuppressed: 0
     };
     var firstIdx = alerts.length > 0 ? alerts[0].anchorIndex : null;
     var lastIdx = alerts.length > 0 ? alerts[alerts.length - 1].anchorIndex : null;
@@ -173,6 +196,12 @@ function assessAlerts(alerts, candles) {
         if (start === null || start >= candles.length) {
             out.incomplete++;
             return;
+        }
+        // 11L.5（P0-2）：near 在通知前已被触及/穿越 —— 仅观察计数，不剔除样本。
+        // 90d 数据结论：被触及机会的 1h hit 反而更高（81% vs 剔除后 33-41%），
+        // 触及 ≠ 失效（近端流动性被测试恰是机会生效标志）→ 用户决策【放弃 suppress】。
+        if (al.tier === 'HIGH_QUALITY' && al.staleNear) {
+            out.staleNearSuppressed = (out.staleNearSuppressed || 0) + 1;
         }
         var a = tacc(al.tier);
         a.n++;

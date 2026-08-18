@@ -58,8 +58,13 @@ dataSource.fetchInitial(SYMBOL, DAYS).then(function (data) {
         snapshotInterval: 12
     }).then(function (result) {
         var replayAlerts = buildReplayAlerts(result, candles5m);
+        // 11L.5（P0-2）：staleNear 仅观察标记，Live 不拦截（用户决策：触及 ≠ 失效）——
+        // parity 对账保持全集合口径（275/275 HIGH 40/40）
+        var suppressed = replayAlerts.filter(function (a) { return a.tier === 'HIGH_QUALITY' && a.staleNear; });
+        var deliverable = replayAlerts;
         console.log('Replay alerts: ' + replayAlerts.length +
-            '（HIGH ' + replayAlerts.filter(function (a) { return a.tier === 'HIGH_QUALITY'; }).length + '）');
+            '（HIGH ' + replayAlerts.filter(function (a) { return a.tier === 'HIGH_QUALITY'; }).length + '）' +
+            ' | 观察: near 通知前已触及 ' + suppressed.length);
 
         // ---- B. Live（逐根推进） ----
         var engine = liveEngineMod.createLiveEngine({
@@ -86,9 +91,9 @@ dataSource.fetchInitial(SYMBOL, DAYS).then(function (data) {
                 '（HIGH ' + liveOpps.filter(function (o) { return o.tier === 'HIGH_QUALITY'; }).length + '）' +
                 ' runtime ' + ((Date.now() - t0) / 1000).toFixed(1) + 's');
 
-            // ---- 对账 ----
+            // ---- 对账（口径 = 可通知集合，Replay 已剔除 staleNear HIGH） ----
             var replayMap = {};
-            replayAlerts.forEach(function (a) { replayMap[a.id] = a; });
+            deliverable.forEach(function (a) { replayMap[a.id] = a; });
             var liveMap = {};
             liveOpps.forEach(function (o) { liveMap[o.id] = o; });
 
@@ -122,11 +127,12 @@ dataSource.fetchInitial(SYMBOL, DAYS).then(function (data) {
             });
 
             console.log('');
-            console.log('PARITY 对账（' + SYMBOL + ' ' + DAYS + 'd）');
+            console.log('PARITY 对账（' + SYMBOL + ' ' + DAYS + 'd，全集合）');
             console.log('  ' + JSON.stringify(stats));
-            var highR = replayAlerts.filter(function (a) { return a.tier === 'HIGH_QUALITY'; }).length;
+            var highR = deliverable.filter(function (a) { return a.tier === 'HIGH_QUALITY'; }).length;
             var highL = liveOpps.filter(function (o) { return o.tier === 'HIGH_QUALITY'; }).length;
-            console.log('  HIGH: Replay ' + highR + ' vs Live ' + highL + '（' + (highR > 0 ? (highL / highR * 100).toFixed(0) + '%' : '-') + '）');
+            console.log('  HIGH: Replay ' + highR + ' vs Live ' + highL + '（' + (highR > 0 ? (highL / highR * 100).toFixed(0) + '%' : '-') + '）' +
+                ' | 观察 near 通知前已触及 ' + suppressed.length);
 
             console.log('');
             console.log('  前 20 LIVE_ONLY（是否为 Leg grouping 造成？）');

@@ -625,7 +625,8 @@ function reportAlertReplay(result, candles) {
     }
     console.log('  通知总数 ' + alerts.length + ' | 覆盖 ' + a.days + ' 天 | 平均 ' + a.perDay.toFixed(1) + ' 条/天' +
         ' | HIGH ' + (a.byTier.HIGH_QUALITY || 0) + ' (每周 ' + a.perWeekHigh.toFixed(1) + ')' +
-        ' | 不可评估（通知点超出数据）' + a.incomplete);
+        ' | 不可评估（通知点超出数据）' + a.incomplete +
+        ' | 观察: near 通知前已触及 ' + (a.staleNearSuppressed || 0));
     console.log('  byTier：HIGH ' + (a.byTier.HIGH_QUALITY || 0) + ' | WATCH ' + (a.byTier.WATCH || 0) +
         ' | LOW ' + (a.byTier.LOW_QUALITY || 0));
 
