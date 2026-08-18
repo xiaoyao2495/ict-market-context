@@ -77,6 +77,28 @@ Binance REST (5m closed)
    （若服务器需要代理，pm2 场景请用 ecosystem 文件把 `ICT_PROXY_ENABLED=1` 等写入进程环境，
    而不是临时 CMD 的 set。）
 
+### Windows 启动（webhook 用环境变量，token 不进 git 文件）
+
+```bat
+set DINGTALK_WEBHOOK=https://oapi.dingtalk.com/robot/send?access_token=你的TOKEN
+set DINGTALK_SECRET=你的SEC      :: 若机器人用"加签"；关键词模式可省略
+pm2 start scripts/live.js --name ict-radar
+pm2 save
+```
+
+注意（Windows CMD）：
+- `set` 与 `pm2 start` 必须在**同一个 CMD 窗口**执行（set 只对当前会话生效，
+  PM2 启动时会捕获当前环境；换窗口后 set 丢失）
+- **set 的值不要加引号**：CMD 的 `set` 会把引号原样存进值，webhook 会带上引号导致请求失败
+- `pm2 save` 后：`pm2 restart` 保留首次启动时的环境变量（pm2 存了 env dump）；
+  开机自启（pm2 startup）同样从 dump 恢复，环境变量不丢
+- 不想依赖 CMD 会话时，更稳的做法：在服务器项目目录建 `config/live.local.json`
+  （已 gitignore，token 不进仓库）：
+  ```json
+  { "dingtalk": { "webhook": "https://oapi.dingtalk.com/robot/send?access_token=你的TOKEN", "secret": "你的SEC" } }
+  ```
+  然后直接 `pm2 start scripts/live.js --name ict-radar`，无需 set
+
 ## 网络注意
 
 - Binance API（fapi.binance.com）在服务器上需可达。**默认直连，无需任何设置**（config/network.js）：
