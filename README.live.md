@@ -40,16 +40,19 @@ Binance REST (5m closed)
    - 钉钉群 → 群设置 → 智能群助手 → 添加机器人 → 自定义
    - 安全设置选 **"加签"**（复制 secret）
    - 复制 webhook 地址（含 access_token）
-   - 编辑 `config/live.json`：
+   - 编辑 `config/live.json`（默认值已与生产一致，只需填 webhook/secret；未列出的字段用默认值）：
      ```json
      {
        "symbols": ["BTCUSDT"],
-       "warmupDays": 3,
+       "symbolsMode": "top10",
+       "warmupDays": 30,
        "pollMs": 30000,
        "dataDir": ".live-state",
+       "requireFutures": true,
        "dingtalk": {
          "webhook": "https://oapi.dingtalk.com/robot/send?access_token=你的TOKEN",
-         "secret": "你的SEC"
+         "secret": "你的SEC",
+         "keyword": "监测"
        }
      }
      ```
@@ -72,9 +75,10 @@ Binance REST (5m closed)
 
 ## 网络注意
 
-- Binance API（fapi.binance.com）在服务器上需可达。代理已环境化（config/network.js）：
-  - 服务器可直连：`set ICT_PROXY_ENABLED=0`（不用改代码）
-  - 需要代理：`set ICT_PROXY_ENABLED=1` + `set ICT_PROXY_HOST=127.0.0.1` + `set ICT_PROXY_PORT=7890`
+- Binance API（fapi.binance.com）在服务器上需可达。**默认直连，无需任何设置**（config/network.js）：
+  - 服务器可直连：零配置（生产默认）
+  - 需要代理（受限网络 / 本机开发）：`set ICT_PROXY_ENABLED=1` + `set ICT_PROXY_HOST=127.0.0.1` + `set ICT_PROXY_PORT=7890`
+    （macOS/Linux 用 `export`；仅本机开发需开启，服务器不要开）
 - **网络健康日志**：运行日志区分 `NO_NEW_BAR`（正常）/ `NETWORK_ERROR`（网络失败，跳过本轮）/
   `DATA_GAP`（5m 不连续，自动补历史后恢复）/ `DATA_SOURCE_DEGRADED`（requireFutures 下非 futures 数据，不推进）
 - 首次下载数据较慢属正常；之后 `data-cache/` 命中 + 增量轮询，开销极小。
