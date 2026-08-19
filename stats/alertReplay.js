@@ -64,10 +64,11 @@ function distBucketOf(pct) {
  *                           anchorPrice, nearTarget, nearDistPct, fvgCount, fvgIds,
  *                           legRangeAtr, legNetMoveAtr, legBodyEff, mssRefPrice, mssBreakPct,
  *                           availableIndex, availableAt, closeReason,
+ *                           notificationPrice, notificationNearTarget, notificationNearDistPct,
  *                           sweep: { price, side, barsAgo } | null }]
  */
 function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, candles, mssEvents) {
-    var items = opportunityQuality.buildTierIndex(opportunities, fvgs, legByDispId, drawTrace);
+    var items = opportunityQuality.buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles);
     var alerts = [];
     var fvgById = {};
     var mssById = {};
@@ -132,6 +133,11 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
             staleTouchIndex: staleTouchIndex,
             nearTarget: it.nearTarget,
             nearDistPct: nearDistPct,
+            // Phase 11L.7：Notification Snapshot 收口 —— 通知时点（availableAt）重新冻结的
+            // 价格/目标/距离。post-alert 统计一律用 notification* 字段（回退 anchor 字段兼容旧调用）。
+            notificationPrice: it.notificationPrice,
+            notificationNearTarget: it.notificationNearTarget,
+            notificationNearDistPct: it.notificationNearDistPct,
             fvgCount: fvgCount,
             fvgZone: firstFvg ? [firstFvg.zoneLow, firstFvg.zoneHigh] : null,
             sweep: sweep,
@@ -197,6 +203,15 @@ function assessAlerts(alerts, candles) {
             out.incomplete++;
             return;
         }
+        // Phase 11L.7：Notification Snapshot 收口 —— post-alert 统计一律用通知时点快照：
+        //   notificationPrice（MFE/MAE 基准）、notificationNearTarget（nearHit 目标）。
+        //   回退 anchor 字段保持旧调用/旧测试兼容（无 notification* 字段时行为不变）。
+        var basePrice = al.notificationPrice !== undefined && al.notificationPrice !== null
+            ? al.notificationPrice
+            : al.anchorPrice;
+        var hitTarget = al.notificationNearTarget !== undefined && al.notificationNearTarget !== null
+            ? al.notificationNearTarget
+            : al.nearTarget;
         // 11L.5（P0-2）：near 在通知前已被触及/穿越 —— 仅观察计数，不剔除样本。
         // 90d 数据结论：被触及机会的 1h hit 反而更高（81% vs 剔除后 33-41%），
         // 触及 ≠ 失效（近端流动性被测试恰是机会生效标志）→ 用户决策【放弃 suppress】。
@@ -205,8 +220,11 @@ function assessAlerts(alerts, candles) {
         }
         var a = tacc(al.tier);
         a.n++;
-        // 距离桶
-        var bucket = distBucketOf(al.nearDistPct !== null ? al.nearDistPct : Infinity);
+        // 距离桶：使用通知时点距离（回退 anchor 距离）
+        var distPct = al.notificationNearDistPct !== undefined && al.notificationNearDistPct !== null
+            ? al.notificationNearDistPct
+            : al.nearDistPct;
+        var bucket = distBucketOf(distPct !== null ? distPct : Infinity);
         if (!out.distBuckets[bucket]) out.distBuckets[bucket] = {};
         var b = out.distBuckets[bucket];
         if (!b[al.tier]) b[al.tier] = { n: 0, nearHit30m: 0, nearHit1h: 0, nearCnt30m: 0, nearCnt1h: 0 };
@@ -219,25 +237,25 @@ function assessAlerts(alerts, candles) {
                 var c = candles[j];
                 if (!c) break;
                 if (bullish) {
-                    if (c.high - al.anchorPrice > mfe) mfe = c.high - al.anchorPrice;
-                    if (al.anchorPrice - c.low > mae) mae = al.anchorPrice - c.low;
-                    if (al.nearTarget !== null && al.nearTarget !== undefined && c.high >= al.nearTarget) nearHit = true;
+                    if (c.high - basePrice > mfe) mfe = c.high - basePrice;
+                    if (basePrice - c.low > mae) mae = basePrice - c.low;
+                    if (hitTarget !== null && hitTarget !== undefined && c.high >= hitTarget) nearHit = true;
                 } else {
-                    if (al.anchorPrice - c.low > mfe) mfe = al.anchorPrice - c.low;
-                    if (c.high - al.anchorPrice > mae) mae = al.anchorPrice - c.high;
-                    if (al.nearTarget !== null && al.nearTarget !== undefined && c.low <= al.nearTarget) nearHit = true;
+                    if (basePrice - c.low > mfe) mfe = basePrice - c.low;
+                    if (c.high - basePrice > mae) mae = basePrice - c.high;
+                    if (hitTarget !== null && hitTarget !== undefined && c.low <= hitTarget) nearHit = true;
                 }
             }
             var ws = a['w' + w.key.slice(1)];
-            ws.mfeSum += mfe / al.anchorPrice * 100;
-            ws.maeSum += mae / al.anchorPrice * 100;
-            if (al.nearTarget !== null && al.nearTarget !== undefined) {
+            ws.mfeSum += mfe / basePrice * 100;
+            ws.maeSum += mae / basePrice * 100;
+            if (hitTarget !== null && hitTarget !== undefined) {
                 ws.nearCnt++;
                 if (nearHit) ws.nearHit++;
             }
             // 距离桶内 30m/1h nearHit
             var bn = b[al.tier];
-            if (al.nearTarget !== null && al.nearTarget !== undefined) {
+            if (hitTarget !== null && hitTarget !== undefined) {
                 if (w.key === 'w30m') { bn.nearCnt30m++; if (nearHit) bn.nearHit30m++; }
                 else { bn.nearCnt1h++; if (nearHit) bn.nearHit1h++; }
             }

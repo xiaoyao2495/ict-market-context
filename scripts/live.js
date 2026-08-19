@@ -66,12 +66,21 @@ function buildMessage(opp, symbol) {
     // 11L.4：时间 = 真正通知时点（availableAt = 系统首次能确认 leg 结束），
     // 不是 leg 最后位移 K 的 anchorTime（那是 leg 本身的研究锚点）
     var notified = opp.availableAt !== undefined && opp.availableAt !== null ? opp.availableAt : opp.anchorTime;
+    // Phase 11L.7：通知内容用通知时点快照（availableAt 时重新冻结的价格/目标/距离），
+    // 不再用 anchor 时点冻结值（anchor→available 的 15min 内 liquidity 可能已变化）
+    var notifTarget = opp.notificationNearTarget !== undefined && opp.notificationNearTarget !== null
+        ? opp.notificationNearTarget
+        : opp.nearTarget;
+    var notifDist = opp.notificationNearDistPct !== undefined && opp.notificationNearDistPct !== null
+        ? opp.notificationNearDistPct
+        : opp.nearDistPct;
     var lines = [
         '🔴 ' + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
         dir,
         'MSS: ' + mss + (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? ' · Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : ' · Leg: ' + opp.legQuality),
-        opp.nearTarget !== null ? 'Near Draw: ' + opp.nearDistPct.toFixed(2) + '% 距离（target ' + opp.nearTarget.toFixed(1) + '）' : 'Near Draw: -',
-        '历史同级机会：1h Near Draw Hit 81%（通知时点修正后）',
+        notifTarget !== null ? 'Near Draw: ' + notifDist.toFixed(2) + '% 距离（target ' + notifTarget.toFixed(1) + '）' : 'Near Draw: -',
+        // 11L.7（P1）：保守措辞 —— 只讲"历史同级机会的 Near Draw 触达率"，不承诺方向胜率/成功率
+        '历史同级机会：1h Near Draw 触达率约 80%（仅参考，非胜率）',
         '通知: ' + fmt(notified) + '（leg 锚 ' + fmt(opp.anchorTime) + '）'
     ];
     return lines.join('\n');
@@ -117,7 +126,9 @@ function createRunner(symbol) {
         }
         // Fix 1（11L.3 P0）：candles.jsonl 既有持久化数据也必须是 futures（旧版本污染的存量同样拒绝）
         // 11L.4：严格 source presence —— source 必须 === 'futures'（undefined 视为来源不明，拒绝）
-        var existing = persistence.loadCandles(candlesFile);
+        // 11L.7（P1）：逐行容错读取（尾部残缺行自动丢弃，中间行损坏抛错 fail-closed）
+        var loaded = persistence.loadCandles(candlesFile);
+        var existing = loaded.candles;
         if (CONFIG.requireFutures) {
             var badExisting = existing.filter(function (c) { return c.source !== 'futures'; });
             if (badExisting.length > 0) {

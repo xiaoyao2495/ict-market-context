@@ -19,6 +19,10 @@
  *   - 禁止从 anchorTime 往后找触发（会把"通知前已发生行情"算进来）
  *   - post-trigger 质量从 triggerIndex + 1（触发确认后的最早 N+1）起算
  *
+ * Phase 11L.7（Notification Snapshot 对齐）：nearTarget 一律用通知时点快照
+ *   （item.notificationNearTarget，回退 item.nearTarget）；BASELINE 的 triggerPrice =
+ *   availableAt close（= notificationPrice），与 alertReplay 统计口径一致。
+ *
  * OTE range 定义（锁死，不引入新 swing）：
  *   直接用 DisplacementLeg start→end：legHigh = max(high)，legLow = min(low)
  *   BULLISH 回撤从高往低：OTE(x) = legHigh - x*(legHigh-legLow)；触发 low <= OTE(x)
@@ -189,7 +193,10 @@ function simulateOne(item, fvgById, legByDispId, candles) {
         availableIndex: availIdx,
         availableAt: item.availableIndex !== undefined ? candles[availIdx].closeTime : null,
         direction: item.direction,
-        nearTarget: item.nearTarget,
+        // Phase 11L.7：post-trigger nearHit 一律用通知时点快照目标（回退 anchor 冻结值）
+        nearTarget: item.notificationNearTarget !== undefined && item.notificationNearTarget !== null
+            ? item.notificationNearTarget
+            : item.nearTarget,
         availPrice: prices.availPrice,
         perModel: perModel
     };

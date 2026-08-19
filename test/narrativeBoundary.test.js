@@ -1242,14 +1242,56 @@ test('11L：persistence —— candles JSONL 追加 + 恢复 round-trip', functi
         { openTime: 2, close: 101, high: 102, low: 100 }
     ]);
     persistence.appendCandles(file, [{ openTime: 3, close: 102, high: 103, low: 101 }]);
-    var candles = persistence.loadCandles(file);
+    var loaded = persistence.loadCandles(file);
+    var candles = loaded.candles;
     assert.strictEqual(candles.length, 3, '追加式恢复');
     assert.strictEqual(candles[2].openTime, 3);
+    assert.strictEqual(loaded.truncatedLines, 0);
     // JSON round-trip
     var pfile = path.join(dir, 'pushed.json');
     persistence.saveJson(pfile, { opp1: 100 });
     assert.deepStrictEqual(persistence.loadJson(pfile, {}), { opp1: 100 });
     // 清理
+    fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('11L.7（P1）：persistence —— 尾部残缺行丢弃（掉电写一半），不整段清空', function () {
+    var os = require('os');
+    var path = require('path');
+    var fs = require('fs');
+    var dir = fs.mkdtempSync(path.join(os.tmpdir(), 'live-test-'));
+    var file = path.join(dir, 'candles.jsonl');
+    // 正常 2 行 + 尾部写一半（残缺 JSON）
+    fs.writeFileSync(file, JSON.stringify({ openTime: 1, close: 100 }) + '\n' +
+        JSON.stringify({ openTime: 2, close: 101 }) + '\n' +
+        '{"openTime":3,"close":10');
+    var loaded = persistence.loadCandles(file);
+    assert.strictEqual(loaded.candles.length, 2, '尾部残缺丢弃，历史不丢');
+    assert.strictEqual(loaded.truncatedLines, 1, '记录丢弃行数');
+    // 尾部残缺后 append 可继续（幂等）
+    persistence.appendCandles(file, [{ openTime: 3, close: 102 }]);
+    var again = persistence.loadCandles(file);
+    assert.strictEqual(again.candles.length, 3, '补齐后恢复 3 根');
+    fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('11L.7（P1）：persistence —— 中间行损坏 fail-closed 抛错', function () {
+    var os = require('os');
+    var path = require('path');
+    var fs = require('fs');
+    var dir = fs.mkdtempSync(path.join(os.tmpdir(), 'live-test-'));
+    var file = path.join(dir, 'candles.jsonl');
+    fs.writeFileSync(file, JSON.stringify({ openTime: 1, close: 100 }) + '\n' +
+        '{BROKEN MIDDLE LINE}\n' +
+        JSON.stringify({ openTime: 3, close: 102 }) + '\n');
+    var threw = false;
+    try {
+        persistence.loadCandles(file);
+    } catch (e) {
+        threw = true;
+        assert.ok(e.message.indexOf('中间行损坏') !== -1, '报错信息含原因');
+    }
+    assert.strictEqual(threw, true, '中间行损坏必须抛错（不静默清空）');
     fs.rmSync(dir, { recursive: true, force: true });
 });
 

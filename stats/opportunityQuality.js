@@ -48,9 +48,11 @@ function classifyOpportunityTier(opts) {
  * @param {Array} fvgs 全部 FVG（含 displacementEventId）
  * @param {Object} legByDispId dispId → { quality, mssQuality, endIndex, direction }
  * @param {Array} drawTrace 逐根 { bslNear, bslMacro, sslNear, sslMacro }
- * @returns {Array} items [{ id, direction, tier, mssQuality, legQuality, anchorIndex, nearTarget, hasLeg }]
+ * @param {Array} [candles] 5m candles（Phase 11L.7：notificationPrice 需 availableIndex 处 close）
+ * @returns {Array} items [{ id, direction, tier, mssQuality, legQuality, anchorIndex, nearTarget, hasLeg,
+ *                          notificationPrice, notificationNearTarget, notificationNearDistPct }]
  */
-function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace) {
+function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles) {
     var fvgByDisp = {};
     (fvgs || []).forEach(function (f) {
         if (f.displacementEventId) {
@@ -103,6 +105,27 @@ function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace) {
             // directionConflict：OPPOSITE 不产生机会（gate 已过滤），冲突维度在 retrace 层挂账
             directionConflict: false
         });
+        // Phase 11L.7：Notification Snapshot 收口 —— 通知内容必须在 availableAt 时重新冻结。
+        //   anchor 的 nearTarget 只描述 leg 本身；通知时点（availableIndex）的 draw 可能已变化
+        //   （该 15min 内 liquidity 可能已被触及/扫掉/更近）。因此：
+        //     notificationNearTarget = drawTrace[availableIndex] 的 near（回退 anchor 的 nearTarget）
+        //     notificationPrice      = availableIndex 处 close
+        //     notificationNearDistPct = |notificationNearTarget - notificationPrice| / notificationPrice
+        var availIdx = best.availableIndex !== undefined && best.availableIndex !== null
+            ? best.availableIndex
+            : best.endIndex;
+        var dtAvail = drawTrace && drawTrace[availIdx] ? drawTrace[availIdx] : null;
+        var notifNear = null;
+        if (dtAvail) {
+            notifNear = o.direction === 'BULLISH' ? dtAvail.bslNear : dtAvail.sslNear;
+        }
+        if (notifNear === null || notifNear === undefined) {
+            notifNear = nearTarget; // 回退：通知时点 draw 不可用 → 用 anchor 冻结值（保守）
+        }
+        var notifPrice = candles && candles[availIdx] ? candles[availIdx].close : null;
+        var notifDist = notifNear !== null && notifNear !== undefined && notifPrice !== null && notifPrice > 0
+            ? Math.abs(notifNear - notifPrice) / notifPrice * 100
+            : null;
         return {
             id: o.id, direction: o.direction, tier: tier,
             mssQuality: best.mssQuality, legQuality: best.quality,
@@ -110,9 +133,11 @@ function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace) {
             fvgIds: o.fvgIds || [],
             // 11L.4：通知可用时点（leg 关闭确认时间）。leg.availableIndex 缺失（旧构造）时回退
             // anchorIndex 保持兼容；authoritative 路径（buildWindowedLegIndex）必有该字段。
-            availableIndex: best.availableIndex !== undefined && best.availableIndex !== null
-                ? best.availableIndex
-                : best.endIndex,
+            availableIndex: availIdx,
+            // Phase 11L.7：通知时点快照（Notification Snapshot）
+            notificationPrice: notifPrice,
+            notificationNearTarget: notifNear,
+            notificationNearDistPct: notifDist,
             // 暴露 best leg 引用（Alert Replay 人工核对：rangeAtr/bodyEff/MSS reference 等）
             dispId: best.ids && best.ids.length > 0 ? best.ids[0] : null
         };

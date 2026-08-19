@@ -220,13 +220,31 @@ function createLiveEngine(data, options) {
             directionConflict: false
         });
 
-        // 11L.5：通知可用时点（系统首次能确认 leg 结束）——
+        // 11L.4：通知可用时点（系统首次能确认 leg 结束）——
         //   availableIndex 优先（调用方当前根）；builder timeout 场景由调用方传入；
         //   flushLeg（无上下文）回退 leg.availableIndex / anchorIndex
         var availIdx = availableIndex !== undefined && availableIndex !== null
             ? availableIndex
             : (leg.availableIndex !== undefined && leg.availableIndex !== null ? leg.availableIndex : anchorIndex);
         var availCandle = window[availIdx];
+
+        // Phase 11L.7：Notification Snapshot 收口 —— 通知内容（价格/Near Draw/距离）必须在
+        // availableAt 时重新冻结（anchor→available 的 15min 内 liquidity 可能已被触及/扫掉/更近）。
+        //   notificationPrice        = availableIndex 处 close
+        //   notificationNearTarget   = drawTrace[availableIndex] 的 near（回退 anchor 冻结值）
+        //   notificationNearDistPct  = |notificationNearTarget - notificationPrice| / notificationPrice
+        var dtAvail = state.drawTrace && state.drawTrace[availIdx] ? state.drawTrace[availIdx] : null;
+        var notifNear = null;
+        if (dtAvail) {
+            notifNear = leg.direction === 'BULLISH' ? dtAvail.bslNear : dtAvail.sslNear;
+        }
+        if (notifNear === null || notifNear === undefined) {
+            notifNear = nearTarget;
+        }
+        var notifPrice = availCandle ? availCandle.close : null;
+        var notifDist = notifNear !== null && notifNear !== undefined && notifPrice !== null && notifPrice > 0
+            ? Math.abs(notifNear - notifPrice) / notifPrice * 100
+            : null;
 
         // FVG 结构证据数（leg 关联的 FVG）
         var fvgCount = state.fvgReg.getAll(symbol).filter(function (f) {
@@ -247,6 +265,10 @@ function createLiveEngine(data, options) {
             closeReason: leg.closeReason || 'timeout',
             nearTarget: nearTarget,
             nearDistPct: nearDistPct,
+            // Phase 11L.7：通知时点快照（消息显示 / post-alert 统计基准）
+            notificationPrice: notifPrice,
+            notificationNearTarget: notifNear,
+            notificationNearDistPct: notifDist,
             fvgCount: fvgCount,
             nearConsumed: false
         };

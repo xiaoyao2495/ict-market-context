@@ -63,14 +63,15 @@ Live 管线
 ## 4. 核心语义决策（防踩坑，改前必读）
 
 1. **anchorTime ≠ availableAt（11L.4 P0）**：leg 用 15min 时间窗合并，`availableAt` = 系统**首次能确认 leg 结束**的时点（new-displacement 触发 = 触发 K 收盘；timeout = lastConfirmedAt+15min）。`anchorTime`（最后位移 K）只描述 leg 本身。**通知与历史统计一律用 availableAt 之后的 N+1 起算**——否则 information-availability leakage 虚高 hit 率。
-2. **触及 ≠ 失效（11L.5，数据否决方案 B）**：90d 显示"通知前 near 被触及/穿越"的机会 1h hit 反而更高（全样本 81% vs 剔除后 33-41%，被触及占 85%）——近端流动性被测试恰是机会生效标志。**不 suppress**，`opp.nearConsumed` 仅日志观察。
-3. **Futures-only 全链路 fail-closed**：init（全 timeframe+exchangeInfo）、HTF 增量（spot 不 append）、实时 5m、Top10 名单，一律 `source === 'futures'`。
-4. **DATA_GAP 严格**：backfill 后 `validate5mContinuity`（首根紧接 lastOpenTime+5m + 逐根连续）不通过 → `DATA_GAP_UNRESOLVED` 不推进，下轮继续补；重启时同样验证 candles.jsonl 历史连续，缺根拒绝启动。
-5. **HTF 失败暂停 5m**：任一 HTF 更新异常 → 本轮不推进 5m（避免 stale HTF context 发 HIGH）；恢复后 poll 自动 gap→backfill。
-6. **tick 并发锁**：setTimeout 串行链 + tickRunning 互斥，杜绝 setInterval 重入。
-7. **Replay/Live 单一实现**：leg builder、检测器、tier 判定共享；parity 是验收硬指标。
-8. **投递确认**：钉钉 `errcode===0` 才写 delivered；失败进 outbox 自动重试（按 oppId 去重），崩溃/重启不丢。
-9. **参数/输出冻结**：跨 run 参数集不变；多层级输出 schema 固定（DATA QUALITY/FUNNEL/TRADE/PERFORMANCE/STOP/CONTEXT/MEMORY）。
+2. **Notification Snapshot 收口（11L.7 P0）**：通知内容（价格/Near Draw/距离）必须在 availableAt 时重新冻结：`notificationPrice`=availableIndex 处 close、`notificationNearTarget`=drawTrace[availableIndex] 的 near（回退 anchor 值）、`notificationNearDistPct`=|target-price|/price。anchor 的 nearTarget/nearDistPct 保留仅描述 leg。**post-alert MFE/MAE 以 notificationPrice 为基准**（不再用 anchorPrice，避免通知前位移被算进 post-alert MFE）。字段缺失回退旧字段兼容。
+3. **触及 ≠ 失效（11L.5，数据否决方案 B）**：90d 显示"通知前 near 被触及/穿越"的机会 1h hit 反而更高（全样本 81% vs 剔除后 33-41%，被触及占 85%）——近端流动性被测试恰是机会生效标志。**不 suppress**，`opp.nearConsumed` 仅日志观察。
+4. **Futures-only 全链路 fail-closed**：init（全 timeframe+exchangeInfo）、HTF 增量（spot 不 append）、实时 5m、Top10 名单，一律 `source === 'futures'`。
+5. **DATA_GAP 严格**：backfill 后 `validate5mContinuity`（首根紧接 lastOpenTime+5m + 逐根连续）不通过 → `DATA_GAP_UNRESOLVED` 不推进，下轮继续补；重启时同样验证 candles.jsonl 历史连续，缺根拒绝启动。
+6. **HTF 失败暂停 5m**：任一 HTF 更新异常 → 本轮不推进 5m（避免 stale HTF context 发 HIGH）；恢复后 poll 自动 gap→backfill。
+7. **tick 并发锁**：setTimeout 串行链 + tickRunning 互斥，杜绝 setInterval 重入。
+8. **Replay/Live 单一实现**：leg builder、检测器、tier 判定共享；parity 是验收硬指标。
+9. **投递确认**：钉钉 `errcode===0` 才写 delivered；失败进 outbox 自动重试（按 oppId 去重），崩溃/重启不丢。
+10. **参数/输出冻结**：跨 run 参数集不变；多层级输出 schema 固定（DATA QUALITY/FUNNEL/TRADE/PERFORMANCE/STOP/CONTEXT/MEMORY）。
 
 ## 5. 阶段历史（压缩）
 
@@ -90,6 +91,7 @@ Live 管线
 | 11L.3 | Final Production Guardrails 4 项（init+HTF futures-only、continuity、钉钉确认投递、fixed 模式） | 720 |
 | 11L.4 | Alert Availability-Time Fix（availableAt 语义，88%→81%）+ outbox 持久化 + init continuity + strict source | 730 |
 | 11L.5 | Final Live Semantics 5 项（tick 锁、stale-near 观察化、source 统一严格、HTF 暂停 5m、outbox 去重） | 739 |
+| 11L.7 | Trigger Price Shadow Audit（5 模型对比，数据否决等待 retrace）+ Notification Snapshot 收口（P0）+ JSONL 崩溃容错（P1）+ 文案保守化 | 758 |
 
 Git 历史（main）：`b1a33d9 → 45217d4(11L) → 6d30df2(11L.1) → fc759a7 → ed459c5(11L.2) → 4e60acb → b165176(默认直连) → b34bfc4(11L.3) → 879da10(docs) → 533ac46(11L.4) → 5ea65b1(11L.5)`。仓库 `github.com/xiaoyao2495/ict-market-context`。
 

@@ -12,6 +12,7 @@
 var assert = require('assert');
 var displacementLeg = require('../stats/displacementLeg');
 var alertReplay = require('../stats/alertReplay');
+var opportunityQuality = require('../stats/opportunityQuality');
 
 var tests = [];
 var passed = 0;
@@ -188,6 +189,93 @@ test('assessAlerts: HIGH 且 near 通知前已触及 → 仅观察计数，不�
     assert.strictEqual(a.staleNearSuppressed, 1, '观察计数');
     assert.strictEqual(a.tierStats.HIGH_QUALITY.n, 2, '不剔除：两个样本都计入 post-alert 统计');
     assert.strictEqual(a.tierStats.HIGH_QUALITY.w1h.nearCnt, 2);
+});
+
+// ---------- Phase 11L.7：Notification Snapshot 收口（P0） ----------
+test('buildTierIndex: 输出 notification 快照（availableAt 时点重新冻结的价格/目标/距离）', function () {
+    var candles = [];
+    for (var i = 0; i < 30; i++) candles.push(m5(100, 101, 99, 100.5, i));
+    // drawTrace：anchor(10) near=103；available(13) near 变化为 102（liquidity 被扫/更近）
+    var drawTrace = [];
+    for (var i = 0; i < 30; i++) {
+        drawTrace[i] = { bslNear: 103, bslMacro: null, sslNear: null, sslMacro: null };
+    }
+    drawTrace[13] = { bslNear: 102, bslMacro: null, sslNear: null, sslMacro: null };
+    var legByDispId = { 'D1': { ids: ['D1'], startIndex: 5, endIndex: 10, direction: 'BULLISH', quality: 'STRONG', mssQuality: 'PROTECTED_SWING', availableIndex: 13 } };
+    var opps = [{
+        id: 'OPP1', direction: 'BULLISH', mssId: 'M1', fvgIds: ['F1'], createdAt: 0, lastAt: 0, nLegs: 1
+    }];
+    var fvgs = [{ id: 'F1', displacementEventId: 'D1', zoneLow: 99, zoneHigh: 101, direction: 'BULLISH', confirmedAt: 0 }];
+    var items = opportunityQuality.buildTierIndex(opps, fvgs, legByDispId, drawTrace, candles);
+    var it = items[0];
+    assert.strictEqual(it.tier, 'HIGH_QUALITY');
+    assert.strictEqual(it.nearTarget, 103, 'anchor 冻结值保留（描述 leg 本身）');
+    assert.strictEqual(it.availableIndex, 13);
+    assert.strictEqual(it.notificationNearTarget, 102, '通知时点重新冻结（drawTrace[13]）');
+    assert.strictEqual(it.notificationPrice, 100.5, 'availableIndex 处 close');
+    assert.ok(Math.abs(it.notificationNearDistPct - Math.abs(102 - 100.5) / 100.5 * 100) < 1e-9);
+});
+
+test('buildTierIndex: notification 快照 drawTrace 缺失 → 回退 anchor 冻结值（保守）', function () {
+    var candles = [];
+    for (var i = 0; i < 30; i++) candles.push(m5(100, 101, 99, 100.5, i));
+    var drawTrace = [];
+    for (var i = 0; i < 30; i++) {
+        drawTrace[i] = { bslNear: 103, bslMacro: null, sslNear: null, sslMacro: null };
+    }
+    delete drawTrace[13]; // available 处 draw 不可用
+    var legByDispId = { 'D1': { ids: ['D1'], startIndex: 5, endIndex: 10, direction: 'BULLISH', quality: 'STRONG', mssQuality: 'PROTECTED_SWING', availableIndex: 13 } };
+    var opps = [{ id: 'OPP1', direction: 'BULLISH', mssId: 'M1', fvgIds: ['F1'], createdAt: 0, lastAt: 0, nLegs: 1 }];
+    var fvgs = [{ id: 'F1', displacementEventId: 'D1', zoneLow: 99, zoneHigh: 101, direction: 'BULLISH', confirmedAt: 0 }];
+    var items = opportunityQuality.buildTierIndex(opps, fvgs, legByDispId, drawTrace, candles);
+    assert.strictEqual(items[0].notificationNearTarget, 103, '回退 anchor 冻结值');
+});
+
+test('buildTierIndex: 无 candles 参数（旧调用）→ notificationPrice=null，notificationNearTarget 仍可取', function () {
+    var drawTrace = [];
+    for (var i = 0; i < 30; i++) {
+        drawTrace[i] = { bslNear: 103, bslMacro: null, sslNear: null, sslMacro: null };
+    }
+    var legByDispId = { 'D1': { ids: ['D1'], startIndex: 5, endIndex: 10, direction: 'BULLISH', quality: 'STRONG', mssQuality: 'PROTECTED_SWING', availableIndex: 13 } };
+    var opps = [{ id: 'OPP1', direction: 'BULLISH', mssId: 'M1', fvgIds: ['F1'], createdAt: 0, lastAt: 0, nLegs: 1 }];
+    var fvgs = [{ id: 'F1', displacementEventId: 'D1', zoneLow: 99, zoneHigh: 101, direction: 'BULLISH', confirmedAt: 0 }];
+    var items = opportunityQuality.buildTierIndex(opps, fvgs, legByDispId, drawTrace);
+    assert.strictEqual(items[0].notificationNearTarget, 103);
+    assert.strictEqual(items[0].notificationPrice, null, '无 candles → price null');
+    assert.strictEqual(items[0].notificationNearDistPct, null);
+});
+
+test('assessAlerts: MFE/MAE 以 notificationPrice 为基准（P0-2 收口）', function () {
+    var candles = [];
+    for (var i = 0; i < 60; i++) candles.push(m5(100, 101, 99, 100.5, i));
+    // 通知时点 available=13（close 100.5）；notificationPrice=100.5；notificationNearTarget=102
+    // post-alert 从 14 起：index 14-25 内 high 101（<102）→ 不 hit；MFE 以 100.5 为基准
+    candles[13] = m5(99.8, 100.5, 99.5, 100.5, 13); // availableAt close 100.5
+    candles[14] = m5(100.5, 104, 100.4, 103, 14);  // 触 notificationNearTarget 102（14 起）
+    var alerts = [{
+        id: 'a', tier: 'HIGH_QUALITY', direction: 'BULLISH',
+        anchorIndex: 10, anchorPrice: 100.5, nearTarget: 103, nearDistPct: 2.49,
+        availableIndex: 13, availableAt: candles[13].closeTime, closeReason: 'timeout',
+        notificationPrice: 100.5, notificationNearTarget: 102, notificationNearDistPct: 1.49
+    }];
+    var a = alertReplay.assessAlerts(alerts, candles);
+    assert.strictEqual(a.tierStats.HIGH_QUALITY.w1h.nearHit, 1, '通知时点目标 102 在 14 起 1h 内被触达 → hit');
+    assert.strictEqual(a.tierStats.HIGH_QUALITY.w1h.nearCnt, 1);
+    // MFE：以 100.5 为基准，index 14 high 104 → MFE = 3.5/100.5*100 ≈ 3.48%
+    assert.ok(Math.abs(a.tierStats.HIGH_QUALITY.w1h.mfeSum - 3.5 / 100.5 * 100) < 1e-9);
+});
+
+test('assessAlerts: 无 notification 字段（旧调用）→ 回退 anchor 字段（行为不变）', function () {
+    var candles = [];
+    for (var i = 0; i < 60; i++) candles.push(m5(100, 101, 99, 100.5, i));
+    var alerts = [{
+        id: 'a', tier: 'HIGH_QUALITY', direction: 'BULLISH',
+        anchorIndex: 10, anchorPrice: 100.5, nearTarget: 100.6, nearDistPct: 0.1,
+        availableIndex: 13, availableAt: candles[13].closeTime, closeReason: 'timeout'
+    }];
+    var a = alertReplay.assessAlerts(alerts, candles);
+    // 回退：basePrice=anchorPrice=100.5，hitTarget=nearTarget=100.6；index 14 起 high 101 >= 100.6 → hit
+    assert.strictEqual(a.tierStats.HIGH_QUALITY.w1h.nearHit, 1, '旧字段回退后 nearHit 语义不变');
 });
 
 // ---------- 异步 runner（保持一致性；本文件同步为主） ----------
