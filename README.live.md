@@ -128,7 +128,15 @@ pm2 save
 - **通知时点语义（11L.4）**：消息与统计的时间 = `availableAt`（系统首次能确认 leg 结束：
   下一个 displacement 触发关闭 = 触发 K 收盘；timeout = lastConfirmedAt + 15min），
   不再是 leg 最后位移 K 的 `anchorTime`。历史 post-alert 统计从 availableAt 之后 N+1 开始，
-  修正 information-availability leakage 后 **HIGH 1h Near Draw Hit = 81%（90d，n=539）**
+  修正 information-availability leakage 后 **HIGH 1h Near Draw 触达率 = 65%（90d，n=575，
+  通知时点快照口径）**
+- **Notification Snapshot（11L.7 P0）**：通知内容（价格 / Near Draw target / 距离百分比）
+  在 **availableAt 时重新冻结**（`notificationPrice` / `notificationNearTarget` /
+  `notificationNearDistPct`），不再用 leg anchor 时点的旧值（anchor→available 的 15min 内
+  liquidity 可能已被触及/扫掉/更近）。post-alert MFE/MAE 也以 `notificationPrice` 为基准。
+  字段缺失（旧代码）自动回退 anchor 字段，兼容升级。
+- **JSONL 崩溃容错（11L.7 P1）**：`candles.jsonl` 逐行读取——尾部残缺行（掉电写一半）
+  自动丢弃并物理截断（重启后自动补齐），中间行损坏抛错 fail-closed（不整段当空数据）。
 - **tick 并发锁（11L.5）**：setTimeout 串行链 + 互斥双保险——上一轮 tick 未完成时新轮 skip，
   杜绝 setInterval 重入导致的 index mismatch / 重复推进
 - **HTF 失败暂停 5m（11L.5）**：任一 HTF（1h/4h/1d/1w/1M）更新异常 → 本轮不推进 5m engine，
@@ -153,12 +161,13 @@ Live 逐根推进 HIGH 546 —— 30d parity 100% / 90d 98.7%，同一机会完�
 LONG (BULLISH)
 MSS: PROTECTED_SWING · Leg: EXPLOSIVE (3.0 ATR)
 Near Draw: 0.36% 距离（target 64513.2）
-历史同级机会：1h Near Draw Hit 81%（通知时点修正后）
+历史同级机会：1h Near Draw 触达率约 80%（仅参考，非胜率）
 通知: 2026-08-18 14:20 (UTC+8)（leg 锚 2026-08-18 14:05）
 ```
 
 （11L.4：`通知` = 系统首次能确认 leg 结束的时点（availableAt），`leg 锚` = 最后位移 K 收盘
-（anchorTime，仅描述 leg 本身）。历史 81% 就是从通知时点之后统计的 post-alert 表现。）
+（anchorTime，仅描述 leg 本身）。11L.7：Near Draw 目标与距离为通知时点重新冻结的快照
+（非 leg anchor 时点）；历史 65% 是从通知时点之后、以通知时点快照目标统计的触达率。）
 
 ## 已知边界
 
