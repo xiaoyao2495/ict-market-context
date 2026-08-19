@@ -1,16 +1,18 @@
 /**
- * Phase 11L.8 — Liquidity Provenance / Notification Explainability 测试
+ * Phase 11L.8 — Liquidity Provenance / Notification Explainability 测试（follow-up 收口）
  *
  * 覆盖：
- *   - associateSweeps：方向过滤（LONG→SSL / SHORT→BSL）
- *   - confirmedAt <= availableAt（无 future leakage，fail-closed）
- *   - 窗口边界：leg.startIndex - maxLookbackBars → leg.endIndex
+ *   - associateSweeps 三字段结构：allCandidates / immediateSweep / primarySweep
+ *   - 方向过滤（LONG→SSL / SHORT→BSL）
+ *   - confirmedAt <= availableAt（无 future leakage，缺失 fail-closed）
+ *   - 窗口边界：48 bars 内可关联、49 bars 外不可关联（production 窗口锁定）
+ *   - immediateSweep = 距离 leg.startIndex 最近；距离相同取 confirmedAt 更新
  *   - INSIDE_LEG（Leg K1 → Sweep → Leg K2/K3 允许）
- *   - primary = 最近候选；sweeps[] = 全候选（含 barsBeforeLegStart / relation）
  *   - NONE：无可靠关联返回 null（不猜测）
+ *   - sourceType 忠实展示；缺失 → UNKNOWN
+ *   - formatSweepPriceLine / formatSweepRelationLine（BEFORE_LEG · 12 bars / INSIDE_LEG · 1 bar）
  *   - classifyMssLegRelation 四态
- *   - formatSweepPriceLine / formatSweepRelationLine（通知行）
- *   - buildAlerts 集成：alert.sweep 兼容 + liquidityContext + mssRelation
+ *   - buildAlerts 集成：alert.sweep 兼容 + liquidityContext + mssRelation；NONE 时 HIGH 正常
  */
 var assert = require('assert');
 var lp = require('../stats/liquidityProvenance');
@@ -54,6 +56,24 @@ function leg(over) {
     };
 }
 
+/* ---------- 三字段结构 ---------- */
+
+test('11L.8：返回结构 = { allCandidates, immediateSweep, primarySweep }', function () {
+    var sweeps = [
+        { id: 's1', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 6 }
+    ];
+    var ctx = lp.associateSweeps({
+        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+    });
+    assert.ok(ctx);
+    assert.ok(Array.isArray(ctx.allCandidates), 'allCandidates 是数组');
+    assert.strictEqual(ctx.allCandidates.length, 1);
+    assert.ok(ctx.immediateSweep, 'immediateSweep 非空');
+    assert.strictEqual(ctx.primarySweep, ctx.immediateSweep, 'primarySweep = immediateSweep（兼容临时字段）');
+    assert.strictEqual(ctx.primarySweep.id, 's1');
+    assert.strictEqual(ctx.primarySweep.relation, 'BEFORE_LEG');
+});
+
 /* ---------- 方向过滤 ---------- */
 
 test('11L.8：BULLISH 只关联 SSL，忽略 BSL', function () {
@@ -64,9 +84,9 @@ test('11L.8：BULLISH 只关联 SSL，忽略 BSL', function () {
     var ctx = lp.associateSweeps({
         direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
-    assert.ok(ctx, '有候选');
-    assert.strictEqual(ctx.primarySweepId, 's1', 'BSL 被过滤，primary 是 SSL');
-    assert.strictEqual(ctx.sweeps.length, 1, '候选只有 1 个 SSL');
+    assert.ok(ctx);
+    assert.strictEqual(ctx.immediateSweep.id, 's1', 'BSL 被过滤');
+    assert.strictEqual(ctx.allCandidates.length, 1);
 });
 
 test('11L.8：BEARISH 只关联 BSL', function () {
@@ -77,46 +97,67 @@ test('11L.8：BEARISH 只关联 BSL', function () {
     var ctx = lp.associateSweeps({
         direction: 'BEARISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
-    assert.ok(ctx);
-    assert.strictEqual(ctx.primarySweepId, 's2');
+    assert.strictEqual(ctx.immediateSweep.id, 's2');
 });
 
 /* ---------- future leakage ---------- */
 
 test('11L.8：sweep.confirmedAt > availableAt → 排除（无 future leakage）', function () {
     var sweeps = [
-        { id: 's1', side: 'SSL', price: 99, confirmedAt: 9000001, candleIndex: 3 }, // 未来（availableAt 之后）
+        { id: 's1', side: 'SSL', price: 99, confirmedAt: 9000001, candleIndex: 3 }, // 未来
         { id: 's2', side: 'SSL', price: 98, confirmedAt: 1200001, candleIndex: 4 }  // 合法
     ];
     var ctx = lp.associateSweeps({
         direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.ok(ctx);
-    assert.strictEqual(ctx.primarySweepId, 's2', '未来 sweep 被排除');
-    assert.strictEqual(ctx.sweeps.length, 1);
+    assert.strictEqual(ctx.immediateSweep.id, 's2', '未来 sweep 被排除');
+    assert.strictEqual(ctx.allCandidates.length, 1);
 });
 
 test('11L.8：confirmedAt 缺失（旧构造）→ fail-closed 拒绝，不猜测', function () {
-    var sweeps = [{ id: 's1', side: 'SSL', price: 99, candleIndex: 3 }]; // 无 confirmedAt
+    var sweeps = [{ id: 's1', side: 'SSL', price: 99, candleIndex: 3 }];
     var ctx = lp.associateSweeps({
         direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.strictEqual(ctx, null, '缺 confirmedAt 无法验证 leakage → NONE');
 });
 
-/* ---------- 窗口边界 ---------- */
+/* ---------- 48-bar 窗口边界（production 锁定） ---------- */
 
-test('11L.8：窗口 = leg.startIndex - N → leg.endIndex', function () {
+test('11L.8：48 bars 内可关联（leg.startIndex - 48 边界恰好命中）', function () {
     var sweeps = [
-        { id: 'in', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 8 },   // start 10 - N(3)=7 → 8 在窗口内
-        { id: 'out', side: 'SSL', price: 98, confirmedAt: 1100001, candleIndex: 6 }   // 6 < 7 → 窗口外
+        { id: 's1', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 10 - 48 } // start 10 - 48 = -38 → candleIndex -38
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps, maxLookbackBars: 3
+        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps, maxLookbackBars: 48
+    });
+    assert.ok(ctx, '恰好 48 bars 前 → 窗口内');
+    assert.strictEqual(ctx.allCandidates.length, 1);
+    assert.strictEqual(ctx.primarySweep.barsBeforeLegStart, 48);
+});
+
+test('11L.8：49 bars 外不可关联（leg.startIndex - 49 越界）', function () {
+    var sweeps = [
+        { id: 's1', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 10 - 49 } // -39 < -38 → 窗口外
+    ];
+    var ctx = lp.associateSweeps({
+        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps, maxLookbackBars: 48
+    });
+    assert.strictEqual(ctx, null, '49 bars 前 → 窗口外 → NONE');
+});
+
+test('11L.8：默认 maxLookbackBars = 48（production 窗口）', function () {
+    var sweeps = [
+        { id: 's1', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 10 - 48 },
+        { id: 's2', side: 'SSL', price: 98, confirmedAt: 1100001, candleIndex: 10 - 49 }
+    ];
+    var ctx = lp.associateSweeps({
+        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.ok(ctx);
-    assert.strictEqual(ctx.sweeps.length, 1, '窗口外候选被排除');
-    assert.strictEqual(ctx.primarySweepId, 'in');
+    assert.strictEqual(ctx.allCandidates.length, 1, '默认窗口 48，49 bars 外被排除');
+    assert.strictEqual(lp.DEFAULT_MAX_LOOKBACK_BARS, 48);
 });
 
 test('11L.8：sweep 在 leg.endIndex 之后 → 排除（必须与 leg 形成过程相关）', function () {
@@ -124,38 +165,42 @@ test('11L.8：sweep 在 leg.endIndex 之后 → 排除（必须与 leg 形成过
     var ctx = lp.associateSweeps({
         direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
-    assert.strictEqual(ctx, null, 'leg 后的 sweep 不关联');
+    assert.strictEqual(ctx, null);
 });
 
-/* ---------- INSIDE_LEG ---------- */
+/* ---------- immediateSweep 选择 ---------- */
 
-test('11L.8：Leg K1 → Sweep → Leg K2/K3 → INSIDE_LEG（允许，不强迫三段式）', function () {
-    var sweeps = [{ id: 's1', side: 'SSL', price: 99, confirmedAt: 1400001, candleIndex: 11 }]; // leg 内（start 10..end 12）
-    var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
-    });
-    assert.ok(ctx);
-    assert.strictEqual(ctx.primary.relation, 'INSIDE_LEG');
-    assert.strictEqual(ctx.primary.barsBeforeLegStart, -1, '10 - 11 = -1（leg 内）');
-});
-
-/* ---------- primary / sweeps[] ---------- */
-
-test('11L.8：primary = confirmedAt 最近；sweeps[] = 全候选升序', function () {
+test('11L.8：immediateSweep = 距离 leg.startIndex 最近', function () {
     var sweeps = [
-        { id: 'old', side: 'SSL', price: 98, confirmedAt: 1000001, candleIndex: 2 },
-        { id: 'mid', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 6 },
-        { id: 'new', side: 'SSL', price: 99.5, confirmedAt: 1250001, candleIndex: 8 }
+        { id: 'far', side: 'SSL', price: 98, confirmedAt: 1100001, candleIndex: 2 },  // 距 start 10 有 8
+        { id: 'near', side: 'SSL', price: 99, confirmedAt: 1250001, candleIndex: 8 }  // 距 start 10 有 2 → 最近
     ];
     var ctx = lp.associateSweeps({
         direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
-    assert.strictEqual(ctx.primarySweepId, 'new', '最近的为 primary');
-    assert.strictEqual(ctx.sweeps.length, 3);
-    assert.strictEqual(ctx.sweeps[0].id, 'old');
-    assert.strictEqual(ctx.sweeps[2].id, 'new');
-    assert.strictEqual(ctx.sweeps[0].relation, 'BEFORE_LEG');
-    assert.strictEqual(ctx.sweeps[0].barsBeforeLegStart, 8, '10-2=8');
+    assert.strictEqual(ctx.immediateSweep.id, 'near', '距离最近者胜');
+    assert.strictEqual(ctx.allCandidates.length, 2, 'allCandidates 保留全部');
+});
+
+test('11L.8：距离相同 → 取 confirmedAt 更新的', function () {
+    var sweeps = [
+        { id: 'old', side: 'SSL', price: 98, confirmedAt: 1100001, candleIndex: 8 },  // 距 2，旧
+        { id: 'new', side: 'SSL', price: 99, confirmedAt: 1250001, candleIndex: 12 }  // 距 |10-12|=2，新 → 胜
+    ];
+    var ctx = lp.associateSweeps({
+        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+    });
+    assert.strictEqual(ctx.immediateSweep.id, 'new', '距离相同取 confirmedAt 更新');
+});
+
+test('11L.8：INSIDE_LEG（Leg K1 → Sweep → Leg K2/K3）允许', function () {
+    var sweeps = [{ id: 's1', side: 'SSL', price: 99, confirmedAt: 1400001, candleIndex: 11 }]; // leg 内
+    var ctx = lp.associateSweeps({
+        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+    });
+    assert.ok(ctx);
+    assert.strictEqual(ctx.primarySweep.relation, 'INSIDE_LEG');
+    assert.strictEqual(ctx.primarySweep.barsBeforeLegStart, -1, '10 - 11 = -1');
 });
 
 test('11L.8：无候选 → null（NONE，不猜测）', function () {
@@ -165,33 +210,53 @@ test('11L.8：无候选 → null（NONE，不猜测）', function () {
     assert.strictEqual(ctx, null);
 });
 
+/* ---------- sourceType 忠实展示 ---------- */
+
+test('11L.8：sourceType 原样展示（SWING_LOW/EQL 等）；缺失 → UNKNOWN', function () {
+    var sweeps = [
+        { id: 's1', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 6, source: { liquidityType: 'SWING_LOW' } },
+        { id: 's2', side: 'SSL', price: 98, confirmedAt: 1100001, candleIndex: 5, source: {} }
+    ];
+    var ctx = lp.associateSweeps({
+        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+    });
+    // allCandidates 按 confirmedAt 升序：s2(1100001) 在前、s1(1200001) 在后
+    assert.strictEqual(ctx.allCandidates[1].sourceType, 'SWING_LOW');
+    assert.strictEqual(ctx.allCandidates[0].sourceType, 'UNKNOWN', '缺失不猜测，不美化');
+});
+
 /* ---------- classifyMssLegRelation ---------- */
 
 test('11L.8：classifyMssLegRelation 四态', function () {
     var l = leg();
-    assert.strictEqual(lp.classifyMssLegRelation(l, null), 'NONE', '无 MSS → NONE');
-    assert.strictEqual(lp.classifyMssLegRelation(l, { confirmedAt: 1200001 }), 'BEFORE_LEG', 'MSS 在 leg 前');
-    assert.strictEqual(lp.classifyMssLegRelation(l, { confirmedAt: 1400001 }), 'INSIDE_LEG', 'MSS 在 leg 内');
-    assert.strictEqual(lp.classifyMssLegRelation(l, { confirmedAt: 1600001 }), 'AFTER_LEG', 'MSS 在 leg 后');
-    // index 回退（无 confirmedAt 时）
+    assert.strictEqual(lp.classifyMssLegRelation(l, null), 'NONE');
+    assert.strictEqual(lp.classifyMssLegRelation(l, { confirmedAt: 1200001 }), 'BEFORE_LEG');
+    assert.strictEqual(lp.classifyMssLegRelation(l, { confirmedAt: 1400001 }), 'INSIDE_LEG');
+    assert.strictEqual(lp.classifyMssLegRelation(l, { confirmedAt: 1600001 }), 'AFTER_LEG');
     assert.strictEqual(lp.classifyMssLegRelation({ startIndex: 10, endIndex: 12 }, { candleIndex: 8 }), 'BEFORE_LEG');
     assert.strictEqual(lp.classifyMssLegRelation({ startIndex: 10, endIndex: 12 }, { candleIndex: 11 }), 'INSIDE_LEG');
 });
 
 /* ---------- 通知行格式化 ---------- */
 
-test('11L.8：formatSweepPriceLine / formatSweepRelationLine', function () {
-    var p = { side: 'SSL', sourceTimeframe: '5m', sourceType: 'EQL', sourcePrice: 1902.4, relation: 'BEFORE_LEG', barsBeforeLegStart: 3 };
-    assert.strictEqual(lp.formatSweepPriceLine(p), 'SSL · 5M EQL @ 1902.40');
-    assert.strictEqual(lp.formatSweepRelationLine(p), '发生于 Leg 前 3 bars');
-    var p2 = { side: 'SSL', sourceTimeframe: '5m', sourceType: 'EQL', sourcePrice: 1902.4, relation: 'INSIDE_LEG', barsBeforeLegStart: -1 };
-    assert.strictEqual(lp.formatSweepRelationLine(p2), '发生于 Leg 内');
+test('11L.8：formatSweepPriceLine / formatSweepRelationLine（新措辞格式）', function () {
+    var p = { side: 'SSL', sourceTimeframe: '5m', sourceType: 'SWING_LOW', sourcePrice: 66000, relation: 'BEFORE_LEG', barsBeforeLegStart: 12 };
+    assert.strictEqual(lp.formatSweepPriceLine(p), 'SSL · 5M SWING_LOW @ 66000.00');
+    assert.strictEqual(lp.formatSweepRelationLine(p), 'BEFORE_LEG · 12 bars');
+    var p2 = { side: 'BSL', sourceTimeframe: '5m', sourceType: 'EQH', sourcePrice: 67250, relation: 'INSIDE_LEG', barsBeforeLegStart: 0 };
+    assert.strictEqual(lp.formatSweepPriceLine(p2), 'BSL · 5M EQH @ 67250.00');
+    assert.strictEqual(lp.formatSweepRelationLine(p2), 'INSIDE_LEG · 1 bar', '腿内第 1 根 → 1 bar（单数）');
+    var p3 = { side: 'SSL', sourceTimeframe: '5m', sourceType: 'SWING_LOW', sourcePrice: 66000, relation: 'INSIDE_LEG', barsBeforeLegStart: -2 };
+    assert.strictEqual(lp.formatSweepRelationLine(p3), 'INSIDE_LEG · 3 bars', '腿内第 3 根 → 3 bars');
     assert.strictEqual(lp.formatSweepPriceLine(null), null);
+    // sourceType 缺失 → UNKNOWN（不猜测）
+    var p4 = { side: 'SSL', sourceTimeframe: null, sourceType: null, sourcePrice: 1.5 };
+    assert.strictEqual(lp.formatSweepPriceLine(p4), 'SSL · UNKNOWN UNKNOWN @ 1.50');
 });
 
 /* ---------- buildAlerts 集成 ---------- */
 
-test('11L.8：buildAlerts —— alert.sweep 兼容 + liquidityContext + mssRelation', function () {
+test('11L.8：buildAlerts —— alert.sweep 兼容 + liquidityContext 三字段 + mssRelation', function () {
     var candles = [];
     for (var i = 0; i < 60; i++) candles.push(m5(100, 101, 99, 100.5, i));
     var fvgs = [
@@ -212,28 +277,29 @@ test('11L.8：buildAlerts —— alert.sweep 兼容 + liquidityContext + mssRela
     var drawTrace = [];
     drawTrace[20] = { bslNear: 105, bslMacro: 110, sslNear: null, sslMacro: null };
     var sweeps = [
-        { id: 'sw1', side: 'SSL', price: 98.5, liquidityType: 'EQL', timeframe: '5m', confirmedAt: candles[15].closeTime - 1, candleIndex: 14 },
-        { id: 'sw2', side: 'SSL', price: 97, liquidityType: 'EQL', timeframe: '5m', confirmedAt: candles[12].closeTime - 1, candleIndex: 11 }
+        { id: 'sw1', side: 'SSL', price: 98.5, liquidityType: 'EQL', timeframe: '5m', confirmedAt: candles[15].closeTime - 1, candleIndex: 14, source: { liquidityType: 'EQL' } },
+        { id: 'sw2', side: 'SSL', price: 97, liquidityType: 'SWING_LOW', timeframe: '5m', confirmedAt: candles[12].closeTime - 1, candleIndex: 11, source: { liquidityType: 'SWING_LOW' } }
     ];
     var mssEvents = [{ id: 'm1', source: { referencePrice: 99.0, breakPct: 0.0012 }, confirmedAt: candles[15].closeTime - 1 }];
     var alerts = alertReplay.buildAlerts(opps, fvgs, legByDispId, drawTrace, sweeps, candles, mssEvents);
     assert.strictEqual(alerts.length, 1);
     var al = alerts[0];
-    // 兼容字段：sweep 摘要（primary = 最近的 sw1）
+    // 兼容字段：sweep 摘要（immediateSweep = 距 start 15 最近 → sw1 距 1）
     assert.ok(al.sweep && al.sweep.side === 'SSL');
     assert.strictEqual(al.sweep.barsAgo, 20 - 14, 'anchor 20 - sweep 14 = 6');
     assert.strictEqual(al.sweep.relation, 'BEFORE_LEG');
     assert.strictEqual(al.sweep.sourceType, 'EQL');
-    // 新结构：liquidityContext
+    // 新结构：liquidityContext 三字段
     assert.ok(al.liquidityContext);
-    assert.strictEqual(al.liquidityContext.primarySweepId, 'sw1');
-    assert.strictEqual(al.liquidityContext.sweeps.length, 2, '全候选记录（诊断用）');
-    assert.strictEqual(al.liquidityContext.primary.barsBeforeLegStart, 15 - 14, 'start 15 - candle 14 = 1');
-    // mssRelation：MSS confirmedAt < leg.firstConfirmedAt → BEFORE_LEG
+    assert.strictEqual(al.liquidityContext.immediateSweep.id, 'sw1', '距 leg.startIndex(15) 最近');
+    assert.strictEqual(al.liquidityContext.primarySweep, al.liquidityContext.immediateSweep, 'primarySweep = immediateSweep');
+    assert.strictEqual(al.liquidityContext.allCandidates.length, 2, '全候选保留');
+    assert.strictEqual(al.liquidityContext.immediateSweep.barsBeforeLegStart, 1, '15 - 14 = 1');
+    // mssRelation
     assert.strictEqual(al.mssRelation, 'BEFORE_LEG');
 });
 
-test('11L.8：buildAlerts —— 无法关联 → liquidityContext null + mssRelation NONE', function () {
+test('11L.8：buildAlerts —— 无 sweep → liquidityContext null，HIGH 仍正常产生（NONE 不降级）', function () {
     var candles = [];
     for (var i = 0; i < 60; i++) candles.push(m5(100, 101, 99, 100.5, i));
     var fvgs = [{ id: 'f1', direction: 'BULLISH', displacementEventId: 'd1', zoneLow: 100.2, zoneHigh: 100.8 }];
@@ -252,6 +318,7 @@ test('11L.8：buildAlerts —— 无法关联 → liquidityContext null + mssRel
     assert.strictEqual(alerts.length, 1);
     assert.strictEqual(alerts[0].liquidityContext, null);
     assert.strictEqual(alerts[0].sweep, null);
+    assert.strictEqual(alerts[0].tier, 'HIGH_QUALITY', 'NONE 不影响 tier');
     assert.strictEqual(alerts[0].mssRelation, 'NONE');
 });
 

@@ -1,29 +1,32 @@
 /**
  * Phase 11L.8 — Liquidity Provenance / Notification Explainability
  *
- * 目的：让通知能解释"这条 HIGH 之前扫了什么流动性"（Sweep → MSS → Displacement Leg）。
- * 核心原则：不在发通知时重新扫描历史猜"它可能扫了什么"，而是在事件产生时保存
- * provenance（LIQUIDITY_SWEEP 事件由 sweepEventAdapter 在 lifecycle SWEPT 时生成）。
+ * 目的：让通知能解释"这条 HIGH 形成前后，近期获取过哪些流动性"。
+ * 核心原则：
+ *   - 不在发通知时重新扫描历史猜"它可能扫了什么"，而是消费事件产生时已保存的
+ *     provenance（LIQUIDITY_SWEEP 事件由 sweepEventAdapter 在 lifecycle SWEPT 时生成）。
+ *   - **只做解释，不做因果声明**：没有证据证明"最近的 sweep"就是整个 Narrative 的
+ *     causal liquidity event。因此 immediateSweep 只是"近期获取的流动性"，
+ *     严禁在注释/变量/文案中称其为 causal / Narrative / "导致本次机会的流动性"。
  *
  * 数据链：
- *   Liquidity (EQL/EQH/SWING_*)
- *     ↓ lifecycle.evaluateLiquidity → SWEPT
- *   SweepEvent { side, liquidityType, liquidityPrice, liquidityId, confirmedAt, candleIndex }
- *     ↓ associateSweeps（本模块，Live/Replay 单一实现）
- *   Opportunity.liquidityContext { primarySweepId, primary, sweeps[] }
- *     ↓ buildMessage
- *   DingTalk "Liquidity Taken:"
+ *   Liquidity (EQL, EQH, SWING_HIGH, SWING_LOW, PDH, PDL 等) → SweepEvent → Opportunity.liquidityContext → DingTalk
  *
- * 关联规则（第一版保守）：
+ * 关联规则（第一版保守，不扩范围）：
  *   - BULLISH → 只关联 SSL；BEARISH → 只关联 BSL
- *   - sweep.confirmedAt <= opportunity.availableAt（严格无 future leakage）
+ *   - sweep.confirmedAt <= opportunity.availableAt（严格无 future leakage，缺失 fail-closed）
  *   - 窗口：leg.startIndex - maxLookbackBars → leg.endIndex
+ *     * maxLookbackBars = 48（production explainability 窗口；90d 数据 N=48 关联 ~90%，
+ *       避免为了 99% 把过旧 sweep 强行挂到当前 Opportunity）
  *     * sweep 允许出现在 leg 内（Leg K1 → Sweep → Leg K2/K3）→ INSIDE_LEG
- *       （不强迫 Sweep → MSS → Displacement 三段式）
- *     * maxLookbackBars 默认宽窗口（记录全部候选）；正式窗口由诊断分布决定，不拍脑袋
- *   - primary = 窗口内 confirmedAt 最近的候选；sweeps[] = 全部候选（confirmedAt 升序，
- *     含 relation / barsBeforeLegStart）→ 供诊断报告看真实分布
- *   - 无可靠关联 → 返回 null（通知显示 NONE，不猜测）
+ *   - 无可靠关联 → 返回 null（通知显示 NONE，不猜测；HIGH 正常发送，不因 NONE 降级）
+ *
+ * 数据结构（用户定稿）：
+ *   liquidityContext: {
+ *     allCandidates: [],   // 窗口内全部方向匹配且 confirmedAt <= availableAt 的 sweep
+ *     immediateSweep: null,// 距离 leg.startIndex 最近的有效 sweep（距离相同取 confirmedAt 更新）
+ *     primarySweep: null   // 暂时等于 immediateSweep，仅兼容当前通知展示的临时字段
+ *   }
  *
  * MSS ↔ Leg relation（诊断字段，不改 tier / mssQuality）：
  *   BEFORE_LEG / INSIDE_LEG / AFTER_LEG / NONE
@@ -32,7 +35,7 @@
  */
 var thresholds = require('../config/thresholds');
 
-var DEFAULT_MAX_LOOKBACK_BARS = 96; // 8h 宽窗口（记录候选，诊断定正式窗口）
+var DEFAULT_MAX_LOOKBACK_BARS = 48; // 11L.8 定稿：production explainability 窗口
 
 function defaultLookback(opts) {
     if (opts && opts.maxLookbackBars !== undefined && opts.maxLookbackBars !== null) {
@@ -97,14 +100,15 @@ function classifyMssLegRelation(leg, mssEvent) {
 
 /**
  * 构建单个候选摘要（sweep + leg → provenance 记录）
+ * sourceType 忠实展示真实 liquidity 类型（SWING_LOW/EQL/...），缺失显示 UNKNOWN，不做人工过滤。
  */
 function buildCandidate(se, leg) {
+    var sourceType = (se.source && se.source.liquidityType) || se.liquidityType || 'UNKNOWN';
     var c = {
         id: se.id || null,
         side: se.side,
-        // liquidityType 在 SweepEvent.source 子对象（sweepEventAdapter 定义），顶层回退
-        sourceType: (se.source && se.source.liquidityType) || se.liquidityType || null,
-        sourceTimeframe: se.timeframe || '5m',
+        sourceType: sourceType,
+        sourceTimeframe: se.timeframe || 'UNKNOWN',
         sourcePrice: se.price,
         sourceId: se.liquidityId || null,
         confirmedAt: se.confirmedAt,
@@ -120,6 +124,30 @@ function buildCandidate(se, leg) {
 }
 
 /**
+ * immediateSweep 选择：距离 leg.startIndex 最近的有效 sweep；距离相同取 confirmedAt 更新的。
+ * 距离 = |leg.startIndex - sweep.candleIndex|（leg 前与 leg 内统一按绝对距离）。
+ * @returns {Object|null} 候选摘要
+ */
+function pickImmediate(leg, candidates) {
+    var best = null;
+    var bestDist = Infinity;
+    var bestConfirmed = -Infinity;
+    candidates.forEach(function (se) {
+        var dist = Infinity;
+        if (typeof leg.startIndex === 'number' && typeof se.candleIndex === 'number') {
+            dist = Math.abs(leg.startIndex - se.candleIndex);
+        }
+        var confirmed = typeof se.confirmedAt === 'number' ? se.confirmedAt : -Infinity;
+        if (dist < bestDist || (dist === bestDist && confirmed > bestConfirmed)) {
+            best = se;
+            bestDist = dist;
+            bestConfirmed = confirmed;
+        }
+    });
+    return best ? buildCandidate(best, leg) : null;
+}
+
+/**
  * Sweep Provenance 关联（Live/Replay 单一实现）。
  *
  * @param {Object} opts
@@ -128,10 +156,10 @@ function buildCandidate(se, leg) {
  *     leg: { startIndex, endIndex, firstConfirmedAt, lastConfirmedAt },  // leg 本身（anchor 语义）
  *     availableAt: number,        // 通知可用时点（leg 关闭确认）—— leakage 硬边界
  *     sweepEvents: Array,         // LIQUIDITY_SWEEP 事件（confirmedAt 已确认）
- *     maxLookbackBars: number     // 候选窗口（leg.startIndex - N → leg.endIndex）；默认宽窗口
+ *     maxLookbackBars: number     // 候选窗口（leg.startIndex - N → leg.endIndex）；默认 48
  *   }
  * @returns {Object|null} {
- *   primarySweepId, primary, sweeps[]
+ *   allCandidates: [...], immediateSweep, primarySweep
  * } | null（无可靠关联 → NONE）
  */
 function associateSweeps(opts) {
@@ -150,12 +178,9 @@ function associateSweeps(opts) {
     var candidates = [];
     (opts.sweepEvents || []).forEach(function (se) {
         if (!se || se.side !== wantSide) return;
-        // 无 future leakage：confirmedAt 必须 <= 通知可用时点
-        if (typeof availableAt === 'number' && typeof se.confirmedAt === 'number') {
-            if (se.confirmedAt > availableAt) return;
-        } else if (typeof availableAt === 'number') {
-            // confirmedAt 缺失（旧构造）：用 candleIndex 所在 5m 时间近似，缺失则拒绝（fail-closed）
-            return;
+        // 无 future leakage：confirmedAt 必须 <= 通知可用时点（缺失则 fail-closed，不猜测）
+        if (typeof availableAt === 'number') {
+            if (typeof se.confirmedAt !== 'number' || se.confirmedAt > availableAt) return;
         }
         // 窗口：leg.startIndex - N → leg.endIndex（sweep 可在 leg 内，禁止 leg 后）
         if (typeof se.candleIndex !== 'number') return;
@@ -168,43 +193,52 @@ function associateSweeps(opts) {
         return null;
     }
     candidates.sort(function (a, b) { return a.confirmedAt - b.confirmedAt; });
-    var primary = candidates[candidates.length - 1];
-    var sweeps = candidates.map(function (se) { return buildCandidate(se, leg); });
+    var immediateSweep = pickImmediate(leg, candidates);
     return {
-        primarySweepId: primary.id || null,
-        primary: buildCandidate(primary, leg),
-        sweeps: sweeps
+        allCandidates: candidates.map(function (se) { return buildCandidate(se, leg); }),
+        immediateSweep: immediateSweep,
+        // 兼容当前通知展示的临时字段：暂等于 immediateSweep。
+        // 注意：不得把 primarySweep 解释为 causal / Narrative Liquidity —— 无证据支持。
+        primarySweep: immediateSweep
     };
 }
 
 /**
- * 通知行格式化（Live buildMessage 用）：'SSL · 5M EQL @ 1902.40'
- * 无 primary → null（调用方显示 NONE）
+ * 通知价格行（Live buildMessage 用）：'SSL · 5M SWING_LOW @ 66000.00'
+ * 无 immediateSweep → null（调用方显示 NONE）；timeframe/sourceType 缺失显示 UNKNOWN，不猜测。
  */
-function formatSweepPriceLine(primary) {
-    if (!primary) return null;
-    var tf = (primary.sourceTimeframe || '5m').toUpperCase();
-    var type = primary.sourceType || 'LIQUIDITY';
-    var price = primary.sourcePrice;
+function formatSweepPriceLine(sweep) {
+    if (!sweep) return null;
+    var tf = (sweep.sourceTimeframe || 'UNKNOWN').toUpperCase();
+    var type = sweep.sourceType || 'UNKNOWN';
+    var price = sweep.sourcePrice;
     if (price === null || price === undefined) {
-        return primary.side + ' · ' + tf + ' ' + type;
+        return sweep.side + ' · ' + tf + ' ' + type;
     }
     var p = typeof price === 'number' ? price.toFixed(price < 1 ? 4 : 2) : String(price);
-    return primary.side + ' · ' + tf + ' ' + type + ' @ ' + p;
+    return sweep.side + ' · ' + tf + ' ' + type + ' @ ' + p;
 }
 
 /**
- * 通知时间关系行：'发生于 Leg 前 3 bars' / '发生于 Leg 内' / '发生于 Leg 后'
+ * 通知时间关系行：'BEFORE_LEG · 12 bars' / 'INSIDE_LEG · 1 bar' / 'AFTER_LEG'
+ * 措辞统一为"近期获取流动性"（relation 描述时间关系，不做因果声明）。
+ * bars 直接用候选的 barsBeforeLegStart（= leg.startIndex - sweep.candleIndex）换算：
+ *   BEFORE_LEG → leg 前 N 根；INSIDE_LEG → 腿内第 K 根（K1 → 1 bar）。
  */
-function formatSweepRelationLine(primary) {
-    if (!primary) return null;
-    if (primary.relation === 'INSIDE_LEG') return '发生于 Leg 内';
-    if (primary.relation === 'AFTER_LEG') return '发生于 Leg 后';
-    var n = primary.barsBeforeLegStart;
-    if (typeof n === 'number' && n > 0) {
-        return '发生于 Leg 前 ' + n + ' bars';
+function formatSweepRelationLine(sweep) {
+    if (!sweep) return null;
+    var rel = sweep.relation || 'BEFORE_LEG';
+    var b = typeof sweep.barsBeforeLegStart === 'number' ? sweep.barsBeforeLegStart : null;
+    var n = null;
+    if (rel === 'BEFORE_LEG' && b !== null) {
+        n = b;                     // startIndex - candleIndex（>0）
+    } else if (rel === 'INSIDE_LEG' && b !== null) {
+        n = -b + 1;                // candleIndex - startIndex + 1（K1 → 1）
     }
-    return '发生于 Leg 前';
+    if (n === null || n === undefined || n < 0) {
+        return rel;
+    }
+    return rel + ' · ' + n + (n === 1 ? ' bar' : ' bars');
 }
 
 module.exports = {

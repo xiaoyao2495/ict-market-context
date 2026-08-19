@@ -173,33 +173,33 @@ function runMssRelationTable(highs, candles) {
  * 3. 窗口敏感性（maxLookbackBars = 6/12/24/48/96 → 关联率）→ 正式窗口决策依据
  */
 function runSweepProvenance(highs, alerts, sweepEvents, candles) {
-    // 2a. 关联率（默认宽窗口 96）
+    // 2a. 关联率（生产窗口 48）
     var linked = 0;
     var relDist = { BEFORE_LEG: 0, INSIDE_LEG: 0, AFTER_LEG: 0 };
     var sourceTypeDist = {};
-    var barDist = {}; // barsBeforeLegStart 分布（每 3 bars 一桶）
+    var barDist = {}; // immediateSweep barsBeforeLegStart 分布（每 3 bars 一桶）
     var barValues = [];
     highs.forEach(function (al) {
         var ctx = al.liquidityContext;
-        if (!ctx || !ctx.primary) return;
+        if (!ctx || !ctx.primarySweep) return;
         linked++;
-        relDist[ctx.primary.relation] = (relDist[ctx.primary.relation] || 0) + 1;
-        var st = ctx.primary.sourceType || 'UNKNOWN';
+        relDist[ctx.primarySweep.relation] = (relDist[ctx.primarySweep.relation] || 0) + 1;
+        var st = ctx.primarySweep.sourceType || 'UNKNOWN';
         sourceTypeDist[st] = (sourceTypeDist[st] || 0) + 1;
-        if (typeof ctx.primary.barsBeforeLegStart === 'number') {
-            var b = Math.floor(ctx.primary.barsBeforeLegStart / 3) * 3;
+        if (typeof ctx.primarySweep.barsBeforeLegStart === 'number') {
+            var b = Math.floor(ctx.primarySweep.barsBeforeLegStart / 3) * 3;
             var key = b >= 0 ? (b + '-' + (b + 2)) : 'leg内';
             barDist[key] = (barDist[key] || 0) + 1;
-            barValues.push(ctx.primary.barsBeforeLegStart);
+            barValues.push(ctx.primarySweep.barsBeforeLegStart);
         }
     });
-    // 候选池：全 HIGH 的所有 sweeps[]（非 primary 也算，看"存在 sweep 但被 primary 选择"的分布）
+    // 候选池：全 HIGH 的所有 allCandidates（看窗口内候选真实分布）
     var candDist = {};
     var candValues = [];
     highs.forEach(function (al) {
         var ctx = al.liquidityContext;
         if (!ctx) return;
-        ctx.sweeps.forEach(function (s) {
+        ctx.allCandidates.forEach(function (s) {
             if (typeof s.barsBeforeLegStart === 'number') {
                 candValues.push(s.barsBeforeLegStart);
                 var key = s.barsBeforeLegStart >= 0 ? 'B' + s.barsBeforeLegStart : 'LEG内';
@@ -209,10 +209,10 @@ function runSweepProvenance(highs, alerts, sweepEvents, candles) {
     });
 
     console.log('');
-    console.log('=== 2. Sweep Provenance（HIGH ' + highs.length + ' 笔，默认窗口 ' +
+    console.log('=== 2. Sweep Provenance（HIGH ' + highs.length + ' 笔，生产窗口 ' +
         liquidityProvenance.DEFAULT_MAX_LOOKBACK_BARS + '） ===');
     console.log('关联率: ' + linked + '/' + highs.length + ' (' + pct(linked / highs.length) + ')  NONE: ' + (highs.length - linked));
-    console.log('primary relation: ' + JSON.stringify(relDist));
+    console.log('immediate relation: ' + JSON.stringify(relDist));
     console.log('sourceType: ' + JSON.stringify(sourceTypeDist));
     if (candValues.length > 0) {
         candValues.sort(function (a, b) { return a - b; });
@@ -221,35 +221,12 @@ function runSweepProvenance(highs, alerts, sweepEvents, candles) {
     }
     console.log('候选分布（B<0 = 腿内）: ' + JSON.stringify(candDist));
 
-    // 3. 窗口敏感性
+    // 3. 窗口敏感性（48 为生产窗口；其余为敏感性参考）
     console.log('');
-    console.log('=== 3. 窗口敏感性（maxLookbackBars → 关联率，决定正式 N） ===');
+    console.log('=== 3. 窗口敏感性（maxLookbackBars → 关联率；★48 = production） ===');
     console.log(pad('N', 6) + pad('linked', 8) + pad('rate', 8) + pad('median bars', 12));
     [6, 12, 24, 48, 96].forEach(function (N) {
         var cnt = 0;
-        highs.forEach(function (al) {
-            var legObj = al.legStartIndex !== null ? {
-                startIndex: al.legStartIndex,
-                endIndex: al.anchorIndex,
-                firstConfirmedAt: null,
-                lastConfirmedAt: null
-            } : null;
-            // 用 alert 自带字段近似 leg；primary 判断 = 候选存在
-            var ctx = liquidityProvenance.associateSweeps({
-                direction: al.direction,
-                leg: {
-                    startIndex: al.legStartIndex !== null ? al.legStartIndex : al.anchorIndex,
-                    endIndex: al.anchorIndex,
-                    firstConfirmedAt: null,
-                    lastConfirmedAt: null
-                },
-                availableAt: al.availableAt !== undefined ? al.availableAt : al.anchorTime,
-                sweepEvents: sweepEvents,
-                maxLookbackBars: N
-            });
-            if (ctx && ctx.primary) cnt++;
-        });
-        var med = '-';
         var vals = [];
         highs.forEach(function (al) {
             var ctx = liquidityProvenance.associateSweeps({
@@ -264,14 +241,18 @@ function runSweepProvenance(highs, alerts, sweepEvents, candles) {
                 sweepEvents: sweepEvents,
                 maxLookbackBars: N
             });
-            if (ctx && ctx.primary && typeof ctx.primary.barsBeforeLegStart === 'number') vals.push(ctx.primary.barsBeforeLegStart);
+            if (ctx && ctx.primarySweep) {
+                cnt++;
+                if (typeof ctx.primarySweep.barsBeforeLegStart === 'number') vals.push(ctx.primarySweep.barsBeforeLegStart);
+            }
         });
+        var med = '-';
         if (vals.length > 0) {
             vals.sort(function (a, b) { return a - b; });
             med = String(vals[Math.floor(vals.length / 2)]);
         }
-        console.log(pad(N, 6) + pad(cnt + '/' + highs.length, 8) + pad(pct(cnt / highs.length), 8) + pad(med, 12));
+        console.log(pad((N === 48 ? '★' : '') + N, 6) + pad(cnt + '/' + highs.length, 8) + pad(pct(cnt / highs.length), 8) + pad(med, 12));
     });
-    console.log('  (正式 N 由真实分布决定：若关联率在 N=24 后不再增长，正式窗口可取 24)');
+    console.log('  (48 为 production explainability 窗口：~90% 关联率，避免为 99% 挂过旧 sweep)');
     console.log('');
 }

@@ -121,8 +121,8 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
         }
         // 兼容字段（旧调用/旧测试）：alert.sweep 摘要（新结构见 liquidityContext）
         var sweep = null;
-        if (prov && prov.primary) {
-            var pri = prov.primary;
+        if (prov && prov.primarySweep) {
+            var pri = prov.primarySweep;
             sweep = {
                 price: pri.sourcePrice,
                 side: pri.side,

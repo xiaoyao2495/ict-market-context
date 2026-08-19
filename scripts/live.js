@@ -91,14 +91,15 @@ function buildMessage(opp, symbol) {
         '🔴 ' + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
         dir
     ];
-    // Phase 11L.8：Liquidity Taken（provenance 通知行）。
-    //   有 primary sweep → 3 行；无法可靠关联 → 'NONE'（不猜测）。
-    //   仅解释"扫了什么流动性"，不影响 HIGH 判定。
-    if (opp.liquidityContext && opp.liquidityContext.primary) {
-        var pri = opp.liquidityContext.primary;
+    // Phase 11L.8：Liquidity Taken（provenance 通知行，措辞=「近期获取流动性」）。
+    //   有 immediateSweep → 3 行；无 → 'NONE'（不猜测）。HIGH 正常发送，不因 NONE 降级。
+    //   primarySweep 仅为兼容临时字段，不得声称 causal / Narrative 流动性。
+    var liq = opp.liquidityContext;
+    if (liq && liq.primarySweep) {
+        var pri = liq.primarySweep;
         lines.push('Liquidity Taken:');
         lines.push(liquidityProvenance.formatSweepPriceLine(pri) || 'Liquidity Taken: -');
-        lines.push(liquidityProvenance.formatSweepRelationLine(pri) || '发生于 Leg 前');
+        lines.push(liquidityProvenance.formatSweepRelationLine(pri) || 'BEFORE_LEG');
     } else {
         lines.push('Liquidity Taken: NONE');
     }
