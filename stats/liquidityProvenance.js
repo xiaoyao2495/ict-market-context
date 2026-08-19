@@ -204,19 +204,37 @@ function associateSweeps(opts) {
 }
 
 /**
- * 通知价格行（Live buildMessage 用）：'SSL · 5M SWING_LOW @ 66000.00'
+ * sweep 时间（UTC+8，MM:DD HH:MM —— 用户示例 "08:19 22:05"）
+ * @param {number} ms confirmedAt（sweep 确认时点 = 触发 K closeTime）
+ * @returns {string|null} 如 '08:19 22:05'
+ */
+function fmtSweepTime(ms) {
+    if (typeof ms !== 'number') return null;
+    var d = new Date(ms + 8 * 3600000); // UTC+8
+    function p2(n) { return (n < 10 ? '0' : '') + n; }
+    return p2(d.getUTCMonth() + 1) + ':' + p2(d.getUTCDate()) + ' ' +
+        p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes());
+}
+
+/**
+ * 通知价格行（Live buildMessage 用）：'SSL · 5M SWING_LOW @ 66000.00 · 08:19 22:05'
  * 无 immediateSweep → null（调用方显示 NONE）；timeframe/sourceType 缺失显示 UNKNOWN，不猜测。
+ * 时间 = sweep confirmedAt（UTC+8 MM:DD HH:MM），缺失不显示。
  */
 function formatSweepPriceLine(sweep) {
     if (!sweep) return null;
     var tf = (sweep.sourceTimeframe || 'UNKNOWN').toUpperCase();
     var type = sweep.sourceType || 'UNKNOWN';
     var price = sweep.sourcePrice;
+    var base;
     if (price === null || price === undefined) {
-        return sweep.side + ' · ' + tf + ' ' + type;
+        base = sweep.side + ' · ' + tf + ' ' + type;
+    } else {
+        var p = typeof price === 'number' ? price.toFixed(price < 1 ? 4 : 2) : String(price);
+        base = sweep.side + ' · ' + tf + ' ' + type + ' @ ' + p;
     }
-    var p = typeof price === 'number' ? price.toFixed(price < 1 ? 4 : 2) : String(price);
-    return sweep.side + ' · ' + tf + ' ' + type + ' @ ' + p;
+    var t = fmtSweepTime(sweep.confirmedAt);
+    return t ? (base + ' · ' + t) : base;
 }
 
 /**
@@ -245,6 +263,7 @@ module.exports = {
     associateSweeps: associateSweeps,
     classifySweepLegRelation: classifySweepLegRelation,
     classifyMssLegRelation: classifyMssLegRelation,
+    fmtSweepTime: fmtSweepTime,
     formatSweepPriceLine: formatSweepPriceLine,
     formatSweepRelationLine: formatSweepRelationLine,
     DEFAULT_MAX_LOOKBACK_BARS: DEFAULT_MAX_LOOKBACK_BARS
