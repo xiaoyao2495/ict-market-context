@@ -264,6 +264,14 @@ module.exports = {
          */
         sweepProvenance: {
             maxLookbackBars: 48
+        },
+        /**
+         * Phase 11L.8 第二刀 — MSS↔Leg Shadow Association Audit（旁路，不改生产 HIGH）。
+         * beforeLookbackBars：shadow 只允许 related MSS 位于 leg.startIndex 前 1~6 根（最多 30 分钟），
+         * 找"同一段 delivery 的结构事件"，不把几小时前的 MSS 硬挂过来。仅审计参数。
+         */
+        mssShadow: {
+            beforeLookbackBars: 6
         }
     },
 

@@ -174,6 +174,16 @@ Git 历史（main）：`b1a33d9 → 45217d4(11L) → 6d30df2(11L.1) → fc759a7 
 - **待用户决策**：① 正式 N（建议 48 平衡，无拐点）② primary 选择（"最近" vs 近端加权——候选均匀，解释力有限）③ 通知 sourceType 显示策略（EQL 非主流，实际多为 SWING_LOW）
 - 第二刀后半（改 MSS/Displacement 判定以纳入 BEFORE_LEG 场景）**未做**，用户明确暂不碰生产判定
 
+### ✅ Phase 11L.8 第二刀 — MSS↔Leg Shadow Association Audit（已跑 90d，不改生产）
+
+**状态：Liquidity Provenance 冻结；MSS↔Leg 进入 Shadow Association Audit；Live HIGH 继续运行不动。**
+
+- 关键事实：现有 HIGH 575/575 全是 INSIDE_LEG —— displacementDetector 的 same-candle bonus 只把【同根】MSS 挂到 displacement（`mssByIndex[index][0].id`，且不校验方向），生产链几乎只允许 inside-leg MSS 进 HIGH
+- 实现：`stats/mssShadowAudit.js`（associateRelatedMss：方向匹配 + 窗口 [start-6, end] + confirmedAt<=availableAt + 距离最近/并列取新；三组；shadow tier 只换 MSS 关联其余冻结）+ `scripts/mssShadowAudit.js` + `test/mssShadowAudit.test.js`（12 tests）；`events.mssShadow.beforeLookbackBars=6`
+- **90d 结果（beforeBars=6）**：INSIDE all 1760 / HIGH 570（NearHit1h 65.1%、MFE 0.34）；BEFORE all 200 / **HIGH 仅 20**（NearHit1h 70% 但 n=20 不足）；NO_RELATED all 1116 / HIGH 0（**ALL NearHit1h 46.4% << INSIDE 63.3%**）
+- **结论方向**：① 解除 same-candle 限制最多新增 ~3.5% HIGH，量级极小；② BEFORE 样本不足不下结论；③ NO_RELATED 46.4% vs INSIDE 63.3% 证明 MSS 关联有真实区分力、当前严格语义过滤了噪声 → **无强证据支持放宽，倾向维持现状**（最终由用户定）
+- 注：shadow INSIDE HIGH 570 vs buildAlerts 575（~1%）：shadow 强制方向匹配，生产 leg.mssId 可能挂方向不匹配的同根 MSS（生产不校验方向）
+
 ## 10. 用户工作约定
 
 - 中文输出，技术术语保留英文
