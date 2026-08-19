@@ -127,22 +127,36 @@ Git 历史（main）：`b1a33d9 → 45217d4(11L) → 6d30df2(11L.1) → fc759a7 
 
 ## 9. 进行中方向（下一个会话从这里继续）
 
-**ICT 2022 execution-location 通知层级（Price Watch）**——用户 2026-08-19 提出的方向，尚未实现：
+**ICT 2022 execution-location 通知层级（Price Watch）** —— 用户 2026-08-19 提出的方向：
 
 - 背景：ICT 2022 逻辑 = Sweep → MSS+Displacement（产生 trade idea）→ 确认 displacement range 中 FVG → **等待价格 retrace 回 FVG/PD Array 再执行**。不追价。
 - 用户结论：**不做 1m 策略层**（不需要 1m MSS/displacement/FVG/structure）。5m HIGH 已足够。
-- 目标流程：
+- 目标流程（未实现，已由 11L.7 数据验证）：
   ```
   5m HIGH_QUALITY Opportunity（availableAt）
-      ↓ 计算 ICT 有意义的 Price Level
-      ↓ 注册 Price Watch（纯价格触达，可用 WebSocket 或 5m/轮询）
-      ↓ 实时价格进入 retracement 区域
-      ↓ 钉钉
+      ↓ 计算 ICT 有意义的 Price Level（FVG / CE / OTE）
+      ↓ 注册 Price Watch（纯价格触达）
+      ↓ 价格进入 retracement 区域 → 钉钉
   ```
-- **三类关键价格**：① FVG 本身（信息已知，价值低）② **FVG Consequent Encroachment（CE/50%）**（有区分度）③ **OTE / retracement depth（62%–79%，70.5% 为代表性 optimal）**
-- **明确不要做**：不要现在就把 70.5%（或任何 ICT 教学数字）硬编码为通知价——需先跑历史 shadow 验证
-- **下一步（shadow 对比）**：HIGH 出现后比较 A：FVG first touch / B：FVG 50%(CE) / C：OTE 62% / D：OTE 70.5% / E：availableAt 直接通知（现行为）——用历史数据回放，比较**哪个价格触发后 Near Draw 最值得提醒**（单变量、样本对齐、统计幻觉检验，沿用项目惯例）
-- 相关术语：FVG zoneLow/zoneHigh 已有；FVG 50% = (zoneLow+zoneHigh)/2；OTE 需要 displacement swing 高低（leg start/low ↔ leg end/high）计算 retracement 深度
+
+### ✅ Phase 11L.7 结论（BTC 90d，2026-08-19 已跑）
+
+**数据明确否决"等待 retrace 再通知"**（与 11L.5 否决方案 B 同款模式）：
+
+| Trigger | TriggerRate | MedianWait | NearHit1h | EffCapture | NoTrg→Hit |
+|---|---|---|---|---|---|
+| AVAILABLE | 100% (573) | 0m | **80.6%** | **80.6%** | 0 |
+| FVG_TOUCH | 76.4% (438) | 10m | 64.2% | 49.0% | 128 |
+| FVG_CE | 70.9% (406) | 20m | 58.4% | 41.4% | 159 |
+| OTE_62 | 77.7% (445) | 15m | 62.9% | 48.9% | 123 |
+| OTE_70_5 | 72.4% (415) | 20m | 58.3% | 42.2% | 149 |
+
+- 等待触发反而让 NearHit1h **全面劣化**（80.6% → 58-64%）、MFE1h 下降（0.34 → 0.28-0.30）
+- **NoTrigger→NearHit 123-159 笔**：坚持等 entry location 会错过大量真正 delivery
+- 越深越差（CE < TOUCH，OTE70.5 < OTE62）：回撤深度单调恶化提醒质量
+- **决策：维持 AVAILABLE 立即通知（现行为），不引入 Price Watch 等待触发**。OTE 教学数字（62/70.5）在"提醒系统"语境下不适用（不同于交易 entry 语境）
+- 新增：`stats/triggerPriceAudit.js`（11 tests）、`scripts/triggerPriceAudit.js`（`node scripts/triggerPriceAudit.js BTCUSDT 90`）
+- 挂账：① 母样本 n=573（当前窗口）vs 历史 539（更早窗口），口径一致 81%≈80.6% ② 本结论仅限"提醒"语义，若将来做交易 entry 需另测 ③ 未测更高触发率模型（如 re-trigger 或价格不再继续才提醒）
 
 ## 10. 用户工作约定
 
