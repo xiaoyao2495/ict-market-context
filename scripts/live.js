@@ -463,6 +463,8 @@ function main() {
 
     if (CONFIG.symbolsMode === 'top10') {
         refreshTop().then(function () {
+            // 11L.2 fix（2026-08-19）：top10 分支补"全部就绪"确认日志（与 fixed 分支一致）
+            log('=== 全部 symbol 就绪，开始轮询（Ctrl+C 停止） ===');
             log('=== 每日 ' + CONFIG.topSymbols.refreshHourUTC + ':00 UTC 自动刷新 Top' + CONFIG.topSymbols.count + ' ===');
             setInterval(checkDailyRefresh, CONFIG.topSymbols.refreshIntervalMs);
         });
