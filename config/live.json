@@ -1,6 +1,6 @@
 {
   "symbols": ["BTCUSDT"],
-  "symbolsMode": "fixed",
+  "symbolsMode": "top10",
   "warmupDays": 30,
   "pollMs": 30000,
   "snapshotInterval": 12,
