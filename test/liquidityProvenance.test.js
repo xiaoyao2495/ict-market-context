@@ -2,7 +2,7 @@
  * Phase 11L.8 — Liquidity Provenance / Notification Explainability 测试（follow-up 收口）
  *
  * 覆盖：
- *   - associateSweeps 三字段结构：allCandidates / immediateSweep / primarySweep
+ *   - associateSweeps 两字段结构：allCandidates / immediateSweep（primarySweep 兼容字段已移除）
  *   - 方向过滤（LONG→SSL / SHORT→BSL）
  *   - confirmedAt <= availableAt（无 future leakage，缺失 fail-closed）
  *   - 窗口边界：48 bars 内可关联、49 bars 外不可关联（production 窗口锁定）
@@ -56,9 +56,9 @@ function leg(over) {
     };
 }
 
-/* ---------- 三字段结构 ---------- */
+/* ---------- 两字段结构 ---------- */
 
-test('11L.8：返回结构 = { allCandidates, immediateSweep, primarySweep }', function () {
+test('11L.8：返回结构 = { allCandidates, immediateSweep }（primarySweep 已移除）', function () {
     var sweeps = [
         { id: 's1', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 6 }
     ];
@@ -69,9 +69,9 @@ test('11L.8：返回结构 = { allCandidates, immediateSweep, primarySweep }', f
     assert.ok(Array.isArray(ctx.allCandidates), 'allCandidates 是数组');
     assert.strictEqual(ctx.allCandidates.length, 1);
     assert.ok(ctx.immediateSweep, 'immediateSweep 非空');
-    assert.strictEqual(ctx.primarySweep, ctx.immediateSweep, 'primarySweep = immediateSweep（兼容临时字段）');
-    assert.strictEqual(ctx.primarySweep.id, 's1');
-    assert.strictEqual(ctx.primarySweep.relation, 'BEFORE_LEG');
+    assert.strictEqual(ctx.primarySweep, undefined, 'primarySweep 兼容字段已删除');
+    assert.strictEqual(ctx.immediateSweep.id, 's1');
+    assert.strictEqual(ctx.immediateSweep.relation, 'BEFORE_LEG');
 });
 
 /* ---------- 方向过滤 ---------- */
@@ -134,7 +134,7 @@ test('11L.8：48 bars 内可关联（leg.startIndex - 48 边界恰好命中）',
     });
     assert.ok(ctx, '恰好 48 bars 前 → 窗口内');
     assert.strictEqual(ctx.allCandidates.length, 1);
-    assert.strictEqual(ctx.primarySweep.barsBeforeLegStart, 48);
+    assert.strictEqual(ctx.immediateSweep.barsBeforeLegStart, 48);
 });
 
 test('11L.8：49 bars 外不可关联（leg.startIndex - 49 越界）', function () {
@@ -199,8 +199,8 @@ test('11L.8：INSIDE_LEG（Leg K1 → Sweep → Leg K2/K3）允许', function ()
         direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.ok(ctx);
-    assert.strictEqual(ctx.primarySweep.relation, 'INSIDE_LEG');
-    assert.strictEqual(ctx.primarySweep.barsBeforeLegStart, -1, '10 - 11 = -1');
+    assert.strictEqual(ctx.immediateSweep.relation, 'INSIDE_LEG');
+    assert.strictEqual(ctx.immediateSweep.barsBeforeLegStart, -1, '10 - 11 = -1');
 });
 
 test('11L.8：无候选 → null（NONE，不猜测）', function () {
@@ -301,10 +301,10 @@ test('11L.8：buildAlerts —— alert.sweep 兼容 + liquidityContext 三字段
     assert.strictEqual(al.sweep.barsAgo, 20 - 14, 'anchor 20 - sweep 14 = 6');
     assert.strictEqual(al.sweep.relation, 'BEFORE_LEG');
     assert.strictEqual(al.sweep.sourceType, 'EQL');
-    // 新结构：liquidityContext 三字段
+    // 新结构：liquidityContext 两字段（allCandidates + immediateSweep）
     assert.ok(al.liquidityContext);
     assert.strictEqual(al.liquidityContext.immediateSweep.id, 'sw1', '距 leg.startIndex(15) 最近');
-    assert.strictEqual(al.liquidityContext.primarySweep, al.liquidityContext.immediateSweep, 'primarySweep = immediateSweep');
+    assert.strictEqual(al.liquidityContext.primarySweep, undefined, 'primarySweep 已移除');
     assert.strictEqual(al.liquidityContext.allCandidates.length, 2, '全候选保留');
     assert.strictEqual(al.liquidityContext.immediateSweep.barsBeforeLegStart, 1, '15 - 14 = 1');
     // mssRelation

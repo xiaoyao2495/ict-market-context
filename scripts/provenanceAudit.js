@@ -181,16 +181,16 @@ function runSweepProvenance(highs, alerts, sweepEvents, candles) {
     var barValues = [];
     highs.forEach(function (al) {
         var ctx = al.liquidityContext;
-        if (!ctx || !ctx.primarySweep) return;
+        if (!ctx || !ctx.immediateSweep) return;
         linked++;
-        relDist[ctx.primarySweep.relation] = (relDist[ctx.primarySweep.relation] || 0) + 1;
-        var st = ctx.primarySweep.sourceType || 'UNKNOWN';
+        relDist[ctx.immediateSweep.relation] = (relDist[ctx.immediateSweep.relation] || 0) + 1;
+        var st = ctx.immediateSweep.sourceType || 'UNKNOWN';
         sourceTypeDist[st] = (sourceTypeDist[st] || 0) + 1;
-        if (typeof ctx.primarySweep.barsBeforeLegStart === 'number') {
-            var b = Math.floor(ctx.primarySweep.barsBeforeLegStart / 3) * 3;
+        if (typeof ctx.immediateSweep.barsBeforeLegStart === 'number') {
+            var b = Math.floor(ctx.immediateSweep.barsBeforeLegStart / 3) * 3;
             var key = b >= 0 ? (b + '-' + (b + 2)) : 'leg内';
             barDist[key] = (barDist[key] || 0) + 1;
-            barValues.push(ctx.primarySweep.barsBeforeLegStart);
+            barValues.push(ctx.immediateSweep.barsBeforeLegStart);
         }
     });
     // 候选池：全 HIGH 的所有 allCandidates（看窗口内候选真实分布）
@@ -241,9 +241,9 @@ function runSweepProvenance(highs, alerts, sweepEvents, candles) {
                 sweepEvents: sweepEvents,
                 maxLookbackBars: N
             });
-            if (ctx && ctx.primarySweep) {
+            if (ctx && ctx.immediateSweep) {
                 cnt++;
-                if (typeof ctx.primarySweep.barsBeforeLegStart === 'number') vals.push(ctx.primarySweep.barsBeforeLegStart);
+                if (typeof ctx.immediateSweep.barsBeforeLegStart === 'number') vals.push(ctx.immediateSweep.barsBeforeLegStart);
             }
         });
         var med = '-';

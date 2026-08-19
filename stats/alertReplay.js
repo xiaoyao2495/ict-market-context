@@ -115,14 +115,14 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
                 leg: legObj,
                 availableAt: availTime,
                 sweepEvents: sweepEvents,
-                maxLookbackBars: null // 用 thresholds.events.sweepProvenance 默认（宽窗口）
+                maxLookbackBars: null // 使用 thresholds.events.sweepProvenance.maxLookbackBars（当前 48）
             });
             mssRelation = liquidityProvenance.classifyMssLegRelation(legObj, legObj.mssId ? (mssById[legObj.mssId] || null) : null);
         }
         // 兼容字段（旧调用/旧测试）：alert.sweep 摘要（新结构见 liquidityContext）
         var sweep = null;
-        if (prov && prov.primarySweep) {
-            var pri = prov.primarySweep;
+        if (prov && prov.immediateSweep) {
+            var pri = prov.immediateSweep;
             sweep = {
                 price: pri.sourcePrice,
                 side: pri.side,
@@ -163,7 +163,7 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
             fvgCount: fvgCount,
             fvgZone: firstFvg ? [firstFvg.zoneLow, firstFvg.zoneHigh] : null,
             sweep: sweep,
-            // Phase 11L.8：Liquidity Provenance（primarySweepId / primary / sweeps[] 全候选）
+            // Phase 11L.8：Liquidity Provenance（allCandidates 全候选 + immediateSweep 通知展示）
             liquidityContext: prov,
             // Phase 11L.8：MSS ↔ Leg relation 诊断字段（不改 tier / mssQuality）
             mssRelation: mssRelation,

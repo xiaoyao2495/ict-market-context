@@ -93,10 +93,9 @@ function buildMessage(opp, symbol) {
     ];
     // Phase 11L.8：Liquidity Taken（provenance 通知行，措辞=「近期获取流动性」）。
     //   有 immediateSweep → 3 行；无 → 'NONE'（不猜测）。HIGH 正常发送，不因 NONE 降级。
-    //   primarySweep 仅为兼容临时字段，不得声称 causal / Narrative 流动性。
     var liq = opp.liquidityContext;
-    if (liq && liq.primarySweep) {
-        var pri = liq.primarySweep;
+    if (liq && liq.immediateSweep) {
+        var pri = liq.immediateSweep;
         lines.push('Liquidity Taken:');
         lines.push(liquidityProvenance.formatSweepPriceLine(pri) || 'Liquidity Taken: -');
         lines.push(liquidityProvenance.formatSweepRelationLine(pri) || 'BEFORE_LEG');

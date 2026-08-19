@@ -292,7 +292,7 @@ function createLiveEngine(data, options) {
             leg: leg,
             availableAt: availTime2,
             sweepEvents: sweepEventsAll,
-            maxLookbackBars: null // 用 thresholds.events.sweepProvenance 默认（宽窗口）
+            maxLookbackBars: null // 使用 thresholds.events.sweepProvenance.maxLookbackBars（当前 48）
         });
         opp.liquidityContext = prov;
         opp.mssRelation = liquidityProvenance.classifyMssLegRelation(leg, mssEvent);

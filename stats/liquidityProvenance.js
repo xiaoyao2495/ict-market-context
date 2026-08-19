@@ -21,12 +21,13 @@
  *     * sweep 允许出现在 leg 内（Leg K1 → Sweep → Leg K2/K3）→ INSIDE_LEG
  *   - 无可靠关联 → 返回 null（通知显示 NONE，不猜测；HIGH 正常发送，不因 NONE 降级）
  *
- * 数据结构（用户定稿）：
+ * 数据结构（用户定稿，最终态）：
  *   liquidityContext: {
  *     allCandidates: [],   // 窗口内全部方向匹配且 confirmedAt <= availableAt 的 sweep
- *     immediateSweep: null,// 距离 leg.startIndex 最近的有效 sweep（距离相同取 confirmedAt 更新）
- *     primarySweep: null   // 暂时等于 immediateSweep，仅兼容当前通知展示的临时字段
+ *     immediateSweep: null // 距离 leg.startIndex 最近的有效 sweep（距离相同取 confirmedAt 更新）
  *   }
+ *   （曾有过 primarySweep 兼容字段，已删除 —— 它不是 Narrative ranking；
+ *     将来若研究出真正的 Narrative Liquidity ranking，再正式增加 narrativeSweep）
  *
  * MSS ↔ Leg relation（诊断字段，不改 tier / mssQuality）：
  *   BEFORE_LEG / INSIDE_LEG / AFTER_LEG / NONE
@@ -159,7 +160,7 @@ function pickImmediate(leg, candidates) {
  *     maxLookbackBars: number     // 候选窗口（leg.startIndex - N → leg.endIndex）；默认 48
  *   }
  * @returns {Object|null} {
- *   allCandidates: [...], immediateSweep, primarySweep
+ *   allCandidates: [...], immediateSweep
  * } | null（无可靠关联 → NONE）
  */
 function associateSweeps(opts) {
@@ -193,13 +194,10 @@ function associateSweeps(opts) {
         return null;
     }
     candidates.sort(function (a, b) { return a.confirmedAt - b.confirmedAt; });
-    var immediateSweep = pickImmediate(leg, candidates);
     return {
         allCandidates: candidates.map(function (se) { return buildCandidate(se, leg); }),
-        immediateSweep: immediateSweep,
-        // 兼容当前通知展示的临时字段：暂等于 immediateSweep。
-        // 注意：不得把 primarySweep 解释为 causal / Narrative Liquidity —— 无证据支持。
-        primarySweep: immediateSweep
+        // 通知展示用：距离 leg.startIndex 最近的 sweep（不是 Narrative ranking，仅"近期获取流动性"）
+        immediateSweep: pickImmediate(leg, candidates)
     };
 }
 

@@ -126,7 +126,7 @@ Git 历史（main）：`b1a33d9 → 45217d4(11L) → 6d30df2(11L.1) → fc759a7 
 3. **retained invalidationBoundary 严格化**：180d 前定死（当前 BULLISH short=sweep||rangeLow；更严格=min(sweep,rangeLow)）
 4. **180d Authoritative Trade Expectancy**：正式 trades 样本不足（3 笔全 LOSS），不宣布 edge；样本<10 不解读
 5. **top10 模式**：fixed 验证通过后再启用（含每日 UTC 8:00 名单刷新）
-6. **生产 leg.mssId 无方向匹配**（11L.8-S2 发现）：displacementDetector 的 same-candle bonus 只取 `mssByIndex[index][0].id` 不校验方向 → shadow INSIDE HIGH 570 vs 生产 575 差 ~5 笔。**单独检查，不现在改**（会直接改变生产 HIGH）
+6. ~~**生产 leg.mssId 无方向匹配**~~ **已关闭（11L.9 审计，2026-08-19）**：575 HIGH 逐笔检查 leg.direction vs mss.direction → **MATCH 575 / OPPOSITE 0 / MISSING 0**。生产无方向挂载 bug；11L.8-S2 的 570 vs 575 差异来自 shadow 关联选择逻辑（associateRelatedMss 取"距 startIndex 最近"，生产取"首根 displacement 的同根第一个 MSS"，同根多 MSS 时可能不同）+ tail leg 处理，非生产 bug。审计模块 `stats/mssDirectionAudit.js` / `scripts/mssDirectionAudit.js`（6 tests）保留可复用
 7. **DisplacementLeg 只用 ATR 太粗**（11L.8 晚课程）：未来单独审计 **time efficiency / overlap / persistence / acceptance**，不和当前 Live 版本混在一起
 
 ## 9. 进行中方向（下一个会话从这里继续）
