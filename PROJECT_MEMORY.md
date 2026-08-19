@@ -198,6 +198,15 @@ Live HIGH rules             ✅ 不动
 - **下一步**：Liquidity Taken 通知行推服务器上线（已 push cebf7e6..0a06e2f），真实 Live 样本继续积累
 - 挂账：leg.mssId 方向匹配（§8.6）、DisplacementLeg ATR-only 审计 time efficiency/overlap/persistence/acceptance（§8.7）
 
+### ✅ Phase 11L.10 结论（Liquidity Recency Audit，2026-08-19 已跑 90d）
+
+**问题：Sweep 距 Delivery 越近，机会质量越高吗？（ZEC 22-bars sweep 是显示怪还是统计也没价值）**
+
+- 方法：90d HIGH=575 按 immediateSweep.barsBeforeLegStart 分桶；新 `stats/liquidityRecencyAudit.js` + `scripts/liquidityRecencyAudit.js`（4 tests）
+- **结果**：INSIDE_LEG n=17 (NearHit1h 70.6%) / 1-3 n=72 (66.7%) / 4-6 n=44 (61.4%) / 7-12 n=112 (57.1%) / 13-24 n=153 (68.0%) / 25-48 n=122 (68.9%) / NONE n=55 (65.5%)
+- **结论方向（数据，非策略结论）**：① 无单调趋势（近端 1-6 未一致优于远端 13-48）；② NONE 65.5% 与各桶相当，无 sweep 关联的 HIGH 质量并不差；③ ZEC 22-bars（13-24 桶）68.0% 与整体相当 → **只是显示怪，无统计价值差异**
+- **决策：Liquidity Taken 维持纯 Context（不参与 HIGH），不引入 notificationSweep；Recency 不进入 Opportunity Quality 维度**（用户 2026-08-19 认可继续 Live）
+
 ## 10. 用户工作约定
 
 - 中文输出，技术术语保留英文
