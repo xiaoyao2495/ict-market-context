@@ -59,6 +59,18 @@ function log(msg) {
         fs.appendFileSync(path.join(CONFIG.dataDir, 'live.log'), line + '\n');
     } catch (e) {}
 }
+/**
+ * 价格自适应精度（Phase 11L.7b fix，2026-08-19）：
+ * 低价币（如 TUTUSDT 0.039）用 toFixed(1) 会显示成 0.0，目标价不可读。
+ * 按价格数量级选择小数位：>=1000 → 1 位；>=1 → 2 位；>=0.01 → 4 位；否则 6 位。
+ */
+function fmtPrice(p) {
+    if (p === null || p === undefined) return '-';
+    if (p >= 1000) return p.toFixed(1);
+    if (p >= 1) return p.toFixed(2);
+    if (p >= 0.01) return p.toFixed(4);
+    return p.toFixed(6);
+}
 function buildMessage(opp, symbol) {
     var dir = opp.direction === 'BULLISH' ? 'LONG (BULLISH)' : 'SHORT (BEARISH)';
     var mss = opp.mssQuality === 'NO_MSS' ? 'no MSS chain' : opp.mssQuality.replace('_SWING', '');
@@ -78,7 +90,7 @@ function buildMessage(opp, symbol) {
         '🔴 ' + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
         dir,
         'MSS: ' + mss + (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? ' · Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : ' · Leg: ' + opp.legQuality),
-        notifTarget !== null ? 'Near Draw: ' + notifDist.toFixed(2) + '% 距离（target ' + notifTarget.toFixed(1) + '）' : 'Near Draw: -',
+        notifTarget !== null ? 'Near Draw: ' + notifDist.toFixed(2) + '% 距离（target ' + fmtPrice(notifTarget) + '）' : 'Near Draw: -',
         // 11L.7（P1）：保守措辞 —— 只讲"历史同级机会的 Near Draw 触达率"，不承诺方向胜率/成功率
         '历史同级机会：1h Near Draw 触达率约 80%（仅参考，非胜率）',
         '通知: ' + fmt(notified) + '（leg 锚 ' + fmt(opp.anchorTime) + '）'
