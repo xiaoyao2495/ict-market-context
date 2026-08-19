@@ -52,7 +52,7 @@ Binance REST (5m closed)
        "dingtalk": {
          "webhook": "https://oapi.dingtalk.com/robot/send?access_token=你的TOKEN",
          "secret": "你的SEC",
-         "keyword": "监测"
+         "keyword": "检测"
        }
      }
      ```

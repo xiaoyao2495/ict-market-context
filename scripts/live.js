@@ -62,7 +62,7 @@ function log(msg) {
 function buildMessage(opp, symbol) {
     var dir = opp.direction === 'BULLISH' ? 'LONG (BULLISH)' : 'SHORT (BEARISH)';
     var mss = opp.mssQuality === 'NO_MSS' ? 'no MSS chain' : opp.mssQuality.replace('_SWING', '');
-    var keyword = CONFIG.dingtalk.keyword || '监测';
+    var keyword = CONFIG.dingtalk.keyword || '检测';
     // 11L.4：时间 = 真正通知时点（availableAt = 系统首次能确认 leg 结束），
     // 不是 leg 最后位移 K 的 anchorTime（那是 leg 本身的研究锚点）
     var notified = opp.availableAt !== undefined && opp.availableAt !== null ? opp.availableAt : opp.anchorTime;
@@ -392,7 +392,7 @@ function main() {
     if (CONFIG.dingtalk.secret) {
         log('钉钉安全模式：加签（secret 已配置）');
     } else {
-        log('钉钉安全模式：自定义关键词「' + (CONFIG.dingtalk.keyword || '监测') + '」（secret 未配置，消息必须包含该关键词）');
+        log('钉钉安全模式：自定义关键词「' + (CONFIG.dingtalk.keyword || '检测') + '」（secret 未配置，消息必须包含该关键词）');
     }
 
     var runners = {}; // sym -> { runner, interval }

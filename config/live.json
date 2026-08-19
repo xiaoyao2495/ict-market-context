@@ -15,6 +15,6 @@
   "dingtalk": {
     "webhook": "https://oapi.dingtalk.com/robot/send?access_token=YOUR_ACCESS_TOKEN",
     "secret": "",
-    "keyword": "监测"
+    "keyword": "检测"
   }
 }

@@ -113,7 +113,7 @@ Git 历史（main）：`b1a33d9 → 45217d4(11L) → 6d30df2(11L.1) → fc759a7 
   pm2 start scripts/live.js --name ict-radar
   pm2 save
   ```
-- 机器人：关键词模式（secret 可省略，消息首行含「监测」）；`config/live.local.json`（gitignored）可替代 env
+- 机器人：关键词模式（secret 可省略，消息首行含「检测」——**机器人实际配置的关键词是「检测」不是「监测」**，2026-08-19 上线自检发现）；`config/live.local.json`（gitignored）可替代 env
 - 网络：**默认直连**（ICT_PROXY_ENABLED 默认 0）；服务器需代理时 set ICT_PROXY_ENABLED=1 + HOST/PORT
 - 状态目录 `.live-state/<SYMBOL>/`：candles.jsonl / pushed.json / outbox.json / cursor.json / live.log
 - 首次启动约 1-3 分钟（30d warmup）；日志顺序：启动横幅 → fixed 模式确认 → BTCUSDT 状态就绪 → 全部就绪开始轮询

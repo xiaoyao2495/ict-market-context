@@ -8,7 +8,8 @@
  * 或改用 config/live.local.json（gitignored）：
  *   { "dingtalk": { "webhook": "...", "secret": "..." } }
  *
- * 发送一条带关键词「监测」的测试消息（非真实机会，不进 outbox/pushed）。
+ * 发送一条带关键词（config/live.json 的 dingtalk.keyword，默认「检测」）的测试消息
+ * （非真实机会，不进 outbox/pushed）。
  * 输出：
  *   OK    → errcode=0（钉钉确认收到，通路正常）
  *   FAIL  → 错误码 + 原因（关键词不匹配 310000 / 加签失败 310000 / 网络错误）
@@ -44,7 +45,7 @@ if (!webhook || webhook.indexOf('YOUR_ACCESS_TOKEN') !== -1) {
     process.exit(1);
 }
 
-var keyword = (liveConfig.dingtalk && liveConfig.dingtalk.keyword) || '监测';
+var keyword = (liveConfig.dingtalk && liveConfig.dingtalk.keyword) || '检测';
 var now = new Date(Date.now() + 8 * 3600000); // UTC+8
 function p2(n) { return n < 10 ? '0' + n : String(n); }
 var ts = now.getUTCFullYear() + '-' + p2(now.getUTCMonth() + 1) + '-' + p2(now.getUTCDate()) +
