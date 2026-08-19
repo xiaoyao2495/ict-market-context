@@ -160,6 +160,20 @@ Git 历史（main）：`b1a33d9 → 45217d4(11L) → 6d30df2(11L.1) → fc759a7 
 - 新增：`stats/triggerPriceAudit.js`（11 tests）、`scripts/triggerPriceAudit.js`（`node scripts/triggerPriceAudit.js BTCUSDT 90`）
 - 挂账：① 母样本 n=573（当前窗口）vs 历史 539（更早窗口），口径一致 81%≈80.6% ② 本结论仅限"提醒"语义，若将来做交易 entry 需另测 ③ 未测更高触发率模型（如 re-trigger 或价格不再继续才提醒）
 
+### ✅ Phase 11L.8 结论（Liquidity Provenance / Notification Explainability，2026-08-19 已实现+已跑 90d）
+
+**切口：先让系统解释自己为什么发这条 HIGH（Liquidity Taken 行），再研究是否需要改变 HIGH。** 不改 HIGH/WATCH/LOW、MSS、Displacement、通知时机。
+
+- 实现：`stats/liquidityProvenance.js`（Live/Replay 唯一关联函数：associateSweeps / classifySweepLegRelation / classifyMssLegRelation / format 通知行）+ `scripts/provenanceAudit.js`（90d 诊断）+ `test/liquidityProvenance.test.js`（13 tests）；buildAlerts 与 liveEngine.evaluateOpportunity 挂 `liquidityContext` + `mssRelation`；buildMessage 插 Liquidity Taken 行（NONE 不猜测）；阈值 `events.sweepProvenance.maxLookbackBars=96`
+- 关联规则：LONG→SSL / SHORT→BSL；`sweep.confirmedAt <= availableAt`（无 future leakage，缺 confirmedAt fail-closed）；窗口 `leg.startIndex-N → leg.endIndex`（sweep 允许在 leg 内=INSIDE_LEG）；sweeps[] 记录全候选，primary=最近
+- **90d 数据（HIGH n=575）**：
+  - mssRelation：**HIGH 100% = INSIDE_LEG**（BEFORE/AFTER/NONE 全 0）——当前 displacement 只消费已 MSS 打破的 reference，BEFORE_LEG 场景从未进 HIGH 母样本；NearHit1h 65.2% 与 11L.7b 一致
+  - sweep 关联率 99.0%（569/575）；primary BEFORE_LEG 552 / INSIDE_LEG 17
+  - sourceType：SWING_LOW 229 / SWING_HIGH 205 / EQH 49 / EQL 34 / PDH 12 / session 系若干（**EQL+EQH 仅 14.6%**，主力是 swing）
+  - 窗口敏感性无拐点：N=6→23% / 24→69% / 48→90% / 96→99%；候选均匀铺 0-96 bars，primary median leg 前 15 bars
+- **待用户决策**：① 正式 N（建议 48 平衡，无拐点）② primary 选择（"最近" vs 近端加权——候选均匀，解释力有限）③ 通知 sourceType 显示策略（EQL 非主流，实际多为 SWING_LOW）
+- 第二刀后半（改 MSS/Displacement 判定以纳入 BEFORE_LEG 场景）**未做**，用户明确暂不碰生产判定
+
 ## 10. 用户工作约定
 
 - 中文输出，技术术语保留英文
