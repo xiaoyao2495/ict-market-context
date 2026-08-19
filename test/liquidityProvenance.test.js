@@ -254,13 +254,13 @@ test('11L.8：formatSweepPriceLine / formatSweepRelationLine（新措辞格式�
     assert.strictEqual(lp.formatSweepPriceLine(p4), 'SSL · UNKNOWN UNKNOWN @ 1.50');
 });
 
-test('11L.8：价格行含 sweep 时间（UTC+8 MM:DD HH:MM，用户示例 "08:19 22:05"）', function () {
-    // 2026-08-19 14:05 UTC = 22:05 UTC+8
-    var ms = Date.UTC(2026, 7, 19, 14, 5, 0);
-    assert.strictEqual(lp.fmtSweepTime(ms), '08:19 22:05');
+test('11L.8：价格行含 sweep 时间（UTC+8 MM-DD HH:MM，用户示例 "08-19 20:05"）', function () {
+    // 2026-08-19 12:05 UTC = 20:05 UTC+8
+    var ms = Date.UTC(2026, 7, 19, 12, 5, 0);
+    assert.strictEqual(lp.fmtSweepTime(ms), '08-19 20:05');
     assert.strictEqual(lp.fmtSweepTime(null), null, '缺 confirmedAt → 不显示时间');
     var p = { side: 'SSL', sourceTimeframe: '5m', sourceType: 'SWING_LOW', sourcePrice: 66000, confirmedAt: ms };
-    assert.strictEqual(lp.formatSweepPriceLine(p), 'SSL · 5M SWING_LOW @ 66000.00 · 08:19 22:05');
+    assert.strictEqual(lp.formatSweepPriceLine(p), 'SSL · 5M SWING_LOW @ 66000.00 · 08-19 20:05');
     // 无 confirmedAt → 原样（不追加时间）
     var p2 = { side: 'SSL', sourceTimeframe: '5m', sourceType: 'SWING_LOW', sourcePrice: 66000 };
     assert.strictEqual(lp.formatSweepPriceLine(p2), 'SSL · 5M SWING_LOW @ 66000.00');

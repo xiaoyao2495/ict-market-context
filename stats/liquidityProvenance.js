@@ -204,22 +204,22 @@ function associateSweeps(opts) {
 }
 
 /**
- * sweep 时间（UTC+8，MM:DD HH:MM —— 用户示例 "08:19 22:05"）
+ * sweep 时间（UTC+8，MM-DD HH:MM —— 用户示例 "08-19 20:05"）
  * @param {number} ms confirmedAt（sweep 确认时点 = 触发 K closeTime）
- * @returns {string|null} 如 '08:19 22:05'
+ * @returns {string|null} 如 '08-19 20:05'
  */
 function fmtSweepTime(ms) {
     if (typeof ms !== 'number') return null;
     var d = new Date(ms + 8 * 3600000); // UTC+8
     function p2(n) { return (n < 10 ? '0' : '') + n; }
-    return p2(d.getUTCMonth() + 1) + ':' + p2(d.getUTCDate()) + ' ' +
+    return p2(d.getUTCMonth() + 1) + '-' + p2(d.getUTCDate()) + ' ' +
         p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes());
 }
 
 /**
- * 通知价格行（Live buildMessage 用）：'SSL · 5M SWING_LOW @ 66000.00 · 08:19 22:05'
+ * 通知价格行（Live buildMessage 用）：'SSL · 5M SWING_LOW @ 66000.00 · 08-19 20:05'
  * 无 immediateSweep → null（调用方显示 NONE）；timeframe/sourceType 缺失显示 UNKNOWN，不猜测。
- * 时间 = sweep confirmedAt（UTC+8 MM:DD HH:MM），缺失不显示。
+ * 时间 = sweep confirmedAt（UTC+8 MM-DD HH:MM），缺失不显示。
  */
 function formatSweepPriceLine(sweep) {
     if (!sweep) return null;
