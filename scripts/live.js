@@ -91,8 +91,6 @@ function buildMessage(opp, symbol) {
         dir,
         'MSS: ' + mss + (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? ' · Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : ' · Leg: ' + opp.legQuality),
         notifTarget !== null ? 'Near Draw: ' + notifDist.toFixed(2) + '% 距离（target ' + fmtPrice(notifTarget) + '）' : 'Near Draw: -',
-        // 11L.7（P1）：保守措辞 —— 只讲"历史同级机会的 Near Draw 触达率"，不承诺方向胜率/成功率
-        '历史同级机会：1h Near Draw 触达率约 80%（仅参考，非胜率）',
         '通知: ' + fmt(notified) + '（leg 锚 ' + fmt(opp.anchorTime) + '）'
     ];
     return lines.join('\n');
