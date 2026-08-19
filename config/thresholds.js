@@ -254,6 +254,16 @@ module.exports = {
             closeExtremeThreshold: 0.75,
             minScore: 3,
             maxScore: 5
+        },
+        /**
+         * Phase 11L.8 — Sweep Provenance 关联（Liquidity Taken 通知行）
+         * maxLookbackBars：sweep 候选窗口 = leg.startIndex - N → leg.endIndex。
+         * 第一版保持宽窗口（记录全部候选），正式窗口由 90d 诊断的 barsBeforeLegStart
+         * 真实分布决定（不拍脑袋定 6/12）。改小窗口只影响通知的 Liquidity Taken 行，
+         * 不影响 HIGH/WATCH/LOW 判定。
+         */
+        sweepProvenance: {
+            maxLookbackBars: 96
         }
     },
 

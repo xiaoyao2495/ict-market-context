@@ -29,6 +29,7 @@
  */
 var opportunityQuality = require('./opportunityQuality');
 var nearStaleness = require('./nearStaleness');
+var liquidityProvenance = require('./liquidityProvenance');
 
 var WINDOWS = [
     { key: 'w30m', bars: 6 },
@@ -97,24 +98,45 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
         var nearDistPct = it.nearTarget !== null && it.nearTarget !== undefined && anchorPrice > 0
             ? Math.abs(it.nearTarget - anchorPrice) / anchorPrice * 100
             : null;
-        // Sweep 关联：anchorIndex 前 24 根内同方向最近 LIQUIDITY_SWEEP
-        // BULLISH ← SSL sweep（side=SSL）；BEARISH ← BSL sweep（side=BSL）
-        var wantSide = it.direction === 'BULLISH' ? 'SSL' : 'BSL';
-        var sweep = null;
-        (sweepEvents || []).forEach(function (se) {
-            if (se.side !== wantSide) return;
-            if (se.candleIndex === undefined || se.candleIndex >= it.anchorIndex) return;
-            if (se.candleIndex < it.anchorIndex - 24) return;
-            if (!sweep || se.candleIndex > sweep.candleIndex) {
-                sweep = { price: se.price, side: se.side, barsAgo: it.anchorIndex - se.candleIndex, timeframe: se.timeframe || '5m' };
-            }
-        });
-        // FVG 结构证据（该 opp 的 FVG 数 + 首个 FVG zone）
-        var fvgCount = (it.fvgIds || []).length || 1;
-        var firstFvg = it.fvgIds && it.fvgIds.length > 0 ? fvgById[it.fvgIds[0]] : null;
         // 人工核对辅助：leg 价量维度 + MSS reference（breakPct / referencePrice）
         var legObj = it.dispId ? (legByDispId[it.dispId] || null) : null;
         var mssEvent = legObj && legObj.mssId ? (mssById[legObj.mssId] || null) : null;
+        // Phase 11L.8：Liquidity Provenance（Live/Replay 同一关联函数）。
+        //   LONG → 只关联 SSL；SHORT → 只关联 BSL；sweep.confirmedAt <= availableAt（无 future leakage）；
+        //   窗口 = leg.startIndex - maxLookbackBars → leg.endIndex（sweep 允许在 leg 内）。
+        //   无法可靠关联 → null（通知显示 NONE，不猜测）。
+        //   sweeps[] 记录窗口内全部候选（含 barsBeforeLegStart / relation）→ 诊断看真实分布定正式窗口。
+        var prov = null;
+        var mssRelation = 'NONE';
+        if (legObj) {
+            var availTime = availCandle ? availCandle.closeTime : anchor.closeTime;
+            prov = liquidityProvenance.associateSweeps({
+                direction: it.direction,
+                leg: legObj,
+                availableAt: availTime,
+                sweepEvents: sweepEvents,
+                maxLookbackBars: null // 用 thresholds.events.sweepProvenance 默认（宽窗口）
+            });
+            mssRelation = liquidityProvenance.classifyMssLegRelation(legObj, legObj.mssId ? (mssById[legObj.mssId] || null) : null);
+        }
+        // 兼容字段（旧调用/旧测试）：alert.sweep 摘要（新结构见 liquidityContext）
+        var sweep = null;
+        if (prov && prov.primary) {
+            var pri = prov.primary;
+            sweep = {
+                price: pri.sourcePrice,
+                side: pri.side,
+                barsAgo: it.anchorIndex - pri.candleIndex,
+                timeframe: pri.sourceTimeframe,
+                relation: pri.relation,
+                sourceType: pri.sourceType,
+                sourceId: pri.sourceId,
+                confirmedAt: pri.confirmedAt
+            };
+        }
+        // FVG 结构证据（该 opp 的 FVG 数 + 首个 FVG zone）
+        var fvgCount = (it.fvgIds || []).length || 1;
+        var firstFvg = it.fvgIds && it.fvgIds.length > 0 ? fvgById[it.fvgIds[0]] : null;
         alerts.push({
             id: it.id,
             tier: it.tier,
@@ -141,6 +163,10 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
             fvgCount: fvgCount,
             fvgZone: firstFvg ? [firstFvg.zoneLow, firstFvg.zoneHigh] : null,
             sweep: sweep,
+            // Phase 11L.8：Liquidity Provenance（primarySweepId / primary / sweeps[] 全候选）
+            liquidityContext: prov,
+            // Phase 11L.8：MSS ↔ Leg relation 诊断字段（不改 tier / mssQuality）
+            mssRelation: mssRelation,
             dispId: it.dispId,
             legStartIndex: legObj ? legObj.startIndex : null,
             legRangeAtr: legObj ? legObj.rangeAtr : null,

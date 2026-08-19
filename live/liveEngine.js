@@ -26,6 +26,7 @@ var mssReference = require('../stats/mssReference');
 var displacementLeg = require('../stats/displacementLeg');
 var opportunityQuality = require('../stats/opportunityQuality');
 var nearStaleness = require('../stats/nearStaleness');
+var liquidityProvenance = require('../stats/liquidityProvenance');
 var thresholds = require('../config/thresholds');
 
 var LEG_MAX_BARS = 3;
@@ -281,6 +282,20 @@ function createLiveEngine(data, options) {
             var cons = nearStaleness.checkNearConsumed(nearTarget, leg.direction, window, anchorIndex + 1, availIdx);
             opp.nearConsumed = cons.consumed;
         }
+
+        // Phase 11L.8：Liquidity Provenance + MSS↔Leg relation（Live/Replay 同一关联函数）。
+        //   通知行 "Liquidity Taken:" 的数据源；sweep.confirmedAt <= availableAt（无 future leakage）。
+        var availTime2 = availCandle ? availCandle.closeTime : (opp.availableAt !== undefined ? opp.availableAt : anchorCandle.closeTime);
+        var sweepEventsAll = state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP');
+        var prov = liquidityProvenance.associateSweeps({
+            direction: leg.direction,
+            leg: leg,
+            availableAt: availTime2,
+            sweepEvents: sweepEventsAll,
+            maxLookbackBars: null // 用 thresholds.events.sweepProvenance 默认（宽窗口）
+        });
+        opp.liquidityContext = prov;
+        opp.mssRelation = liquidityProvenance.classifyMssLegRelation(leg, mssEvent);
         return opp;
     }
 

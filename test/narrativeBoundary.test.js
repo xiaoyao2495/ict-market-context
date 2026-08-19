@@ -1023,8 +1023,8 @@ test('11D.8：buildAlerts —— 同一 Opportunity 只通知一次，时间升�
     drawTrace[20] = { bslNear: 105, bslMacro: 110, sslNear: null, sslMacro: null };
     drawTrace[30] = { bslNear: null, bslMacro: null, sslNear: 96, sslMacro: 94 };
     var sweeps = [
-        { side: 'SSL', price: 99.8, candleIndex: 15 },  // 同向（BULLISH）leg 前窗口内
-        { side: 'BSL', price: 102, candleIndex: 25 }    // BEARISH
+        { side: 'SSL', price: 99.8, candleIndex: 15, confirmedAt: 6000000 },  // 同向（BULLISH）leg 前窗口内
+        { side: 'BSL', price: 102, candleIndex: 25, confirmedAt: 7500000 }    // BEARISH
     ];
     // MSS 事件（人工核对字段：referencePrice / breakPct）
     var mssEvents = [

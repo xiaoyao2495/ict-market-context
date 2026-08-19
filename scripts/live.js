@@ -24,6 +24,7 @@ var binanceRest = require('../data/binanceRest');
 var persistence = require('../live/persistence');
 var dingTalk = require('../notify/dingTalk');
 var continuityChecker = require('../replay/continuityChecker');
+var liquidityProvenance = require('../stats/liquidityProvenance');
 
 var CONFIG = require('../config/live.json');
 
@@ -88,11 +89,24 @@ function buildMessage(opp, symbol) {
         : opp.nearDistPct;
     var lines = [
         '🔴 ' + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
-        dir,
+        dir
+    ];
+    // Phase 11L.8：Liquidity Taken（provenance 通知行）。
+    //   有 primary sweep → 3 行；无法可靠关联 → 'NONE'（不猜测）。
+    //   仅解释"扫了什么流动性"，不影响 HIGH 判定。
+    if (opp.liquidityContext && opp.liquidityContext.primary) {
+        var pri = opp.liquidityContext.primary;
+        lines.push('Liquidity Taken:');
+        lines.push(liquidityProvenance.formatSweepPriceLine(pri) || 'Liquidity Taken: -');
+        lines.push(liquidityProvenance.formatSweepRelationLine(pri) || '发生于 Leg 前');
+    } else {
+        lines.push('Liquidity Taken: NONE');
+    }
+    lines.push(
         'MSS: ' + mss + (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? ' · Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : ' · Leg: ' + opp.legQuality),
         notifTarget !== null ? 'Near Draw: ' + notifDist.toFixed(2) + '% 距离（target ' + fmtPrice(notifTarget) + '）' : 'Near Draw: -',
         '通知: ' + fmt(notified) + '（leg 锚 ' + fmt(opp.anchorTime) + '）'
-    ];
+    );
     return lines.join('\n');
 }
 
