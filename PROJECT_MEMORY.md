@@ -126,6 +126,8 @@ Git 历史（main）：`b1a33d9 → 45217d4(11L) → 6d30df2(11L.1) → fc759a7 
 3. **retained invalidationBoundary 严格化**：180d 前定死（当前 BULLISH short=sweep||rangeLow；更严格=min(sweep,rangeLow)）
 4. **180d Authoritative Trade Expectancy**：正式 trades 样本不足（3 笔全 LOSS），不宣布 edge；样本<10 不解读
 5. **top10 模式**：fixed 验证通过后再启用（含每日 UTC 8:00 名单刷新）
+6. **生产 leg.mssId 无方向匹配**（11L.8-S2 发现）：displacementDetector 的 same-candle bonus 只取 `mssByIndex[index][0].id` 不校验方向 → shadow INSIDE HIGH 570 vs 生产 575 差 ~5 笔。**单独检查，不现在改**（会直接改变生产 HIGH）
+7. **DisplacementLeg 只用 ATR 太粗**（11L.8 晚课程）：未来单独审计 **time efficiency / overlap / persistence / acceptance**，不和当前 Live 版本混在一起
 
 ## 9. 进行中方向（下一个会话从这里继续）
 
@@ -183,6 +185,18 @@ Git 历史（main）：`b1a33d9 → 45217d4(11L) → 6d30df2(11L.1) → fc759a7 
 - **90d 结果（beforeBars=6）**：INSIDE all 1760 / HIGH 570（NearHit1h 65.1%、MFE 0.34）；BEFORE all 200 / **HIGH 仅 20**（NearHit1h 70% 但 n=20 不足）；NO_RELATED all 1116 / HIGH 0（**ALL NearHit1h 46.4% << INSIDE 63.3%**）
 - **结论方向**：① 解除 same-candle 限制最多新增 ~3.5% HIGH，量级极小；② BEFORE 样本不足不下结论；③ NO_RELATED 46.4% vs INSIDE 63.3% 证明 MSS 关联有真实区分力、当前严格语义过滤了噪声 → **无强证据支持放宽，倾向维持现状**（最终由用户定）
 - 注：shadow INSIDE HIGH 570 vs buildAlerts 575（~1%）：shadow 强制方向匹配，生产 leg.mssId 可能挂方向不匹配的同根 MSS（生产不校验方向）
+
+### ✅ Phase 11L.8 最终冻结（用户决策，2026-08-19 22:07）
+
+```
+Liquidity Provenance        ✅ 冻结（48 窗口 + allCandidates/immediateSweep/primarySweep + 措辞保守）
+MSS same-candle association ✅ 暂时保留（shadow 证明严格关联过滤噪声：NO_RELATED 46.4% vs INSIDE 63.3%）
+BEFORE_LEG promotion        ❌ 不上线（仅 ~3.5% 增量、n=20 不足，收益不明确）
+Live HIGH rules             ✅ 不动
+```
+
+- **下一步**：Liquidity Taken 通知行推服务器上线（已 push cebf7e6..0a06e2f），真实 Live 样本继续积累
+- 挂账：leg.mssId 方向匹配（§8.6）、DisplacementLeg ATR-only 审计 time efficiency/overlap/persistence/acceptance（§8.7）
 
 ## 10. 用户工作约定
 
