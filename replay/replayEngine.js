@@ -848,6 +848,12 @@ function runReplay(data, options) {
             // Phase 11L.17：equal liquidity 事件只读暴露（EQL/EQH 本体含 metadata.members，
             // 供 Equal Liquidity Quality Audit 用；零判定改动，仅暴露已有 registry 数据）
             equalLiquidity: state.registry.getByType(symbol, 'EQL').concat(state.registry.getByType(symbol, 'EQH')),
+            // Phase 13：全部 liquidity 对象只读暴露（PDH/PDL/PWH/PWL/Session/EQH/EQL/SWING，
+            // 含 status/touchedAt/sweptAt/confirmedAt——供 Draw on Liquidity 候选池重建；
+            // 零判定改动，仅暴露已有 registry 数据）
+            liquidityObjects: state.registry.getAll(symbol),
+            // Phase 13：ATR 序列只读暴露（{index: atrValue}，供 distanceATR 归一；零判定改动）
+            atrSeries: state.atrSeries || {},
             summary: {
                 barCount: endIndex - startIndex + 1,
                 stepCount: steps.length,
