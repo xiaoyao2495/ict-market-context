@@ -158,6 +158,7 @@ function pickImmediate(leg, candidates) {
  *     availableAt: number,        // 通知可用时点（leg 关闭确认）—— leakage 硬边界
  *     sweepEvents: Array,         // LIQUIDITY_SWEEP 事件（confirmedAt 已确认）
  *     maxLookbackBars: number     // 候选窗口（leg.startIndex - N → leg.endIndex）；默认 48
+ *     excludeSwing: boolean       // 11L.11 Shadow：排除普通 5m SWING_HIGH/SWING_LOW（生产默认 false）
  *   }
  * @returns {Object|null} {
  *   allCandidates: [...], immediateSweep
@@ -182,6 +183,12 @@ function associateSweeps(opts) {
         // 无 future leakage：confirmedAt 必须 <= 通知可用时点（缺失则 fail-closed，不猜测）
         if (typeof availableAt === 'number') {
             if (typeof se.confirmedAt !== 'number' || se.confirmedAt > availableAt) return;
+        }
+        // 11L.11（Shadow，生产默认 false）：排除普通 5m SWING —— 从 Liquidity Object 候选回归 Structure。
+        //   仅审计用：验证"普通 swing 从解释层移除后覆盖率/NearHit 变化"，不改变生产。
+        if (opts.excludeSwing) {
+            var st = (se.source && se.source.liquidityType) || se.liquidityType || '';
+            if (st === 'SWING_HIGH' || st === 'SWING_LOW') return;
         }
         // 窗口：leg.startIndex - N → leg.endIndex（sweep 可在 leg 内，禁止 leg 后）
         if (typeof se.candleIndex !== 'number') return;
