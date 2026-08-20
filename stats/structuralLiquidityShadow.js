@@ -208,10 +208,17 @@ function auditCausalShadow(alerts, ctx) {
             id: al.id,
             direction: al.direction,
             anchorIndex: al.anchorIndex,
+            anchorTime: al.anchorTime,
             quadrant: q,
             causalPrice: causal ? causal.price : null,
             causalSide: causal ? causal.side : null,
             causalRaidIndex: causal ? causal.raidIndex : null,
+            causalRaidTime: causal ? (function () {
+                var rc = ctx.candles[causal.raidIndex];
+                return rc ? rc.closeTime : null;
+            })() : null,
+            causalMssId: causal ? causal.mssId : null,
+            causalLegId: al.dispId || null,
             causalRaidToLegBars: causal ? causal.raidToLegBars : null,
             windowSignificantPrices: alertPrioritization.significantCandidates(al).map(function (c) {
                 return { sourceType: c.sourceType, sourcePrice: c.sourcePrice, barsBeforeLegStart: c.barsBeforeLegStart };

@@ -147,6 +147,36 @@ historicalLoader.loadAll(SYMBOL, startTime, endTime)
             console.log('  （CAUSAL_ONLY 共 ' + co.length + ' 条）');
             console.log('');
 
+            // 案例复核：第 4 参数 "YYYY-MM-DD HH:MM"（UTC+8）→ 打印该 anchor 时刻 ±3 bars 的
+            // HIGH 完整因果链（candidate/raid/MSS/leg）——用于 ETH 20:09 案例等验收。
+            var filterArg = process.argv[4];
+            if (filterArg) {
+                var filterMs = Date.parse(filterArg.replace(' ', 'T') + ':00+08:00');
+                if (!isNaN(filterMs)) {
+                    console.log('=== 案例复核：anchor ' + filterArg + '（UTC+8）±15min 的 HIGH ===');
+                    res.samples.forEach(function (s) {
+                        if (typeof s.anchorTime !== 'number') return;
+                        if (Math.abs(s.anchorTime - filterMs) > 15 * 60 * 1000) return;
+                        console.log('  ' + s.direction + ' id=' + s.id + ' anchor=' + fmt(s.anchorTime) +
+                            ' quadrant=' + s.quadrant);
+                        if (s.causalPrice !== null) {
+                            console.log('    causal: ' + s.causalSide + ' @ ' + s.causalPrice +
+                                ' raid=' + fmt(s.causalRaidTime) +
+                                ' mss=' + s.causalMssId +
+                                ' leg=' + s.causalLegId +
+                                ' (raidToLeg ' + s.causalRaidToLegBars + 'b)');
+                        } else {
+                            console.log('    causal: NONE（该 HIGH 无因果链命中）');
+                        }
+                        console.log('    windowSignificant: ' + (s.windowSignificantPrices.length === 0 ? 'NONE' :
+                            s.windowSignificantPrices.map(function (w) {
+                                return w.sourceType + ' @ ' + w.sourcePrice + ' (' + w.barsBeforeLegStart + 'b)';
+                            }).join(' / ')));
+                    });
+                    console.log('');
+                }
+            }
+
             console.log('解读（用户 12.5B 验收）：');
             console.log('  - WINDOW_ONLY 占比高且 forward 差 → 相关性窗口大量产生错误 narrative（2267.09 类误关联），因果链替代有据');
             console.log('  - CAUSAL_ONLY 占比与 forward → 因果链是否有增量（窗口漏掉的真实 raid 链）');
