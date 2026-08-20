@@ -283,6 +283,41 @@ module.exports = {
         sweepIncremental: {
             priceTolerance: 0.001,
             overlapBars: 12
+        },
+        /**
+         * Phase 11L.14 — EXTERNAL_SWING Shadow（旁路，不改生产）。
+         * 透明规则把普通 5m SWING 拆成 INTERNAL/EXTERNAL：
+         *   EXTERNAL = 形成后 >= ageMinBars 才被 sweep（长期未被取）
+         *              OR 接近 1h/4h 极值（± htfTolerance，截至 sweep 时刻，无 future leakage）
+         * 仅审计参数。
+         */
+        sweepExternal: {
+            ageMinBars: 24,
+            htfTolerance: 0.002
+        }
+    },
+
+    /**
+     * Phase 11L.15 — Alert Prioritization（通知层筛选，检测层零改动）
+     *
+     * 背景：Top10 → 更多币 + 美股合约后"所有 HIGH 都推钉钉"不可持续。
+     * 拆两层：Detection（HIGH/WATCH/LOW 全保留落日志）与 Notification（Alert Filter → 钉钉）。
+     *
+     * B 口径（用户选定，A 口径数据失败已关闭）：
+     *   HIGH + 48 窗口内存在任一 Significant Liquidity（EQL/EQH/PDL/PDH/Session）
+     *     → notifyPriority = PRIORITY_HIGH → 钉钉立即推
+     *   HIGH + 窗口内无显著流动性
+     *     → notifyPriority = STANDARD_HIGH → 只落日志 / shadow（3-7 天 Live 对比后决定是否正式只推 PRIORITY）
+     *
+     * 硬约束：notifyPriority 只决定通知优先级，绝不回写 tier（Detection 冻结；
+     * 通知筛选层不得混进机会检测层）。
+     *
+     * enabled=true  → 钉钉只推 PRIORITY_HIGH，STANDARD_HIGH 只落日志（Live Shadow Prioritization）
+     * enabled=false → 全部 HIGH 照常推钉钉（仅记录 notifyPriority 字段供审计）——回滚开关
+     */
+    notify: {
+        prioritization: {
+            enabled: true
         }
     },
 

@@ -50,7 +50,8 @@ test('11L.10：sourceGroupOf 分组', function () {
 
 function mkCandles() {
     var candles = [];
-    for (var i = 0; i < 30; i++) candles.push(m5(100, 101, 99, 100.5, i));
+    // 40 根：保证 auditRelevance 测试里 availableIndex=19 → 1h 窗口（20+12=32）完整（11L.15a）
+    for (var i = 0; i < 40; i++) candles.push(m5(100, 101, 99, 100.5, i));
     return candles;
 }
 
@@ -160,6 +161,50 @@ test('11L.10：交叉表 + behavior 分布（只统计 HIGH）', function () {
     // NearHit 计入
     assert.strictEqual(res.behavior.NO_SWEEP.nearHit1h, 1, '通知后 1h 触达');
     assert.strictEqual(res.behavior.NO_SWEEP.mfeCnt, 1);
+});
+
+/* ---------- statOne 完整窗口（11L.15a right-censoring） ---------- */
+
+test('11L.15a：statOne 只计完整窗口（1h 不足 12 根不算 miss）', function () {
+    var candles = mkCandles(); // 40 根
+    var win = [{ key: '30m', bars: 6 }, { key: '1h', bars: 12 }];
+    function mkAlert(availIdx) {
+        return { id: 'x', direction: 'BULLISH', availableIndex: availIdx, anchorIndex: availIdx,
+            notificationPrice: 100.5, notificationNearTarget: 105, nearTarget: 105 };
+    }
+    // availIdx=33 → start=34：30m 完整（34+6=40 <= 40），1h 不完整（34+12=46 > 40）
+    var st = lra.statOne(mkAlert(33), candles, win);
+    assert.strictEqual(st.complete30, true, '30m 恰好完整 6 根');
+    assert.strictEqual(st.complete1h, false, '1h 不足 12 根 → 不完整');
+    assert.strictEqual(st.near1h, false, '不完整窗口不算 hit');
+    // availIdx=35 → start=36：30m 也不完整（36+6=42 > 40）
+    var st2 = lra.statOne(mkAlert(35), candles, win);
+    assert.strictEqual(st2.complete30, false);
+    assert.strictEqual(st2.complete1h, false);
+    // availIdx=19 → start=20：两个窗口都完整
+    var st3 = lra.statOne(mkAlert(19), candles, win);
+    assert.strictEqual(st3.complete30, true);
+    assert.strictEqual(st3.complete1h, true);
+});
+
+test('11L.15a：accAdd 不完整窗口不计 denominator 与 MFE', function () {
+    var ap = require('../stats/alertPrioritization');
+    var candles = mkCandles(); // 40 根
+    var acc = ap.newAcc();
+    // availIdx=35 → 无完整窗口：n 计、nearCnt/mfeCnt 不计
+    ap.accAdd(acc, { id: 'y', tier: 'HIGH_QUALITY', direction: 'BULLISH',
+        availableIndex: 35, anchorIndex: 35, notificationPrice: 100.5, notificationNearTarget: 105 }, candles);
+    assert.strictEqual(acc.n, 1);
+    assert.strictEqual(acc.nearCnt30m, 0, '30m 不完整 → 不计 denominator');
+    assert.strictEqual(acc.nearCnt1h, 0);
+    assert.strictEqual(acc.mfeCnt, 0, 'MFE 需完整 1h');
+    // availIdx=33 → 30m 完整但 1h 不完整：nearCnt30m=1、nearCnt1h=0、mfeCnt=0
+    ap.accAdd(acc, { id: 'z', tier: 'HIGH_QUALITY', direction: 'BULLISH',
+        availableIndex: 33, anchorIndex: 33, notificationPrice: 100.5, notificationNearTarget: 105 }, candles);
+    assert.strictEqual(acc.n, 2);
+    assert.strictEqual(acc.nearCnt30m, 1);
+    assert.strictEqual(acc.nearCnt1h, 0, '1h 不完整 → 不计 1h denominator');
+    assert.strictEqual(acc.mfeCnt, 0);
 });
 
 // ---------- 结果 ----------

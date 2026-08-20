@@ -44,6 +44,8 @@ function sourceGroupOf(sourceType) {
     if (t === 'EQL' || t === 'EQH') return 'SIGNIFICANT';
     if (t === 'PDH' || t === 'PDL' || t === 'PWH' || t === 'PWL') return 'SIGNIFICANT';
     if (t.indexOf('ASIA') === 0 || t.indexOf('LONDON') === 0 || t.indexOf('NEW_YORK') === 0) return 'SIGNIFICANT';
+    // SESSION_* 前缀防御（registry 实际只发 ASIA/LONDON/NEW_YORK_*，SESSION_* 未落地；用户语义含 Session High/Low）
+    if (t.indexOf('SESSION') === 0) return 'SIGNIFICANT';
     if (t === 'SWING_HIGH' || t === 'SWING_LOW') return 'SWING';
     if (t === '' || t === 'UNKNOWN') return 'OTHER';
     return 'OTHER';
@@ -89,6 +91,11 @@ function classifyPostSweepBehavior(alert, candles) {
 
 /**
  * 统计单一样本的一组指标（通知后 availableIndex+1 起；notificationPrice 基准）。
+ *
+ * 11L.15a（Forward Sample Integrity）：right-censoring 防护 ——
+ *   30m 窗口必须有完整 6 根后续 5m、1h 必须有完整 12 根，才计算该窗口的 hit；
+ *   不完整 → complete30/complete1h = false，调用方不得计入 denominator（不算 hit 也不算 miss）。
+ *   MFE/MAE 为 1h 口径：仅当 1h 窗口完整时累加（调用方依据 complete1h 决定是否计 mfeCnt）。
  */
 function statOne(alert, candles, windows) {
     var availIdx = alert.availableIndex !== undefined && alert.availableIndex !== null ? alert.availableIndex : alert.anchorIndex;
@@ -97,9 +104,14 @@ function statOne(alert, candles, windows) {
     var basePrice = alert.notificationPrice !== undefined && alert.notificationPrice !== null ? alert.notificationPrice : alert.anchorPrice;
     var hitTarget = alert.notificationNearTarget !== undefined && alert.notificationNearTarget !== null ? alert.notificationNearTarget : alert.nearTarget;
     var bullish = alert.direction === 'BULLISH';
-    var out = { mfe: 0, mae: 0, near30: false, near1h: false };
+    var out = { mfe: 0, mae: 0, near30: false, near1h: false, complete30: false, complete1h: false };
     windows.forEach(function (w) {
-        var lastJ = Math.min(start + w.bars - 1, candles.length - 1);
+        var endExclusive = start + w.bars;
+        if (endExclusive > candles.length) {
+            // 未来不足完整 w.bars 根 → 该窗口不完整（right-censoring），跳过（hit/miss 都不算）
+            return;
+        }
+        var lastJ = endExclusive - 1;
         var hit = false;
         for (var j = start; j <= lastJ; j++) {
             var c = candles[j];
@@ -114,8 +126,8 @@ function statOne(alert, candles, windows) {
                 if (hitTarget !== null && hitTarget !== undefined && c.low <= hitTarget) hit = true;
             }
         }
-        if (w.key === '30m') out.near30 = hit;
-        else out.near1h = hit;
+        if (w.key === '30m') { out.near30 = hit; out.complete30 = true; }
+        else { out.near1h = hit; out.complete1h = true; }
     });
     return out;
 }
@@ -172,18 +184,23 @@ function auditRelevance(alerts, candles) {
         b.n++;
         if (st) {
             if (al.notificationNearTarget !== null && al.notificationNearTarget !== undefined) {
-                c.nearCnt1h++;
-                if (st.near1h) c.nearHit1h++;
-                b.nearCnt30m++;
-                b.nearCnt1h++;
-                if (st.near30) b.nearHit30m++;
-                if (st.near1h) b.nearHit1h++;
+                // 11L.15a：仅完整窗口才计 denominator（不完整 = right-censoring，不算 hit 也不算 miss）
+                if (st.complete1h) {
+                    c.nearCnt1h++;
+                    if (st.near1h) c.nearHit1h++;
+                }
+                if (st.complete30) b.nearCnt30m++;
+                if (st.complete1h) b.nearCnt1h++;
+                if (st.complete30 && st.near30) b.nearHit30m++;
+                if (st.complete1h && st.near1h) b.nearHit1h++;
             }
-            c.mfeSum += st.mfe / (al.notificationPrice || al.anchorPrice) * 100;
-            c.mfeCnt++;
-            b.mfeSum += st.mfe / (al.notificationPrice || al.anchorPrice) * 100;
-            b.maeSum += st.mae / (al.notificationPrice || al.anchorPrice) * 100;
-            b.mfeCnt++;
+            if (st.complete1h) { // MFE/MAE 为 1h 口径：需完整 12 根后续 K
+                c.mfeSum += st.mfe / (al.notificationPrice || al.anchorPrice) * 100;
+                c.mfeCnt++;
+                b.mfeSum += st.mfe / (al.notificationPrice || al.anchorPrice) * 100;
+                b.maeSum += st.mae / (al.notificationPrice || al.anchorPrice) * 100;
+                b.mfeCnt++;
+            }
         }
     });
     return { cross: cross, crossOrder: crossOrder, behavior: behavior, behaviorOrder: behaviorOrder };
@@ -192,5 +209,6 @@ function auditRelevance(alerts, candles) {
 module.exports = {
     auditRelevance: auditRelevance,
     sourceGroupOf: sourceGroupOf,
-    classifyPostSweepBehavior: classifyPostSweepBehavior
+    classifyPostSweepBehavior: classifyPostSweepBehavior,
+    statOne: statOne
 };

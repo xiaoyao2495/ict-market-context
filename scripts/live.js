@@ -25,8 +25,15 @@ var persistence = require('../live/persistence');
 var dingTalk = require('../notify/dingTalk');
 var continuityChecker = require('../replay/continuityChecker');
 var liquidityProvenance = require('../stats/liquidityProvenance');
+var thresholds = require('../config/thresholds');
 
 var CONFIG = require('../config/live.json');
+
+// Phase 11L.15：B 口径 Live Shadow Prioritization 开关（thresholds.notify.prioritization.enabled）。
+//   true  → 钉钉只推 PRIORITY_HIGH（HIGH + 48 窗口内 Significant Liquidity），STANDARD_HIGH 只落日志
+//   false → 全部 HIGH 照常推钉钉（仅记录 notifyPriority 字段）——回滚开关，无需改代码
+var PRIORITIZATION_ENABLED = !!(thresholds.notify && thresholds.notify.prioritization &&
+    thresholds.notify.prioritization.enabled);
 
 // 环境变量覆盖（Windows: set DINGTALK_WEBHOOK=... / set DINGTALK_SECRET=...）
 if (process.env.DINGTALK_WEBHOOK) CONFIG.dingtalk.webhook = process.env.DINGTALK_WEBHOOK;
@@ -87,8 +94,11 @@ function buildMessage(opp, symbol) {
     var notifDist = opp.notificationNearDistPct !== undefined && opp.notificationNearDistPct !== null
         ? opp.notificationNearDistPct
         : opp.nearDistPct;
+    // 11L.15：通知层优先级标识 —— PRIORITY_HIGH（🔴 钉钉立即推）/ STANDARD_HIGH（🟡 只落日志；
+    // enabled=false 全推时用于区分两组，配合"人工值得看比例"评估）。不影响 HIGH 判定。
+    var headTag = opp.notifyPriority === 'STANDARD_HIGH' ? '🟡 ' : '🔴 ';
     var lines = [
-        '🔴 ' + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
+        headTag + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
         dir
     ];
     // Phase 11L.8：Liquidity Taken（provenance 通知行，措辞=「近期获取流动性」）。
@@ -118,6 +128,7 @@ function createRunner(symbol) {
     var pushedFile = path.join(dir, 'pushed.json');
     var stateFile = path.join(dir, 'cursor.json');
     var outboxFile = path.join(dir, 'outbox.json');
+    var shadowFile = path.join(dir, 'prioritization.jsonl'); // 11L.15：两组 HIGH 的 shadow 记录（3-7 天后 forward 对比）
 
     var engine = null;
     var lastCloseTime = 0;
@@ -135,6 +146,47 @@ function createRunner(symbol) {
 
     function saveOutbox() {
         persistence.saveJson(outboxFile, pending);
+    }
+
+    /**
+     * 11L.15：B 口径 —— 是否推钉钉。
+     * PRIORITY_HIGH（HIGH + 48 窗口内 Significant Liquidity）→ 推；
+     * STANDARD_HIGH → 只落日志；PRIORITIZATION_ENABLED=false（回滚）→ 全部照常推。
+     */
+    function shouldNotify(opp) {
+        if (!PRIORITIZATION_ENABLED) return true;
+        return opp.notifyPriority === 'PRIORITY_HIGH';
+    }
+
+    /**
+     * 11L.15：两组（PRIORITY/STANDARD）HIGH 都落 shadow 记录（schema 锁定，
+     * 见 stats/livePrioritizationAudit.js）—— 3-7 天后用 scripts/livePrioritizationAudit.js
+     * 对比 forward：n / NearHit30m / NearHit1h / MFE / MAE。
+     * 11L.15a：写盘失败不静默（磁盘满/权限/损坏）——样本悄悄消失会让几天后的对比失真。
+     */
+    function logShadowOpp(opp) {
+        try {
+            var rec = {
+                id: opp.id,
+                symbol: symbol,
+                ts: Date.now(),
+                priority: opp.notifyPriority || 'STANDARD_HIGH',
+                direction: opp.direction,
+                tier: opp.tier,
+                availableAt: opp.availableAt !== undefined ? opp.availableAt : opp.anchorTime,
+                anchorTime: opp.anchorTime,
+                anchorIndex: opp.anchorIndex,
+                notificationPrice: opp.notificationPrice !== undefined ? opp.notificationPrice : opp.anchorPrice,
+                notificationNearTarget: opp.notificationNearTarget !== undefined ? opp.notificationNearTarget : opp.nearTarget,
+                nearTarget: opp.nearTarget,
+                // 11L.15a：通知时点距离（通知快照口径，非 anchor 口径）——未来 NearDistance/ATR 归一化研究需要
+                notificationNearDistPct: opp.notificationNearDistPct !== undefined ? opp.notificationNearDistPct : opp.nearDistPct,
+                nearDistPct: opp.nearDistPct
+            };
+            fs.appendFileSync(shadowFile, JSON.stringify(rec) + '\n');
+        } catch (e) {
+            log(symbol + ' PRIORITIZATION_SHADOW_WRITE_ERROR: ' + (e && e.message || e) + '（shadow 样本未落盘，钉钉/雷达不受影响）');
+        }
     }
 
     function initFromHistory(data) {
@@ -257,9 +309,17 @@ function createRunner(symbol) {
         return pending.some(function (x) { return x.opp && x.opp.id === id; });
     }
 
-    /** 新 HIGH 机会入口：尝试投递，失败进入 outbox（持久化，重启不丢） */
+    /** 新 HIGH 机会入口：PRIORITY 尝试投递（失败进 outbox）；STANDARD 只落日志（11L.15 shadow） */
     function handleHigh(opp) {
+        // 11L.15：两组都先落 shadow 记录（PRIORITY 与 STANDARD 同 schema，供 forward 对比）
+        logShadowOpp(opp);
         if (delivered[opp.id] || isPending(opp.id)) return Promise.resolve(null);
+        if (!shouldNotify(opp)) {
+            log(symbol + ' STANDARD_HIGH 只落日志（11L.15 shadow）id=' + opp.id + ' ' + opp.direction +
+                ' near ' + (opp.nearDistPct !== null && opp.nearDistPct !== undefined ? opp.nearDistPct.toFixed(2) + '%' : '-') +
+                ' 通知=' + fmt(opp.availableAt) + ' 锚=' + fmt(opp.anchorTime));
+            return Promise.resolve(null);
+        }
         return deliver(opp).then(function (ok) {
             if (!ok) {
                 pending.push({ opp: opp, attempts: 0 });
@@ -406,6 +466,9 @@ function createRunner(symbol) {
 function main() {
     persistence.ensureDir(CONFIG.dataDir);
     log('=== Live Opportunity Radar 启动 ===');
+    log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED
+        ? 'ENABLED（钉钉只推 PRIORITY_HIGH = HIGH + 48 窗口内 Significant Liquidity；STANDARD_HIGH 只落日志）'
+        : 'DISABLED（全部 HIGH 照常推钉钉，仅记录 notifyPriority 字段）'));
     log('symbolsMode=' + CONFIG.symbolsMode + ' pollMs=' + CONFIG.pollMs + ' warmupDays=' + CONFIG.warmupDays);
     if (!CONFIG.dingtalk.webhook || CONFIG.dingtalk.webhook.indexOf('YOUR_') !== -1) {
         log('⚠️ 未配置钉钉 webhook（config/live.json 或 DINGTALK_WEBHOOK）——机会将只记录日志不推送');

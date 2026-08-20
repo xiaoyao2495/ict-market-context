@@ -27,6 +27,7 @@ var displacementLeg = require('../stats/displacementLeg');
 var opportunityQuality = require('../stats/opportunityQuality');
 var nearStaleness = require('../stats/nearStaleness');
 var liquidityProvenance = require('../stats/liquidityProvenance');
+var alertPrioritization = require('../stats/alertPrioritization');
 var thresholds = require('../config/thresholds');
 
 var LEG_MAX_BARS = 3;
@@ -296,6 +297,18 @@ function createLiveEngine(data, options) {
         });
         opp.liquidityContext = prov;
         opp.mssRelation = liquidityProvenance.classifyMssLegRelation(leg, mssEvent);
+
+        // Phase 11L.15 — Alert Prioritization（B 口径，用户选定；A 口径数据失败已关闭）：
+        //   HIGH + 48 窗口内存在任一 Significant Liquidity（EQL/EQH/PDL/PDH/Session）
+        //     → PRIORITY_HIGH（钉钉立即推）
+        //   否则 → STANDARD_HIGH（只落日志 / shadow）
+        // 硬约束：notifyPriority 只决定通知优先级，绝不回写 tier——
+        // Detection（HIGH/WATCH/LOW）冻结，通知筛选层不得混进机会检测层。
+        if (tier === 'HIGH_QUALITY') {
+            opp.notifyPriority = alertPrioritization.windowHasSignificant(opp)
+                ? 'PRIORITY_HIGH'
+                : 'STANDARD_HIGH';
+        }
         return opp;
     }
 
