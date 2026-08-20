@@ -24,7 +24,9 @@ module.exports = {
      * - useDcStructuralSwing: MSS reference source 开关
      *     false → legacy 2-2 swing（现状）
      *     true  → DC 1.5 STRUCTURAL_SWING（唯一实现 structure/dcStructuralSwing.js）
-     *   默认 false（部署不改 Live 行为；服务器主动打开后才生效，随时可回滚）
+     *   默认 false（部署不改 Live 行为）。**运行时切换走环境变量 STRUCTURE_DC=1**
+     *   （服务器 `set STRUCTURE_DC=1` + pm2 restart；回滚 `set STRUCTURE_DC=0`）——
+     *   不把切换状态写死进 git（本地测试基线依赖默认 false，见 test/ 全量回归）。
      * - dc.k: ATR 倍率（12.1-12.4 三币验证冻结 = 1.5）
      * - dc.confirmWith: close（收盘反转确认，非 wick；与全项目 structure break → close confirmation 一致）
      * - dc.atrN: ATR 周期（True Range 均值窗口）
@@ -32,7 +34,7 @@ module.exports = {
      *   extremePrice - close >= extremeATR × k；绝不用每根 K 的当前 ATR 重算（防参数漂移）。
      */
     structure: {
-        useDcStructuralSwing: false,
+        useDcStructuralSwing: process.env.STRUCTURE_DC === '1',
         dc: {
             k: 1.5,
             atrN: 14,
