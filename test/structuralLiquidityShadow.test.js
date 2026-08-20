@@ -186,6 +186,68 @@ test('12.5B：auditCausalShadow 四象限 + 覆盖率 + 分布', function () {
     assert.strictEqual(distTotal, 2, '2 个 causal 样本进分布');
 });
 
+/* ---------- 12.5B.2 Corroboration Audit ---------- */
+
+test('12.5B.2：corrGroupOf 分类（PD / EQL / SESSION / null）', function () {
+    assert.strictEqual(sls.corrGroupOf('PDH'), 'PD');
+    assert.strictEqual(sls.corrGroupOf('PDL'), 'PD');
+    assert.strictEqual(sls.corrGroupOf('PWH'), 'PD');
+    assert.strictEqual(sls.corrGroupOf('EQL'), 'EQL');
+    assert.strictEqual(sls.corrGroupOf('EQH'), 'EQL');
+    assert.strictEqual(sls.corrGroupOf('ASIA_HIGH'), 'SESSION');
+    assert.strictEqual(sls.corrGroupOf('LONDON_LOW'), 'SESSION');
+    assert.strictEqual(sls.corrGroupOf('NEW_YORK_HIGH'), 'SESSION');
+    assert.strictEqual(sls.corrGroupOf('SESSION_HIGH'), 'SESSION');
+    assert.strictEqual(sls.corrGroupOf('SWING_HIGH'), null, '普通 swing 不是 corroboration');
+    assert.strictEqual(sls.corrGroupOf('FVG'), null);
+    assert.strictEqual(sls.corrGroupOf(''), null);
+});
+
+test('12.5B.2：corrBuckets 归属（单类 / overlap 多桶 / ONLY）+ hasStrong', function () {
+    var candles = [];
+    for (var i = 0; i < 40; i++) candles.push(mkBar(i, 100, 101, 99, 100.5));
+    candles[10] = mkBar(10, 100, 108, 99, 100);
+    var swings = [mkSwing('BSL1', 'SWING_HIGH', 107, 4)];
+    var mss = [mkMss('MSS1', 'BEARISH', 13)];
+    var raidIdx = sls.buildRaidIndex(swings, candles);
+    var legByDispId = {
+        d1: { mssId: 'MSS1', startIndex: 11, endIndex: 15, direction: 'BEARISH' },
+        D1: { mssId: 'MSS1', startIndex: 11, endIndex: 15, direction: 'BEARISH', quality: 'EXPLOSIVE' }
+    };
+    var dispByIndex = { 16: [{ id: 'D1', direction: 'BEARISH', candleIndex: 16 }] };
+    var ctx = {
+        dcSwings: swings, dcMss: mss, candles: candles, legByDispId: legByDispId,
+        dispByIndex: dispByIndex,
+        raidByCandidateId: raidIdx.raidByCandidateId,
+        confirmBarById: raidIdx.confirmBarById,
+        mssByIndex: { 13: [mss[0]] }
+    };
+    // a1：causal 命中 + EQH 佐证 → EQL 桶；anchor 15 → hasStrong 窗口 16-27（D1 @16 EXPLOSIVE 同向）
+    var a1 = mkAlert('A1', 'BEARISH', 'd1', 15);
+    a1.liquidityContext = { allCandidates: [{ sourceType: 'EQH', sourcePrice: 105, barsBeforeLegStart: 5 }] };
+    // a2：causal 命中 + PDH+EQL 双佐证 → PD 桶 + EQL 桶 + MULTI 桶（overlap）
+    var a2 = mkAlert('A2', 'BEARISH', 'd1', 16);
+    a2.liquidityContext = { allCandidates: [
+        { sourceType: 'PDH', sourcePrice: 108, barsBeforeLegStart: 3 },
+        { sourceType: 'EQL', sourcePrice: 96, barsBeforeLegStart: 4 }
+    ] };
+    // a3：causal 命中但佐证只有普通 swing（非 significant）→ ONLY 桶
+    var a3 = mkAlert('A3', 'BEARISH', 'd1', 17);
+    a3.liquidityContext = { allCandidates: [{ sourceType: 'SWING_HIGH', sourcePrice: 105, barsBeforeLegStart: 2 }] };
+
+    var res = sls.auditCausalShadow([a1, a2, a3], ctx);
+    assert.strictEqual(res.corrBuckets.EQL.n, 2, 'a1(EQH) + a2(EQL) → EQL 桶 2（overlap 计数）');
+    assert.strictEqual(res.corrBuckets.PD.n, 1, 'a2(PDH) → PD 桶 1');
+    assert.strictEqual(res.corrBuckets.SESSION.n, 0);
+    assert.strictEqual(res.corrBuckets.MULTI.n, 1, 'a2 双佐证 → MULTI 桶 1');
+    assert.strictEqual(res.corrBuckets.ONLY.n, 1, 'a3 无 significant 佐证 → ONLY 桶 1（= CAUSAL_ONLY 组）');
+    // hasStrong：a1 anchor15 → 窗口 16-27 命中 D1 EXPLOSIVE（同方向 BEARISH）；a2/a3 窗口不命中
+    assert.strictEqual(res.corrBuckets.EQL.hasStrongN, 2);
+    assert.strictEqual(res.corrBuckets.EQL.hasStrong, 1, 'EQL 桶 hasStrong=1（仅 a1 命中）');
+    assert.strictEqual(res.corrBuckets.PD.hasStrong, 0, 'PD 桶（a2）窗口 17-28 无 disp → 0');
+    assert.strictEqual(res.corrBuckets.ONLY.hasStrong, 0, 'ONLY 桶（a3 anchor17）窗口 18-29 无 disp → 0');
+});
+
 console.log('');
 console.log(passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

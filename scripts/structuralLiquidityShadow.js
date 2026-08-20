@@ -86,12 +86,19 @@ historicalLoader.loadAll(SYMBOL, startTime, endTime)
             // DC 链路 leg 索引（与 buildChainAlerts 内部同口径重建）
             var dispDc = displacementDetector.detectDisplacement(candles, dc.mss, { symbol: SYMBOL, timeframe: '5m' });
             var legByDispId = displacementLeg.buildWindowedLegIndex(dispDc, candles, dc.mss, dc.swings);
+            var dispByIndex = {};
+            dispDc.forEach(function (d) {
+                if (typeof d.candleIndex !== 'number') return;
+                if (!dispByIndex[d.candleIndex]) dispByIndex[d.candleIndex] = [];
+                dispByIndex[d.candleIndex].push(d);
+            });
 
             var res = structuralLiquidityShadow.auditCausalShadow(dc.alerts, {
                 dcSwings: dc.swings,
                 dcMss: dc.mss,
                 candles: candles,
-                legByDispId: legByDispId
+                legByDispId: legByDispId,
+                dispByIndex: dispByIndex
             });
 
             console.log('');
@@ -127,6 +134,31 @@ historicalLoader.loadAll(SYMBOL, startTime, endTime)
             printDist('raidToMssBars', res.dist.raidToMssBars);
             printDist('mssToLegBars', res.dist.mssToLegBars);
             printDist('raidToLegBars', res.dist.raidToLegBars);
+            console.log('');
+
+            console.log('=== 12.5B.2 Corroboration Audit（仅 causal 命中的 HIGH；子桶可 overlap） ===');
+            console.log('方法论：Causal Chain 回答"为什么这次 delivery 发生"；Corroboration 只回答');
+            console.log('"值不值得优先打扰我"——corroboration 绝不回头修改 Causal Narrative。');
+            console.log('');
+            function printCorr(label, a) {
+                console.log(pad(label, 18) + pad(String(a.n), 6) +
+                    pad(pct(a.nearCnt30m > 0 ? a.nearHit30m / a.nearCnt30m : null), 11) +
+                    pad(pct(a.nearCnt1h > 0 ? a.nearHit1h / a.nearCnt1h : null), 11) +
+                    pad(fnum(a.mfeCnt > 0 ? a.mfeSum / a.mfeCnt : null, 3), 9) +
+                    pad(fnum(a.mfeCnt > 0 ? a.maeSum / a.mfeCnt : null, 3), 9) +
+                    pad(pct(a.hasStrongN > 0 ? a.hasStrong / a.hasStrongN : null), 10));
+            }
+            console.log(pad('桶', 18) + pad('n', 6) + pad('NearHit30m', 11) + pad('NearHit1h', 11) +
+                pad('MFE1h%', 9) + pad('MAE1h%', 9) + pad('hasStrong', 10));
+            printCorr('Causal only', res.corrBuckets.ONLY);
+            printCorr('Causal + PDH/PDL', res.corrBuckets.PD);
+            printCorr('Causal + EQL/EQH', res.corrBuckets.EQL);
+            printCorr('Causal + Session', res.corrBuckets.SESSION);
+            printCorr('Causal + 多种(2+)', res.corrBuckets.MULTI);
+            console.log('');
+            console.log('  （PD/EQL/SESSION 桶可 overlap 计数（同一样本多种佐证）；ONLY = CAUSAL_ONLY 组；');
+            console.log('    PD+EQL+SESSION+MULTI 合计 n 可 > BOTH n。hasStrong = anchor 后 1h 内同方向');
+            console.log('   STRONG/EXPLOSIVE leg 至少一次，12.4 同口径）');
             console.log('');
 
             console.log('=== WINDOW_ONLY 样例（现状给、因果链不给的 HIGH——疑似误关联） ===');

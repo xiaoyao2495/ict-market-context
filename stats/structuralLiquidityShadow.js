@@ -24,6 +24,14 @@
  *   - 验收案例：20:09 ETH SHORT 不得把 2267.09（45 bars 前、价格下方的旧 EQH）当
  *     causal BSL。
  *
+ * 12.5B.2 Corroboration Audit（用户 2026-08-20 定案）：
+ *   Causal Chain 回答"为什么这次 delivery 发生"；Corroboration 回答"这次 delivery
+ *   值不值得优先打扰我"——两个职责不混。把 BOTH（causal + legacy significant 佐证）
+ *   拆成子桶：Causal+PDH/PDL / Causal+EQL/EQH / Causal+Session / Causal+多种(2+) /
+ *   Causal only。允许 overlap（一个 sample 可有多种佐证 → 计入多个桶，不强迫互斥）。
+ *   重点：BNB 的 BOTH(64.1%) vs CAUSAL_ONLY(56.1%) +8pp 到底谁贡献。
+ *   Corroboration 只影响 Notification Priority，绝不回头修改 Causal Narrative。
+ *
  * 纯诊断：生产判定（windowHasSignificant / 通知）零改动。
  */
 var alertPrioritization = require('./alertPrioritization');
@@ -45,6 +53,55 @@ function accAdd(acc, al, candles) {
         var base = al.notificationPrice !== undefined && al.notificationPrice !== null ? al.notificationPrice : al.anchorPrice;
         if (base) { acc.mfeSum += st.mfe / base * 100; acc.maeSum += st.mae / base * 100; acc.mfeCnt++; }
     }
+}
+
+/**
+ * 12.5B.2：corroboration 桶累计器（含 hasStrong——anchor 后 1h 窗口内同方向
+ * STRONG/EXPLOSIVE displacement leg 至少一次；与 12.4 assessQuadrant 同口径）。
+ */
+function newCorrAcc() {
+    return { n: 0, nearHit30m: 0, nearCnt30m: 0, nearHit1h: 0, nearCnt1h: 0, mfeSum: 0, maeSum: 0, mfeCnt: 0, hasStrong: 0, hasStrongN: 0 };
+}
+function corrAdd(acc, al, ctx) {
+    acc.n++;
+    var st = lra.statOne(al, ctx.candles, WINDOWS);
+    if (!st) return;
+    if (al.notificationNearTarget !== null && al.notificationNearTarget !== undefined) {
+        if (st.complete30) { acc.nearCnt30m++; if (st.near30) acc.nearHit30m++; }
+        if (st.complete1h) { acc.nearCnt1h++; if (st.near1h) acc.nearHit1h++; }
+    }
+    if (st.complete1h) {
+        var base = al.notificationPrice !== undefined && al.notificationPrice !== null ? al.notificationPrice : al.anchorPrice;
+        if (base) { acc.mfeSum += st.mfe / base * 100; acc.maeSum += st.mae / base * 100; acc.mfeCnt++; }
+    }
+    // hasStrong：anchor 后 1h 窗口内同方向 STRONG/EXPLOSIVE leg
+    acc.hasStrongN++;
+    var strong = false;
+    var start = (typeof al.anchorIndex === 'number') ? al.anchorIndex + 1 : -1;
+    if (start >= 0 && ctx.dispByIndex) {
+        for (var j = start; j < ctx.candles.length && j <= start + 11; j++) {
+            var list = ctx.dispByIndex[j] || [];
+            for (var k = 0; k < list.length; k++) {
+                if (list[k].direction !== al.direction) continue;
+                var leg = ctx.legByDispId && ctx.legByDispId[list[k].id];
+                if (leg && (leg.quality === 'STRONG' || leg.quality === 'EXPLOSIVE')) { strong = true; break; }
+            }
+            if (strong) break;
+        }
+    }
+    if (strong) acc.hasStrong++;
+}
+
+/**
+ * 12.5B.2：sourceType → corroboration 类别（PD / EQL / SESSION / null）。
+ * SIGNIFICANT 组（liquidityRelevanceAudit.sourceGroupOf）拆成用户指定三类。
+ */
+function corrGroupOf(sourceType) {
+    var t = String(sourceType || '').toUpperCase();
+    if (t === 'PDH' || t === 'PDL' || t === 'PWH' || t === 'PWL') return 'PD';
+    if (t === 'EQL' || t === 'EQH') return 'EQL';
+    if (t.indexOf('SESSION') === 0 || t.indexOf('ASIA') === 0 || t.indexOf('LONDON') === 0 || t.indexOf('NEW_YORK') === 0) return 'SESSION';
+    return null;
 }
 
 /**
@@ -172,12 +229,16 @@ function auditCausalShadow(alerts, ctx) {
         dcMss: ctx.dcMss || [],
         candles: ctx.candles,
         legByDispId: ctx.legByDispId || {},
+        dispByIndex: ctx.dispByIndex || {},
         raidByCandidateId: idx.raidByCandidateId,
         confirmBarById: idx.confirmBarById,
         mssByIndex: mssByIndex
     };
 
     var quadrants = { BOTH: newAcc(), CAUSAL_ONLY: newAcc(), WINDOW_ONLY: newAcc(), NEITHER: newAcc() };
+    // 12.5B.2：corroboration 子桶（只统计 causal 命中的 HIGH；可 overlap——
+    // 一个 sample 多种佐证 → 计入多个单类桶 + MULTI 桶；ONLY = 无佐证）
+    var corrBuckets = { PD: newCorrAcc(), EQL: newCorrAcc(), SESSION: newCorrAcc(), MULTI: newCorrAcc(), ONLY: newCorrAcc() };
     var dist = {
         objectAgeAtRaid: {}, raidToMssBars: {}, mssToLegBars: {}, raidToLegBars: {}
     };
@@ -203,6 +264,19 @@ function auditCausalShadow(alerts, ctx) {
             accBucket(dist.raidToMssBars, causal.raidToMssBars);
             accBucket(dist.mssToLegBars, causal.mssToLegBars);
             accBucket(dist.raidToLegBars, causal.raidToLegBars);
+            // 12.5B.2：corroboration 类别集合（去重；可 overlap 计入多桶）
+            var groups = {};
+            alertPrioritization.significantCandidates(al).forEach(function (c) {
+                var g = corrGroupOf(c.sourceType);
+                if (g) groups[g] = true;
+            });
+            var keys = Object.keys(groups);
+            if (keys.length === 0) {
+                corrAdd(corrBuckets.ONLY, al, fullCtx);
+            } else {
+                keys.forEach(function (g) { corrAdd(corrBuckets[g], al, fullCtx); });
+                if (keys.length >= 2) corrAdd(corrBuckets.MULTI, al, fullCtx);
+            }
         }
         samples.push({
             id: al.id,
@@ -232,6 +306,7 @@ function auditCausalShadow(alerts, ctx) {
         causalRate: total > 0 ? causalCount / total : 0,
         windowRate: total > 0 ? windowCount / total : 0,
         quadrants: quadrants,
+        corrBuckets: corrBuckets,
         dist: dist,
         samples: samples
     };
@@ -241,6 +316,7 @@ module.exports = {
     buildRaidIndex: buildRaidIndex,
     findCausalLiquidity: findCausalLiquidity,
     auditCausalShadow: auditCausalShadow,
+    corrGroupOf: corrGroupOf,
     newAcc: newAcc,
     accAdd: accAdd
 };
