@@ -5,6 +5,15 @@
  * - 默认 left = 2, right = 2
  * - Pivot 必须等右侧 right 根 K 线出现后才确认（不允许偷看未来）
  * - 检测只使用已收盘 K 线
+ *
+ * Phase 12.1（2026-08-20）正名 —— 语义边界：
+ * 2-left + 2-right 的输出只回答一个问题：「这里是不是一个确认后的局部转折点」。
+ * 它的语义是 LOCAL_PIVOT（LOCAL_PIVOT_HIGH / LOCAL_PIVOT_LOW），**不承诺**：
+ *   - 它是不是重要 Swing（结构性意义需要后续 qualification，见 Phase 12.2）
+ *   - 它是不是 Liquidity Object（是否注册 liquidity 需要 Liquidity Qualification，见 Phase 12.4）
+ *   - 它能不能作为 MSS reference（MSS 消费方应改吃 STRUCTURAL_SWING，见 Phase 12.3）
+ * 后续改变 Swing/Liquidity qualification 时，本 detector 不应被牵连修改。
+ * 历史兼容：当前消费方（swingLiquidity 包装等）仍把输出当 swing 使用，仅注释正名，逻辑零改动。
  */
 
 /**

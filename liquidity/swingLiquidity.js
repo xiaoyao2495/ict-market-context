@@ -4,6 +4,13 @@
  * Pivot High  → BSL (Buy-Side Liquidity)  / type = 'SWING_HIGH'
  * Pivot Low   → SSL (Sell-Side Liquidity) / type = 'SWING_LOW'
  *
+ * Phase 12.1（2026-08-20）正名 —— 语义边界：
+ * 输入 pivot 的语义 = LOCAL_PIVOT（2-left+2-right 局部转折确认，见 pivotDetector 注释）。
+ * 本模块把 LOCAL_PIVOT 包装成 'SWING_HIGH'/'SWING_LOW' 仅是**历史兼容层**：
+ * 它不代表该 pivot 已具备 STRUCTURAL_SWING 或 LIQUIDITY_OBJECT 资格
+ * （Phase 12.2/12.4 将引入 qualification，届时普通 LOCAL_PIVOT 不应自动注册 liquidity）。
+ * Phase 12.1 仅注释正名，包装逻辑与数据结构零改动。
+ *
  * 统一 Liquidity Object（15 字段）：
  *   id / symbol / timeframe / type / side / price /
  *   sourceOpenTime / sourceCloseTime / createdAt / confirmedAt /
