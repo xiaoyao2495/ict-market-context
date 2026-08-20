@@ -14,9 +14,12 @@
  *   - 顺向 MFE / 逆向 MAE（以 sweep K 收盘为基准）
  *
  * 回答：什么 liquidity event 更容易"启动"后续有意义的 Delivery？
- * （第二层 provenance 有效性验证 = HIGH 侧，见 11L.10 classifyPostSweepBehavior，另行）
+ * （11L.12 结论：各类型启动率同量级；但 Liquidity Object 不互斥 → 11L.13 增量审计）
  *
  * 纯诊断，不改生产。
+ *
+ * 本模块同时导出 buildOutcomeIndex / computeSweepOutcomes，供 11L.13
+ * Liquidity Incremental Value Audit 复用同一套"后续 delivery 指标"实现。
  */
 var mssReference = require('./mssReference');
 
@@ -35,28 +38,20 @@ function classifySweepGroup(sourceType) {
 }
 
 /**
- * Sweep-centric 审计（全部 LIQUIDITY_SWEEP 事件为母样本）。
- * @param {Object} input
- *   {
- *     sweepEvents: Array,          // 全部 LIQUIDITY_SWEEP（含 source.liquidityType / candleIndex / confirmedAt / side）
- *     mssEvents: Array,            // 全部 MSS 事件
- *     swings: Array,               // registry swings（classifyMssReference 用）
- *     displacementEvents: Array,   // 全部 DISPLACEMENT 事件
- *     legByDispId: Object,         // dispId → leg（含 quality）
- *     alerts: Array,               // buildAlerts 输出（tier / anchorIndex / direction）
- *     candles: Array,              // 5m candles
- *     windowBars: number           // 观察窗口（默认 12 = 1h）
- *   }
- * @returns {Object} {
- *   groups: { GROUP: { n, mss, protectedMss, strongLeg, high, mfeSum, maeSum, mfeCnt } },
- *   order: [...],
- *   windowBars
- * }
+ * 是否为普通 5m SWING（11L.13 增量审计用）
  */
-function auditSweepCentric(input) {
+function isSwingType(sourceType) {
+    var t = String(sourceType || '').toUpperCase();
+    return t === 'SWING_HIGH' || t === 'SWING_LOW';
+}
+
+/**
+ * 构建"后续 delivery 指标"所需的索引（11L.12/11L.13 共享）。
+ * @param {Object} input { mssEvents, displacementEvents, alerts, swings, legByDispId, candles, windowBars }
+ * @returns {Object} { mssByIndex, dispByIndex, alertByAnchor, swings, legByDispId, candles, windowBars }
+ */
+function buildOutcomeIndex(input) {
     var W = input.windowBars || DEFAULT_WINDOW_BARS;
-    var candles = input.candles || [];
-    // 索引（避免 O(n²)）
     var mssByIndex = {};
     (input.mssEvents || []).forEach(function (m) {
         if (typeof m.candleIndex !== 'number') return;
@@ -76,7 +71,90 @@ function auditSweepCentric(input) {
         if (!alertByAnchor[a.anchorIndex]) alertByAnchor[a.anchorIndex] = [];
         alertByAnchor[a.anchorIndex].push(a);
     });
+    return {
+        mssByIndex: mssByIndex,
+        dispByIndex: dispByIndex,
+        alertByAnchor: alertByAnchor,
+        swings: input.swings || [],
+        legByDispId: input.legByDispId || {},
+        candles: input.candles || [],
+        windowBars: W
+    };
+}
 
+/**
+ * 单个 sweep 的后续 delivery 指标（11L.12/11L.13 共享）。
+ * @param {Object} se LIQUIDITY_SWEEP 事件（side / candleIndex）
+ * @param {Object} idx buildOutcomeIndex 输出
+ * @returns {Object|null} {
+ *   mss, protectedMss, strongLeg, high,   // 布尔
+ *   mfePct, maePct, counted               // MFE/MAE 相对 %（counted=false 表示基准缺失）
+ * } | null（candleIndex 缺失）
+ */
+function computeSweepOutcomes(se, idx) {
+    var s = se.candleIndex;
+    if (typeof s !== 'number') return null;
+    var candles = idx.candles;
+    var W = idx.windowBars;
+    var dir = se.side === 'SSL' ? 'BULLISH' : 'BEARISH';
+    var mssFound = false;
+    var protectedFound = false;
+    var strongLegFound = false;
+    var highFound = false;
+    var base = candles[s] ? candles[s].close : null;
+    var mfe = 0;
+    var mae = 0;
+
+    var end = Math.min(s + W, candles.length - 1);
+    for (var j = s + 1; j <= end; j++) {
+        var c = candles[j];
+        if (!c) continue;
+        if (base !== null) {
+            if (dir === 'BULLISH') {
+                if (c.high - base > mfe) mfe = c.high - base;
+                if (base - c.low > mae) mae = base - c.low;
+            } else {
+                if (base - c.low > mfe) mfe = base - c.low;
+                if (c.high - base > mae) mae = base - c.high;
+            }
+        }
+        (idx.mssByIndex[j] || []).forEach(function (m) {
+            if (m.direction !== dir) return;
+            mssFound = true;
+            var q = mssReference.classifyMssReference(m, idx.swings).quality;
+            if (q === 'PROTECTED_SWING' || q === 'HTF_RELEVANT') protectedFound = true;
+        });
+        (idx.dispByIndex[j] || []).forEach(function (d) {
+            if (d.direction !== dir) return;
+            var leg = idx.legByDispId[d.id];
+            if (leg && (leg.quality === 'STRONG' || leg.quality === 'EXPLOSIVE')) strongLegFound = true;
+        });
+        (idx.alertByAnchor[j] || []).forEach(function (a) {
+            if (a.direction === dir) highFound = true;
+        });
+    }
+    return {
+        mss: mssFound,
+        protectedMss: protectedFound,
+        strongLeg: strongLegFound,
+        high: highFound,
+        mfePct: base !== null ? mfe / base * 100 : null,
+        maePct: base !== null ? mae / base * 100 : null,
+        counted: base !== null
+    };
+}
+
+/**
+ * Sweep-centric 审计（全部 LIQUIDITY_SWEEP 事件为母样本）。
+ * @param {Object} input
+ *   {
+ *     sweepEvents, mssEvents, swings, displacementEvents, legByDispId, alerts, candles,
+ *     windowBars
+ *   }
+ * @returns {Object} { groups: { GROUP: { n, mss, protectedMss, strongLeg, high, mfeSum, maeSum, mfeCnt } }, order, windowBars }
+ */
+function auditSweepCentric(input) {
+    var idx = buildOutcomeIndex(input);
     var groups = {};
     var order = [];
     function acc(g) {
@@ -86,72 +164,30 @@ function auditSweepCentric(input) {
         }
         return groups[g];
     }
-
     (input.sweepEvents || []).forEach(function (se) {
-        var s = se.candleIndex;
-        if (typeof s !== 'number') return;
-        var dir = se.side === 'SSL' ? 'BULLISH' : 'BEARISH';
+        var o = computeSweepOutcomes(se, idx);
+        if (!o) return;
         var group = classifySweepGroup((se.source && se.source.liquidityType) || se.liquidityType);
         var g = acc(group);
         g.n++;
-
-        var mssFound = false;
-        var protectedFound = false;
-        var strongLegFound = false;
-        var highFound = false;
-        var base = candles[s] ? candles[s].close : null;
-        var mfe = 0;
-        var mae = 0;
-
-        var end = Math.min(s + W, candles.length - 1);
-        for (var j = s + 1; j <= end; j++) {
-            var c = candles[j];
-            if (!c) continue;
-            // 顺向 MFE / 逆向 MAE（以 sweep K 收盘为基准）
-            if (base !== null) {
-                if (dir === 'BULLISH') {
-                    if (c.high - base > mfe) mfe = c.high - base;
-                    if (base - c.low > mae) mae = base - c.low;
-                } else {
-                    if (base - c.low > mfe) mfe = base - c.low;
-                    if (c.high - base > mae) mae = base - c.high;
-                }
-            }
-            // 方向匹配 MSS
-            (mssByIndex[j] || []).forEach(function (m) {
-                if (m.direction !== dir) return;
-                mssFound = true;
-                var q = mssReference.classifyMssReference(m, input.swings || []).quality;
-                if (q === 'PROTECTED_SWING' || q === 'HTF_RELEVANT') protectedFound = true;
-            });
-            // STRONG/EXPLOSIVE leg（displacement → leg）
-            (dispByIndex[j] || []).forEach(function (d) {
-                if (d.direction !== dir) return;
-                var leg = input.legByDispId && input.legByDispId[d.id];
-                if (leg && (leg.quality === 'STRONG' || leg.quality === 'EXPLOSIVE')) strongLegFound = true;
-            });
-            // 形成 HIGH（anchor 落在窗口内）
-            (alertByAnchor[j] || []).forEach(function (a) {
-                if (a.direction === dir) highFound = true;
-            });
-        }
-
-        if (mssFound) g.mss++;
-        if (protectedFound) g.protectedMss++;
-        if (strongLegFound) g.strongLeg++;
-        if (highFound) g.high++;
-        if (base !== null) {
-            g.mfeSum += mfe / base * 100;
-            g.maeSum += mae / base * 100;
+        if (o.mss) g.mss++;
+        if (o.protectedMss) g.protectedMss++;
+        if (o.strongLeg) g.strongLeg++;
+        if (o.high) g.high++;
+        if (o.counted) {
+            g.mfeSum += o.mfePct;
+            g.maeSum += o.maePct;
             g.mfeCnt++;
         }
     });
-
-    return { groups: groups, order: order, windowBars: W };
+    return { groups: groups, order: order, windowBars: idx.windowBars };
 }
 
 module.exports = {
     auditSweepCentric: auditSweepCentric,
     classifySweepGroup: classifySweepGroup,
+    isSwingType: isSwingType,
+    buildOutcomeIndex: buildOutcomeIndex,
+    computeSweepOutcomes: computeSweepOutcomes,
     DEFAULT_WINDOW_BARS: DEFAULT_WINDOW_BARS
 };

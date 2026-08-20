@@ -272,6 +272,17 @@ module.exports = {
          */
         mssShadow: {
             beforeLookbackBars: 6
+        },
+        /**
+         * Phase 11L.13 — Liquidity Incremental Value Audit（旁路，不改生产）。
+         * 判定两个 sweep 是否"同一价格区域 + 时间窗口"（共现）：
+         *   priceTolerance：价格相对容差（0.001 = 0.1%）
+         *   overlapBars：时间窗口（12 = 1h）
+         * 仅审计参数。
+         */
+        sweepIncremental: {
+            priceTolerance: 0.001,
+            overlapBars: 12
         }
     },
 
