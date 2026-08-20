@@ -1,23 +1,14 @@
 /**
- * Phase 12.2 — ATR Directional Change Structural Swing Shadow
+ * Phase 12.2 — ATR Directional Change Structural Swing Shadow（audit 统计层）
+ *
+ * 架构（Phase 12.5A）：**算法唯一实现在 structure/dcStructuralSwing.js**（createDcState /
+ * stepDcState / buildDcSwings / packageForMss），本文件只保留 audit 统计（computeStats /
+ * auditDc），buildDcSwings / atrAt / cfgOf 一律 re-export 自唯一实现——
+ * 禁止任何"看起来一样"的复制算法（Shadow 验证 A == Live 上线 A）。
  *
  * 背景（用户 2026-08-20）：Phase 12.1 修正后结论——2-2 LOCAL_PIVOT 作为局部转折检测器没问题，
  * 但 90d 有 75.1% 的 pivot 最终被附近更极端同向 pivot 包含（层级冗余），不能继续把
- * LOCAL_PIVOT 等价于 STRUCTURAL_SWING。Phase 12.2 不再给 2-2 打补丁（不用 nested=false +
- * separation>=12 + prominence 规则过滤器），直接 shadow 一套 ATR Directional Change 结构，
- * 让结构定义天然消掉 nested pivot。
- *
- * 算法（在线，纯价格结构，不看 HIGH/不碰 MSS/Liquidity）：
- *   状态方向交替寻找 Swing：
- *     UP   ：candidateHigh = 当前最高；每根 bar high 更高 → candidate 更新（吞掉 local extreme）
- *            直到 extremePrice - close >= extremeATR × k → 确认 STRUCTURAL_SWING_HIGH，翻 DOWN
- *     DOWN ：对称（candidateLow / close - extremePrice）
- *
- * 【ATR 冻结语义（用户要求，防参数漂移）】
- *   threshold = ATR_at_extreme × k。每次 candidate extreme 更新时重新锁定：
- *     candidateHigh 更新 → extremePrice 更新 → extremeATR = atrAt(extremeIdx) 更新
- *   之后等待阶段 ATR 保持该锁定值，绝不用每根 K 的当前 ATR 重算——
- *   否则极值后 volatility 扩大会让确认门槛越来越远，Swing 定义被波动状态移动。
+ * LOCAL_PIVOT 等价于 STRUCTURAL_SWING。ATR Directional Change 天然消掉 nested pivot。
  *
  * 每档输出指标（用户表）：
  *   n / swingsPerHour       降噪程度、是否过密
@@ -27,122 +18,16 @@
  *   medianConfirmDelay      occurredAt → confirmedAt 等多久
  *   replacements           一个最终 Swing 确认前吞掉多少 local extremes（分布）
  *
- * 纯诊断：pivotDetector / swingLiquidity / MSS / EQL / 通知全部零改动。
+ * 纯诊断：生产 detector / MSS / 通知全部零改动（本模块仅统计层）。
  */
+var dcss = require('../structure/dcStructuralSwing');
+
 var DEFAULT_ATR_N = 14;
 
-function cfgOf(opts) {
-    var o = opts || {};
-    return {
-        atrN: o.atrN !== undefined ? o.atrN : DEFAULT_ATR_N,
-        confirmWith: o.confirmWith || 'close' // 'close'（默认，wick 噪声小）| 'extreme'
-    };
-}
-
-function trueRange(c, prev) {
-    if (!prev) return c.high - c.low;
-    return Math.max(c.high - c.low, Math.abs(c.high - prev.close), Math.abs(c.low - prev.close));
-}
-
-/** ATR(N)：截止 upTo（含）前 N 根 True Range 均值 */
-function atrAt(candles, upTo, n) {
-    var sum = 0;
-    var cnt = 0;
-    for (var j = upTo; j >= 0 && cnt < n; j--) {
-        var c = candles[j];
-        if (!c) continue;
-        sum += trueRange(c, candles[j - 1]);
-        cnt++;
-    }
-    return cnt > 0 ? sum / cnt : 0;
-}
-
-function mkSwing(direction, price, extremeIndex, occurredAt, confirmedAt, replacements, extremeATR) {
-    return {
-        direction: direction,       // 'HIGH' | 'LOW'
-        price: price,
-        extremeIndex: extremeIndex, // candidate 最后一次更新的 bar
-        occurredAt: occurredAt,     // candidate 形成时点（= extremeIndex）
-        confirmedAt: confirmedAt,   // 反转确认的 bar
-        replacements: replacements, // 确认前吞掉的 local extreme 数
-        extremeATR: extremeATR      // extreme 时点锁定的 ATR（冻结语义）
-    };
-}
-
-/**
- * ATR Directional Change 构建器（在线扫描，无未来泄漏）。
- * @param {Array} candles
- * @param {number} k ATR 倍率（0.5 / 0.75 / 1.0 / 1.5 / 2.0）
- * @param {Object} [opts] { atrN, confirmWith }
- * @returns {Array} 已确认 swings（末段未确认的 candidate 不输出）
- */
-function buildDcSwings(candles, k, opts) {
-    var cfg = cfgOf(opts);
-    var swings = [];
-    var dir = null;            // 'UP'(找 HIGH) | 'DOWN'(找 LOW)
-    var extremeIdx = -1;
-    var extremePrice = null;
-    var extremeATR = 0;
-    var occurredAt = -1;
-    var replacements = 0;
-    var len = candles ? candles.length : 0;
-
-    for (var i = 0; i < len; i++) {
-        var c = candles[i];
-        if (!c) continue;
-        if (dir === null) {
-            // 初始化：以首根 bar 的 high 为起始 candidate（边界 swing 对 90d 统计影响可忽略）
-            dir = 'UP';
-            extremeIdx = i;
-            extremePrice = c.high;
-            occurredAt = i;
-            replacements = 0;
-            extremeATR = atrAt(candles, i, cfg.atrN);
-            continue;
-        }
-        if (dir === 'UP') {
-            if (c.high > extremePrice) {
-                // candidate 更新：吞掉一个 local extreme，ATR 重新锁定
-                extremeIdx = i;
-                extremePrice = c.high;
-                occurredAt = i;
-                replacements++;
-                extremeATR = atrAt(candles, i, cfg.atrN);
-            } else {
-                var rev = cfg.confirmWith === 'extreme' ? extremePrice - c.low : extremePrice - c.close;
-                if (rev >= extremeATR * k) {
-                    swings.push(mkSwing('HIGH', extremePrice, extremeIdx, occurredAt, i, replacements, extremeATR));
-                    dir = 'DOWN';
-                    extremeIdx = i;
-                    extremePrice = c.low;
-                    occurredAt = i;
-                    replacements = 0;
-                    extremeATR = atrAt(candles, i, cfg.atrN);
-                }
-            }
-        } else { // DOWN
-            if (c.low < extremePrice) {
-                extremeIdx = i;
-                extremePrice = c.low;
-                occurredAt = i;
-                replacements++;
-                extremeATR = atrAt(candles, i, cfg.atrN);
-            } else {
-                var rev2 = cfg.confirmWith === 'extreme' ? c.high - extremePrice : c.close - extremePrice;
-                if (rev2 >= extremeATR * k) {
-                    swings.push(mkSwing('LOW', extremePrice, extremeIdx, occurredAt, i, replacements, extremeATR));
-                    dir = 'UP';
-                    extremeIdx = i;
-                    extremePrice = c.high;
-                    occurredAt = i;
-                    replacements = 0;
-                    extremeATR = atrAt(candles, i, cfg.atrN);
-                }
-            }
-        }
-    }
-    return swings;
-}
+/** 唯一实现 re-export（禁止本地复制） */
+var buildDcSwings = dcss.buildDcSwings;
+var atrAt = dcss.atrAt;
+var cfgOf = dcss.cfgOf;
 
 function medianSorted(arr) {
     if (arr.length === 0) return null;
@@ -224,5 +109,6 @@ module.exports = {
     auditDc: auditDc,
     computeStats: computeStats,
     atrAt: atrAt,
-    cfgOf: cfgOf
+    cfgOf: cfgOf,
+    DEFAULT_ATR_N: DEFAULT_ATR_N
 };

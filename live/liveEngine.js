@@ -28,6 +28,7 @@ var opportunityQuality = require('../stats/opportunityQuality');
 var nearStaleness = require('../stats/nearStaleness');
 var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
+var dcStructuralSwing = require('../structure/dcStructuralSwing'); // Phase 12.5A：唯一实现
 var thresholds = require('../config/thresholds');
 
 var LEG_MAX_BARS = 3;
@@ -98,9 +99,24 @@ function createLiveEngine(data, options) {
             prevAtr = replayEngine._updateAtrIncremental(atrSeries, window, i, prevAtr, 14);
 
             // ---- 4. 增量事件 ----
-            var newMssRaw = mssDetector.detectMss([candle], state.swings, {
+            // Phase 12.5A：MSS reference source 切换（与 replayEngine 同构，唯一实现 dcStructuralSwing）。
+            var useDc = !!(cfg.structure && cfg.structure.useDcStructuralSwing);
+            var mssPool = state.swings;
+            var mssConsumed = state.consumedMssRefs || (state.consumedMssRefs = {});
+            if (useDc) {
+                if (!state.dcState) {
+                    state.dcState = dcStructuralSwing.createDcState(undefined, { baseIndex: 0 });
+                }
+                var rawSw = dcStructuralSwing.stepDcState(state.dcState, candle, i, window);
+                if (rawSw) {
+                    state.dcRefPool.push(dcStructuralSwing.packageForMss(rawSw, symbol, '5m', window));
+                }
+                mssPool = state.dcRefPool;
+                mssConsumed = state.dcConsumedMssRefs || (state.dcConsumedMssRefs = {});
+            }
+            var newMssRaw = mssDetector.detectMss([candle], mssPool, {
                 symbol: symbol, timeframe: '5m', baseIndex: i,
-                consumedRefs: state.consumedMssRefs || (state.consumedMssRefs = {}),
+                consumedRefs: mssConsumed,
                 thresholds: cfg
             });
             var newDispRaw = displacementDetector.detectDisplacement([candle], newMssRaw, {

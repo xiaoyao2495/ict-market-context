@@ -144,6 +144,12 @@ function buildMessage(opp, symbol) {
 }
 
 // ---------- 每个 symbol 的运行时 ----------
+// Phase 12.5A：MSS reference source 模式（thresholds.structure.useDcStructuralSwing）。
+// 启动日志 + cursor.json 持久化 + 模式变化 fail-closed（防旧模式状态跑新模式）。
+function structuralSwingMode() {
+    var th = require('../config/thresholds');
+    return !!(th.structure && th.structure.useDcStructuralSwing) ? 'DC_ATR_1_5_CLOSE' : 'LEGACY';
+}
 function createRunner(symbol) {
     var dir = path.join(CONFIG.dataDir, symbol);
     persistence.ensureDir(dir);
@@ -255,6 +261,17 @@ function createRunner(symbol) {
                     ' 根非 futures/无 source（source=' + (badExisting[0].source || 'undefined') + '）——请清理 .live-state 后重启');
             }
         }
+        // Phase 12.5A：structureMode fail-closed —— cursor.json 记录了上次运行的 MSS reference
+        // 模式；本次模式不一致 → 拒绝用旧模式状态跑新模式（DC swings 有状态，混用会污染）。
+        // 回滚安全：flag 改回 false（LEGACY）时，只要 cursor 是 LEGACY 即正常恢复；若 cursor 是
+        // DC 而 flag=false → fail-closed 提示（用户需清理 .live-state 或确认切回）。
+        var cursor = persistence.loadJson(stateFile, null);
+        var mode = structuralSwingMode();
+        if (cursor && cursor.structureMode && cursor.structureMode !== mode) {
+            throw new Error('STRUCTURE_MODE_CHANGED: ' + symbol + ' cursor.structureMode=' +
+                cursor.structureMode + ' 当前=' + mode + '——请清理 .live-state 后重启重新 bootstrap，' +
+                '或保持 flag 一致（勿用旧模式状态跑新模式）');
+        }
         // Fix 1 (P0)：runnerData 保存组装后的 HTF 引用（fetchHtfIncrement 增量更新同一对象）
         var structureCandles = { '1d': data['1d'], '4h': data['4h'], '1h': data['1h'] };
         var calendarCandles = { '1d': data['1d'], '1w': data['1w'], '1M': data['1M'] };
@@ -298,7 +315,7 @@ function createRunner(symbol) {
             lastOpenTime = all[all.length - 1].openTime;
             historyLoaded = true;
             persistence.saveJson(pushedFile, delivered);
-            persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: all.length });
+            persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: all.length, structureMode: mode });
             log(symbol + ' 状态就绪，已推进 ' + all.length + ' 根，去重集合 ' + Object.keys(delivered).length + ' 个已投递机会');
         });
     }
@@ -408,7 +425,7 @@ function createRunner(symbol) {
             lastOpenTime = list[list.length - 1].openTime;
             persistence.appendCandles(candlesFile, list);
             persistence.saveJson(pushedFile, delivered);
-            persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength() });
+            persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength(), structureMode: structuralSwingMode() });
         });
     }
 
@@ -511,6 +528,8 @@ function createRunner(symbol) {
 function main() {
     persistence.ensureDir(CONFIG.dataDir);
     log('=== Live Opportunity Radar 启动 ===');
+    log('Phase 12.5A STRUCTURAL_SWING_MODE=' + structuralSwingMode() + '（MSS reference source：' +
+        (structuralSwingMode() === 'LEGACY' ? 'legacy 2-2 swing' : 'DC 1.5 ATR close-confirmed（structure/dcStructuralSwing.js 唯一实现）') + '）');
     log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED
         ? 'ENABLED（钉钉只推 PRIORITY_HIGH = HIGH + 48 窗口内 Significant Liquidity；STANDARD_HIGH 只落日志）'
         : 'DISABLED（全部 HIGH 照常推钉钉，仅记录 notifyPriority 字段）'));

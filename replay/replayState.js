@@ -80,7 +80,16 @@ function createReplayState(options) {
         prevAmdPhase: 'SEARCHING',
 
         // ---- ATR 增量 ----
-        atrValue: null
+        atrValue: null,
+
+        // ---- Phase 12.5A：DC Structural Swing MSS reference（thresholds.structure.useDcStructuralSwing=true 时启用） ----
+        //   dcState = dcStructuralSwing.createDcState()（惰性）；dcRefPool = 已确认 DC swings
+        //   （packageForMss 兼容格式）；dcConsumedMssRefs = DC 模式独立 consumed（不混 legacy）。
+        //   注意：live 重启从 candles.jsonl 全量重放 onBar 重建（无内存快照持久化）——
+        //   只要 flag 一致，重建状态与连续运行天然一致（同一 stepDcState）。
+        dcState: null,
+        dcRefPool: [],
+        dcConsumedMssRefs: null
     };
 }
 
