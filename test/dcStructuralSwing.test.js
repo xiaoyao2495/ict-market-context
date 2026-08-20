@@ -178,6 +178,56 @@ test('12.5A：future-safety（swing 确认前不入池 / MSS 引用已确认 swi
     assert.strictEqual(firstConfirm.extremeIndex, 5, 'extreme 是 bar5 的 high=100');
 });
 
+test('12.5A.1【P0 复现】：DC MSS 必须用 dcRefPool 解析 quality（legacy pool → NO_REFERENCE）', function () {
+    // 构造：extreme high=100 @bar5，bar11 确认 HIGH（close 回撤 1 ATR），bar16 close 突破 100 → DC BULLISH MSS
+    var out = [];
+    var p = 99;
+    for (var i = 0; i < 6; i++) {
+        var hi = i === 5 ? 100 : 99.9;
+        var lo = hi - 1.0;
+        var c = hi - 0.5;
+        out.push(mkBar(i, p, hi, lo, c));
+        p = c;
+    }
+    for (var j = 6; j < 16; j++) {
+        var hi = 99.5;
+        var lo = hi - 1.0;
+        var c = 99.5 - (j - 6) * 0.1;
+        out.push(mkBar(j, p, hi, lo, c));
+        p = c;
+    }
+    for (var k = 16; k < 20; k++) {
+        var hi = 100.8;
+        var lo = 99.0;
+        var c = 100.2;
+        out.push(mkBar(k, p, hi, lo, c));
+        p = c;
+    }
+    var dcSwings = dcss.buildDcSwings(out, 1.0, {}).map(function (raw) {
+        return dcss.packageForMss(raw, 'BTCUSDT', '5m', out);
+    });
+    var mss = require('../events/mssDetector').detectMss(out, dcSwings, {
+        symbol: 'BTCUSDT', timeframe: '5m', consumedRefs: {}
+    });
+    var withDcRef = mss.filter(function (m) {
+        return m.source.referenceSwingId.indexOf(':DC:') !== -1;
+    });
+    assert.ok(withDcRef.length > 0, '存在 DC reference MSS（' + withDcRef.length + '）');
+
+    var mssRef = require('../stats/mssReference');
+    // 修复后（正确）：用 dcRefPool 解析 → 至少存在非 NO_REFERENCE 的 quality
+    var nonNoRefDc = 0;
+    var nonNoRefLegacy = 0;
+    withDcRef.forEach(function (m) {
+        var qDc = mssRef.classifyMssReference(m, dcSwings).quality;
+        var qLegacy = mssRef.classifyMssReference(m, []).quality; // legacy 池找不到 :DC: id → NO_REFERENCE
+        if (qDc !== 'NO_REFERENCE') nonNoRefDc++;
+        if (qLegacy !== 'NO_REFERENCE') nonNoRefLegacy++;
+    });
+    assert.ok(nonNoRefDc > 0, 'DC pool 解析应有非 NO_REFERENCE（' + nonNoRefDc + '/' + withDcRef.length + '）——P0 修复后的正确行为');
+    assert.strictEqual(nonNoRefLegacy, 0, 'legacy pool 解析全部 NO_REFERENCE（修复前 Live 的 bug 行为）——证明 pool 必须一致');
+});
+
 console.log('');
 console.log(passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

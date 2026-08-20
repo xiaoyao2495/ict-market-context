@@ -68,6 +68,20 @@ function createLiveEngine(data, options) {
     // 共享增量 Leg builder（Phase 11L.1：15min 时间窗 = buildOpportunities 语义，Replay/Live 单一实现）
     var legBuilder = displacementLeg.createWindowedLegBuilder();
 
+    // Phase 12.5A.1（P0 fix）：MSS reference pool 统一 —— MSS 生成与 MSS quality 解析必须吃同一 pool。
+    //   DC 模式：state.dcRefPool（DC STRUCTURAL_SWING，packageForMss 兼容格式）
+    //   legacy 模式：state.swings（2-2 LOCAL_PIVOT 包装）
+    //   之前 evaluateOpportunity 用 state.swings 解析 DC MSS（referenceSwingId 含 :DC: 找不到）
+    //   → NO_REFERENCE → 大量 HIGH 漏报（Shadow/Replay 离线正确，Live 错误）。
+    function structuralReferencePool() {
+        return (cfg.structure && cfg.structure.useDcStructuralSwing)
+            ? state.dcRefPool
+            : state.swings;
+    }
+    function useDcMode() {
+        return !!(cfg.structure && cfg.structure.useDcStructuralSwing);
+    }
+
     /**
      * 单根推进（5m 已收盘，index 必须 == window.length 且连续）。
      * 内部把 candle push 进 window 后，用完整 window 驱动检测器（全局 index 语义）。
@@ -100,9 +114,12 @@ function createLiveEngine(data, options) {
 
             // ---- 4. 增量事件 ----
             // Phase 12.5A：MSS reference source 切换（与 replayEngine 同构，唯一实现 dcStructuralSwing）。
-            var useDc = !!(cfg.structure && cfg.structure.useDcStructuralSwing);
-            var mssPool = state.swings;
-            var mssConsumed = state.consumedMssRefs || (state.consumedMssRefs = {});
+            // 12.5A.1：pool 统一走 structuralReferencePool()（生成与 quality 解析同一来源）。
+            var useDc = useDcMode();
+            var mssPool = structuralReferencePool();
+            var mssConsumed = useDc
+                ? (state.dcConsumedMssRefs || (state.dcConsumedMssRefs = {}))
+                : (state.consumedMssRefs || (state.consumedMssRefs = {}));
             if (useDc) {
                 if (!state.dcState) {
                     state.dcState = dcStructuralSwing.createDcState(undefined, { baseIndex: 0 });
@@ -111,8 +128,6 @@ function createLiveEngine(data, options) {
                 if (rawSw) {
                     state.dcRefPool.push(dcStructuralSwing.packageForMss(rawSw, symbol, '5m', window));
                 }
-                mssPool = state.dcRefPool;
-                mssConsumed = state.dcConsumedMssRefs || (state.dcConsumedMssRefs = {});
             }
             var newMssRaw = mssDetector.detectMss([candle], mssPool, {
                 symbol: symbol, timeframe: '5m', baseIndex: i,
@@ -202,7 +217,8 @@ function createLiveEngine(data, options) {
         }
         var legQuality = displacementLeg.classifyLegQuality(leg);
 
-        // mss quality
+        // mss quality（12.5A.1 P0 fix：必须用与 MSS 生成相同的 reference pool，
+        // 否则 DC MSS 的 :DC: reference 在 legacy swings 里解析为 NO_REFERENCE → HIGH 漏报）
         var mssQuality = 'NO_MSS';
         if (leg.mssId) {
             var mssEvent = null;
@@ -211,7 +227,7 @@ function createLiveEngine(data, options) {
                 return false;
             });
             if (mssEvent) {
-                mssQuality = mssReference.classifyMssReference(mssEvent, state.swings || []).quality;
+                mssQuality = mssReference.classifyMssReference(mssEvent, structuralReferencePool()).quality;
             }
         }
 
@@ -275,6 +291,9 @@ function createLiveEngine(data, options) {
             mssQuality: mssQuality,
             legQuality: legQuality,
             legRangeAtr: leg.rangeAtr,
+            // Phase 12.5A.1：MSS 追溯诊断字段（shadow 记录用；不参与判定）
+            mssId: leg.mssId || null,
+            mssReferenceSwingId: mssEvent && mssEvent.source ? (mssEvent.source.referenceSwingId || null) : null,
             anchorIndex: anchorIndex,
             anchorTime: anchorCandle.closeTime,
             anchorPrice: anchorPrice,

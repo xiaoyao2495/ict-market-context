@@ -230,7 +230,12 @@ function createRunner(symbol) {
                         barsBeforeLegStart: c.barsBeforeLegStart,
                         significant: alertPrioritization.isSignificant(c.sourceType)
                     };
-                })
+                }),
+                // 12.5A.1：Structure Mode + MSS 追溯 —— 避免 legacy/DC 样本混在同一个
+                // prioritization.jsonl 无法区分；referenceSwingId 验证 ":DC:" 前缀。
+                structureMode: structuralSwingMode(),
+                mssEventId: opp.mssId || null,
+                referenceSwingId: opp.mssReferenceSwingId || null
             };
             fs.appendFileSync(shadowFile, JSON.stringify(rec) + '\n');
         } catch (e) {
@@ -350,12 +355,20 @@ function createRunner(symbol) {
     }
 
     /** Fix 3+4（11L.3/11L.4）：重试 outbox 中未投递成功的机会（崩溃/重启后从 outbox.json 恢复） */
+    // 12.5A.1：outbox item 带 structureMode —— 跨模式的机会不得重试（quarantine + warning），
+    // 防止"看起来是 DC 模式发出的通知、实际来自 LEGACY"污染人工观察。
     function retryPending() {
         if (pending.length === 0) return Promise.resolve();
         var list = pending.slice();
         pending = [];
+        var mode = structuralSwingMode();
         return list.reduce(function (chain2, item) {
             return chain2.then(function () {
+                if (item.structureMode && item.structureMode !== mode) {
+                    log(symbol + ' OUTBOX_MODE_MISMATCH: 丢弃跨模式机会 id=' + (item.opp && item.opp.id) +
+                        '（outbox.structureMode=' + item.structureMode + ' 当前=' + mode + '，qurantined，不发送）');
+                    return; // quarantine：不发送、不进回队
+                }
                 return deliver(item.opp).then(function (ok) {
                     if (!ok) {
                         pending.push(item); // 仍失败 → 留在 outbox，下轮继续
@@ -384,7 +397,8 @@ function createRunner(symbol) {
         }
         return deliver(opp).then(function (ok) {
             if (!ok) {
-                pending.push({ opp: opp, attempts: 0 });
+                // 12.5A.1：入队带 structureMode（跨模式重试隔离）
+                pending.push({ opp: opp, attempts: 0, structureMode: structuralSwingMode() });
                 saveOutbox();
             }
             return null;

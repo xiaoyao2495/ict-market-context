@@ -10,6 +10,9 @@
  *   nearDistPct / notificationNearDistPct
  *   11L.15b 起新增：immediateSweep（摘要）+ allCandidates[]（side/sourceType/sourcePrice/
  *   confirmedAt/barsBeforeLegStart/significant）——判定依据可追溯，不再只看消息的 immediateSweep
+ *   12.5A.1 起新增：structureMode（LEGACY|DC_ATR_1_5_CLOSE，区分混合样本）+ mssEventId +
+ *   referenceSwingId（验证 ":DC:" 前缀 / MSS 追溯）——audit 可按 structureMode 分桶，不混
+ *   legacy/DC 样本
  *
  * 11L.15a（Forward Sample Integrity）：
  *   - 按 opp.id 去重（crash/replay 边界下 STANDARD 不写 delivered，可能重复落盘）
