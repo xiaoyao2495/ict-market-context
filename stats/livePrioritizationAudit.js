@@ -8,6 +8,8 @@
  *   id / symbol / ts / priority(PRIORITY_HIGH|STANDARD_HIGH) / direction / tier
  *   availableAt / anchorTime / anchorIndex / notificationPrice / notificationNearTarget / nearTarget
  *   nearDistPct / notificationNearDistPct
+ *   11L.15b 起新增：immediateSweep（摘要）+ allCandidates[]（side/sourceType/sourcePrice/
+ *   confirmedAt/barsBeforeLegStart/significant）——判定依据可追溯，不再只看消息的 immediateSweep
  *
  * 11L.15a（Forward Sample Integrity）：
  *   - 按 opp.id 去重（crash/replay 边界下 STANDARD 不写 delivered，可能重复落盘）

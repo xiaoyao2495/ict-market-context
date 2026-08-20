@@ -59,6 +59,20 @@ function windowHasSignificant(alert) {
 }
 
 /**
+ * 11L.15b：全部 Significant 候选（判定依据明细）。
+ * B 口径判定只看"是否存在"，但通知/诊断需要展示"到底是哪一个"——
+ * 这就是 XRP/ETH 案例里"消息显示 SWING_HIGH 但实际是 PRIORITY_HIGH"的真相来源。
+ * allCandidates 按 confirmedAt 升序，返回保持该序。
+ */
+function significantCandidates(alert) {
+    var ctx = alert && alert.liquidityContext;
+    if (!ctx || !Array.isArray(ctx.allCandidates)) return [];
+    return ctx.allCandidates.filter(function (c) {
+        return c && isSignificant(c.sourceType);
+    });
+}
+
+/**
  * 空统计累加器（与 auditRelevance / auditLiquidityRecency 同口径）。
  */
 function newAcc() {
@@ -146,6 +160,7 @@ module.exports = {
     isSignificant: isSignificant,
     immediateGroupOf: immediateGroupOf,
     windowHasSignificant: windowHasSignificant,
+    significantCandidates: significantCandidates,
     newAcc: newAcc,
     accAdd: accAdd
 };

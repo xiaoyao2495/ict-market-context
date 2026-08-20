@@ -25,6 +25,7 @@ var persistence = require('../live/persistence');
 var dingTalk = require('../notify/dingTalk');
 var continuityChecker = require('../replay/continuityChecker');
 var liquidityProvenance = require('../stats/liquidityProvenance');
+var alertPrioritization = require('../stats/alertPrioritization');
 var thresholds = require('../config/thresholds');
 
 var CONFIG = require('../config/live.json');
@@ -101,16 +102,38 @@ function buildMessage(opp, symbol) {
         headTag + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
         dir
     ];
-    // Phase 11L.8：Liquidity Taken（provenance 通知行，措辞=「近期获取流动性」）。
-    //   有 immediateSweep → 3 行；无 → 'NONE'（不猜测）。HIGH 正常发送，不因 NONE 降级。
+    // Phase 11L.8 + 11L.15b：流动性通知行 —— 展示与判定依据对齐。
+    //
+    //   判定（B 口径，windowHasSignificant）看的是 48 根窗口内 allCandidates 是否存在
+    //   Significant Liquidity（EQL/EQH/PDL/PDH/Session）；而 immediateSweep 只是"离 leg 最近
+    //   （或同距最新）的 sweep"，经常被更频繁的普通 swing 抢走 —— 这就是 XRP/ETH 案例里
+    //   "消息显示 5M SWING_HIGH 但实际是 PRIORITY_HIGH"的来源，不是筛选 bug。
+    //
+    //   文案因此拆两块：
+    //     Priority Liquidity → allCandidates 中全部 Significant（"为什么这条 HIGH 有资格打扰你"）
+    //     Immediate Context  → 离 leg 最近的 sweep（仅供上下文，不构成判定依据）
+    //   STANDARD（窗口内无 Significant；enabled=false 全推时可见）→ Liquidity Context（immediateSweep 或 NONE）。
     var liq = opp.liquidityContext;
-    if (liq && liq.immediateSweep) {
-        var pri = liq.immediateSweep;
-        lines.push('Liquidity Taken:');
-        lines.push(liquidityProvenance.formatSweepPriceLine(pri) || 'Liquidity Taken: -');
-        lines.push(liquidityProvenance.formatSweepRelationLine(pri) || 'BEFORE_LEG');
+    var sigs = alertPrioritization.significantCandidates(opp);
+    if (sigs.length > 0) {
+        lines.push('Priority Liquidity:');
+        sigs.forEach(function (s, i) {
+            var prefix = sigs.length > 1 ? '• ' : '';
+            lines.push(prefix + (liquidityProvenance.formatSweepPriceLine(s) || (s.side + ' · ' + (s.sourceType || 'UNKNOWN'))) +
+                ' · ' + (liquidityProvenance.formatSweepRelationLine(s) || 'BEFORE_LEG'));
+        });
+        if (liq && liq.immediateSweep) {
+            lines.push('Immediate Context:');
+            lines.push((liquidityProvenance.formatSweepPriceLine(liq.immediateSweep) || 'Immediate Context: -') +
+                ' · ' + (liquidityProvenance.formatSweepRelationLine(liq.immediateSweep) || 'BEFORE_LEG'));
+        }
+    } else if (liq && liq.immediateSweep) {
+        // STANDARD_HIGH：窗口内无 Significant（仅普通 swing 或无）
+        lines.push('Liquidity Context:');
+        lines.push(liquidityProvenance.formatSweepPriceLine(liq.immediateSweep) || 'Liquidity Context: -');
+        lines.push(liquidityProvenance.formatSweepRelationLine(liq.immediateSweep) || 'BEFORE_LEG');
     } else {
-        lines.push('Liquidity Taken: NONE');
+        lines.push('Liquidity Context: NONE');
     }
     lines.push(
         'MSS: ' + mss + (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? ' · Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : ' · Leg: ' + opp.legQuality),
@@ -166,6 +189,7 @@ function createRunner(symbol) {
      */
     function logShadowOpp(opp) {
         try {
+            var ctx = opp.liquidityContext || {};
             var rec = {
                 id: opp.id,
                 symbol: symbol,
@@ -181,7 +205,26 @@ function createRunner(symbol) {
                 nearTarget: opp.nearTarget,
                 // 11L.15a：通知时点距离（通知快照口径，非 anchor 口径）——未来 NearDistance/ATR 归一化研究需要
                 notificationNearDistPct: opp.notificationNearDistPct !== undefined ? opp.notificationNearDistPct : opp.nearDistPct,
-                nearDistPct: opp.nearDistPct
+                nearDistPct: opp.nearDistPct,
+                // 11L.15b：判定依据明细（48 窗口内全部候选）——可追溯"到底是哪个 significant 让它通过"，
+                // 避免只看消息（immediateSweep）误判为筛选 bug
+                immediateSweep: ctx.immediateSweep ? {
+                    side: ctx.immediateSweep.side,
+                    sourceType: ctx.immediateSweep.sourceType,
+                    sourcePrice: ctx.immediateSweep.sourcePrice,
+                    confirmedAt: ctx.immediateSweep.confirmedAt,
+                    barsBeforeLegStart: ctx.immediateSweep.barsBeforeLegStart
+                } : null,
+                allCandidates: (ctx.allCandidates || []).map(function (c) {
+                    return {
+                        side: c.side,
+                        sourceType: c.sourceType,
+                        sourcePrice: c.sourcePrice,
+                        confirmedAt: c.confirmedAt,
+                        barsBeforeLegStart: c.barsBeforeLegStart,
+                        significant: alertPrioritization.isSignificant(c.sourceType)
+                    };
+                })
             };
             fs.appendFileSync(shadowFile, JSON.stringify(rec) + '\n');
         } catch (e) {
@@ -268,7 +311,9 @@ function createRunner(symbol) {
     function deliver(opp) {
         if (delivered[opp.id]) return Promise.resolve(true); // 已投递（跨重启去重）
         var msg = buildMessage(opp, symbol);
-        log('🔥 HIGH 机会: ' + symbol + ' ' + opp.direction + ' ' + opp.mssQuality + '|' + opp.legQuality +
+        // 11L.15b：日志带优先级前缀（PRIORITY=🔴 / STANDARD=🟡），配合消息文案可追溯判定依据
+        log((opp.notifyPriority === 'PRIORITY_HIGH' ? '🔴 ' : '🟡 ') + 'HIGH 机会: ' + symbol + ' ' + opp.direction +
+            ' ' + opp.mssQuality + '|' + opp.legQuality +
             ' near ' + (opp.nearDistPct !== null ? opp.nearDistPct.toFixed(2) + '%' : '-') + ' id=' + opp.id +
             ' 通知=' + fmt(opp.availableAt) + ' 锚=' + fmt(opp.anchorTime) +
             (opp.nearConsumed ? ' [near 通知前已触及·观察]' : ''));

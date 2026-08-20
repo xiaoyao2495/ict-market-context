@@ -88,6 +88,32 @@ test('11L.15：isSignificant / immediateGroupOf / windowHasSignificant 分类', 
     assert.strictEqual(ap.windowHasSignificant(mkAlert('g', null)), false);
 });
 
+/* ---------- significantCandidates（判定依据明细，11L.15b） ---------- */
+
+test('11L.15b：significantCandidates 返回全部显著候选（判定依据）', function () {
+    // immediate 是 SWING，但窗口内存在 EQH + PDH → B 口径 PRIORITY，依据是这两个 significant
+    var ctx = {
+        immediateSweep: { sourceType: 'SWING_HIGH', sourcePrice: 2269.88, candleIndex: 8, barsBeforeLegStart: 12 },
+        allCandidates: [
+            { sourceType: 'SWING_HIGH', sourcePrice: 2269.88, candleIndex: 8, barsBeforeLegStart: 12 },
+            { sourceType: 'EQH', sourcePrice: 2270.5, candleIndex: 5, barsBeforeLegStart: 21 },
+            { sourceType: 'PDH', sourcePrice: 2271.1, candleIndex: 3, barsBeforeLegStart: 30 }
+        ]
+    };
+    var alert = mkAlert('xrp', ctx);
+    var sigs = ap.significantCandidates(alert);
+    assert.strictEqual(sigs.length, 2, 'EQH + PDH 是显著候选');
+    assert.strictEqual(sigs[0].sourceType, 'EQH', '按 confirmedAt 升序保持（index 5 在前）');
+    assert.strictEqual(sigs[1].sourceType, 'PDH');
+    assert.strictEqual(ap.windowHasSignificant(alert), true, 'B 口径判定 = PRIORITY（依据正是上述两个）');
+
+    // 只有普通 swing → 空数组（STANDARD）
+    var alert2 = mkAlert('eth', swCtx('SWING_HIGH', ['SWING_HIGH']));
+    assert.strictEqual(ap.significantCandidates(alert2).length, 0);
+    // 无 context → 空数组
+    assert.strictEqual(ap.significantCandidates(mkAlert('z', null)).length, 0);
+});
+
 /* ---------- 两个口径分组 + 原因分布 + forward ---------- */
 
 test('11L.15：auditPrioritization 两口径分组 + 原因分布 + forward', function () {
