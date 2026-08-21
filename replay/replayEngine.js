@@ -719,10 +719,28 @@ function runReplay(data, options) {
                 state.drawTrace[i] = { bslNear: null, bslMacro: null, sslNear: null, sslMacro: null };
             }
             // Phase 11D.9：bias trace + 1h/4h 已收盘趋势方向（Delivery Alignment 维度）
+            // Phase 13A.1：只读扩展组件级方向 + conflicts（零判定；供当前 Bias 审计）
             if (!state.biasTrace) state.biasTrace = [];
             state.biasTrace[i] = {
                 direction: snapshot.bias ? snapshot.bias.direction : null,
-                confidence: snapshot.bias && snapshot.bias.confidence !== undefined ? snapshot.bias.confidence : null
+                confidence: snapshot.bias && snapshot.bias.confidence !== undefined ? snapshot.bias.confidence : null,
+                components: (function () {
+                    var b = snapshot.bias;
+                    if (!b || !b.components) return null;
+                    return {
+                        liquidity: b.components.liquidity ? b.components.liquidity.direction : null,
+                        structure: b.components.structure ? b.components.structure.direction : null,
+                        location: b.components.location ? b.components.location.direction : null,
+                        delivery: b.components.delivery ? b.components.delivery.direction : null
+                    };
+                })(),
+                conflicts: (function () {
+                    var b = snapshot.bias;
+                    if (!b || !Array.isArray(b.conflicts)) return null;
+                    return b.conflicts.map(function (cf) {
+                        return { type: cf.type || null, severity: cf.severity || null };
+                    });
+                })()
             };
             while (h1Ptr < h1Candles.length - 1 && h1Candles[h1Ptr + 1].closeTime <= evaluationTime) h1Ptr++;
             while (h4Ptr < h4Candles.length - 1 && h4Candles[h4Ptr + 1].closeTime <= evaluationTime) h4Ptr++;
