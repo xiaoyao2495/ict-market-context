@@ -145,7 +145,7 @@ test('13：futureLabel（未来第一个被 raid 的候选；label 独立于 fea
     var lb8 = dla.futureLabel(actives8, idx, 8);
     assert.strictEqual(lb8.nextSide, 'BSL');
     assert.strictEqual(lb8.nextType, 'EQH');
-    assert.strictEqual(lb8.barsToDraw, 4, 'raid bar12 - t8');
+    assert.strictEqual(lb8.barsToRaid, 4, 'raid bar12 - t8');
     // t=15：B1 已被 take（raid 12 <= 15），只剩 S1 → nextDraw = SSL
     var actives15 = cs.filter(function (c) { return dla.isActiveAt(c, idx, 15, candles); });
     assert.strictEqual(actives15.length, 1, 'B1 已被 take 出池');
@@ -187,6 +187,64 @@ test('13：auditDrawLiquidity（基线：最近距离 vs 随机；分布输出�
     // 最近距离基线：t=8 时 BSL @105 距离 4.5、SSL @95 距离 5.5 → 预测 BSL（实际 BSL）✓
     // t=13 后 BSL 被 take（raid 12）→ 只剩 SSL → 预测 SSL（实际 SSL）✓ —— 最近距离应显著好于随机
     assert.ok(res.accuracyNearest > 0.5, '最近距离基线应 > 随机（构造倾向）；实际 ' + res.accuracyNearest);
+    // Phase 13.1：分桶统计存在且聚合正确
+    var totalBuckets = Object.keys(res.bucketStats).reduce(function (s, k) { return s + res.bucketStats[k].n; }, 0);
+    assert.strictEqual(totalBuckets, res.n, '分桶 n 之和 = 总 label 数');
+});
+
+/* ---------- Phase 13.1：净化 + 分桶 ---------- */
+
+test('13.1：excludeLegacySwing 净化（排除 legacy SWING，保留 DC_SWING/EQH/PDL 等）', function () {
+    var candles = [];
+    for (var i = 0; i < 60; i++) candles.push(mkBar(i, 100, 101, 99, 100.5));
+    candles[12] = mkBar(12, 100, 106, 99, 100);
+    candles[22] = mkBar(22, 100, 101, 94, 100);
+    candles[30] = mkBar(30, 100, 108, 99, 100);
+    var liqs = [
+        mkLiq('L1', 'SWING_HIGH', 'BSL', 105, 4),  // legacy 2-2 → 净化后排除
+        mkLiq('L2', 'PDL', 'SSL', 95, 6)
+    ];
+    var dcRaw = [{ direction: 'HIGH', price: 108, extremeIndex: 10, occurredAt: 10, confirmedAt: 12, replacements: 1, extremeATR: 2 }];
+    var dcSwings = dcRaw.map(function (r) {
+        return { id: 'X:DC:SWING_HIGH:12:10', type: 'SWING_HIGH', side: 'BSL', price: r.price,
+            confirmedAt: 1000000 + 12 * BAR + BAR - 1, metadata: { index: 12, source: 'dc' } };
+    });
+    var atrSeries = {};
+    candles.forEach(function (c, i) { atrSeries[i] = 2; });
+    var htfTrend = {};
+    candles.forEach(function (c, i) { htfTrend[i] = { h1Up: true, h4Up: true }; });
+    // V1 全池
+    var resV1 = dla.auditDrawLiquidity({
+        candles: candles, liquidityObjects: liqs, dcSwings: dcSwings,
+        htfTrend: htfTrend, htf1hCandles: [], displacementEvents: [], atrSeries: atrSeries, startIndex: 0
+    });
+    // 净化
+    var res13 = dla.auditDrawLiquidity({
+        candles: candles, liquidityObjects: liqs, dcSwings: dcSwings,
+        htfTrend: htfTrend, htf1hCandles: [], displacementEvents: [], atrSeries: atrSeries,
+        startIndex: 0, excludeLegacySwing: true
+    });
+    assert.ok(resV1.n > 0, 'V1 全池有 label');
+    assert.ok(res13.n > 0, '净化后仍有 label（DC_SWING/PDL 保留）');
+    // typeDist 不应含 legacy SWING
+    assert.strictEqual(res13.typeDist.SWING_HIGH, undefined, '净化后 nextType 无 legacy SWING_HIGH');
+    assert.strictEqual(res13.typeDist.SWING_LOW, undefined, '净化后 nextType 无 legacy SWING_LOW');
+    assert.ok(res13.typeDist.PDL !== undefined || res13.typeDist.DC_SWING_HIGH !== undefined, '净化后 label 来自 significant');
+    // 分桶（barsToRaid 分桶聚合）
+    var totalB = Object.keys(res13.bucketStats).reduce(function (s, k) { return s + res13.bucketStats[k].n; }, 0);
+    assert.strictEqual(totalB, res13.n, '净化模式分桶 n 之和 = label 数');
+});
+
+test('13.1：raidBucketOf 分桶边界（30m/1h/4h/24h）', function () {
+    assert.strictEqual(dla.raidBucketOf(1), '30m');
+    assert.strictEqual(dla.raidBucketOf(6), '30m');
+    assert.strictEqual(dla.raidBucketOf(7), '1h');
+    assert.strictEqual(dla.raidBucketOf(12), '1h');
+    assert.strictEqual(dla.raidBucketOf(13), '4h');
+    assert.strictEqual(dla.raidBucketOf(48), '4h');
+    assert.strictEqual(dla.raidBucketOf(49), '24h');
+    assert.strictEqual(dla.raidBucketOf(288), '24h');
+    assert.strictEqual(dla.raidBucketOf(289), '>24h');
 });
 
 console.log('');

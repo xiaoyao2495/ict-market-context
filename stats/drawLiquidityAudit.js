@@ -209,9 +209,18 @@ function futureLabel(actives, idxById, tBar) {
     return {
         nextSide: best.c.side,
         nextType: best.c.type,
-        barsToDraw: best.ix.raidBar - tBar,
+        barsToRaid: best.ix.raidBar - tBar,
         nextId: best.c.id
     };
+}
+
+/** barsToRaid 分桶（30m / 1h / 4h / 24h / >24h）——用户 13.1：预测对了但 6h 后才发生 ≠ 30min 内发生 */
+function raidBucketOf(bars) {
+    if (bars <= 6) return '30m';
+    if (bars <= 12) return '1h';
+    if (bars <= 48) return '4h';
+    if (bars <= 288) return '24h';
+    return '>24h';
 }
 
 /**
@@ -228,6 +237,13 @@ function futureLabel(actives, idxById, tBar) {
 function auditDrawLiquidity(ctx) {
     var candles = ctx.candles || [];
     var candidates = normalizeCandidates(ctx.liquidityObjects || [], ctx.dcSwings || [], candles);
+    // Phase 13.1：候选池净化（排除 legacy 2-2 LOCAL_PIVOT swing；DC swing 保留）。
+    // 保留：PDH/PDL/PWH/PWL/Session/EQH/EQL/DC_SWING。一次一个变量，其他全冻结。
+    if (ctx.excludeLegacySwing) {
+        candidates = candidates.filter(function (c) {
+            return c.type !== 'SWING_HIGH' && c.type !== 'SWING_LOW';
+        });
+    }
     var idxById = buildCandidateIndex(candidates, candles);
 
     // ATR 序列（as-of t）
@@ -269,6 +285,7 @@ function auditDrawLiquidity(ctx) {
     var sideDist = {};     // 实际 nextSide 分布
     var typeDist = {};     // 实际 nextType 分布
     var primaryDist = {};  // primary draw 判定（最近候选侧）
+    var bucketRows = [];   // Phase 13.1：分桶统计行 { bucket, actual, nearest, htf, rand }
     var featureCohort = { // 按特征分组预测准确率（feature → nextSide 命中率）
         htfBullish: { n: 0, hit: 0 }, htfBearish: { n: 0, hit: 0 }, htfNeutral: { n: 0, hit: 0 },
         zoneDiscount: { n: 0, hit: 0 }, zonePremium: { n: 0, hit: 0 }, zoneEq: { n: 0, hit: 0 },
@@ -295,7 +312,9 @@ function auditDrawLiquidity(ctx) {
         sideDist[label.nextSide] = (sideDist[label.nextSide] || 0) + 1;
         typeDist[label.nextType] = (typeDist[label.nextType] || 0) + 1;
         // 最近距离基线预测
+        var nearestSide = null;
         if (nearest) {
+            nearestSide = nearest.c.side;
             var pred = nearest.c.side;
             primaryDist[pred] = (primaryDist[pred] || 0) + 1;
             if (pred === label.nextSide) nearestCorrect++;
@@ -305,6 +324,21 @@ function auditDrawLiquidity(ctx) {
         actives.forEach(function (c) { if (c.side === 'BSL') upper++; else lower++; });
         var randPred = upper >= lower ? 'BSL' : 'SSL';
         if (randPred === label.nextSide) randomCorrect++;
+
+        // Phase 13.1：分桶统计行（30m/1h/4h/24h——区分"30min 内发生"与"6h 后才发生"）
+        var ht = ctx.htfTrend && ctx.htfTrend[t];
+        var htfPred = null;
+        if (ht) {
+            if (ht.h1Up === true && ht.h4Up === true) htfPred = 'BSL';
+            else if (ht.h1Up === false && ht.h4Up === false) htfPred = 'SSL';
+        }
+        bucketRows.push({
+            bucket: raidBucketOf(label.barsToRaid),
+            actual: label.nextSide,
+            nearest: nearestSide,
+            htf: htfPred,
+            rand: randPred
+        });
 
         // 特征 cohort（用最近候选的特征做分组）
         var feat = null;
@@ -333,11 +367,21 @@ function auditDrawLiquidity(ctx) {
                 close: price,
                 nextSide: label.nextSide,
                 nextType: label.nextType,
-                barsToDraw: label.barsToDraw,
+                barsToRaid: label.barsToRaid,
                 nearest: { type: feat.type, side: feat.side, distanceATR: feat.distanceATR, ageBars: feat.ageBars, zone: feat.zone, htfStructure: feat.htfStructure, deliveryAlignment: feat.deliveryAlignment }
             });
         }
     }
+
+    // Phase 13.1：分桶汇总（30m/1h/4h/24h——区分"30min 内发生"与"6h 后才发生"）
+    var bucketStats = {};
+    bucketRows.forEach(function (r) {
+        var b = bucketStats[r.bucket] || (bucketStats[r.bucket] = { n: 0, nearest: 0, nearestN: 0, htf: 0, htfN: 0, rand: 0, randN: 0 });
+        b.n++;
+        if (r.nearest !== null) { b.nearestN++; if (r.nearest === r.actual) b.nearest++; }
+        if (r.htf !== null) { b.htfN++; if (r.htf === r.actual) b.htf++; }
+        b.randN++; if (r.rand === r.actual) b.rand++;
+    });
 
     var randomRate = n > 0 ? randomCorrect / n : null;
     return {
@@ -349,6 +393,7 @@ function auditDrawLiquidity(ctx) {
         accuracyNearest: n > 0 ? nearestCorrect / n : null,
         accuracyRandom: randomRate,
         featureCohort: featureCohort,
+        bucketStats: bucketStats,
         HORIZON_BARS: HORIZON_BARS
     };
 }
@@ -356,6 +401,7 @@ function auditDrawLiquidity(ctx) {
 module.exports = {
     BAR_MS: BAR_MS,
     HORIZON_BARS: HORIZON_BARS,
+    raidBucketOf: raidBucketOf,
     typeGroup: typeGroup,
     normalizeCandidates: normalizeCandidates,
     buildCandidateIndex: buildCandidateIndex,

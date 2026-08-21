@@ -20,6 +20,8 @@ var drawLiquidityAudit = require('../stats/drawLiquidityAudit');
 
 var SYMBOL = process.argv[2] || 'BTCUSDT';
 var DAYS = parseInt(process.argv[3] || '90', 10);
+// Phase 13.1：第 4 参数 'significant' → 候选池净化（排除 legacy 2-2 swing）
+var SIGNIFICANT_ONLY = process.argv[4] === 'significant';
 var SNAPSHOT_INTERVAL = 12;
 
 function fmt(ms) {
@@ -73,11 +75,16 @@ historicalLoader.loadAll(SYMBOL, startTime, endTime)
                 htf1hCandles: data['1h'] || [],
                 displacementEvents: result.displacementEvents || [],
                 atrSeries: result.atrSeries || [],
-                startIndex: startIndex
+                startIndex: startIndex,
+                excludeLegacySwing: SIGNIFICANT_ONLY
             });
 
             console.log('');
-            console.log('DRAW ON LIQUIDITY QUANTIFICATION (Phase 13 V1, ' + SYMBOL + ' ' + DAYS + 'd)');
+            console.log('DRAW ON LIQUIDITY QUANTIFICATION (Phase 13' + (SIGNIFICANT_ONLY ? '.1' : ' V1') + ', ' + SYMBOL + ' ' + DAYS + 'd)');
+            if (SIGNIFICANT_ONLY) {
+                console.log('净化模式：排除 legacy 2-2 SWING；保留 PDH/PDL/PWH/PWL/Session/EQH/EQL/DC_SWING');
+                console.log('（label = nextSignificantDrawSide/Type + barsToRaid，未来只进 label）');
+            }
             console.log('liquidity objects = ' + (result.liquidityObjects || []).length +
                 ' · DC swings = ' + dcSwings.length + ' · label 窗口 = ' + drawLiquidityAudit.HORIZON_BARS + ' bars (8h)');
             console.log('');
@@ -109,6 +116,20 @@ historicalLoader.loadAll(SYMBOL, startTime, endTime)
             console.log('  （若最近距离明显 > 随机 → 距离是有效特征；>70% 才有资格谈 Draw 预测）');
             console.log('');
 
+            console.log('=== Phase 13.1 barsToRaid 分桶（30m/1h/4h/24h——"30min 内发生"≠"6h 后才发生"） ===');
+            console.log(pad('桶', 8) + pad('n', 7) + pad('nearest', 9) + pad('HTF dir', 9) + pad('random', 9));
+            ['30m', '1h', '4h', '24h', '>24h'].forEach(function (b) {
+                var s = res.bucketStats[b];
+                if (!s) return;
+                console.log(pad(b, 8) + pad(String(s.n), 7) +
+                    pad(pct(s.nearestN > 0 ? s.nearest / s.nearestN : null), 9) +
+                    pad(pct(s.htfN > 0 ? s.htf / s.htfN : null), 9) +
+                    pad(pct(s.randN > 0 ? s.rand / s.randN : null), 9));
+            });
+            console.log('  （nearest = 最近 ACTIVE 候选侧；HTF dir = h1+h4 同向方向；random = 候选池多数侧）');
+            console.log('  预期若净化有效：30m 桶 nearest/HTF 应显著 > random，且 > V1 全池同桶');
+            console.log('');
+
             console.log('=== 特征 cohort（按最近候选特征分组，预测 nextDrawSide 命中率） ===');
             function printCohort(label, c, hasDir) {
                 var rate = (hasDir && c.n > 0) ? pct(c.hit / c.n) : '-';
@@ -133,7 +154,7 @@ historicalLoader.loadAll(SYMBOL, startTime, endTime)
                 console.log(pad(String(r.t), 8) +
                     pad(String(r.close !== null && r.close !== undefined ? r.close.toFixed(2) : '-'), 12) +
                     pad(r.nextSide + ':' + r.nextType, 16) +
-                    pad(String(r.barsToDraw), 5) +
+                    pad(String(r.barsToRaid), 5) +
                     pad(r.nearest.type + '(' + r.nearest.side + ')', 18) +
                     pad(r.nearest.distanceATR !== null ? r.nearest.distanceATR.toFixed(2) : '-', 8) +
                     pad(String(r.nearest.ageBars), 5) +
