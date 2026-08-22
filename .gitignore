@@ -4,6 +4,10 @@ node_modules/
 # Local data cache (historical market data, re-downloadable)
 data-cache/
 
+# Generated Daily Bias audit datasets and artifacts (local/reproducible)
+outputs/deepseek-4h-bias/
+outputs/structural-provenance-population/
+
 # WorkBuddy project data (memories, configs)
 .workbuddy/
 
