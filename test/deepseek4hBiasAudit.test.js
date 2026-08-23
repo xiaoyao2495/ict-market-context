@@ -174,7 +174,7 @@ function baseValid() {
             bearishFvg: []
         },
         delivery: {
-            mss: [{ type: 'BULLISH', brokenSwingPrice: 95, breakTime: '2026-01-04T00:00:00Z', reason: 'x' }],
+            referencedStructuralEventIds: [],
             displacement: [{ direction: 'BULLISH', startTime: '2026-01-04T00:00:00Z', endTime: '2026-01-04T04:00:00Z', reason: 'x' }],
             currentDelivery: 'BULLISH'
         },
@@ -199,9 +199,17 @@ test('confidence 非法值被拒', function () {
     assert.throws(function () { validator.validate(p); }, /confidence/);
 });
 
-test('MSS 缺 breakTime 被拒', function () {
-    var p = baseValid(); p.delivery.mss[0].breakTime = undefined;
-    assert.throws(function () { validator.validate(p); }, /breakTime/);
+test('旧 delivery.mss contract 被拒', function () {
+    var p = baseValid(); p.delivery.mss = [{
+        type: 'BEARISH', brokenSwingPrice: 76510,
+        breakTime: '2026-08-23T04:00:00.000Z', reason: 'invented'
+    }];
+    assert.throws(function () { validator.validate(p); }, /delivery\.mss 已删除/);
+});
+
+test('structural event reference 必须为字符串', function () {
+    var p = baseValid(); p.delivery.referencedStructuralEventIds = [123];
+    assert.throws(function () { validator.validate(p); }, /必须是字符串/);
 });
 
 test('Sweep 缺 sweepTime 被拒', function () {
@@ -362,8 +370,10 @@ test('System prompt 以 Structural Provenance 为 authoritative MSS 来源', fun
     assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('structuralEvents types are authoritative') >= 0);
     assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('STRUCTURAL_CONTINUATION is continuation') >= 0);
     assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('mssAssessment') < 0, '旧 mssAssessment 合同应退休');
-    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('When marketFacts is supplied, delivery.mss MUST be []') < 0,
-        '不得继续在 marketFacts 存在时统一强制 delivery.mss=[]');
+    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('referencedStructuralEventIds') >= 0,
+        '应只允许引用 authoritative structural event ID');
+    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('brokenSwingPrice') < 0,
+        'response contract 不得再要求 AI 重建 MSS price');
 });
 
 test('Prompt 序列化 structuralState/protectedSwings/structuralEvents 且过滤未来事实', function () {
@@ -401,6 +411,8 @@ test('Prompt 序列化 structuralState/protectedSwings/structuralEvents 且过�
     assert.ok(prompt.indexOf('"protectedSwings"') >= 0);
     assert.ok(prompt.indexOf('"role": "ACTIVE_PROTECTED_LOW"') >= 0);
     assert.ok(prompt.indexOf('"type": "STRUCTURAL_MSS"') >= 0);
+    assert.ok(prompt.indexOf('"eventId": "AUTHORITATIVE_STRUCTURAL_EVENT:') >= 0,
+        'authoritative event 应带稳定 eventId');
     assert.ok(prompt.indexOf('"referenceLevel": 100') >= 0);
     assert.ok(prompt.indexOf('"referenceLevel": 999') < 0, 'future event 不得进入 prompt');
     assert.ok(prompt.indexOf('"price": 999') < 0, 'future protected swing 不得进入 prompt');

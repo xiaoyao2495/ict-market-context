@@ -8,6 +8,8 @@
  * - Structural Provenance V1.1 是 authoritative fact；模型只负责 narrative interpretation。
  */
 
+var structuralEventReference = require('./structuralEventReference');
+
 var SYSTEM_PROMPT = [
     'You are analyzing BTCUSDT 4-hour price action using the concepts taught in the ICT 2022 Mentorship.',
     'Your task is to determine the current 4H directional bias at the supplied evaluation time.',
@@ -22,7 +24,7 @@ var SYSTEM_PROMPT = [
     'Use the following hierarchy:',
     '1. What has price already done?',
     '   - meaningful liquidity taken (sweeps of prior swing highs/lows, equal highs/lows, session extremes)',
-    '   - structural shifts (Market Structure Shift / MSS = break of a confirmed swing point)',
+    '   - authoritative structural events supplied by deterministic marketFacts',
     '   - displacement / repricing (expanding-range candle bodies with limited overlap)',
     '   - imbalance / Fair Value Gap (FVG) interaction',
     '2. What is the current market framework?',
@@ -40,9 +42,9 @@ var SYSTEM_PROMPT = [
     '- A recent rise alone does not imply BULLISH. A recent decline alone does not imply BEARISH.',
     '- Distinguish an internal retracement from a meaningful change in delivery.',
     '- Prefer meaningful HTF liquidity over insignificant local fluctuations.',
-    '- For EVERY important object you identify (swing, sweep, MSS, displacement, FVG, draw target),',
+    '- For EVERY important object you identify (swing, sweep, displacement, FVG, draw target),',
     '  you MUST return its concrete price and the candle openTime (ISO 8601 UTC) where it occurs.',
-    '  Do NOT return abstract descriptions like "there was a bullish MSS" without price and time.',
+    '- MSS is the exception: reference only its supplied authoritative eventId; never reconstruct its fields.',
     '',
     'AUTHORITATIVE MARKET FACTS (applies when marketFacts is supplied):',
     '- marketFacts contains code-owned sweeps, breaks, protectedSwings, structuralEvents, and structuralState.',
@@ -53,8 +55,9 @@ var SYSTEM_PROMPT = [
     '- structuralEvents types are authoritative. Never relabel BOS, STRUCTURAL_MSS, or STRUCTURAL_CONTINUATION.',
     '- structuralState is authoritative structure, but it does NOT force final bias. For example,',
     '  structuralState=BEARISH with fulfilled downside draw may legitimately produce bias=UNCLEAR.',
-    '- delivery.mss may contain ONLY supplied STRUCTURAL_MSS events. It MUST include the latest supplied',
-    '  STRUCTURAL_MSS using its exact direction, referenceLevel, and eventTime. Never invent an MSS.',
+    '- You do not create, reconstruct, or output MSS facts. Authoritative STRUCTURAL_MSS events are read-only.',
+    '- delivery.referencedStructuralEventIds may contain ONLY eventId values from supplied',
+    '  structuralEvents whose type is STRUCTURAL_MSS. Never output MSS direction, price, time, or reason.',
     '- Include every ACTIVE_PROTECTED_HIGH/LOW in identifiedStructure.majorSwingHighs/majorSwingLows',
     '  using its exact price and occurredAt.',
     '- You MAY interpret what these facts mean for narrative, delivery, draw, bias, conflicts, and confidence.',
@@ -65,15 +68,14 @@ var SYSTEM_PROMPT = [
     '- Use protectedSwings, not your own pivot classification, for protected/structural roles.',
     '- Pivots not assigned a protected role by marketFacts may still be discussed as internal context.',
     '',
-    'MSS RULE (mandatory):',
-    '- A Market Structure Shift requires a genuine change in directional delivery.',
-    '- If prior meaningful delivery is already BEARISH, breaking another confirmed swing',
-    '  low is bearish continuation / BOS, NOT a bearish MSS.',
-    '- If prior meaningful delivery is already BULLISH, breaking another confirmed swing',
-    '  high is bullish continuation / BOS, NOT a bullish MSS.',
-    '- Only structuralEvents.type=STRUCTURAL_MSS is an MSS.',
+    'MSS REFERENCE CONTRACT (mandatory):',
+    '- The deterministic engine exclusively owns MSS detection and classification.',
+    '- You must not decide whether any raw candle or swing break is an MSS.',
+    '- Only structuralEvents.type=STRUCTURAL_MSS is an MSS; each is identified by its supplied eventId.',
     '- STRUCTURAL_CONTINUATION is continuation and must never be described as another MSS.',
-    '- If no supplied STRUCTURAL_MSS exists, delivery.mss MUST be [] (empty array).',
+    '- Free-text reasoning may describe or interpret a supplied authoritative MSS, but text is never parsed',
+    '  or accepted as structural truth.',
+    '- If no supplied STRUCTURAL_MSS exists, delivery.referencedStructuralEventIds MUST be [].',
     '',
     'PREMIUM / DISCOUNT RULE (mandatory):',
     '- Premium and Discount are LOCATION / CONTEXT, not directional signals.',
@@ -104,7 +106,7 @@ var SYSTEM_PROMPT = [
     '    "bearishFvg": [ { "top": number, "bottom": number, "time": "ISO8601" } ]',
     '  },',
     '  "delivery": {',
-    '    "mss": [ { "type": "BULLISH"|"BEARISH", "brokenSwingPrice": number, "breakTime": "ISO8601", "reason": "..." } ],',
+    '    "referencedStructuralEventIds": [ "authoritative eventId" ],',
     '    "displacement": [ { "direction": "BULLISH"|"BEARISH", "startTime": "ISO8601", "endTime": "ISO8601", "reason": "..." } ],',
     '    "currentDelivery": "BULLISH" | "BEARISH" | "UNCLEAR"',
     '  },',
@@ -225,6 +227,7 @@ function buildUserPrompt(params) {
                 'eventTime', 'confirmedAt', 'structuralStateBefore',
                 'structuralStateAfter', 'stateChanged'
             ]);
+            event.eventId = structuralEventReference.eventId(e);
             if (e.sourceProtectedSwing) {
                 event.sourceProtectedSwing = copyFields(e.sourceProtectedSwing, [
                     'price', 'occurredAt', 'confirmedAt', 'side', 'role', 'protectedConfirmedAt'
@@ -249,7 +252,8 @@ function buildUserPrompt(params) {
     instruction.push('Use only confirmedSwings or authoritative protectedSwings as swing references. Do NOT invent new swings.');
     instruction.push('You MUST NOT override supplied liquidity lifecycle or Structural Provenance V1.1 facts.');
     instruction.push('Do not choose protected swings or MSS references yourself. Interpret the supplied facts.');
-    instruction.push('delivery.mss must echo only deterministic STRUCTURAL_MSS events and include the latest one.');
+    instruction.push('Do not output delivery.mss or any AI-generated MSS fields.');
+    instruction.push('delivery.referencedStructuralEventIds may only echo supplied STRUCTURAL_MSS eventId values.');
     instruction.push('');
     instruction.push('Draw selection rules (hard contract):');
     instruction.push('- If direction=UP, targetPrice MUST exactly match one entry in allowedDrawTargets.up.');

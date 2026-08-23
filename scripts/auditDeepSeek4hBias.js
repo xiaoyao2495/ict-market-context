@@ -772,8 +772,8 @@ function buildReview(results, manifest, klinesSource) {
         });
         L.push('');
         L.push('**Delivery** (current=' + (p.delivery && p.delivery.currentDelivery) + ')');
-        (p.delivery ? p.delivery.mss : []).forEach(function (m) {
-            L.push('- MSS ' + m.type + ' break ' + m.brokenSwingPrice + ' @ ' + m.breakTime);
+        (p.delivery && p.delivery.referencedStructuralEventIds || []).forEach(function (eventId) {
+            L.push('- Authoritative structural event reference: ' + eventId);
         });
         (p.delivery ? p.delivery.displacement : []).forEach(function (d) {
             L.push('- Disp ' + d.direction + ' ' + d.startTime + '→' + d.endTime);

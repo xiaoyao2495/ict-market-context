@@ -2,6 +2,7 @@
 
 var assert = require('assert');
 var diagnostic = require('../scripts/diagnoseDailyBiasMss');
+var structuralEventReference = require('../ai/structuralEventReference');
 
 var passed = 0;
 function test(name, fn) {
@@ -23,46 +24,40 @@ var events = [{
     confirmedAt: '2026-08-23T15:59:59.999Z'
 }];
 
-test('exact latest MSS echo passes every field', function () {
-    var out = diagnostic.buildComparison({ delivery: { mss: [{
-        type: 'BEARISH', brokenSwingPrice: 77039,
-        breakTime: '2026-08-23T15:00:00.000Z'
-    }] } }, { structuralEvents: events });
-    assert.strictEqual(out.latestAuthoritativeIncluded, true);
-    assert.strictEqual(out.aiMssComparisons[0].againstLatest.exactLatestMatch, true);
-    assert.strictEqual(out.diagnosis, 'MSS_ECHO_VALID');
+test('authoritative MSS event ID reference is valid', function () {
+    var id = structuralEventReference.eventId(events[0]);
+    var out = diagnostic.buildComparison({ delivery: {
+        referencedStructuralEventIds: [id]
+    } }, { structuralEvents: events });
+    assert.deepStrictEqual(out.unknownReferences, []);
+    assert.strictEqual(out.authoritativeLatestMss.eventId, id);
+    assert.strictEqual(out.diagnosis, 'STRUCTURAL_EVENT_REFERENCES_VALID');
 });
 
-test('confirmedAt used as breakTime is identified explicitly', function () {
-    var out = diagnostic.buildComparison({ delivery: { mss: [{
-        type: 'BEARISH', brokenSwingPrice: 77039,
-        breakTime: '2026-08-23T15:59:59.999Z'
-    }] } }, { structuralEvents: events });
-    var fields = out.aiMssComparisons[0].againstLatest;
-    assert.strictEqual(fields.directionMatch, true);
-    assert.strictEqual(fields.priceMatch, true);
-    assert.strictEqual(fields.eventTimeMatch, false);
-    assert.strictEqual(fields.confirmedAtUsedInstead, true);
-    assert.strictEqual(out.diagnosis, 'AI_MSS_FIELD_MISMATCH_OR_INVENTED_EVENT');
+test('unknown structural event reference is identified', function () {
+    var out = diagnostic.buildComparison({ delivery: {
+        referencedStructuralEventIds: ['AUTHORITATIVE_STRUCTURAL_EVENT:invented']
+    } }, { structuralEvents: events });
+    assert.strictEqual(out.unknownReferences.length, 1);
+    assert.strictEqual(out.diagnosis, 'UNKNOWN_AUTHORITATIVE_STRUCTURAL_EVENT_REFERENCE');
 });
 
-test('price and direction mismatches remain separate diagnostics', function () {
-    var out = diagnostic.buildComparison({ delivery: { mss: [{
-        type: 'BULLISH', brokenSwingPrice: 77100,
-        breakTime: '2026-08-23T15:00:00.000Z'
-    }] } }, { structuralEvents: events });
-    var fields = out.aiMssComparisons[0].againstLatest;
-    assert.strictEqual(fields.directionMatch, false);
-    assert.strictEqual(fields.priceMatch, false);
-    assert.strictEqual(fields.eventTimeMatch, true);
+test('empty references do not recreate or omit deterministic facts', function () {
+    var out = diagnostic.buildComparison({ delivery: {
+        referencedStructuralEventIds: []
+    } }, { structuralEvents: events });
+    assert.strictEqual(out.authoritativeMssCount, 1);
+    assert.strictEqual(out.referencedStructuralEventCount, 0);
+    assert.strictEqual(out.diagnosis, 'STRUCTURAL_EVENT_REFERENCES_VALID');
 });
 
-test('omitted latest authoritative MSS is classified', function () {
-    var out = diagnostic.buildComparison({ delivery: { mss: [] } }, {
-        structuralEvents: events
-    });
-    assert.strictEqual(out.latestAuthoritativeIncluded, false);
-    assert.strictEqual(out.diagnosis, 'AI_OMITTED_LATEST_AUTHORITATIVE_MSS');
+test('production invented 76510 legacy MSS is classified as forbidden contract', function () {
+    var out = diagnostic.buildComparison({ delivery: { mss: [{
+        type: 'BEARISH', brokenSwingPrice: 76510,
+        breakTime: '2026-08-23T04:00:00.000Z'
+    }], referencedStructuralEventIds: [] } }, { structuralEvents: events });
+    assert.strictEqual(out.legacyMssFieldPresent, true);
+    assert.strictEqual(out.diagnosis, 'LEGACY_AI_MSS_FIELD_FORBIDDEN');
 });
 
 test('future safety reports candle or event beyond evaluationTime', function () {

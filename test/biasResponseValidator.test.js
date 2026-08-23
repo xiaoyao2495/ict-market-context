@@ -7,6 +7,7 @@
  */
 var assert = require('assert');
 var validator = require('../ai/biasResponseValidator');
+var structuralEventReference = require('../ai/structuralEventReference');
 
 var passed = 0;
 var failed = 0;
@@ -37,7 +38,7 @@ function baseValid() {
         },
         imbalances: { bullishFvg: [], bearishFvg: [] },
         delivery: {
-            mss: [],
+            referencedStructuralEventIds: [],
             displacement: [{ direction: 'BEARISH', startTime: '2026-03-18T08:00:00Z', endTime: '2026-03-18T12:00:00Z' }],
             currentDelivery: 'BEARISH'
         },
@@ -80,10 +81,9 @@ function marketFactsForStructure() {
 
 function responseMatchingStructure() {
     var p = baseValid();
-    p.delivery.mss = [{
-        type: 'BEARISH', brokenSwingPrice: 73330.3,
-        breakTime: '2026-03-18T08:00:00Z', reason: 'authoritative MSS'
-    }];
+    p.delivery.referencedStructuralEventIds = [
+        structuralEventReference.eventId(marketFactsForStructure().structuralEvents[0])
+    ];
     return p;
 }
 
@@ -106,23 +106,53 @@ test('AI structureState=UNCLEAR 明确背离 authoritative BEARISH → 拒绝', 
     }, /structuralState 不一致/);
 });
 
-test('AI 省略 latest authoritative STRUCTURAL_MSS → 拒绝', function () {
+test('AI 可以不引用 MSS，deterministic facts 仍由输入持有', function () {
     var p = responseMatchingStructure();
-    p.delivery.mss = [];
-    assert.throws(function () {
-        validator.validate(p, { marketFacts: marketFactsForStructure() });
-    }, /缺少 latest authoritative STRUCTURAL_MSS/);
+    p.delivery.referencedStructuralEventIds = [];
+    validator.validate(p, { marketFacts: marketFactsForStructure() });
 });
 
-test('AI 自创未供应的 STRUCTURAL_MSS → 拒绝', function () {
+test('AI 引用未供应的 structural event ID → 拒绝', function () {
     var p = responseMatchingStructure();
-    p.delivery.mss.push({
-        type: 'BULLISH', brokenSwingPrice: 80000,
-        breakTime: '2026-03-18T12:00:00Z', reason: 'invented'
-    });
+    p.delivery.referencedStructuralEventIds.push('AUTHORITATIVE_STRUCTURAL_EVENT:invented');
     assert.throws(function () {
         validator.validate(p, { marketFacts: marketFactsForStructure() });
-    }, /未对应 authoritative STRUCTURAL_MSS/);
+    }, /未对应 authoritative STRUCTURAL_MSS eventId/);
+});
+
+test('reference 白名单校验不依赖 protectedSwings 字段', function () {
+    var p = baseValid();
+    p.drawOnLiquidity = { direction: 'NONE', targetPrice: null, reason: 'not relevant' };
+    p.delivery.referencedStructuralEventIds = ['AUTHORITATIVE_STRUCTURAL_EVENT:invented'];
+    assert.throws(function () {
+        validator.validate(p, { marketFacts: { structuralEvents: [] } });
+    }, /未对应 authoritative STRUCTURAL_MSS eventId/);
+});
+
+test('AI 不得把 supplied BOS event ID 当作 MSS reference', function () {
+    var facts = marketFactsForStructure();
+    var bos = {
+        type: 'BOS', direction: 'BEARISH', referenceLevel: 72000,
+        eventTime: '2026-03-18T04:00:00Z', confirmedAt: '2026-03-18T07:59:59.999Z'
+    };
+    facts.structuralEvents.push(bos);
+    var p = responseMatchingStructure();
+    p.delivery.referencedStructuralEventIds = [structuralEventReference.eventId(bos)];
+    assert.throws(function () {
+        validator.validate(p, { marketFacts: facts });
+    }, /未对应 authoritative STRUCTURAL_MSS eventId/);
+});
+
+test('production case：AI 不得把 76510 普通 break 生成为 MSS fact', function () {
+    var p = responseMatchingStructure();
+    p.delivery.mss = [{
+        type: 'BEARISH', brokenSwingPrice: 76510,
+        breakTime: '2026-08-23T04:00:00.000Z',
+        reason: 'Break of swing low 76510 after bullish delivery, confirmed by close.'
+    }];
+    assert.throws(function () {
+        validator.validate(p, { marketFacts: marketFactsForStructure() });
+    }, /delivery\.mss 已删除/);
 });
 
 test('AI 省略 ACTIVE_PROTECTED swing → 拒绝', function () {

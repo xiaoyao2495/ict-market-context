@@ -5,15 +5,16 @@
  * Read-only Daily Bias MSS response trace.
  *
  * Reuses the production data/context/prompt/API path, but never writes the
- * Daily Bias store. It prints only the authoritative MSS facts, the model's
- * delivery.mss array, and field-level comparisons. API keys, the full prompt,
- * and the full model response are never printed or persisted.
+ * Daily Bias store. It prints only authoritative MSS facts and the model's
+ * structural event references. API keys, the full prompt, and the full model
+ * response are never printed or persisted.
  */
 var dataSource = require('../live/dataSource');
 var contextBuilder = require('../ai/dailyBiasContext');
 var ictBiasPrompt = require('../ai/ictBiasPrompt');
 var deepseekClient = require('../ai/deepseekClient');
 var biasValidator = require('../ai/biasResponseValidator');
+var structuralEventReference = require('../ai/structuralEventReference');
 
 var SYMBOL = process.env.DAILY_BIAS_DIAG_SYMBOL || 'BTCUSDT';
 var WARMUP_DAYS = 30;
@@ -22,18 +23,6 @@ function toMs(value) {
     if (typeof value === 'number' && isFinite(value)) return value;
     var parsed = Date.parse(value);
     return isFinite(parsed) ? parsed : null;
-}
-
-function sameTime(a, b) {
-    var ta = toMs(a), tb = toMs(b);
-    return ta !== null && tb !== null && ta === tb;
-}
-
-function samePrice(a, b) {
-    if (typeof a !== 'number' || !isFinite(a) ||
-        typeof b !== 'number' || !isFinite(b)) return false;
-    var scale = Math.max(Math.abs(a), Math.abs(b), 1);
-    return Math.abs(a - b) <= scale * 1e-10;
 }
 
 function latestStructuralMss(events) {
@@ -47,6 +36,7 @@ function latestStructuralMss(events) {
 function compactAuthoritative(event) {
     if (!event) return null;
     return {
+        eventId: structuralEventReference.eventId(event),
         direction: event.direction,
         referenceLevel: event.referenceLevel,
         eventTime: event.eventTime,
@@ -57,82 +47,38 @@ function compactAuthoritative(event) {
     };
 }
 
-function compactAiMss(mss) {
-    if (!mss || typeof mss !== 'object') return null;
-    return {
-        type: mss.type,
-        brokenSwingPrice: mss.brokenSwingPrice,
-        breakTime: mss.breakTime,
-        reason: typeof mss.reason === 'string' ? mss.reason : null
-    };
-}
-
-function compareOne(aiMss, latest, authoritativeEvents) {
-    var directionMatch = !!latest && aiMss.type === latest.direction;
-    var priceMatch = !!latest && samePrice(aiMss.brokenSwingPrice, latest.referenceLevel);
-    var eventTimeMatch = !!latest && sameTime(aiMss.breakTime, latest.eventTime);
-    var confirmedAtUsedInstead = !!latest && !eventTimeMatch &&
-        sameTime(aiMss.breakTime, latest.confirmedAt);
-    var exactAuthoritativeMatch = (authoritativeEvents || []).some(function (event) {
-        return aiMss.type === event.direction &&
-            samePrice(aiMss.brokenSwingPrice, event.referenceLevel) &&
-            sameTime(aiMss.breakTime, event.eventTime);
-    });
-    return {
-        ai: compactAiMss(aiMss),
-        againstLatest: {
-            directionMatch: directionMatch,
-            priceMatch: priceMatch,
-            eventTimeMatch: eventTimeMatch,
-            confirmedAtUsedInstead: confirmedAtUsedInstead,
-            exactLatestMatch: directionMatch && priceMatch && eventTimeMatch
-        },
-        exactAnyAuthoritativeMatch: exactAuthoritativeMatch
-    };
-}
-
 function buildComparison(parsed, marketFacts) {
     var events = (marketFacts && marketFacts.structuralEvents || []).filter(function (event) {
         return event.type === 'STRUCTURAL_MSS';
     });
     var latest = latestStructuralMss(events);
-    var aiMss = parsed && parsed.delivery && Array.isArray(parsed.delivery.mss)
-        ? parsed.delivery.mss : [];
+    var delivery = parsed && parsed.delivery || {};
+    var references = Array.isArray(delivery.referencedStructuralEventIds)
+        ? delivery.referencedStructuralEventIds : [];
+    var authoritativeIds = structuralEventReference.mssEventIds(events);
+    var unknownReferences = references.filter(function (eventId) {
+        return authoritativeIds.indexOf(eventId) < 0;
+    });
+    var legacyMssFieldPresent = Object.prototype.hasOwnProperty.call(delivery, 'mss');
     return {
         authoritativeMssCount: events.length,
         authoritativeLatestMss: compactAuthoritative(latest),
-        aiMssCount: aiMss.length,
-        aiMssComparisons: aiMss.map(function (mss) {
-            return compareOne(mss, latest, events);
-        }),
-        latestAuthoritativeIncluded: !!latest && aiMss.some(function (mss) {
-            return mss.type === latest.direction &&
-                samePrice(mss.brokenSwingPrice, latest.referenceLevel) &&
-                sameTime(mss.breakTime, latest.eventTime);
-        }),
-        diagnosis: diagnose(aiMss, latest, events)
+        authoritativeMssEventIds: authoritativeIds,
+        referencedStructuralEventIds: references,
+        referencedStructuralEventCount: references.length,
+        unknownReferences: unknownReferences,
+        legacyMssFieldPresent: legacyMssFieldPresent,
+        diagnosis: diagnose(references, authoritativeIds, legacyMssFieldPresent)
     };
 }
 
-function diagnose(aiMss, latest, events) {
-    if (!latest && aiMss.length === 0) return 'NO_AUTHORITATIVE_MSS_AND_AI_EMPTY';
-    if (!latest && aiMss.length > 0) return 'AI_INVENTED_MSS_WITHOUT_AUTHORITATIVE_EVENT';
-    if (latest && aiMss.length === 0) return 'AI_OMITTED_LATEST_AUTHORITATIVE_MSS';
-    var exact = aiMss.some(function (mss) {
-        return mss.type === latest.direction &&
-            samePrice(mss.brokenSwingPrice, latest.referenceLevel) &&
-            sameTime(mss.breakTime, latest.eventTime);
+function diagnose(references, authoritativeIds, legacyMssFieldPresent) {
+    if (legacyMssFieldPresent) return 'LEGACY_AI_MSS_FIELD_FORBIDDEN';
+    var unknown = (references || []).some(function (eventId) {
+        return (authoritativeIds || []).indexOf(eventId) < 0;
     });
-    var invented = aiMss.some(function (mss) {
-        return !(events || []).some(function (event) {
-            return mss.type === event.direction &&
-                samePrice(mss.brokenSwingPrice, event.referenceLevel) &&
-                sameTime(mss.breakTime, event.eventTime);
-        });
-    });
-    if (exact && !invented) return 'MSS_ECHO_VALID';
-    if (invented) return 'AI_MSS_FIELD_MISMATCH_OR_INVENTED_EVENT';
-    return 'LATEST_AUTHORITATIVE_MSS_OMITTED';
+    if (unknown) return 'UNKNOWN_AUTHORITATIVE_STRUCTURAL_EVENT_REFERENCE';
+    return 'STRUCTURAL_EVENT_REFERENCES_VALID';
 }
 
 function latestClosed4h(candles, now) {
@@ -247,8 +193,6 @@ if (require.main === module) {
 
 module.exports = {
     toMs: toMs,
-    sameTime: sameTime,
-    samePrice: samePrice,
     latestStructuralMss: latestStructuralMss,
     buildComparison: buildComparison,
     diagnose: diagnose,

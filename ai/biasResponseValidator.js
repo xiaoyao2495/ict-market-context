@@ -8,9 +8,12 @@
  * - bias ∈ {BULLISH, BEARISH, UNCLEAR}
  * - confidence ∈ {HIGH, MEDIUM, LOW}
  * - 各结构数组字段存在（可为空）
- * - 引用类对象（swing / sweep / mss / displacement / fvg / draw）必须带具体 price + time
+ * - AI 不得生成 MSS；structural event references 必须属于 authoritative STRUCTURAL_MSS
+ * - 其他引用类对象（swing / sweep / displacement / fvg / draw）必须带具体 price + time
  * - dealingRange 必须带 high/low/equilibrium/location
  */
+
+var structuralEventReference = require('./structuralEventReference');
 
 var BIAS_VALUES = ['BULLISH', 'BEARISH', 'UNCLEAR'];
 var CONF_VALUES = ['HIGH', 'MEDIUM', 'LOW'];
@@ -56,30 +59,16 @@ function validateDrawTarget(draw, marketFacts) {
     }
 }
 
-function latestStructuralMss(events) {
-    return (events || []).filter(function (e) {
-        return e.type === 'STRUCTURAL_MSS';
-    }).sort(function (a, b) {
-        return Date.parse(b.confirmedAt) - Date.parse(a.confirmedAt);
-    })[0] || null;
-}
-
-function matchesMss(aiMss, event) {
-    return aiMss.type === event.direction &&
-        samePrice(aiMss.brokenSwingPrice, event.referenceLevel) &&
-        sameTime(aiMss.breakTime, event.eventTime);
-}
-
 function structuralFactContradictions(parsed, marketFacts) {
     var out = [];
-    if (!parsed || !marketFacts || !Array.isArray(marketFacts.structuralEvents) ||
-        !Array.isArray(marketFacts.protectedSwings)) return out;
+    if (!parsed || !marketFacts) return out;
 
     var identified = parsed.identifiedStructure || {};
     var delivery = parsed.delivery || {};
-    var aiMss = delivery.mss || [];
-    var events = marketFacts.structuralEvents || [];
-    var factMss = events.filter(function (e) { return e.type === 'STRUCTURAL_MSS'; });
+    var references = delivery.referencedStructuralEventIds || [];
+    var events = Array.isArray(marketFacts.structuralEvents)
+        ? marketFacts.structuralEvents : [];
+    var allowedMssIds = structuralEventReference.mssEventIds(events);
     var expectedState = marketFacts.structuralState === 'UNKNOWN'
         ? 'UNCLEAR' : marketFacts.structuralState;
 
@@ -93,34 +82,18 @@ function structuralFactContradictions(parsed, marketFacts) {
         });
     }
 
-    aiMss.forEach(function (m, i) {
-        var exists = factMss.some(function (e) { return matchesMss(m, e); });
-        if (!exists) {
+    references.forEach(function (eventId, i) {
+        if (allowedMssIds.indexOf(eventId) < 0) {
             out.push({
-                code: 'INVENTED_STRUCTURAL_MSS',
-                message: 'delivery.mss[' + i + '] 未对应 authoritative STRUCTURAL_MSS',
-                ai: m
+                code: 'UNKNOWN_STRUCTURAL_EVENT_REFERENCE',
+                message: 'delivery.referencedStructuralEventIds[' + i +
+                    '] 未对应 authoritative STRUCTURAL_MSS eventId',
+                ai: eventId
             });
         }
     });
 
-    var latest = latestStructuralMss(events);
-    if (latest && !aiMss.some(function (m) { return matchesMss(m, latest); })) {
-        out.push({
-            code: 'LATEST_STRUCTURAL_MSS_OMITTED',
-            message: 'delivery.mss 缺少 latest authoritative STRUCTURAL_MSS：' +
-                latest.direction + ' @ ' + latest.referenceLevel,
-            deterministic: latest
-        });
-    }
-    if (!latest && aiMss.length) {
-        out.push({
-            code: 'STRUCTURAL_MSS_WITHOUT_FACT',
-            message: '无 authoritative STRUCTURAL_MSS 时 delivery.mss 必须为空'
-        });
-    }
-
-    (marketFacts.protectedSwings || []).filter(function (s) {
+    (Array.isArray(marketFacts.protectedSwings) ? marketFacts.protectedSwings : []).filter(function (s) {
         return s.status === 'ACTIVE_PROTECTED';
     }).forEach(function (s) {
         var list = s.side === 'HIGH'
@@ -217,16 +190,16 @@ function validate(parsed, opts) {
         }
     });
 
-    // delivery：mss / displacement
-    (del.mss || []).forEach(function (o, i) {
-        if (BIAS_VALUES.indexOf(o.type) < 0) {
-            throw fail('delivery.mss[' + i + '].type 必须是 BULLISH|BEARISH|UNCLEAR');
-        }
-        if (!isNum(o.brokenSwingPrice)) {
-            throw fail('delivery.mss[' + i + '].brokenSwingPrice 必须是数字');
-        }
-        if (!isStr(o.breakTime)) {
-            throw fail('delivery.mss[' + i + '].breakTime 必须是 ISO 字符串');
+    // delivery：AI 不再生成 MSS，只能引用 authoritative STRUCTURAL_MSS eventId。
+    if (Object.prototype.hasOwnProperty.call(del, 'mss')) {
+        throw fail('delivery.mss 已删除；AI 不得创建或重建 MSS fact');
+    }
+    if (!Array.isArray(del.referencedStructuralEventIds)) {
+        throw fail('delivery.referencedStructuralEventIds 必须是数组');
+    }
+    del.referencedStructuralEventIds.forEach(function (eventId, i) {
+        if (!isStr(eventId)) {
+            throw fail('delivery.referencedStructuralEventIds[' + i + '] 必须是字符串');
         }
     });
     (del.displacement || []).forEach(function (o, i) {
