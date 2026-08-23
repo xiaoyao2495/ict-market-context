@@ -263,7 +263,7 @@ test('base url / model 可经环境变量覆盖，不写死', function () {
     }
 });
 
-/* ---------- Phase-2：confirmedSwings / pivot detector ---------- */
+/* ---------- Deterministic context：confirmedSwings / pivot detector ---------- */
 
 var auditPivots = require('../ai/auditPivots');
 var ictBiasPrompt = require('../ai/ictBiasPrompt');
@@ -338,27 +338,79 @@ test('pivot detector：confirmedAt 为右侧第 right 根 closeTime', function (
     }
 });
 
-test('Phase-2 prompt 注入 confirmedSwings，Phase-1 不注入', function () {
+test('Daily Bias V1 prompt 必须注入 confirmedSwings 和 marketFacts', function () {
     var c = makeZigzag(200, 1700000000000);
     var evalIdx = 150;
     var evalTime = c[evalIdx].closeTime;
     var slice = c.slice(evalIdx - 119, evalIdx + 1);
     var pv = auditPivots.detectPivots(c, evalIdx, { left: 2, right: 2, window: 120 });
-    var p2 = ictBiasPrompt.buildUserPrompt({
+    var prompt = ictBiasPrompt.buildUserPrompt({
         symbol: 'BTCUSDT', evaluationTime: evalTime, candles: slice,
-        confirmedSwings: { highs: pv.highs, lows: pv.lows }
+        confirmedSwings: { highs: pv.highs, lows: pv.lows },
+        marketFacts: { sweeps: [], breaks: [], protectedSwings: [], structuralEvents: [], structuralState: 'UNKNOWN' }
     });
-    var p1 = ictBiasPrompt.buildUserPrompt({
-        symbol: 'BTCUSDT', evaluationTime: evalTime, candles: slice
-    });
-    assert.ok(p2.indexOf('confirmedSwings') >= 0, 'phase2 应含 confirmedSwings');
-    assert.ok(p2.indexOf('MUST NOT invent') >= 0 || p2.indexOf('Do NOT invent') >= 0, 'phase2 应含禁止自创约束');
-    assert.ok(p1.indexOf('confirmedSwings') < 0, 'phase1 不应含 confirmedSwings');
+    assert.ok(prompt.indexOf('confirmedSwings') >= 0, '应含 confirmedSwings');
+    assert.ok(prompt.indexOf('marketFacts') >= 0, '应含 marketFacts');
+    assert.ok(prompt.indexOf('MUST NOT invent') >= 0 || prompt.indexOf('Do NOT invent') >= 0,
+        '应含禁止自创约束');
+    assert.throws(function () {
+        ictBiasPrompt.buildUserPrompt({ symbol: 'BTCUSDT', evaluationTime: evalTime, candles: slice });
+    }, /requires confirmedSwings and marketFacts/);
 });
 
-test('Phase-2 system prompt 含 MSS 新约束（opposite-direction / continuation）', function () {
-    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('continuation break') >= 0, '应含 continuation break 约束');
-    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('structural/protected') >= 0, '应含 structural/protected 分类约束');
+test('System prompt 以 Structural Provenance 为 authoritative MSS 来源', function () {
+    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('structuralEvents types are authoritative') >= 0);
+    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('STRUCTURAL_CONTINUATION is continuation') >= 0);
+    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('mssAssessment') < 0, '旧 mssAssessment 合同应退休');
+    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('When marketFacts is supplied, delivery.mss MUST be []') < 0,
+        '不得继续在 marketFacts 存在时统一强制 delivery.mss=[]');
+});
+
+test('Prompt 序列化 structuralState/protectedSwings/structuralEvents 且过滤未来事实', function () {
+    var c = makeZigzag(130, 1700000000000);
+    var evaluationTime = c[129].closeTime;
+    var visible = new Date(c[110].openTime).toISOString();
+    var confirmed = new Date(c[112].closeTime).toISOString();
+    var future = new Date(evaluationTime + 14400000).toISOString();
+    var prompt = ictBiasPrompt.buildUserPrompt({
+        symbol: 'BTCUSDT', evaluationTime: evaluationTime, candles: c.slice(-120),
+        confirmedSwings: { highs: [], lows: [] },
+        marketFacts: {
+            sweeps: [], breaks: [], structuralState: 'BULLISH',
+            protectedSwings: [{
+                price: 95, occurredAt: visible, confirmedAt: confirmed,
+                protectedConfirmedAt: confirmed, side: 'LOW',
+                role: 'ACTIVE_PROTECTED_LOW', status: 'ACTIVE_PROTECTED'
+            }, {
+                price: 999, occurredAt: future, confirmedAt: future,
+                protectedConfirmedAt: future, side: 'HIGH',
+                role: 'ACTIVE_PROTECTED_HIGH', status: 'ACTIVE_PROTECTED'
+            }],
+            structuralEvents: [{
+                type: 'STRUCTURAL_MSS', direction: 'BULLISH', referenceLevel: 100,
+                referenceRole: 'ACTIVE_PROTECTED_HIGH', eventTime: visible,
+                confirmedAt: confirmed, structuralStateBefore: 'BEARISH',
+                structuralStateAfter: 'BULLISH', stateChanged: true
+            }, {
+                type: 'STRUCTURAL_MSS', direction: 'BEARISH', referenceLevel: 999,
+                eventTime: future, confirmedAt: future
+            }]
+        }
+    });
+    assert.ok(prompt.indexOf('"structuralState": "BULLISH"') >= 0);
+    assert.ok(prompt.indexOf('"protectedSwings"') >= 0);
+    assert.ok(prompt.indexOf('"role": "ACTIVE_PROTECTED_LOW"') >= 0);
+    assert.ok(prompt.indexOf('"type": "STRUCTURAL_MSS"') >= 0);
+    assert.ok(prompt.indexOf('"referenceLevel": 100') >= 0);
+    assert.ok(prompt.indexOf('"referenceLevel": 999') < 0, 'future event 不得进入 prompt');
+    assert.ok(prompt.indexOf('"price": 999') < 0, 'future protected swing 不得进入 prompt');
+    assert.ok(prompt.indexOf('Classify each supplied pivot') < 0, '旧 pivot reclassification 指令应删除');
+});
+
+test('Live 默认配置固定 BTCUSDT，不启用 top10', function () {
+    var liveConfig = require('../config/live.json');
+    assert.strictEqual(liveConfig.symbolsMode, 'fixed');
+    assert.deepStrictEqual(liveConfig.symbols, ['BTCUSDT']);
 });
 
 test('allowedDrawTargets 只包含 time-local INTACT liquidity', function () {
@@ -379,7 +431,7 @@ test('allowedDrawTargets 只包含 time-local INTACT liquidity', function () {
     assert.strictEqual(allowed.down[0].type, 'SWING_LOW');
 });
 
-test('Phase-2 prompt 注入 allowedDrawTargets hard contract', function () {
+test('Daily Bias V1 prompt 注入 allowedDrawTargets hard contract', function () {
     var c = makeZigzag(130, 1700000000000);
     var evaluationTime = c[129].closeTime;
     var prompt = ictBiasPrompt.buildUserPrompt({
@@ -404,7 +456,7 @@ test('finish_reason=length 显式分类 OUTPUT_TRUNCATED', function () {
     var evaluated = audit.evaluateAuditResponse({
         text: '{"bias":"BEARISH"',
         raw: { choices: [{ finish_reason: 'length' }] }
-    }, { sweeps: [] }, true);
+    }, { sweeps: [] });
     assert.strictEqual(evaluated.caseStatus, 'OUTPUT_TRUNCATED');
     assert.strictEqual(evaluated.validationError.code, 'OUTPUT_TRUNCATED');
 });
@@ -413,7 +465,7 @@ test('非 length 的 JSON 解析失败仍分类 MALFORMED_JSON', function () {
     var evaluated = audit.evaluateAuditResponse({
         text: '{"bias":"BEARISH"',
         raw: { choices: [{ finish_reason: 'stop' }] }
-    }, { sweeps: [] }, true);
+    }, { sweeps: [] });
     assert.strictEqual(evaluated.caseStatus, 'CASE_SCHEMA_INVALID');
     assert.strictEqual(evaluated.validationError.code, 'MALFORMED_JSON');
 });

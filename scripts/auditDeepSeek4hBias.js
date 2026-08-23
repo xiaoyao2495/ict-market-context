@@ -1,9 +1,9 @@
 /**
- * 方案 Z：纯 4H Raw-OHLC DeepSeek 4H Bias 审计实验
+ * Daily Bias deterministic context V1 DeepSeek 4H Bias 审计
  *
- * 目的（第一轮可行性）：
- *   验证 DeepSeek 是否能仅从 evaluationTime 之前 120 根 BTCUSDT 4H OHLC，
- *   自行识别 ICT 2022 Narrative 并给出 4H Bias。
+ * 目的：
+ *   在 evaluationTime 之前逐 bar 构建冻结的 deterministic context，
+ *   交由 DeepSeek 解释 ICT Narrative 并给出 4H Bias。
  *   不调用 5m replayEngine，不混入任何 5m 信息，不新增生产级 4H 检测器。
  *
  * 不修改任何生产逻辑（Opportunity / Alert / DingTalk / Scenario / engine）。
@@ -38,14 +38,8 @@ var DEEPSEEK_V4_FLASH_PRICING_USD_PER_MILLION = {
     source: 'https://api-docs.deepseek.com/quick_start/pricing/'
 };
 
-// ---------- Phase-2 A/B 实验开关 ----------
 // 设 DEEPSEEK_CASE_IDXS="381,663" → 直接重跑这些固定索引（与已审 case 对齐）
 // 不设 → 走原采样逻辑（固定 seed 或随机模式）。
-// 本审计脚本默认 PHASE2=ON 且 DELIVERY_HINT=ON（半保守版：注入 confirmedSwings + marketFacts，
-//   break 分类 SAME→CONTINUATION，OPPOSITE→UNCLASSIFIED+mssCandidate，绝不 OPPOSITE→MSS）。
-//   若想跑纯 raw（A 组）或全保守版，显式设 DEEPSEEK_PHASE2=0 / DEEPSEEK_DELIVERY_HINT=0 关闭。
-var PHASE2 = process.env.DEEPSEEK_PHASE2 !== '0';
-var DELIVERY_HINT = process.env.DEEPSEEK_DELIVERY_HINT !== '0';
 var PIVOT_LEFT = 2;
 var PIVOT_RIGHT = 2;
 function parseCaseIdxs() {
@@ -167,7 +161,7 @@ function buildStructuralSnapshotIndex(candles, evalIdxs) {
             left: PIVOT_LEFT, right: PIVOT_RIGHT, window: WINDOW
         });
         var facts = auditMarketFacts.computeMarketFacts(candles, idx, pivots, {
-            deliveryHintEnabled: DELIVERY_HINT
+            deliveryHintEnabled: true
         });
         var structural = auditStructuralProvenance.computeStructuralProvenance(
             candles, idx, pivots, { breaks: facts.breaks, previousSnapshot: previousSnapshot }
@@ -267,24 +261,14 @@ function run() {
                 (process.env.DEEPSEEK_RANDOM === '1' ? ' (随机模式)' : ' (固定 seed=' + seed + ')'));
         }
 
-        // 明确打印 Phase-2 状态，避免漏设开关导致 confirmedSwings 为 null
-        console.log('PHASE2=' + (PHASE2 ? 'ON（注入 confirmedSwings）' : 'OFF（纯 raw OHLC，confirmedSwings=null）'));
-        if (PHASE2) {
-            console.log('MARKET_FACTS=ON（注入 sweep lifecycle + break classification）' +
-                (DELIVERY_HINT ? '  deliveryHint=inferred（半保守：SAME→CONTINUATION，OPPOSITE→UNCLASSIFIED+mssCandidate）'
-                    : '  deliveryHint=UNCLEAR（break 默认 UNCLASSIFIED，全保守）'));
-        }
-        if (fixedIdxs && !PHASE2) {
-            console.log('⚠️  警告：设了 DEEPSEEK_CASE_IDXS 但 DEEPSEEK_PHASE2=0，' +
-                '将按 Phase-1（raw OHLC）重跑，不会注入 pivots。');
-        }
+        console.log('DETERMINISTIC_CONTEXT=DAILY_BIAS_DETERMINISTIC_CONTEXT_V1' +
+            ' (confirmedSwings + marketFacts + Structural Provenance V1.1)');
         if (!fixedIdxs) {
             console.log('采样数=' + evalIdxs.length + (process.env.DEEPSEEK_RANDOM === '1'
                 ? ' （随机模式：每个 case 串行独立跑完）' : ' （固定 seed=' + seed + '）'));
         }
 
-        var runPrefix = PHASE2 ? 'phase2' : 'run';
-        var runId = runPrefix + (DATA_YEAR ? '_y' + DATA_YEAR : '') + '_' +
+        var runId = 'daily_bias_v1' + (DATA_YEAR ? '_y' + DATA_YEAR : '') + '_' +
             utcStamp(new Date()) + '_seed' + seed;
         var outDir = path.join('outputs', 'deepseek-4h-bias', runId);
         if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
@@ -297,15 +281,13 @@ function run() {
             klinesFile: KLINES_FILE,
             seed: seed,
             randomMode: process.env.DEEPSEEK_RANDOM === '1',
-            phase: PHASE2 ? 2 : 1,
-            abTag: PHASE2 ? 'B (raw+confirmedSwings)' : 'A (raw OHLC)',
             fixedCaseIdxs: fixedIdxs || null,
-            pivotParams: PHASE2 ? { left: PIVOT_LEFT, right: PIVOT_RIGHT, window: WINDOW } : null,
-            marketFacts: PHASE2 ? {
+            pivotParams: { left: PIVOT_LEFT, right: PIVOT_RIGHT, window: WINDOW },
+            marketFacts: {
                 enabled: true,
-                deliveryHintMode: DELIVERY_HINT ? 'time-local-inferred' : 'unclear',
-                note: 'sweep lifecycle + break classification computed by code; conservative (no false MSS)'
-            } : null,
+                deliveryHintMode: 'time-local-inferred',
+                note: 'Frozen deterministic context; Structural Provenance V1.1 is authoritative'
+            },
             sampleCount: SAMPLE_COUNT,
             minGapBars: MIN_GAP_BARS,
             window: WINDOW,
@@ -348,9 +330,9 @@ function run() {
         fs.writeFileSync(path.join(outDir, 'manifest.json'),
             JSON.stringify(manifest, null, 2));
 
-        // Phase-2 deterministic facts 必须逐 bar replay，保证 protected/state/ancestry
+        // Deterministic facts 必须逐 bar replay，保证 protected/state/ancestry
         // 不因 120-bar pivot 输入窗口滚动而丢失。
-        var structuralSnapshots = PHASE2 ? buildStructuralSnapshotIndex(closed, evalIdxs) : {};
+        var structuralSnapshots = buildStructuralSnapshotIndex(closed, evalIdxs);
 
         // 逐 case 串行调用（避免并发触发 DeepSeek 空 200 / 限流；
         // 单 case 失败不中止，且 deepseekClient 内部对空 200 已重试）
@@ -386,36 +368,31 @@ function processCase(candles, evalIdx, caseNo, outDir, precomputedStructural) {
     var evaluationTime = evalCandle.closeTime;
     var slice = buildCandleSlice(candles, evalIdx);
 
-    // Phase-2：注入 confirmedSwings（仅审计用 pivot 候选集）+ marketFacts（sweep/break 代码化事实）
-    var confirmedSwings = null;
-    var marketFacts = null;
-    if (PHASE2) {
-        var pv = precomputedStructural ? precomputedStructural.pivots :
-            auditPivots.detectPivots(candles, evalIdx, {
+    var pv = precomputedStructural ? precomputedStructural.pivots :
+        auditPivots.detectPivots(candles, evalIdx, {
             left: PIVOT_LEFT, right: PIVOT_RIGHT, window: WINDOW
         });
-        confirmedSwings = { highs: pv.highs, lows: pv.lows };
+    var confirmedSwings = { highs: pv.highs, lows: pv.lows };
 
-        // marketFacts：每个 break 使用其所属 candle 收盘时可见的 time-local delivery hint。
-        var mf = precomputedStructural ? precomputedStructural.facts :
-            auditMarketFacts.computeMarketFacts(candles, evalIdx, pv, {
-            deliveryHintEnabled: DELIVERY_HINT
+    // 每个 break 使用其所属 candle 收盘时可见的 time-local delivery hint。
+    var mf = precomputedStructural ? precomputedStructural.facts :
+        auditMarketFacts.computeMarketFacts(candles, evalIdx, pv, {
+            deliveryHintEnabled: true
         });
-        var structural = precomputedStructural ? precomputedStructural.structural :
-            auditStructuralProvenance.computeStructuralProvenance(
+    var structural = precomputedStructural ? precomputedStructural.structural :
+        auditStructuralProvenance.computeStructuralProvenance(
             candles, evalIdx, pv, { breaks: mf.breaks }
         );
-        marketFacts = {
-            sweeps: mf.sweeps,
-            breaks: mf.breaks,
-            protectedSwings: structural.protectedSwings,
-            pendingProvenances: structural.pendingProvenances,
-            penetrations: structural.penetrations,
-            structuralEvents: structural.structuralEvents,
-            structuralState: structural.structuralState,
-            futureLeakViolations: structural.futureLeakViolations
-        };
-    }
+    var marketFacts = {
+        sweeps: mf.sweeps,
+        breaks: mf.breaks,
+        protectedSwings: structural.protectedSwings,
+        pendingProvenances: structural.pendingProvenances,
+        penetrations: structural.penetrations,
+        structuralEvents: structural.structuralEvents,
+        structuralState: structural.structuralState,
+        futureLeakViolations: structural.futureLeakViolations
+    };
 
     var userPrompt = ictBiasPrompt.buildUserPrompt({
         symbol: SYMBOL,
@@ -441,12 +418,12 @@ function processCase(candles, evalIdx, caseNo, outDir, precomputedStructural) {
             usage: resp.raw.usage
         }, null, 2));
 
-        var evaluated = evaluateAuditResponse(resp, marketFacts, PHASE2);
+        var evaluated = evaluateAuditResponse(resp, marketFacts);
         var parsed = evaluated.parsedResponse;
         var validationError = evaluated.validationError;
         var finishReason = evaluated.finishReason;
         var caseStatus = evaluated.caseStatus;
-        var contradictions = findStructuralContradictions(parsed, marketFacts);
+        var contradictions = biasValidator.structuralFactContradictions(parsed, marketFacts);
         var rec = {
             caseId: caseNo,
             symbol: SYMBOL,
@@ -535,7 +512,7 @@ function processCase(candles, evalIdx, caseNo, outDir, precomputedStructural) {
     });
 }
 
-function evaluateAuditResponse(resp, marketFacts, strictMssEmpty) {
+function evaluateAuditResponse(resp, marketFacts) {
     var parsed = null;
     var parseError = null;
     var finishReason = resp && resp.raw && resp.raw.choices && resp.raw.choices[0] &&
@@ -571,8 +548,7 @@ function evaluateAuditResponse(resp, marketFacts, strictMssEmpty) {
     try {
         // 使用冻结 validator；失败保留 parsed/raw，不重新请求。
         biasValidator.validate(parsed, {
-            strictMssEmpty: strictMssEmpty,
-            marketFacts: strictMssEmpty ? marketFacts : null
+            marketFacts: marketFacts
         });
     } catch (e) {
         validationError = { code: e.code, message: e.message };
@@ -591,22 +567,6 @@ function latestByConfirmedAt(events, types) {
     }).sort(function (a, b) {
         return Date.parse(b.confirmedAt) - Date.parse(a.confirmedAt);
     })[0] || null;
-}
-
-function findStructuralContradictions(parsed, marketFacts) {
-    if (!parsed || !marketFacts) return [];
-    var out = [];
-    var aiState = parsed.identifiedStructure && parsed.identifiedStructure.structureState;
-    var factState = marketFacts.structuralState;
-    if ((aiState === 'BULLISH' || aiState === 'BEARISH') &&
-        (factState === 'BULLISH' || factState === 'BEARISH') && aiState !== factState) {
-        out.push({
-            code: 'STRUCTURAL_STATE_MISMATCH',
-            deterministic: factState,
-            ai: aiState
-        });
-    }
-    return out;
 }
 
 function compactProtected(swing) {

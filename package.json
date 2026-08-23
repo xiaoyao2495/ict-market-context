@@ -2,7 +2,6 @@
   "name": "ict-market-context",
   "version": "1.0.0",
   "description": "ICT Market Context - Binance data layer + multi-timeframe candles + liquidity framework",
-  "main": "index.js",
   "directories": {
     "test": "test"
   },

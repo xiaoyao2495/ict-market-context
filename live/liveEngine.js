@@ -1,9 +1,9 @@
 /**
  * Phase 11L — Live Engine（实时机会雷达核心）
  *
- * 把回测的单根状态推进（liquidity / snapshot / ATR / events / AMD / FVG）
- * 复用到实时：每根 5m 收盘推进一次，检测 DisplacementLeg 完成 →
- * 评估 Opportunity tier（MSS × Leg × Near Draw）→ 返回新 HIGH_QUALITY 机会。
+ * 把回测的单根状态推进复用到实时。Production notification 的新入口是
+ * valid Displacement -> backward matching liquidity -> Displacement Watch；legacy
+ * Opportunity tier 继续返回给统计/兼容层，但不再决定 FVG retracement DingTalk。
  *
  * 与回测 11D.8 的一致性保证：
  *   - 复用同一批检测器（incrementalLiquidity / incrementalEvents / incrementalFvg /
@@ -18,24 +18,35 @@
  */
 var replayState = require('../replay/replayState');
 var eventRegistry = require('../events/eventRegistry');
-var mssDetector = require('../events/mssDetector');
 var displacementDetector = require('../events/displacementDetector');
 var amdState = require('../amd/amdState');
 var replayEngine = require('../replay/replayEngine');
-var mssReference = require('../stats/mssReference');
 var displacementLeg = require('../stats/displacementLeg');
 var opportunityQuality = require('../stats/opportunityQuality');
 var nearStaleness = require('../stats/nearStaleness');
 var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
-var dcStructuralSwing = require('../structure/dcStructuralSwing'); // Phase 12.5A：唯一实现
+var structuralProvenance5m = require('../structure/structuralProvenance5m');
+var displacementWatch = require('../stats/displacementWatch');
+var dailyBiasAlignment = require('../bias/dailyBiasAlignment');
 var thresholds = require('../config/thresholds');
 
 var LEG_MAX_BARS = 3;
 
+function attachDailyBias(opp, provider) {
+    try {
+        opp.dailyBias = provider
+            ? provider(opp.direction, opp.availableAt, opp)
+            : dailyBiasAlignment.unknownDailyBias();
+    } catch (e) {
+        opp.dailyBias = dailyBiasAlignment.unknownDailyBias();
+    }
+    return opp;
+}
+
 /**
  * @param {Object} data { symbol, exchangeInfo, structureCandles, calendarCandles, fetcher, thresholds }
- * @param {Object} [options] { snapshotInterval, baseIndex }
+ * @param {Object} [options] { snapshotInterval, baseIndex, dailyBiasProvider }
  * @returns {Object} engine
  */
 function createLiveEngine(data, options) {
@@ -44,6 +55,7 @@ function createLiveEngine(data, options) {
     var symbol = data.symbol;
     var snapshotInterval = opts.snapshotInterval !== undefined ? opts.snapshotInterval : 12;
     var baseIndex = opts.baseIndex !== undefined ? opts.baseIndex : 0;
+    var dailyBiasProvider = opts.dailyBiasProvider;
 
     var state = replayState.createReplayState({ symbol: symbol, timeframe: '5m', snapshotInterval: snapshotInterval });
     state.eventRegistry = eventRegistry.createEventRegistry();
@@ -55,6 +67,8 @@ function createLiveEngine(data, options) {
     // 投递确认（钉钉 errcode=0）与去重（delivered）由 scripts/live.js 负责：
     //   钉钉失败 → 机会保留 pending，下轮重试；确认成功才记 delivered（跨重启持久化）。
     var window = []; // 全局 index 对齐的已收盘 5m 序列（window.length === 最后 index + 1）
+    var watchById = {};
+    var watchUpdates = [];
 
     var fullData = {
         symbol: symbol,
@@ -68,18 +82,43 @@ function createLiveEngine(data, options) {
     // 共享增量 Leg builder（Phase 11L.1：15min 时间窗 = buildOpportunities 语义，Replay/Live 单一实现）
     var legBuilder = displacementLeg.createWindowedLegBuilder();
 
-    // Phase 12.5A.1（P0 fix）：MSS reference pool 统一 —— MSS 生成与 MSS quality 解析必须吃同一 pool。
-    //   DC 模式：state.dcRefPool（DC STRUCTURAL_SWING，packageForMss 兼容格式）
-    //   legacy 模式：state.swings（2-2 LOCAL_PIVOT 包装）
-    //   之前 evaluateOpportunity 用 state.swings 解析 DC MSS（referenceSwingId 含 :DC: 找不到）
-    //   → NO_REFERENCE → 大量 HIGH 漏报（Shadow/Replay 离线正确，Live 错误）。
-    function structuralReferencePool() {
-        return (cfg.structure && cfg.structure.useDcStructuralSwing)
-            ? state.dcRefPool
-            : state.swings;
-    }
-    function useDcMode() {
-        return !!(cfg.structure && cfg.structure.useDcStructuralSwing);
+    /**
+     * Displacement-Centric Watch V1: the leg/displacement is the trigger. Only
+     * after it exists do we look backward for matching sweep provenance.
+     * Native FVG is calculated from each displacement's own K1/K2/K3 candles;
+     * state.fvgReg is deliberately not passed to the builder.
+     */
+    function emitDisplacementWatch(leg, evaluationTime) {
+        if (!leg || !leg.ids || !leg.ids.length) return null;
+        leg.endIndex = leg.lastIndex;
+        displacementLeg.enrichLegWithCandles(leg, window);
+        displacementLeg.classifyLegQuality(leg);
+        var dailyBias;
+        try {
+            dailyBias = dailyBiasProvider
+                ? dailyBiasProvider(leg.direction, evaluationTime, { displacementLegId: 'LEG:' + leg.ids[0] })
+                : dailyBiasAlignment.unknownDailyBias();
+        } catch (e) {
+            dailyBias = dailyBiasAlignment.unknownDailyBias();
+        }
+        var candidate = displacementWatch.buildWatch({
+            symbol: symbol,
+            leg: leg,
+            evaluationTime: evaluationTime,
+            sweepEvents: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),
+            displacements: state.eventRegistry.getByType(symbol, 'DISPLACEMENT'),
+            mssEvents: state.eventRegistry.getByType(symbol, 'MSS'),
+            candles: window,
+            structuralState: state.structural5m,
+            dailyBias: dailyBias,
+            existing: watchById['WATCH:' + symbol + ':' + leg.direction + ':LEG:' + leg.ids[0]] || null
+        });
+        if (!candidate) return null;
+        var old = watchById[candidate.id];
+        var changed = !old || displacementWatch.watchFingerprint(old) !== displacementWatch.watchFingerprint(candidate);
+        watchById[candidate.id] = candidate;
+        if (changed) watchUpdates.push(JSON.parse(JSON.stringify(candidate)));
+        return candidate;
     }
 
     /**
@@ -96,7 +135,7 @@ function createLiveEngine(data, options) {
         var evaluationTime = candle.closeTime;
 
         // ---- 1. 增量 liquidity（全局 slice 语义） ----
-        replayState.incrementalLiquidity(state, window, i, data.exchangeInfo, evaluationTime);
+        var newConfirmedSwings = replayState.incrementalLiquidity(state, window, i, data.exchangeInfo, evaluationTime);
 
         // ---- 2. 慢变量快照（每 snapshotInterval 根） ----
         var doSnapshot = (i === baseIndex) || (i - (state.lastSnapshotIndex !== undefined ? state.lastSnapshotIndex : baseIndex - snapshotInterval)) >= snapshotInterval;
@@ -112,28 +151,14 @@ function createLiveEngine(data, options) {
             // ---- 3. 增量 ATR ----
             prevAtr = replayEngine._updateAtrIncremental(atrSeries, window, i, prevAtr, 14);
 
-            // ---- 4. 增量事件 ----
-            // Phase 12.5A：MSS reference source 切换（与 replayEngine 同构，唯一实现 dcStructuralSwing）。
-            // 12.5A.1：pool 统一走 structuralReferencePool()（生成与 quality 解析同一来源）。
-            var useDc = useDcMode();
-            var mssPool = structuralReferencePool();
-            var mssConsumed = useDc
-                ? (state.dcConsumedMssRefs || (state.dcConsumedMssRefs = {}))
-                : (state.consumedMssRefs || (state.consumedMssRefs = {}));
-            if (useDc) {
-                if (!state.dcState) {
-                    state.dcState = dcStructuralSwing.createDcState(undefined, { baseIndex: 0 });
-                }
-                var rawSw = dcStructuralSwing.stepDcState(state.dcState, candle, i, window);
-                if (rawSw) {
-                    state.dcRefPool.push(dcStructuralSwing.packageForMss(rawSw, symbol, '5m', window));
-                }
-            }
-            var newMssRaw = mssDetector.detectMss([candle], mssPool, {
-                symbol: symbol, timeframe: '5m', baseIndex: i,
-                consumedRefs: mssConsumed,
-                thresholds: cfg
+            // ---- 4. Incremental structural provenance + events ----
+            var structuralStep = structuralProvenance5m.step(
+                state.structural5m, candle, i, newConfirmedSwings
+            );
+            structuralStep.events.forEach(function (event) {
+                state.eventRegistry.add(event);
             });
+            var newMssRaw = structuralStep.mss;
             var newDispRaw = displacementDetector.detectDisplacement([candle], newMssRaw, {
                 symbol: symbol, timeframe: '5m', baseIndex: i,
                 atrSeries: atrSeries, thresholds: cfg
@@ -177,6 +202,7 @@ function createLiveEngine(data, options) {
             (newEvents.displacements || []).forEach(function (d) {
                 var r = legBuilder.feed(d);
                 if (r.closed) {
+                    emitDisplacementWatch(r.closed, evaluationTime);
                     var anchorCandle = window[r.closed.lastIndex];
                     if (anchorCandle) {
                         opp = evaluateOpportunity(r.closed, r.closed.lastIndex, anchorCandle, i) || opp;
@@ -187,11 +213,16 @@ function createLiveEngine(data, options) {
             // 避免 LATE notification / 永不评估（Live 常驻无"数据结束"）
             var expired = legBuilder.closeExpired(evaluationTime);
             if (expired) {
+                emitDisplacementWatch(expired, evaluationTime);
                 var anchorCandle2 = window[expired.lastIndex];
                 if (anchorCandle2) {
                     opp = evaluateOpportunity(expired, expired.lastIndex, anchorCandle2, i) || opp;
                 }
             }
+            // Re-evaluate the current open leg every closed candle. This is what lets K3
+            // confirm a native FVG one bar after its owning displacement K2 without any
+            // future-state backfill. No new displacement is required for that upgrade.
+            if (legBuilder.getOpen()) emitDisplacementWatch(legBuilder.getOpen(), evaluationTime);
             return opp;
         });
     }
@@ -217,8 +248,8 @@ function createLiveEngine(data, options) {
         }
         var legQuality = displacementLeg.classifyLegQuality(leg);
 
-        // mss quality（12.5A.1 P0 fix：必须用与 MSS 生成相同的 reference pool，
-        // 否则 DC MSS 的 :DC: reference 在 legacy swings 里解析为 NO_REFERENCE → HIGH 漏报）
+        // MSS quality is enrichment from time-local structural provenance;
+        // age/latest-swing/reference-role cannot suppress MSS or HIGH eligibility.
         var mssQuality = 'NO_MSS';
         if (leg.mssId) {
             var mssEvent = null;
@@ -227,7 +258,7 @@ function createLiveEngine(data, options) {
                 return false;
             });
             if (mssEvent) {
-                mssQuality = mssReference.classifyMssReference(mssEvent, structuralReferencePool()).quality;
+                mssQuality = structuralProvenance5m.qualityForMss(mssEvent);
             }
         }
 
@@ -249,6 +280,7 @@ function createLiveEngine(data, options) {
 
         var tier = opportunityQuality.classifyOpportunityTier({
             mssQuality: mssQuality,
+            mssExists: !!mssEvent,
             legQuality: legQuality,
             nearDrawAvailable: nearTarget !== null && nearTarget !== undefined,
             directionConflict: false
@@ -291,9 +323,16 @@ function createLiveEngine(data, options) {
             mssQuality: mssQuality,
             legQuality: legQuality,
             legRangeAtr: leg.rangeAtr,
-            // Phase 12.5A.1：MSS 追溯诊断字段（shadow 记录用；不参与判定）
+            // Authoritative Structural MSS provenance fields (diagnostic only).
             mssId: leg.mssId || null,
             mssReferenceSwingId: mssEvent && mssEvent.source ? (mssEvent.source.referenceSwingId || null) : null,
+            mssReferenceRole: mssEvent ? mssEvent.referenceStructuralRole : null,
+            protectedBreak: !!(mssEvent && mssEvent.protectedBreak),
+            mssGrade: mssEvent ? mssEvent.mssGrade : null,
+            structuralStateBefore: mssEvent ? mssEvent.structuralStateBefore : null,
+            structuralStateAfter: mssEvent ? mssEvent.structuralStateAfter : null,
+            provenanceAvailable: !!(mssEvent && mssEvent.provenanceAvailable),
+            provenanceId: mssEvent ? (mssEvent.provenanceId || null) : null,
             anchorIndex: anchorIndex,
             anchorTime: anchorCandle.closeTime,
             anchorPrice: anchorPrice,
@@ -332,6 +371,12 @@ function createLiveEngine(data, options) {
         });
         opp.liquidityContext = prov;
         opp.mssRelation = liquidityProvenance.classifyMssLegRelation(leg, mssEvent);
+        var narrativeRaid = prov && prov.immediateSweep ? prov.immediateSweep : null;
+        opp.raidToMssBars = narrativeRaid && mssEvent &&
+            typeof narrativeRaid.candleIndex === 'number' && typeof mssEvent.candleIndex === 'number'
+            ? mssEvent.candleIndex - narrativeRaid.candleIndex : null;
+        opp.mssToDisplacementBars = mssEvent && typeof mssEvent.candleIndex === 'number'
+            ? leg.startIndex - mssEvent.candleIndex : null;
 
         // Phase 11L.15 — Alert Prioritization（B 口径，用户选定；A 口径数据失败已关闭）：
         //   HIGH + 48 窗口内存在任一 Significant Liquidity（EQL/EQH/PDL/PDH/Session）
@@ -344,7 +389,10 @@ function createLiveEngine(data, options) {
                 ? 'PRIORITY_HIGH'
                 : 'STANDARD_HIGH';
         }
-        return opp;
+
+        // Daily Bias V1 is reporting-only enrichment. It runs strictly after tier and
+        // notifyPriority are finalized, and failures degrade to UNKNOWN without touching either.
+        return attachDailyBias(opp, dailyBiasProvider);
     }
 
     function getState() { return state; }
@@ -354,6 +402,14 @@ function createLiveEngine(data, options) {
         onBar: onBar,
         getState: getState,
         getWindowLength: getWindowLength,
+        drainDisplacementWatchUpdates: function () {
+            var out = watchUpdates.slice();
+            watchUpdates = [];
+            return out;
+        },
+        getDisplacementWatches: function () {
+            return Object.keys(watchById).map(function (id) { return watchById[id]; });
+        },
         flushLeg: function () {
             var closed = legBuilder.close();
             if (!closed) return null;
@@ -368,5 +424,6 @@ function createLiveEngine(data, options) {
 
 module.exports = {
     createLiveEngine: createLiveEngine,
+    attachDailyBias: attachDailyBias,
     LEG_MAX_BARS: LEG_MAX_BARS
 };

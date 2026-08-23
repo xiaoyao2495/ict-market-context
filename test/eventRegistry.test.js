@@ -39,27 +39,27 @@ function event(id, type, direction, confirmedAt) {
 
 test('add / dedupe：相同 id 不重复加入', function () {
     var r = eventRegistry.createEventRegistry();
-    assert.strictEqual(r.add(event('e1', 'MSS', 'BULLISH', 1000)), true);
-    assert.strictEqual(r.add(event('e1', 'MSS', 'BULLISH', 1000)), false);
+    assert.strictEqual(r.add(event('e1', 'STRUCTURAL_MSS', 'BULLISH', 1000)), true);
+    assert.strictEqual(r.add(event('e1', 'STRUCTURAL_MSS', 'BULLISH', 1000)), false);
     assert.strictEqual(r.size(), 1);
 });
 
 test('addMany：返回实际加入数', function () {
     var r = eventRegistry.createEventRegistry();
     var list = [
-        event('e1', 'MSS', 'BULLISH', 1000),
-        event('e2', 'MSS', 'BEARISH', 2000),
-        event('e1', 'MSS', 'BULLISH', 1000) // 重复
+        event('e1', 'STRUCTURAL_MSS', 'BULLISH', 1000),
+        event('e2', 'STRUCTURAL_MSS', 'BEARISH', 2000),
+        event('e1', 'STRUCTURAL_MSS', 'BULLISH', 1000) // 重复
     ];
     assert.strictEqual(r.addMany(list), 2);
 });
 
 test('getByType / getByDirection / getById', function () {
     var r = eventRegistry.createEventRegistry();
-    r.add(event('e1', 'MSS', 'BULLISH', 1000));
+    r.add(event('e1', 'STRUCTURAL_MSS', 'BULLISH', 1000));
     r.add(event('e2', 'DISPLACEMENT', 'BULLISH', 2000));
-    r.add(event('e3', 'MSS', 'BEARISH', 3000));
-    assert.strictEqual(r.getByType('BTCUSDT', 'MSS').length, 2);
+    r.add(event('e3', 'STRUCTURAL_MSS', 'BEARISH', 3000));
+    assert.strictEqual(r.getByType('BTCUSDT', 'STRUCTURAL_MSS').length, 2);
     assert.strictEqual(r.getByDirection('BTCUSDT', 'BULLISH').length, 2);
     assert.strictEqual(r.getById('e2').type, 'DISPLACEMENT');
     assert.strictEqual(r.getById('NOPE'), null);
@@ -67,8 +67,8 @@ test('getByType / getByDirection / getById', function () {
 
 test('getBefore：confirmedAt > evaluationTime 不返回（防未来数据）', function () {
     var r = eventRegistry.createEventRegistry();
-    r.add(event('e1', 'MSS', 'BULLISH', 1000));
-    r.add(event('e2', 'MSS', 'BEARISH', 9999999999999)); // 未来
+    r.add(event('e1', 'STRUCTURAL_MSS', 'BULLISH', 1000));
+    r.add(event('e2', 'STRUCTURAL_MSS', 'BEARISH', 9999999999999)); // 未来
     var before = r.getBefore('BTCUSDT', 5000);
     assert.strictEqual(before.length, 1);
     assert.strictEqual(before[0].id, 'e1');
@@ -76,11 +76,11 @@ test('getBefore：confirmedAt > evaluationTime 不返回（防未来数据）', 
 
 test('getRecent：类型过滤 + limit + 升序', function () {
     var r = eventRegistry.createEventRegistry();
-    r.add(event('e1', 'MSS', 'BULLISH', 1000));
-    r.add(event('e2', 'MSS', 'BULLISH', 2000));
-    r.add(event('e3', 'MSS', 'BULLISH', 3000));
+    r.add(event('e1', 'STRUCTURAL_MSS', 'BULLISH', 1000));
+    r.add(event('e2', 'STRUCTURAL_MSS', 'BULLISH', 2000));
+    r.add(event('e3', 'STRUCTURAL_MSS', 'BULLISH', 3000));
     r.add(event('e4', 'DISPLACEMENT', 'BULLISH', 4000));
-    var recent = r.getRecent('BTCUSDT', 'MSS', 9999999999999, 2);
+    var recent = r.getRecent('BTCUSDT', 'STRUCTURAL_MSS', 9999999999999, 2);
     assert.strictEqual(recent.length, 2);
     assert.strictEqual(recent[0].id, 'e2'); // 升序取末尾 2 条
     assert.strictEqual(recent[1].id, 'e3');
@@ -88,8 +88,8 @@ test('getRecent：类型过滤 + limit + 升序', function () {
 
 test('getRecent：evaluationTime 过滤 + 无 limit 全量', function () {
     var r = eventRegistry.createEventRegistry();
-    r.add(event('e1', 'MSS', 'BULLISH', 1000));
-    r.add(event('e2', 'MSS', 'BULLISH', 9999999999999));
+    r.add(event('e1', 'STRUCTURAL_MSS', 'BULLISH', 1000));
+    r.add(event('e2', 'STRUCTURAL_MSS', 'BULLISH', 9999999999999));
     var recent = r.getRecent('BTCUSDT', null, 5000, undefined);
     assert.strictEqual(recent.length, 1);
 });

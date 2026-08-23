@@ -21,8 +21,6 @@
  * 本模块同时导出 buildOutcomeIndex / computeSweepOutcomes，供 11L.13
  * Liquidity Incremental Value Audit 复用同一套"后续 delivery 指标"实现。
  */
-var mssReference = require('./mssReference');
-
 var DEFAULT_WINDOW_BARS = 12; // 1h
 
 /**
@@ -121,8 +119,15 @@ function computeSweepOutcomes(se, idx) {
         (idx.mssByIndex[j] || []).forEach(function (m) {
             if (m.direction !== dir) return;
             mssFound = true;
-            var q = mssReference.classifyMssReference(m, idx.swings).quality;
-            if (q === 'PROTECTED_SWING' || q === 'HTF_RELEVANT') protectedFound = true;
+            // STRUCTURAL_MSS is authoritative by construction: it can only be emitted
+            // by a close through an ACTIVE_PROTECTED swing.  Do not re-introduce the
+            // retired age/latest-opposing-swing quality proxy in this diagnostic.
+            if (m.type === 'STRUCTURAL_MSS' || !m.type || m.protectedBreak === true ||
+                (m.metadata && m.metadata.protectedBreak === true) ||
+                m.referenceStructuralRole === 'ACTIVE_PROTECTED' ||
+                (m.source && m.source.referenceStructuralRole === 'ACTIVE_PROTECTED')) {
+                protectedFound = true;
+            }
         });
         (idx.dispByIndex[j] || []).forEach(function (d) {
             if (d.direction !== dir) return;

@@ -1,5 +1,5 @@
 /**
- * 方案 Z Phase-2 扩展：Sweep lifecycle + Break classification 单元测试
+ * Daily Bias deterministic context：Sweep lifecycle + Break classification 单元测试
  * 覆盖：
  *  - sweep INTACT / TAKEN 判定
  *  - takenByWick（影线刺破 vs 收盘越过）
@@ -267,7 +267,7 @@ test('inferDeliveryFromPivots：无明确突破 → UNCLEAR', function () {
 
 /* ---------- Prompt 注入 ---------- */
 
-test('marketFacts 注入 prompt（sweeps + breaks 可见，且含 MARKET FACTS DISCIPLINE）', function () {
+test('marketFacts 注入 prompt（sweeps + breaks 可见，且含 authoritative discipline）', function () {
     var c = makeSeries(4, 10, 14, 'UP', 1700000000000);
     var evalIdx = 20;
     var evalTime = c[evalIdx].closeTime;
@@ -285,10 +285,10 @@ test('marketFacts 注入 prompt（sweeps + breaks 可见，且含 MARKET FACTS D
     assert.ok(p.indexOf('classification') >= 0, '应含 break classification');
     assert.ok(p.indexOf('relationToDelivery') >= 0, '应含 relationToDelivery 字段');
     assert.ok(p.indexOf('mssCandidate') >= 0, '应含 mssCandidate 字段');
-    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('MARKET FACTS DISCIPLINE') >= 0,
-        'system prompt 应含 MARKET FACTS DISCIPLINE');
-    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('mssCandidate') >= 0,
-        'system prompt 应解释 mssCandidate 语义');
+    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('AUTHORITATIVE MARKET FACTS') >= 0,
+        'system prompt 应含 authoritative market facts discipline');
+    assert.ok(ictBiasPrompt.SYSTEM_PROMPT.indexOf('structuralEvents types are authoritative') >= 0,
+        'system prompt 应明确 structural events 不得重判');
 });
 
 test('marketFacts 仅含 TAKEN 时带 takenAt / 不含 null 字段混乱', function () {
@@ -297,7 +297,11 @@ test('marketFacts 仅含 TAKEN 时带 takenAt / 不含 null 字段混乱', funct
     var mf = auditMarketFacts.computeMarketFacts(c, 20, pv, { deliveryHintEnabled: false });
     var p = ictBiasPrompt.buildUserPrompt({
         symbol: 'BTCUSDT', evaluationTime: c[20].closeTime, candles: c.slice(20 - 119, 21),
-        marketFacts: { sweeps: mf.sweeps, breaks: mf.breaks }
+        confirmedSwings: { highs: pv.highs, lows: pv.lows },
+        marketFacts: {
+            sweeps: mf.sweeps, breaks: mf.breaks,
+            protectedSwings: [], structuralEvents: [], structuralState: 'UNKNOWN'
+        }
     });
     // 注入的 JSON 应包含 takenAt 字段（TAKEN 项）
     assert.ok(p.indexOf('takenAt') >= 0, 'TAKEN 项应含 takenAt');

@@ -168,7 +168,7 @@ function compareChains(a, b) {
  * @param {Object} input { evaluationTime, timeframe, events? , eventRegistry? , symbol? }
  *   events: { sweeps, mss, displacements }（数组接口，向后兼容）
  *   eventRegistry: 统一 Market Event registry（Phase 7.1 起，优先使用）
- *     → 内部按 getByType('LIQUIDITY_SWEEP' / 'MSS' / 'DISPLACEMENT') 取事件
+ *     → 内部按 getByType('LIQUIDITY_SWEEP' / 'STRUCTURAL_MSS' / 'DISPLACEMENT') 取事件
  * @param {Object} [options] { thresholds }
  * @returns {Object} {
  *   available, direction, rawScore, freshnessMultiplier, score,
@@ -188,7 +188,7 @@ function scoreDeliveryBias(input, options) {
     if (input.eventRegistry) {
         var symbol = input.symbol || 'UNKNOWN';
         sweeps = input.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP');
-        mss = input.eventRegistry.getByType(symbol, 'MSS');
+        mss = input.eventRegistry.getByType(symbol, 'STRUCTURAL_MSS');
         displacements = input.eventRegistry.getByType(symbol, 'DISPLACEMENT');
     } else {
         var ev = input.events || {};

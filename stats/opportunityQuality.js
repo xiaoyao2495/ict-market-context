@@ -1,17 +1,18 @@
 /**
  * Phase 11D.7 — Opportunity Quality Tier
  *
- * Opportunity Quality = Structure Quality（MSS）+ Delivery Quality（DisplacementLeg）
+ * Opportunity Quality = MSS existence + Delivery Quality（DisplacementLeg）
  *                       + Reachable Draw Quality（Near Draw）
  *
  * 规则分层（不用神秘总分，每档可解释）：
- *   HIGH_QUALITY : MSS = PROTECTED_SWING / HTF_RELEVANT
- *                  && Leg = STRONG / EXPLOSIVE
+ *   HIGH_QUALITY : MSS exists && Leg = STRONG / EXPLOSIVE
  *                  && Near Draw 存在（可达）
  *                  && 无 direction conflict
- *   WATCH        : （PROTECTED/HTF + NORMAL leg）或（INTERNAL + NORMAL/STRONG/EXPLOSIVE leg）
- *                  && Near Draw 存在
- *   LOW_QUALITY  : MICRO_INTERNAL / NO_MSS / WEAK leg / 无 Near Draw / direction conflict
+ *   WATCH        : MSS exists && Leg = NORMAL && Near Draw 存在
+ *   LOW_QUALITY  : NO_MSS / WEAK leg / 无 Near Draw / direction conflict
+ *
+ * Structural Provenance（mssQuality/referenceRole/protectedBreak）只作 enrichment；
+ * protected/important swing 不是 HIGH prerequisite。
  *
  * 锁死语义：机会身份 = Sweep → MSS → DisplacementLeg；FVG 只是 delivery leg 的
  * 结构证据（去重单位是 leg 不是 FVG）；Near Draw 是目标。
@@ -20,7 +21,7 @@
 var DEFAULT_WINDOW_BARS = 12; // 1h = 12 根 5m
 
 /**
- * @param {Object} opts { mssQuality, legQuality, nearDrawAvailable, directionConflict }
+ * @param {Object} opts { mssExists, mssQuality(enrichment), legQuality, nearDrawAvailable, directionConflict }
  * @returns {string} 'HIGH_QUALITY' | 'WATCH' | 'LOW_QUALITY'
  */
 function classifyOpportunityTier(opts) {
@@ -28,15 +29,15 @@ function classifyOpportunityTier(opts) {
     var leg = opts.legQuality || 'WEAK';
     var nearOk = opts.nearDrawAvailable !== false;
     var conflict = !!opts.directionConflict;
-    if (conflict || !nearOk) {
+    var mssExists = opts.mssExists !== undefined ? !!opts.mssExists : mss !== 'NO_MSS';
+    if (conflict || !nearOk || !mssExists) {
         return 'LOW_QUALITY';
     }
-    var highMss = mss === 'PROTECTED_SWING' || mss === 'HTF_RELEVANT';
     var strongLeg = leg === 'STRONG' || leg === 'EXPLOSIVE';
-    if (highMss && strongLeg) {
+    if (strongLeg) {
         return 'HIGH_QUALITY';
     }
-    if ((highMss && leg === 'NORMAL') || (mss === 'INTERNAL' && (leg === 'NORMAL' || strongLeg))) {
+    if (leg === 'NORMAL') {
         return 'WATCH';
     }
     return 'LOW_QUALITY';

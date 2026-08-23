@@ -1,9 +1,10 @@
 /**
  * Phase 11L — Live Opportunity Radar（实时机会提醒入口）
  *
- * 流程（每根 5m 收盘）：
- *   Binance 5m closed → HTF 维护 → 状态推进 → DisplacementLeg 完成 →
- *   Opportunity tier → HIGH_QUALITY 投递（钉钉确认 errcode=0 才记 delivered）→ 失败重试
+ * Production notification flow:
+ *   closed 5m -> valid Displacement -> backward matching-liquidity association -> WATCH
+ *   -> owning Displacement K1/K2/K3 native FVG -> Futures aggTrade FIRST_TOUCH -> DingTalk.
+ * Legacy HIGH/WATCH/LOW remains statistical/shadow output only.
  *
  * Phase 11L.3（Final Production Guardrails）：
  *   1. requireFutures → 初始化 + HTF 增量 futures-only fail-closed（spot 绝不进入）
@@ -22,11 +23,14 @@ var liveEngineMod = require('../live/liveEngine');
 var dataSource = require('../live/dataSource');
 var binanceRest = require('../data/binanceRest');
 var persistence = require('../live/persistence');
+var dailyBiasServiceModule = require('../live/dailyBiasService');
 var dingTalk = require('../notify/dingTalk');
 var continuityChecker = require('../replay/continuityChecker');
 var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
 var thresholds = require('../config/thresholds');
+var displacementWatch = require('../stats/displacementWatch');
+var futuresPriceStream = require('../live/futuresPriceStream');
 
 var CONFIG = require('../config/live.json');
 
@@ -102,6 +106,16 @@ function buildMessage(opp, symbol) {
         headTag + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
         dir
     ];
+    var dailyBias = opp.dailyBias || {
+        bias: 'UNKNOWN', confidence: null, alignment: 'UNKNOWN', status: 'UNKNOWN',
+        evaluationTime: null, ageMs: null
+    };
+    lines.push('Daily Bias:');
+    lines.push(dailyBias.bias + ' / ' + (dailyBias.confidence || '-') +
+        ' · ' + dailyBias.alignment + ' · ' + dailyBias.status);
+    lines.push('Bias Eval: ' + (dailyBias.evaluationTime !== null
+        ? fmt(dailyBias.evaluationTime) + ' · age ' + Math.round(dailyBias.ageMs / 60000) + 'm'
+        : '-'));
     // Phase 11L.8 + 11L.15b：流动性通知行 —— 展示与判定依据对齐。
     //
     //   判定（B 口径，windowHasSignificant）看的是 48 根窗口内 allCandidates 是否存在
@@ -137,18 +151,58 @@ function buildMessage(opp, symbol) {
     }
     lines.push(
         'MSS: ' + mss + (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? ' · Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : ' · Leg: ' + opp.legQuality),
+        'MSS Structure: role ' + (opp.mssReferenceRole || 'UNKNOWN') +
+            ' · grade ' + (opp.mssGrade || 'UNKNOWN') +
+            ' · protectedBreak ' + (opp.protectedBreak === true ? 'YES' : 'NO') +
+            ' · state ' + (opp.structuralStateBefore || 'UNKNOWN') + '→' + (opp.structuralStateAfter || 'UNKNOWN') +
+            ' · provenance ' + (opp.provenanceAvailable === true ? 'YES' : 'NO'),
         notifTarget !== null ? 'Near Draw: ' + notifDist.toFixed(2) + '% 距离（target ' + fmtPrice(notifTarget) + '）' : 'Near Draw: -',
         '通知: ' + fmt(notified) + '（leg 锚 ' + fmt(opp.anchorTime) + '）'
     );
     return lines.join('\n');
 }
 
+function buildFvgRetracementMessage(watch, currentPrice) {
+    var keyword = CONFIG.dingtalk.keyword || '检测';
+    var dir = watch.direction === 'BULLISH' ? 'LONG' : 'SHORT';
+    var liq = watch.liquidityTaken && watch.liquidityTaken.primary;
+    var f = watch.nativeFvg;
+    var m = watch.mss || { exists: false };
+    var bias = watch.dailyBias || { bias: 'UNKNOWN', confidence: null, alignment: 'UNKNOWN', status: 'UNKNOWN' };
+    return [
+        keyword + ' · ' + watch.symbol + ' ' + dir + ' WATCH TRIGGERED',
+        '',
+        'Liquidity Taken:',
+        liq ? ((liq.sourceType || 'UNKNOWN') + ' @ ' + fmtPrice(liq.sourcePrice) + ' · ' + (liq.relation || 'BEFORE_LEG')) : 'NONE',
+        '',
+        'Displacement:',
+        watch.direction + ' · quality ' + (watch.displacement.quality || 'UNKNOWN'),
+        'start/end: ' + watch.displacement.startIndex + '/' + watch.displacement.endIndex,
+        '',
+        'Native FVG:',
+        'low: ' + fmtPrice(f.low),
+        'high: ' + fmtPrice(f.high),
+        'midpoint: ' + fmtPrice(f.midpoint),
+        'current price: ' + fmtPrice(currentPrice),
+        'touch: FIRST_TOUCH',
+        '',
+        'MSS:',
+        m.exists ? (m.direction + ' · reference ' + fmtPrice(m.referencePrice) +
+            ' · role ' + (m.referenceRole || 'UNKNOWN') + ' · protectedBreak ' + (m.protectedBreak ? 'YES' : 'NO')) : 'NONE',
+        '',
+        '4H Daily Bias:',
+        (bias.bias || 'UNKNOWN') + ' / ' + (bias.confidence || '-') +
+            ' · ' + (bias.alignment || 'UNKNOWN') + ' · ' + (bias.status || 'UNKNOWN'),
+        '',
+        '仅为市场结构监测，不是自动交易指令。'
+    ].join('\n');
+}
+
 // ---------- 每个 symbol 的运行时 ----------
-// Phase 12.5A：MSS reference source 模式（thresholds.structure.useDcStructuralSwing）。
-// 启动日志 + cursor.json 持久化 + 模式变化 fail-closed（防旧模式状态跑新模式）。
+// Structural Provenance V1 is the sole production 5m MSS source.
+// Persist the mode name so a pre-refactor cursor fails closed and is rebuilt.
 function structuralSwingMode() {
-    var th = require('../config/thresholds');
-    return !!(th.structure && th.structure.useDcStructuralSwing) ? 'DC_ATR_1_5_CLOSE' : 'LEGACY';
+    return 'STRUCTURAL_PROVENANCE_2L2R_V1';
 }
 function createRunner(symbol) {
     var dir = path.join(CONFIG.dataDir, symbol);
@@ -157,7 +211,15 @@ function createRunner(symbol) {
     var pushedFile = path.join(dir, 'pushed.json');
     var stateFile = path.join(dir, 'cursor.json');
     var outboxFile = path.join(dir, 'outbox.json');
+    var dailyBiasFile = path.join(dir, 'daily-bias.json');
     var shadowFile = path.join(dir, 'prioritization.jsonl'); // 11L.15：两组 HIGH 的 shadow 记录（3-7 天后 forward 对比）
+    var watchFile = path.join(dir, 'displacement-watches.json');
+    var watchDeliveredFile = path.join(dir, 'fvg-watch-delivered.json');
+    var watchOutboxFile = path.join(dir, 'fvg-watch-outbox.json');
+    var dailyBiasService = dailyBiasServiceModule.createDailyBiasService({
+        symbol: symbol,
+        file: dailyBiasFile
+    });
 
     var engine = null;
     var lastCloseTime = 0;
@@ -168,6 +230,13 @@ function createRunner(symbol) {
     // Fix 4（11L.4）：pending 改 transactional outbox —— outbox.json 持久化，
     // 崩溃/重启后仍保留未投递机会（DETECTED → DELIVERY_PENDING → DELIVERED），不漏 HIGH
     var pending = persistence.loadJson(outboxFile, []); // [{ opp, attempts }]
+    var watchStore = displacementWatch.createWatchStore(
+        persistence.loadJson(watchFile, []),
+        persistence.loadJson(watchDeliveredFile, {})
+    );
+    var watchPending = persistence.loadJson(watchOutboxFile, []);
+    var priceStream = null;
+    var priceDeliveryChain = Promise.resolve();
 
     function loadPushed() {
         return persistence.loadJson(pushedFile, {});
@@ -175,6 +244,11 @@ function createRunner(symbol) {
 
     function saveOutbox() {
         persistence.saveJson(outboxFile, pending);
+    }
+    function saveWatchState() {
+        persistence.saveJson(watchFile, watchStore.getAll());
+        persistence.saveJson(watchDeliveredFile, watchStore.getDelivered());
+        persistence.saveJson(watchOutboxFile, watchPending);
     }
 
     /**
@@ -231,12 +305,12 @@ function createRunner(symbol) {
                         significant: alertPrioritization.isSignificant(c.sourceType)
                     };
                 }),
-                // 12.5A.1：Structure Mode + MSS 追溯 —— 避免 legacy/DC 样本混在同一个
-                // prioritization.jsonl 无法区分；referenceSwingId 验证 ":DC:" 前缀。
+                // Structure mode + authoritative Structural MSS provenance.
                 structureMode: structuralSwingMode(),
                 mssEventId: opp.mssId || null,
                 referenceSwingId: opp.mssReferenceSwingId || null
             };
+            rec.dailyBias = opp.dailyBias || null;
             fs.appendFileSync(shadowFile, JSON.stringify(rec) + '\n');
         } catch (e) {
             log(symbol + ' PRIORITIZATION_SHADOW_WRITE_ERROR: ' + (e && e.message || e) + '（shadow 样本未落盘，钉钉/雷达不受影响）');
@@ -266,16 +340,13 @@ function createRunner(symbol) {
                     ' 根非 futures/无 source（source=' + (badExisting[0].source || 'undefined') + '）——请清理 .live-state 后重启');
             }
         }
-        // Phase 12.5A：structureMode fail-closed —— cursor.json 记录了上次运行的 MSS reference
-        // 模式；本次模式不一致 → 拒绝用旧模式状态跑新模式（DC swings 有状态，混用会污染）。
-        // 回滚安全：flag 改回 false（LEGACY）时，只要 cursor 是 LEGACY 即正常恢复；若 cursor 是
-        // DC 而 flag=false → fail-closed 提示（用户需清理 .live-state 或确认切回）。
+        // A cursor from any prior structural implementation must not be resumed.
         var cursor = persistence.loadJson(stateFile, null);
         var mode = structuralSwingMode();
         if (cursor && cursor.structureMode && cursor.structureMode !== mode) {
             throw new Error('STRUCTURE_MODE_CHANGED: ' + symbol + ' cursor.structureMode=' +
                 cursor.structureMode + ' 当前=' + mode + '——请清理 .live-state 后重启重新 bootstrap，' +
-                '或保持 flag 一致（勿用旧模式状态跑新模式）');
+                '请重新 bootstrap（勿用旧结构状态继续运行）');
         }
         // Fix 1 (P0)：runnerData 保存组装后的 HTF 引用（fetchHtfIncrement 增量更新同一对象）
         var structureCandles = { '1d': data['1d'], '4h': data['4h'], '1h': data['1h'] };
@@ -306,23 +377,119 @@ function createRunner(symbol) {
             calendarCandles: calendarCandles,
             fetcher: dataSource.makeFetcher(calendarCandles),
             thresholds: require('../config/thresholds')
-        }, { snapshotInterval: CONFIG.snapshotInterval, baseIndex: 0 });
+        }, {
+            snapshotInterval: CONFIG.snapshotInterval,
+            baseIndex: 0,
+            dailyBiasProvider: function (direction, atTime) {
+                return dailyBiasService.getDailyBias(direction, atTime);
+            }
+        });
 
         delivered = loadPushed();
+        if (pending.length > 0) {
+            log(symbol + ' LEGACY_HIGH_OUTBOX_DISABLED: ' + pending.length +
+                ' 条旧 HIGH outbox 保留在磁盘但不再发送；FVG FIRST_TOUCH 是唯一新通知入口');
+        }
 
         // 逐根推进历史（warmup 段机会不推送：已过去）
         var chain = Promise.resolve();
         all.forEach(function (c, idx) {
-            chain = chain.then(function () { return engine.onBar(c, idx); });
+            chain = chain.then(function () {
+                return engine.onBar(c, idx).then(function () {
+                    // Bootstrap reconstructs lifecycle but never sends historical touches.
+                    engine.drainDisplacementWatchUpdates().forEach(function (w) { watchStore.upsert(w); });
+                    watchStore.onCandle(c);
+                });
+            });
         });
         return chain.then(function () {
+            return refreshDailyBias();
+        }).then(function () {
             lastCloseTime = all[all.length - 1].closeTime;
             lastOpenTime = all[all.length - 1].openTime;
             historyLoaded = true;
             persistence.saveJson(pushedFile, delivered);
+            saveWatchState();
             persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: all.length, structureMode: mode });
             log(symbol + ' 状态就绪，已推进 ' + all.length + ' 根，去重集合 ' + Object.keys(delivered).length + ' 个已投递机会');
         });
+    }
+
+    function isWatchPending(key) {
+        return watchPending.some(function (x) { return x.notificationKey === key; });
+    }
+
+    function deliverWatchTouch(watch) {
+        var key = watch.notificationKey;
+        if (!key || watchStore.getDelivered()[key]) return Promise.resolve(true);
+        var msg = buildFvgRetracementMessage(watch, watch.firstTouchPrice);
+        log('FVG FIRST_TOUCH: ' + symbol + ' ' + watch.direction + ' watch=' + watch.id +
+            ' fvg=' + watch.nativeFvg.id + ' price=' + fmtPrice(watch.firstTouchPrice));
+        return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {
+            if (!res || res.errcode !== 0) throw new Error('errcode=' + (res ? res.errcode : 'none'));
+            watchStore.markNotified(watch.id, Date.now());
+            saveWatchState();
+            log(symbol + ' FVG retracement 钉钉投递成功 key=' + key);
+            return true;
+        }).catch(function (e) {
+            log(symbol + ' FVG retracement 钉钉投递失败 key=' + key + ': ' + e.message + '（保留 watch outbox）');
+            return false;
+        });
+    }
+
+    function handleWatchTouches(touched) {
+        (touched || []).forEach(function (watch) {
+            if (!watch.notificationKey || watchStore.getDelivered()[watch.notificationKey] || isWatchPending(watch.notificationKey)) return;
+            watchPending.push({ notificationKey: watch.notificationKey, watchId: watch.id, attempts: 0 });
+        });
+        saveWatchState();
+        return retryWatchPending();
+    }
+
+    function retryWatchPending() {
+        if (!watchPending.length) return Promise.resolve();
+        var list = watchPending.slice();
+        watchPending = [];
+        return list.reduce(function (p, item) {
+            return p.then(function () {
+                var watch = watchStore.get(item.watchId);
+                if (!watch || watchStore.getDelivered()[item.notificationKey]) { saveWatchState(); return; }
+                return deliverWatchTouch(watch).then(function (ok) {
+                    if (!ok) watchPending.push(item);
+                    saveWatchState();
+                });
+            });
+        }, Promise.resolve());
+    }
+
+    function applyWatchUpdates() {
+        var updates = engine.drainDisplacementWatchUpdates();
+        updates.forEach(function (watch) {
+            var current = watchStore.upsert(watch);
+            log(symbol + ' DISPLACEMENT_WATCH ' + current.state + ' id=' + current.id +
+                ' liquidity=' + (current.liquidityTaken.primary && current.liquidityTaken.primary.sourceType || 'UNKNOWN') +
+                ' nativeFvg=' + (current.nativeFvg ? current.nativeFvg.id : 'NONE'));
+        });
+        if (updates.length) saveWatchState();
+    }
+
+    function onRealtimePrice(price, at) {
+        priceDeliveryChain = priceDeliveryChain.then(function () {
+            var touched = watchStore.onPrice(price, at);
+            if (touched.changed) saveWatchState();
+            return touched.length ? handleWatchTouches(touched) : null;
+        }).catch(function (e) { log(symbol + ' PRICE_STREAM_HANDLER_ERROR: ' + (e && e.message || e)); });
+    }
+
+    function startPriceStream() {
+        if (priceStream) return;
+        priceStream = futuresPriceStream.createFuturesPriceStream(symbol, {
+            onOpen: function () { log(symbol + ' Futures WebSocket aggTrade connected'); },
+            onPrice: onRealtimePrice,
+            onClose: function () { log(symbol + ' Futures WebSocket closed; reconnect scheduled'); },
+            onError: function (e) { log(symbol + ' Futures WebSocket error: ' + (e && e.message || e)); }
+        });
+        priceStream.start();
     }
 
     /**
@@ -384,25 +551,11 @@ function createRunner(symbol) {
         return pending.some(function (x) { return x.opp && x.opp.id === id; });
     }
 
-    /** 新 HIGH 机会入口：PRIORITY 尝试投递（失败进 outbox）；STANDARD 只落日志（11L.15 shadow） */
+    /** Legacy HIGH remains a statistical/shadow output and no longer drives DingTalk. */
     function handleHigh(opp) {
-        // 11L.15：两组都先落 shadow 记录（PRIORITY 与 STANDARD 同 schema，供 forward 对比）
         logShadowOpp(opp);
-        if (delivered[opp.id] || isPending(opp.id)) return Promise.resolve(null);
-        if (!shouldNotify(opp)) {
-            log(symbol + ' STANDARD_HIGH 只落日志（11L.15 shadow）id=' + opp.id + ' ' + opp.direction +
-                ' near ' + (opp.nearDistPct !== null && opp.nearDistPct !== undefined ? opp.nearDistPct.toFixed(2) + '%' : '-') +
-                ' 通知=' + fmt(opp.availableAt) + ' 锚=' + fmt(opp.anchorTime));
-            return Promise.resolve(null);
-        }
-        return deliver(opp).then(function (ok) {
-            if (!ok) {
-                // 12.5A.1：入队带 structureMode（跨模式重试隔离）
-                pending.push({ opp: opp, attempts: 0, structureMode: structuralSwingMode() });
-                saveOutbox();
-            }
-            return null;
-        });
+        log(symbol + ' LEGACY_HIGH 仅统计/兼容输出，不触发 DingTalk id=' + opp.id);
+        return Promise.resolve(null);
     }
 
     function processCandles(list) {
@@ -427,6 +580,14 @@ function createRunner(symbol) {
         list.forEach(function (c) {
             chain = chain.then(function () {
                 return engine.onBar(c, engine.getWindowLength()).then(function (opp) {
+                    applyWatchUpdates();
+                    // Closed-candle fallback covers WebSocket outages. It starts strictly
+                    // after watch/native-FVG confirmation and cannot self-touch K3.
+                    var fallbackTouches = watchStore.onCandle(c);
+                    if (fallbackTouches.length) return handleWatchTouches(fallbackTouches).then(function () { return opp; });
+                    saveWatchState();
+                    return opp;
+                }).then(function (opp) {
                     if (opp && opp.tier === 'HIGH_QUALITY') {
                         return handleHigh(opp);
                     }
@@ -451,8 +612,26 @@ function createRunner(symbol) {
     var tickRunning = false;
     var loopTimer = null;
 
+    function refreshDailyBias() {
+        return dailyBiasService.updateOnClosed4h(runnerData.structureCandles['4h']).then(function (result) {
+            if (!result.attempted) return result;
+            if (result.updated) {
+                log(symbol + ' Daily Bias 更新: ' + result.snapshot.bias + '/' + result.snapshot.confidence +
+                    ' evaluationTime=' + fmt(result.snapshot.evaluationTime));
+            } else {
+                log(symbol + ' Daily Bias API 失败: ' + result.error.code + ' ' + result.error.message +
+                    '（保留上一 snapshot，按 8h 规则标记 STALE/UNKNOWN）');
+            }
+            return result;
+        }).catch(function (e) {
+            log(symbol + ' Daily Bias service 错误: ' + (e && e.message || e) +
+                '（不影响 Opportunity detection/notification）');
+            return null;
+        });
+    }
+
     function doTick() {
-        return retryPending().then(function () {
+        return retryWatchPending().then(function () {
             // Fix 1（11L.3 P0）：HTF 增量 futures-only（spot 不 append）+ 错误不吞
             return dataSource.fetchHtfIncrement(symbol, runnerData.structureCandles, runnerData.calendarCandles, CONFIG.requireFutures);
         }).then(function (htf) {
@@ -464,14 +643,16 @@ function createRunner(symbol) {
                     log(symbol + ' HTF_NETWORK_ERROR: ' + iss.tf + ' ' + (iss.error || 'network') + '（保留旧 HTF snapshot，stale 状态）');
                 }
             });
-            // 11L.5（P1-2）：HTF 更新异常 → 本轮暂停 5m 推进。
-            // Near Draw/Liquidity/Snapshot 依赖 HTF context，stale HTF 下不应发 HIGH；
-            // 下轮 HTF 恢复后 poll 自动检测 gap → backfill → 连续推进（Live/Replay 状态一致）
-            if (!htf.ok) {
-                log(symbol + ' HTF 更新异常（' + htf.issues.length + ' 处）——本轮暂停 5m 推进，避免基于 stale HTF 发通知');
-                return;
-            }
-            return dataSource.pollNew5m(symbol, lastCloseTime);
+            return refreshDailyBias().then(function () {
+                // 11L.5（P1-2）：HTF 更新异常 → 本轮暂停 5m 推进。
+                // Near Draw/Liquidity/Snapshot 依赖 HTF context，stale HTF 下不应发 HIGH；
+                // 下轮 HTF 恢复后 poll 自动检测 gap → backfill → 连续推进（Live/Replay 状态一致）
+                if (!htf.ok) {
+                    log(symbol + ' HTF 更新异常（' + htf.issues.length + ' 处）——本轮暂停 5m 推进，避免基于 stale HTF 发通知');
+                    return;
+                }
+                return dataSource.pollNew5m(symbol, lastCloseTime);
+            });
         }).then(function (res) {
             // Fix 4（P1）：区分 NO_NEW_BAR / NETWORK_ERROR（不吞错）
             if (!res) return; // HTF 异常分支已提前返回
@@ -515,6 +696,7 @@ function createRunner(symbol) {
 
     /** 11L.5（P0-1）：setTimeout 串行链 —— tick 完成后再等 pollMs 调度下一轮（无重入） */
     function startLoop() {
+        startPriceStream();
         function schedule() {
             loopTimer = setTimeout(function () {
                 tick().then(schedule);
@@ -528,6 +710,7 @@ function createRunner(symbol) {
             clearTimeout(loopTimer);
             loopTimer = null;
         }
+        if (priceStream) { priceStream.stop(); priceStream = null; }
     }
 
     return {
@@ -542,8 +725,8 @@ function createRunner(symbol) {
 function main() {
     persistence.ensureDir(CONFIG.dataDir);
     log('=== Live Opportunity Radar 启动 ===');
-    log('Phase 12.5A STRUCTURAL_SWING_MODE=' + structuralSwingMode() + '（MSS reference source：' +
-        (structuralSwingMode() === 'LEGACY' ? 'legacy 2-2 swing' : 'DC 1.5 ATR close-confirmed（structure/dcStructuralSwing.js 唯一实现）') + '）');
+    log('STRUCTURAL_SWING_MODE=' + structuralSwingMode() +
+        '（MSS reference source：confirmed 2L/2R pivots + Structural Provenance）');
     log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED
         ? 'ENABLED（钉钉只推 PRIORITY_HIGH = HIGH + 48 窗口内 Significant Liquidity；STANDARD_HIGH 只落日志）'
         : 'DISABLED（全部 HIGH 照常推钉钉，仅记录 notifyPriority 字段）'));
@@ -644,4 +827,11 @@ function main() {
     }
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = {
+    buildMessage: buildMessage,
+    buildFvgRetracementMessage: buildFvgRetracementMessage,
+    createRunner: createRunner,
+    main: main
+};

@@ -1,5 +1,5 @@
 /**
- * DeepSeek API 客户端（审计实验专用，方案 Z）
+ * DeepSeek API 客户端（Daily Bias audit + live snapshot）
  *
  * 安全纪律（严格遵守）：
  * - API Key 仅从 process.env.DEEPSEEK_API_KEY 读取，绝不硬编码 / 打印 / 落盘。

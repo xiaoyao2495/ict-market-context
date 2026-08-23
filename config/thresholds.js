@@ -20,29 +20,6 @@ module.exports = {
     },
 
     /**
-     * Structure 层（Phase 12.5A）：STRUCTURAL_SWING := ATR-normalized Directional Change
-     * - useDcStructuralSwing: MSS reference source 开关
-     *     false → legacy 2-2 swing（现状）
-     *     true  → DC 1.5 STRUCTURAL_SWING（唯一实现 structure/dcStructuralSwing.js）
-     *   默认 false（部署不改 Live 行为）。**运行时切换走环境变量 STRUCTURE_DC=1**
-     *   （服务器 `set STRUCTURE_DC=1` + pm2 restart；回滚 `set STRUCTURE_DC=0`）——
-     *   不把切换状态写死进 git（本地测试基线依赖默认 false，见 test/ 全量回归）。
-     * - dc.k: ATR 倍率（12.1-12.4 三币验证冻结 = 1.5）
-     * - dc.confirmWith: close（收盘反转确认，非 wick；与全项目 structure break → close confirmation 一致）
-     * - dc.atrN: ATR 周期（True Range 均值窗口）
-     * ATR frozen at extreme：candidate extreme 更新时锁定 extremeATR，等待
-     *   extremePrice - close >= extremeATR × k；绝不用每根 K 的当前 ATR 重算（防参数漂移）。
-     */
-    structure: {
-        useDcStructuralSwing: process.env.STRUCTURE_DC === '1',
-        dc: {
-            k: 1.5,
-            atrN: 14,
-            confirmWith: 'close'
-        }
-    },
-
-    /**
      * Liquidity Cluster 聚类参数
      * - percentageTolerance: 成员并入 cluster zone 的百分比容差（0.0003 = 0.03%）
      *   聚类采用 zone 链式扩展：新成员 price - zoneHigh <= price * tolerance 即并入

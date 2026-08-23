@@ -1,8 +1,8 @@
 /**
  * biasResponseValidator 单元测试
  * 覆盖：
- *  - strictMssEmpty 契约（marketFacts 提供时 delivery.mss 必须为空）
- *  - mssAssessment 解释层字段校验
+ *  - authoritative Structural Provenance fact consistency
+ *  - Draw INTACT_OR_NONE contract
  *  - 标准合法响应可通过
  */
 var assert = require('assert');
@@ -54,64 +54,83 @@ test('标准合法响应（无 marketFacts）通过校验', function () {
     validator.parseAndValidate(JSON.stringify(baseValid()));
 });
 
-test('strictMssEmpty=true 且 delivery.mss 为空 → 通过', function () {
+function marketFactsForStructure() {
+    return {
+        sweeps: [
+            { refSide: 'HIGH', pivotPrice: 75998.9, status: 'INTACT' },
+            { refSide: 'LOW', pivotPrice: 65569.2, status: 'INTACT' }
+        ],
+        structuralState: 'BEARISH',
+        protectedSwings: [{
+            price: 75998.9,
+            occurredAt: '2026-03-18T04:00:00Z',
+            side: 'HIGH',
+            role: 'ACTIVE_PROTECTED_HIGH',
+            status: 'ACTIVE_PROTECTED'
+        }],
+        structuralEvents: [{
+            type: 'STRUCTURAL_MSS',
+            direction: 'BEARISH',
+            referenceLevel: 73330.3,
+            eventTime: '2026-03-18T08:00:00Z',
+            confirmedAt: '2026-03-18T11:59:59.999Z'
+        }]
+    };
+}
+
+function responseMatchingStructure() {
     var p = baseValid();
+    p.delivery.mss = [{
+        type: 'BEARISH', brokenSwingPrice: 73330.3,
+        breakTime: '2026-03-18T08:00:00Z', reason: 'authoritative MSS'
+    }];
+    return p;
+}
+
+test('authoritative structural state/MSS/active protected 全匹配 → 通过', function () {
+    validator.validate(responseMatchingStructure(), { marketFacts: marketFactsForStructure() });
+});
+
+test('deterministic structure=BEARISH 但 finalBias=UNCLEAR → 合法', function () {
+    var p = responseMatchingStructure();
+    p.bias = 'UNCLEAR';
+    p.confidence = 'LOW';
+    validator.validate(p, { marketFacts: marketFactsForStructure() });
+});
+
+test('AI structureState=UNCLEAR 明确背离 authoritative BEARISH → 拒绝', function () {
+    var p = responseMatchingStructure();
+    p.identifiedStructure.structureState = 'UNCLEAR';
+    assert.throws(function () {
+        validator.validate(p, { marketFacts: marketFactsForStructure() });
+    }, /structuralState 不一致/);
+});
+
+test('AI 省略 latest authoritative STRUCTURAL_MSS → 拒绝', function () {
+    var p = responseMatchingStructure();
     p.delivery.mss = [];
-    validator.validate(p, { strictMssEmpty: true });
+    assert.throws(function () {
+        validator.validate(p, { marketFacts: marketFactsForStructure() });
+    }, /缺少 latest authoritative STRUCTURAL_MSS/);
 });
 
-test('strictMssEmpty=true 但 delivery.mss 非空（AI 把 candidate 升级为 MSS）→ 拒绝', function () {
-    var p = baseValid();
-    p.delivery.mss = [{ type: 'BEARISH', brokenSwingPrice: 73330.3, breakTime: '2026-03-18T08:00:00Z', reason: 'shift' }];
-    var threw = false;
-    try {
-        validator.validate(p, { strictMssEmpty: true });
-    } catch (e) {
-        threw = true;
-        assert.strictEqual(e.code, 'SCHEMA_INVALID');
-        assert.ok(e.message.indexOf('delivery.mss') >= 0, '错误信息应点名 delivery.mss');
-    }
-    assert.ok(threw, 'strictMssEmpty 下非空 mss 必须被拒');
+test('AI 自创未供应的 STRUCTURAL_MSS → 拒绝', function () {
+    var p = responseMatchingStructure();
+    p.delivery.mss.push({
+        type: 'BULLISH', brokenSwingPrice: 80000,
+        breakTime: '2026-03-18T12:00:00Z', reason: 'invented'
+    });
+    assert.throws(function () {
+        validator.validate(p, { marketFacts: marketFactsForStructure() });
+    }, /未对应 authoritative STRUCTURAL_MSS/);
 });
 
-test('非 strict 模式（无 marketFacts）允许 delivery.mss 非空', function () {
-    var p = baseValid();
-    p.delivery.mss = [{ type: 'BEARISH', brokenSwingPrice: 73330.3, breakTime: '2026-03-18T08:00:00Z', reason: 'shift' }];
-    validator.validate(p); // 不抛错
-});
-
-test('mssAssessment 合法三项通过', function () {
-    var p = baseValid();
-    p.mssAssessment = [
-        { level: 73330.3, assessment: 'LIKELY_MSS', reason: 'structural shift' },
-        { level: 71220.1, assessment: 'NOT_MSS', reason: 'continuation after shift' },
-        { level: 70256, assessment: 'UNCERTAIN', reason: 'ambiguous' }
-    ];
-    validator.validate(p, { strictMssEmpty: true });
-});
-
-test('mssAssessment 缺 level → 拒绝', function () {
-    var p = baseValid();
-    p.mssAssessment = [{ assessment: 'LIKELY_MSS', reason: 'x' }];
-    var threw = false;
-    try { validator.validate(p, { strictMssEmpty: true }); } catch (e) { threw = true; assert.strictEqual(e.code, 'SCHEMA_INVALID'); }
-    assert.ok(threw);
-});
-
-test('mssAssessment assessment 非法值 → 拒绝', function () {
-    var p = baseValid();
-    p.mssAssessment = [{ level: 73330.3, assessment: 'CONFIRMED_MSS', reason: 'x' }];
-    var threw = false;
-    try { validator.validate(p, { strictMssEmpty: true }); } catch (e) { threw = true; assert.strictEqual(e.code, 'SCHEMA_INVALID'); }
-    assert.ok(threw);
-});
-
-test('mssAssessment 缺 reason → 拒绝', function () {
-    var p = baseValid();
-    p.mssAssessment = [{ level: 73330.3, assessment: 'LIKELY_MSS' }];
-    var threw = false;
-    try { validator.validate(p, { strictMssEmpty: true }); } catch (e) { threw = true; assert.strictEqual(e.code, 'SCHEMA_INVALID'); }
-    assert.ok(threw);
+test('AI 省略 ACTIVE_PROTECTED swing → 拒绝', function () {
+    var p = responseMatchingStructure();
+    p.identifiedStructure.majorSwingHighs = [];
+    assert.throws(function () {
+        validator.validate(p, { marketFacts: marketFactsForStructure() });
+    }, /缺少 authoritative ACTIVE_PROTECTED_HIGH/);
 });
 
 function marketFactsForDraw(highStatus, lowStatus) {
@@ -161,10 +180,12 @@ test('Draw hard validator：NONE 不代表 active target，直接通过', functi
     validator.validate(p, { marketFacts: marketFactsForDraw('TAKEN', 'TAKEN') });
 });
 
-test('Draw hard validator：NONE 兼容既有 schema 的数字 targetPrice', function () {
+test('Draw hard validator：NONE + 数字 targetPrice 拒绝', function () {
     var p = baseValid();
     p.drawOnLiquidity = { direction: 'NONE', targetPrice: 65569.2, reason: 'no active draw' };
-    validator.validate(p, { marketFacts: marketFactsForDraw('TAKEN', 'TAKEN') });
+    assert.throws(function () {
+        validator.validate(p, { marketFacts: marketFactsForDraw('TAKEN', 'TAKEN') });
+    }, /targetPrice 必须为 null/);
 });
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');

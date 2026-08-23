@@ -930,19 +930,25 @@ test('11D.5：3 根连续同向 displacement 合并为 1 leg，价量维度与 q
 var opportunityQuality = require('../stats/opportunityQuality');
 
 test('11D.7：tier 规则分层 —— HIGH/WATCH/LOW 边界锁定', function () {
-    // HIGH：高档 MSS + STRONG/EXPLOSIVE leg + near draw
+    // HIGH：MSS exists + STRONG/EXPLOSIVE leg + near draw；structural role 只作 enrichment
     assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'PROTECTED_SWING', legQuality: 'EXPLOSIVE', nearDrawAvailable: true }), 'HIGH_QUALITY');
     assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'HTF_RELEVANT', legQuality: 'STRONG', nearDrawAvailable: true }), 'HIGH_QUALITY');
-    // WATCH：高档 MSS + NORMAL leg，或 INTERNAL + NORMAL/STRONG/EXPLOSIVE
+    // WATCH：MSS exists + NORMAL leg
     assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'PROTECTED_SWING', legQuality: 'NORMAL', nearDrawAvailable: true }), 'WATCH');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'INTERNAL', legQuality: 'STRONG', nearDrawAvailable: true }), 'WATCH');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'INTERNAL', legQuality: 'STRONG', nearDrawAvailable: true }), 'HIGH_QUALITY');
     assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'INTERNAL', legQuality: 'NORMAL', nearDrawAvailable: true }), 'WATCH');
-    // LOW：MICRO / WEAK leg / 无 near / conflict
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'MICRO_INTERNAL', legQuality: 'EXPLOSIVE', nearDrawAvailable: true }), 'LOW_QUALITY');
+    // LOW：NO_MSS / WEAK leg / 无 near / conflict；MICRO 仍表示 MSS exists
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'MICRO_INTERNAL', legQuality: 'EXPLOSIVE', nearDrawAvailable: true }), 'HIGH_QUALITY');
     assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'PROTECTED_SWING', legQuality: 'WEAK', nearDrawAvailable: true }), 'LOW_QUALITY');
     assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'PROTECTED_SWING', legQuality: 'EXPLOSIVE', nearDrawAvailable: false }), 'LOW_QUALITY');
     assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'PROTECTED_SWING', legQuality: 'EXPLOSIVE', nearDrawAvailable: true, directionConflict: true }), 'LOW_QUALITY');
     assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'NO_MSS', legQuality: 'NORMAL', nearDrawAvailable: true }), 'LOW_QUALITY');
+    ['LOCAL', 'INTERNAL', 'CONTROLLING', 'ACTIVE_PROTECTED', 'SUPERSEDED_PROTECTED'].forEach(function (role) {
+        assert.strictEqual(opportunityQuality.classifyOpportunityTier({
+            mssQuality: role === 'ACTIVE_PROTECTED' ? 'PROTECTED_SWING' : 'INTERNAL',
+            mssExists: true, referenceRole: role, legQuality: 'STRONG', nearDrawAvailable: true
+        }), 'HIGH_QUALITY', role + ' 不得成为 HIGH hard gate');
+    });
 });
 
 test('11D.7：buildTierIndex 挂档 —— leg endIndex 取 near target，tier 判定正确', function () {

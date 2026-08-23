@@ -44,7 +44,7 @@ function sweep(id, side, price, confirmedAt, candleIndex, liquidityType) {
 
 function mssEvent(id, direction, confirmedAt, candleIndex) {
     return {
-        id: id, symbol: 'BTCUSDT', timeframe: '5m', type: 'MSS', direction: direction,
+        id: id, symbol: 'BTCUSDT', timeframe: '5m', type: 'STRUCTURAL_MSS', direction: direction,
         confirmedAt: confirmedAt, candleIndex: candleIndex,
         price: 100, source: { candle: { close: 100 } }, metadata: {}
     };

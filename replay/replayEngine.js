@@ -23,10 +23,9 @@ var thresholds = require('../config/thresholds');
 var replayState = require('./replayState');
 var amdState = require('../amd/amdState');
 var eventRegistry = require('../events/eventRegistry');
-var mssDetector = require('../events/mssDetector');
 var displacementDetector = require('../events/displacementDetector');
 var atrIndicator = require('../indicators/atr');
-var dcStructuralSwing = require('../structure/dcStructuralSwing'); // Phase 12.5A：唯一实现
+var structuralProvenance5m = require('../structure/structuralProvenance5m');
 var dailyLiquidity = require('../liquidity/dailyLiquidity');
 var weeklyLiquidity = require('../liquidity/weeklyLiquidity');
 var monthlyLiquidity = require('../liquidity/monthlyLiquidity');
@@ -112,7 +111,7 @@ function rebuildSnapshot(state, candles, index, evaluationTime, data) {
             draw: draw, structures: structures, location: location,
             events: {
                 sweeps: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),
-                mss: state.eventRegistry.getByType(symbol, 'MSS'),
+                mss: state.eventRegistry.getByType(symbol, 'STRUCTURAL_MSS'),
                 displacements: state.eventRegistry.getByType(symbol, 'DISPLACEMENT')
             }
         }, { thresholds: cfg });
@@ -195,22 +194,6 @@ function runReplay(data, options) {
     }
     state.atrSeries = atrSeries; // 供 incrementalFvg 的全局 ATR 使用
 
-    // ---- Phase 12.5A：DC 状态机 warmup（唯一实现 structure/dcStructuralSwing.js） ----
-    // 前 startIndex 根不跑 processBar（性能），但 DC 状态机必须消费完整历史——
-    // 否则初始 candidate 缺失、warmup 段确认的 swings 不进 dcRefPool →
-    // MSS 口径与 12.4 shadow（全量 buildDcSwings + detectMss）不一致。
-    // fullWarmup 模式下 processBar 从 0 开始逐根 step（含 DC），无需此处预热。
-    var useDcWarm = !!(cfg.structure && cfg.structure.useDcStructuralSwing);
-    if (useDcWarm && !fullWarmup && startIndex > 0) {
-        state.dcState = dcStructuralSwing.createDcState(undefined, { baseIndex: 0 });
-        for (w = 0; w < startIndex; w++) {
-            var wsw = dcStructuralSwing.stepDcState(state.dcState, candles[w], w, candles);
-            if (wsw) {
-                state.dcRefPool.push(dcStructuralSwing.packageForMss(wsw, symbol, '5m', candles));
-            }
-        }
-    }
-
     var fetcher = function (sym, interval, limit, st, et) {
         return Promise.resolve(data.calendarCandles[interval] || []);
     };
@@ -269,7 +252,7 @@ function runReplay(data, options) {
         state.index = i;
 
         // ---- 1. 增量 liquidity ----
-        replayState.incrementalLiquidity(state, candles, i, data.exchangeInfo, evaluationTime);
+        var newConfirmedSwings = replayState.incrementalLiquidity(state, candles, i, data.exchangeInfo, evaluationTime);
 
         // ---- 2. 慢变量快照（每 snapshotInterval 根） ----
         var doSnapshot = (i === (fullWarmup ? 0 : startIndex)) ||
@@ -286,32 +269,17 @@ function runReplay(data, options) {
             // ---- 3. 增量 ATR（O(1) Wilder 更新） ----
             prevAtr = updateAtrIncremental(atrSeries, candles, i, prevAtr, 14);
 
-            // ---- 4. 增量事件 ----
-            // Phase 12.5A：MSS reference source 切换（flag=false legacy 2-2 swings / true DC STRUCTURAL_SWING）。
-            //   Liquidity Registry / EQL/EQH / Sweep / Draw / Opportunity / Alert 全部不动，只换 reference 池。
-            //   DC 模式：每根 step 状态机，确认的新 swing 包装后加入 dcRefPool；consumed 独立（不混 legacy）。
-            var useDc = !!(cfg.structure && cfg.structure.useDcStructuralSwing);
-            var mssPool = state.swings;
-            var mssConsumed = state.consumedMssRefs || (state.consumedMssRefs = {});
-            if (useDc) {
-                if (!state.dcState) {
-                    state.dcState = dcStructuralSwing.createDcState(undefined, { baseIndex: 0 });
-                }
-                var rawSw = dcStructuralSwing.stepDcState(state.dcState, candle, i, candles);
-                if (rawSw) {
-                    state.dcRefPool.push(dcStructuralSwing.packageForMss(rawSw, symbol, '5m', candles));
-                }
-                mssPool = state.dcRefPool;
-                mssConsumed = state.dcConsumedMssRefs || (state.dcConsumedMssRefs = {});
-            }
-            // mss：只检测新 K，持久 consumedRefs
-            var newMssRaw = mssDetector.detectMss([candle], mssPool, {
-                symbol: symbol,
-                timeframe: '5m',
-                baseIndex: i,
-                consumedRefs: mssConsumed,
-                thresholds: cfg
+            // ---- 4. Incremental structural provenance + events ----
+            // Only confirmed 2L/2R pivots feed this state. Every closed-candle
+            // close-through may emit MSS; protected lifecycle remains a separate
+            // STRUCTURAL_MSS context event.
+            var structuralStep = structuralProvenance5m.step(
+                state.structural5m, candle, i, newConfirmedSwings
+            );
+            structuralStep.events.forEach(function (event) {
+                state.eventRegistry.add(event);
             });
+            var newMssRaw = structuralStep.mss;
             // displacement：只检测新 K，增量 ATR 序列
             var newDispRaw = displacementDetector.detectDisplacement([candle], newMssRaw, {
                 symbol: symbol,
@@ -859,6 +827,8 @@ function runReplay(data, options) {
             // Phase 11D.3：Opportunity/DisplacementLeg 数据源
             fvgs: state.fvgReg.getAll(symbol),
             displacementEvents: state.eventRegistry.getByType(symbol, 'DISPLACEMENT'),
+            // Short-term MSS signal coverage. STRUCTURAL_MSS remains available
+            // separately in eventRegistry as protected-lifecycle context.
             mssEvents: state.eventRegistry.getByType(symbol, 'MSS'),
             // Phase 11D.8：liquidity sweep 事件（Alert Replay 的 Sweep 字段）
             sweepEvents: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),

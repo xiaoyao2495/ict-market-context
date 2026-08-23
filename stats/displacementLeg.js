@@ -11,7 +11,7 @@
  * Leg Quality（诊断分级，不过滤机会）：
  *   WEAK / NORMAL / STRONG / EXPLOSIVE（基于 rangeAtr + netMoveAtr + bodyEfficiency）
  */
-var mssReference = require('./mssReference');
+var structuralProvenance5m = require('../structure/structuralProvenance5m');
 
 var MAX_LEG_BARS = 3; // 1~3 根连续同向
 
@@ -91,8 +91,7 @@ function finalizeLeg(leg, swings) {
             mssEvent = leg.mssEvent;
         }
         if (mssEvent) {
-            var cls = mssReference.classifyMssReference(mssEvent, swings || []);
-            out.mssQuality = cls.quality;
+            out.mssQuality = structuralProvenance5m.qualityForMss(mssEvent);
             out.didBreakMssReference = true;
         } else {
             out.mssQuality = 'NO_MSS';
@@ -376,7 +375,7 @@ function buildWindowedLegIndex(displacements, candles, mssEvents, swings, mergeM
         enrichLegWithCandles(l, candles || []);
         classifyLegQuality(l);
         if (l.mssId && mssById[l.mssId]) {
-            l.mssQuality = mssReference.classifyMssReference(mssById[l.mssId], swings || []).quality;
+            l.mssQuality = structuralProvenance5m.qualityForMss(mssById[l.mssId]);
         } else {
             l.mssQuality = 'NO_MSS';
         }

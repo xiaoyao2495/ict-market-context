@@ -1,5 +1,5 @@
 /**
- * auditMarketFacts.js —— 方案 Z Phase-2 扩展（仅用于 DeepSeek A/B 实验）
+ * auditMarketFacts.js —— Daily Bias deterministic context 审计事实
  *
  * ⚠️ 定位（与 auditPivots.js 同）：
  * - 这是给 DeepSeek 提供"已由代码确定的市场事实"的确定性工具：

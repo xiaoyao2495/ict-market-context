@@ -4,8 +4,8 @@
  * 设计原则：
  * - System Prompt 固定（ICT 2022 Mentorship 框架），不含"SSL Sweep→BULLISH"模板，
  *   避免模型机械套规则。
- * - User Prompt 每次只变化：evaluationTime + 120 根 4H OHLC JSON。
- * - 要求模型从原始 OHLC 自行识别全部 ICT 结构，且所有重要对象必须返回具体 price + candle time。
+ * - User Prompt 每次只变化：evaluationTime + 120 根 4H OHLC + deterministic market facts。
+ * - Structural Provenance V1.1 是 authoritative fact；模型只负责 narrative interpretation。
  */
 
 var SYSTEM_PROMPT = [
@@ -17,7 +17,7 @@ var SYSTEM_PROMPT = [
     'BULLISH, BEARISH, or UNCLEAR.',
     '',
     'You will be given ONLY the 120 most recent CLOSED 4H candles available at that exact evaluation time.',
-    'You must identify ICT structure yourself, directly from the OHLC data. Do not assume any pre-computed structure.',
+    'When deterministic marketFacts are supplied, accept their structural provenance as authoritative.',
     '',
     'Use the following hierarchy:',
     '1. What has price already done?',
@@ -35,7 +35,7 @@ var SYSTEM_PROMPT = [
     'Important rules:',
     '- Use ONLY the 120 candles supplied. Never reference candles or events after the evaluation time.',
     '- Do not assume every liquidity sweep reverses price.',
-    '- Do not classify every minor swing break as a structural MSS; require a meaningful, confirmed swing point.',
+    '- Do not promote a minor break to structural MSS unless marketFacts explicitly labels it STRUCTURAL_MSS.',
     '- Do not force a directional bias. If the narrative or draw on liquidity is ambiguous, return UNCLEAR.',
     '- A recent rise alone does not imply BULLISH. A recent decline alone does not imply BEARISH.',
     '- Distinguish an internal retracement from a meaningful change in delivery.',
@@ -44,40 +44,26 @@ var SYSTEM_PROMPT = [
     '  you MUST return its concrete price and the candle openTime (ISO 8601 UTC) where it occurs.',
     '  Do NOT return abstract descriptions like "there was a bullish MSS" without price and time.',
     '',
-    'MARKET FACTS DISCIPLINE (applies when marketFacts is supplied):',
-    '- marketFacts contains facts ALREADY COMPUTED by code (sweeps + breaks).',
+    'AUTHORITATIVE MARKET FACTS (applies when marketFacts is supplied):',
+    '- marketFacts contains code-owned sweeps, breaks, protectedSwings, structuralEvents, and structuralState.',
     '- You MUST NOT re-derive or override the sweep status / break classification / relationToDelivery.',
     '- A sweep marked status=TAKEN was swept at takenAt; do NOT claim it is intact.',
-    '- Each break carries: direction (BULLISH=HIGH broken up, BEARISH=LOW broken down),',
-    '  relationToDelivery (SAME|OPPOSITE|UNKNOWN vs current delivery), classification, and mssCandidate.',
     '- A break marked classification=CONTINUATION is a continuation, NOT an MSS.',
-    '- A break marked classification=UNCLASSIFIED with mssCandidate=true is an OPPOSITE-direction',
-    '  candidate only. It is NOT yet an MSS. To call it an MSS you must independently verify that',
-    '  the broken reference swing is a genuine structural / protected swing (not merely an internal',
-    '  swing) AND that bullish/bearish displacement confirms the shift. Do NOT upgrade on direction alone.',
-    '- A break marked classification=UNCLASSIFIED with mssCandidate=false / relationToDelivery=UNKNOWN',
-    '  means code could NOT confirm current delivery; treat as ambiguous, do NOT invent an MSS.',
-    '- You MAY still interpret these facts narrative-wise (why it matters, what it implies),',
-    '  but you must not contradict the supplied status / classification / relationToDelivery.',
-    '- CONTRACT (hard): When marketFacts is supplied, delivery.mss MUST be [] (empty array).',
-    '  The only legal MSS source is a deterministic classification=MSS written by code; the half-conservative',
-    '  engine produces NONE, so you MUST NOT promote any mssCandidate into delivery.mss.',
-    '- Instead, for every break with mssCandidate=true, output your interpretation in a SEPARATE field',
-    '  "mssAssessment": [ { "level": number, "assessment": "LIKELY_MSS"|"NOT_MSS"|"UNCERTAIN", "reason": "..." } ].',
-    '  This is the INTERPRETATION layer — it does NOT change the supplied facts and MUST NOT enter delivery.mss.',
-    '  Among multiple OPPOSITE candidates, at most the FIRST one that genuinely changes structural delivery',
-    '  may be LIKELY_MSS; later same-direction breaks are continuation (NOT_MSS).',
+    '- protectedSwings roles/statuses are authoritative. Never redefine ACTIVE_PROTECTED or SUPERSEDED_PROTECTED.',
+    '- structuralEvents types are authoritative. Never relabel BOS, STRUCTURAL_MSS, or STRUCTURAL_CONTINUATION.',
+    '- structuralState is authoritative structure, but it does NOT force final bias. For example,',
+    '  structuralState=BEARISH with fulfilled downside draw may legitimately produce bias=UNCLEAR.',
+    '- delivery.mss may contain ONLY supplied STRUCTURAL_MSS events. It MUST include the latest supplied',
+    '  STRUCTURAL_MSS using its exact direction, referenceLevel, and eventTime. Never invent an MSS.',
+    '- Include every ACTIVE_PROTECTED_HIGH/LOW in identifiedStructure.majorSwingHighs/majorSwingLows',
+    '  using its exact price and occurredAt.',
+    '- You MAY interpret what these facts mean for narrative, delivery, draw, bias, conflicts, and confidence.',
     '',
     'SWING REFERENCE DISCIPLINE (applies when confirmedSwings is supplied):',
     '- You MUST NOT invent swing highs or swing lows.',
-    '- Only levels listed in confirmedSwings (highs / lows) may be used as swing references.',
-    '- You must decide which confirmed swings are: internal, structural, or protected,',
-    '  and which are relevant to the current narrative.',
-    '- A Pivot is NOT automatically a Structural Swing. You classify it.',
-    '- An MSS is valid ONLY if price breaks a previously confirmed structural/protected',
-    '  swing in the OPPOSITE direction of the prior delivery.',
-    '- Do NOT call a continuation break (breaking a swing already in the direction of',
-    '  current delivery) an MSS.',
+    '- Only levels listed in confirmedSwings or authoritative protectedSwings may be used as swing references.',
+    '- Use protectedSwings, not your own pivot classification, for protected/structural roles.',
+    '- Pivots not assigned a protected role by marketFacts may still be discussed as internal context.',
     '',
     'MSS RULE (mandatory):',
     '- A Market Structure Shift requires a genuine change in directional delivery.',
@@ -85,9 +71,9 @@ var SYSTEM_PROMPT = [
     '  low is bearish continuation / BOS, NOT a bearish MSS.',
     '- If prior meaningful delivery is already BULLISH, breaking another confirmed swing',
     '  high is bullish continuation / BOS, NOT a bullish MSS.',
-    '- Only classify MSS when a confirmed structural/protected swing is broken AGAINST',
-    '  the prior directional delivery.',
-    '- If no genuine shift occurred, delivery.mss MUST be [] (empty array).',
+    '- Only structuralEvents.type=STRUCTURAL_MSS is an MSS.',
+    '- STRUCTURAL_CONTINUATION is continuation and must never be described as another MSS.',
+    '- If no supplied STRUCTURAL_MSS exists, delivery.mss MUST be [] (empty array).',
     '',
     'PREMIUM / DISCOUNT RULE (mandatory):',
     '- Premium and Discount are LOCATION / CONTEXT, not directional signals.',
@@ -122,16 +108,13 @@ var SYSTEM_PROMPT = [
     '    "displacement": [ { "direction": "BULLISH"|"BEARISH", "startTime": "ISO8601", "endTime": "ISO8601", "reason": "..." } ],',
     '    "currentDelivery": "BULLISH" | "BEARISH" | "UNCLEAR"',
     '  },',
-    '  "mssAssessment": [',
-    '    { "level": number, "assessment": "LIKELY_MSS"|"NOT_MSS"|"UNCERTAIN", "reason": "..." }',
-    '  ],',
     '  "dealingRange": {',
     '    "high": number, "low": number, "equilibrium": number,',
     '    "location": "PREMIUM" | "EQUILIBRIUM" | "DISCOUNT"',
     '  },',
     '  "drawOnLiquidity": {',
     '    "direction": "UP" | "DOWN" | "NONE",',
-    '    "targetPrice": number,',
+    '    "targetPrice": number | null,',
     '    "reason": "..."',
     '  },',
     '  "supportingEvidence": [ "string" ],',
@@ -144,19 +127,21 @@ var SYSTEM_PROMPT = [
  * 构造 user prompt
  * @param {Object} params
  *   symbol, evaluationTime(ms), candles(Array of 4H candle {openTime,open,high,low,close})
- *   confirmedSwings [可选] { highs:[{price,occurredAt,confirmedAt}], lows:[...] }
- *     —— Phase-2 实验注入：已确认的 pivot 候选集，模型不得自创 swing。
- *   marketFacts [可选] { sweeps:[...], breaks:[...] }
- *     —— Phase-2 扩展注入：已由代码确定的 sweep lifecycle 与 break classification，
- *       模型不得自创/反驳这些事实，仅可补充 narrative 解读。
+ *   confirmedSwings { highs:[{price,occurredAt,confirmedAt}], lows:[...] }
+ *     —— 已确认的 pivot 候选集，模型不得自创 swing。
+ *   marketFacts { sweeps, breaks, protectedSwings, structuralEvents, structuralState }
+ *     —— code-owned deterministic facts，模型不得自创/反驳，仅可补充 narrative 解读。
  * @returns {string}
  */
 function buildUserPrompt(params) {
     var symbol = params.symbol;
     var evaluationTime = params.evaluationTime;
     var candles = params.candles;
-    var confirmedSwings = params.confirmedSwings; // 可能 undefined（Phase-1 / Raw 模式）
-    var marketFacts = params.marketFacts;         // 可能 undefined（Phase-1）
+    var confirmedSwings = params.confirmedSwings;
+    var marketFacts = params.marketFacts;
+    if (!confirmedSwings || !marketFacts) {
+        throw new Error('DAILY_BIAS_DETERMINISTIC_CONTEXT_V1 requires confirmedSwings and marketFacts');
+    }
 
     var iso = new Date(evaluationTime).toISOString();
 
@@ -179,20 +164,23 @@ function buildUserPrompt(params) {
         candles: compact
     };
     var allowedDrawTargets = buildAllowedDrawTargets(marketFacts, evaluationTime);
-    // Phase-2：注入已确认 pivots（模型只能引用这些，不得自创）
-    if (confirmedSwings && (confirmedSwings.highs || confirmedSwings.lows)) {
-        dataObj.confirmedSwings = {
-            highs: (confirmedSwings.highs || []).map(function (h) {
-                return { price: h.price, occurredAt: h.occurredAt, confirmedAt: h.confirmedAt };
-            }),
-            lows: (confirmedSwings.lows || []).map(function (l) {
-                return { price: l.price, occurredAt: l.occurredAt, confirmedAt: l.confirmedAt };
-            })
+    dataObj.confirmedSwings = {
+        highs: (confirmedSwings.highs || []).map(function (h) {
+            return { price: h.price, occurredAt: h.occurredAt, confirmedAt: h.confirmedAt };
+        }),
+        lows: (confirmedSwings.lows || []).map(function (l) {
+            return { price: l.price, occurredAt: l.occurredAt, confirmedAt: l.confirmedAt };
+        })
+    };
+    // 注入 code-owned deterministic marketFacts，全部按 evaluationTime 再做一次 visibility guard。
+    {
+        var mf = {
+            sweeps: [],
+            breaks: [],
+            protectedSwings: [],
+            structuralEvents: [],
+            structuralState: marketFacts.structuralState || 'UNKNOWN'
         };
-    }
-    // Phase-2 扩展：注入已由代码确定的 marketFacts（sweep lifecycle + break classification）
-    if (marketFacts && (marketFacts.sweeps || marketFacts.breaks)) {
-        var mf = { sweeps: [], breaks: [] };
         (marketFacts.sweeps || []).forEach(function (s) {
             var entry = {
                 refSide: s.refSide,
@@ -219,6 +207,31 @@ function buildUserPrompt(params) {
                 referenceSwing: b.referenceSwing
             });
         });
+        (marketFacts.protectedSwings || []).forEach(function (s) {
+            if (!isVisibleAt(s.protectedConfirmedAt || s.confirmedAt, evaluationTime)) return;
+            mf.protectedSwings.push(copyFields(s, [
+                'price', 'occurredAt', 'confirmedAt', 'side',
+                'parentStructuralLevel', 'parentStructuralConfirmedAt',
+                'bosLevel', 'bosCandleTime', 'bosClose', 'bosConfirmedAt',
+                'protectedConfirmedAt', 'role', 'status', 'supersededBy',
+                'brokenAt', 'brokenConfirmedAt', 'brokenByClose',
+                'structuralMssReference'
+            ]));
+        });
+        (marketFacts.structuralEvents || []).forEach(function (e) {
+            if (!isVisibleAt(e.confirmedAt, evaluationTime)) return;
+            var event = copyFields(e, [
+                'type', 'direction', 'referenceLevel', 'referenceRole',
+                'eventTime', 'confirmedAt', 'structuralStateBefore',
+                'structuralStateAfter', 'stateChanged'
+            ]);
+            if (e.sourceProtectedSwing) {
+                event.sourceProtectedSwing = copyFields(e.sourceProtectedSwing, [
+                    'price', 'occurredAt', 'confirmedAt', 'side', 'role', 'protectedConfirmedAt'
+                ]);
+            }
+            mf.structuralEvents.push(event);
+        });
         dataObj.marketFacts = mf;
         dataObj.allowedDrawTargets = allowedDrawTargets;
     }
@@ -230,26 +243,20 @@ function buildUserPrompt(params) {
         'evaluationTime = ' + iso,
         ''
     ];
-    if (confirmedSwings && (confirmedSwings.highs || confirmedSwings.lows)) {
-        instruction.push('Below are the 120 most recent CLOSED 4H candles available at that exact time,');
-        instruction.push('PLUS a set of CONFIRMED swing pivots (highs/lows) already identified by code,');
-        instruction.push('AND marketFacts (sweep lifecycle + break classification) ALREADY COMPUTED by code.');
-        instruction.push('You MUST use ONLY these supplied pivots as swing references. Do NOT invent new swings.');
-        instruction.push('You MUST NOT override the supplied sweep status / break classification — only interpret them.');
-        instruction.push('Classify each supplied pivot as internal / structural / protected, then build the ICT narrative.');
-        instruction.push('Because marketFacts is supplied: delivery.mss MUST be [] (empty). For every break with');
-        instruction.push('mssCandidate=true, give your interpretation in mssAssessment[]. Do NOT promote candidates into delivery.mss.');
-        instruction.push('');
-        instruction.push('Draw selection rules (hard contract):');
-        instruction.push('- If direction=UP, targetPrice MUST exactly match one entry in allowedDrawTargets.up.');
-        instruction.push('- If direction=DOWN, targetPrice MUST exactly match one entry in allowedDrawTargets.down.');
-        instruction.push('- If no supplied target is meaningful, return direction=NONE and targetPrice=null.');
-        instruction.push('- Never invent a draw target from raw OHLC.');
-        instruction.push('- Never select TAKEN liquidity. Validator remains authoritative.');
-    } else {
-        instruction.push('Below are the 120 most recent CLOSED 4H candles available at that exact time.');
-        instruction.push('Identify the ICT 2022 structure yourself and determine the 4H bias.');
-    }
+    instruction.push('Below are the 120 most recent CLOSED 4H candles available at that exact time,');
+    instruction.push('PLUS a set of CONFIRMED swing pivots (highs/lows) already identified by code,');
+    instruction.push('AND authoritative marketFacts (sweeps, breaks, protected swings, structural events/state).');
+    instruction.push('Use only confirmedSwings or authoritative protectedSwings as swing references. Do NOT invent new swings.');
+    instruction.push('You MUST NOT override supplied liquidity lifecycle or Structural Provenance V1.1 facts.');
+    instruction.push('Do not choose protected swings or MSS references yourself. Interpret the supplied facts.');
+    instruction.push('delivery.mss must echo only deterministic STRUCTURAL_MSS events and include the latest one.');
+    instruction.push('');
+    instruction.push('Draw selection rules (hard contract):');
+    instruction.push('- If direction=UP, targetPrice MUST exactly match one entry in allowedDrawTargets.up.');
+    instruction.push('- If direction=DOWN, targetPrice MUST exactly match one entry in allowedDrawTargets.down.');
+    instruction.push('- If no supplied target is meaningful, return direction=NONE and targetPrice=null.');
+    instruction.push('- Never invent a draw target from raw OHLC.');
+    instruction.push('- Never select TAKEN liquidity. Validator remains authoritative.');
     instruction.push('');
     instruction.push('Return JSON only using the required schema. Every important object must include its');
     instruction.push('concrete price and candle time. Do NOT use any data after the evaluation time.');
@@ -257,6 +264,19 @@ function buildUserPrompt(params) {
     instruction.push(dataJson);
 
     return instruction.join('\n');
+}
+
+function isVisibleAt(time, evaluationTime) {
+    var t = Date.parse(time);
+    return isFinite(t) && t <= Number(evaluationTime);
+}
+
+function copyFields(source, fields) {
+    var out = {};
+    fields.forEach(function (field) {
+        if (source[field] !== undefined) out[field] = source[field];
+    });
+    return out;
 }
 
 function buildAllowedDrawTargets(marketFacts, evaluationTime) {

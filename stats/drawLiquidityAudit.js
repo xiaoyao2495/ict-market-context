@@ -28,8 +28,6 @@
  *
  * 生产零改动（replay 仅加只读 liquidityObjects 输出字段）。
  */
-var dcStructuralSwing = require('../structure/dcStructuralSwing');
-
 var BAR_MS = 300000;
 var HORIZON_BARS = 96; // label 窗口：未来 8h（96 × 5m）内找下一个被 raid 的候选
 
@@ -193,14 +191,19 @@ function extractFeatures(c, ix, ctx, tBar) {
 
 /**
  * 未来 label：t 起未来第一个被 raid 的 ACTIVE 候选（只进 label）。
- * @returns {Object|null} { nextSide, nextType, barsToDraw, nextId } | null（horizon 内无）
+ * @param {Array} actives t 时点 ACTIVE 候选
+ * @param {Object} idxById buildCandidateIndex 输出
+ * @param {number} tBar 当前 bar
+ * @param {number} [horizonBars] 可配 horizon（默认 HORIZON_BARS=96；13A.2 用 288=24h）
+ * @returns {Object|null} { nextSide, nextType, barsToRaid, nextId } | null（horizon 内无）
  */
-function futureLabel(actives, idxById, tBar) {
+function futureLabel(actives, idxById, tBar, horizonBars) {
+    var hz = typeof horizonBars === 'number' ? horizonBars : HORIZON_BARS;
     var best = null;
     actives.forEach(function (c) {
         var ix = idxById[c.id];
         if (!ix || ix.raidBar === null || ix.raidBar <= tBar) return;
-        if (ix.raidBar - tBar > HORIZON_BARS) return;
+        if (ix.raidBar - tBar > hz) return;
         if (!best || ix.raidBar < best.raidBar) {
             best = { c: c, ix: ix };
         }
@@ -212,6 +215,15 @@ function futureLabel(actives, idxById, tBar) {
         barsToRaid: best.ix.raidBar - tBar,
         nextId: best.c.id
     };
+}
+
+/** horizon 分桶（13A.2：<=4h / <=8h / <=12h / <=24h）——时间尺度审计 */
+function horizonBucketOf(bars) {
+    if (bars <= 48) return '<=4h';
+    if (bars <= 96) return '<=8h';
+    if (bars <= 144) return '<=12h';
+    if (bars <= 288) return '<=24h';
+    return '>24h';
 }
 
 /** barsToRaid 分桶（30m / 1h / 4h / 24h / >24h）——用户 13.1：预测对了但 6h 后才发生 ≠ 30min 内发生 */
@@ -402,6 +414,7 @@ module.exports = {
     BAR_MS: BAR_MS,
     HORIZON_BARS: HORIZON_BARS,
     raidBucketOf: raidBucketOf,
+    horizonBucketOf: horizonBucketOf,
     typeGroup: typeGroup,
     normalizeCandidates: normalizeCandidates,
     buildCandidateIndex: buildCandidateIndex,

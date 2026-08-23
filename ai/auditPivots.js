@@ -1,5 +1,5 @@
 /**
- * auditPivots.js —— Phase-2 审计专用 4H Pivot Detector（仅用于 DeepSeek A/B 实验）
+ * auditPivots.js —— Daily Bias deterministic context 审计专用 4H Pivot Detector
  *
  * 重要定位：
  * - 这是给 DeepSeek 提供"已确认存在的 Swing 候选 Universe"的确定性工具，

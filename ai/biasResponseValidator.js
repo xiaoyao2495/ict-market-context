@@ -16,8 +16,6 @@ var BIAS_VALUES = ['BULLISH', 'BEARISH', 'UNCLEAR'];
 var CONF_VALUES = ['HIGH', 'MEDIUM', 'LOW'];
 var LOC_VALUES = ['PREMIUM', 'EQUILIBRIUM', 'DISCOUNT'];
 var SIDE_VALUES = ['BSL', 'SSL'];
-// mssAssessment：AI 对 code-supplied mssCandidate 的解释层评估（非确定性事实）
-var MSS_ASSESS_VALUES = ['LIKELY_MSS', 'NOT_MSS', 'UNCERTAIN'];
 
 function isNum(x) { return typeof x === 'number' && isFinite(x); }
 function isStr(x) { return typeof x === 'string' && x.length > 0; }
@@ -31,6 +29,12 @@ function fail(msg) {
 function samePrice(a, b) {
     var scale = Math.max(Math.abs(a), Math.abs(b), 1);
     return Math.abs(a - b) <= scale * 1e-10;
+}
+
+function sameTime(a, b) {
+    var ta = Date.parse(a);
+    var tb = Date.parse(b);
+    return isFinite(ta) && isFinite(tb) && ta === tb;
 }
 
 function validateDrawTarget(draw, marketFacts) {
@@ -50,6 +54,96 @@ function validateDrawTarget(draw, marketFacts) {
             ? 'drawOnLiquidity.targetPrice 指向 TAKEN liquidity；target 必须是 INTACT 或 NONE'
             : 'drawOnLiquidity.targetPrice 未对应任何 INTACT liquidity；target 必须是 INTACT 或 NONE');
     }
+}
+
+function latestStructuralMss(events) {
+    return (events || []).filter(function (e) {
+        return e.type === 'STRUCTURAL_MSS';
+    }).sort(function (a, b) {
+        return Date.parse(b.confirmedAt) - Date.parse(a.confirmedAt);
+    })[0] || null;
+}
+
+function matchesMss(aiMss, event) {
+    return aiMss.type === event.direction &&
+        samePrice(aiMss.brokenSwingPrice, event.referenceLevel) &&
+        sameTime(aiMss.breakTime, event.eventTime);
+}
+
+function structuralFactContradictions(parsed, marketFacts) {
+    var out = [];
+    if (!parsed || !marketFacts || !Array.isArray(marketFacts.structuralEvents) ||
+        !Array.isArray(marketFacts.protectedSwings)) return out;
+
+    var identified = parsed.identifiedStructure || {};
+    var delivery = parsed.delivery || {};
+    var aiMss = delivery.mss || [];
+    var events = marketFacts.structuralEvents || [];
+    var factMss = events.filter(function (e) { return e.type === 'STRUCTURAL_MSS'; });
+    var expectedState = marketFacts.structuralState === 'UNKNOWN'
+        ? 'UNCLEAR' : marketFacts.structuralState;
+
+    if (BIAS_VALUES.indexOf(expectedState) >= 0 && identified.structureState !== expectedState) {
+        out.push({
+            code: 'STRUCTURAL_STATE_MISMATCH',
+            message: 'identifiedStructure.structureState 与 authoritative structuralState 不一致；expected=' +
+                expectedState + ' actual=' + identified.structureState,
+            deterministic: expectedState,
+            ai: identified.structureState
+        });
+    }
+
+    aiMss.forEach(function (m, i) {
+        var exists = factMss.some(function (e) { return matchesMss(m, e); });
+        if (!exists) {
+            out.push({
+                code: 'INVENTED_STRUCTURAL_MSS',
+                message: 'delivery.mss[' + i + '] 未对应 authoritative STRUCTURAL_MSS',
+                ai: m
+            });
+        }
+    });
+
+    var latest = latestStructuralMss(events);
+    if (latest && !aiMss.some(function (m) { return matchesMss(m, latest); })) {
+        out.push({
+            code: 'LATEST_STRUCTURAL_MSS_OMITTED',
+            message: 'delivery.mss 缺少 latest authoritative STRUCTURAL_MSS：' +
+                latest.direction + ' @ ' + latest.referenceLevel,
+            deterministic: latest
+        });
+    }
+    if (!latest && aiMss.length) {
+        out.push({
+            code: 'STRUCTURAL_MSS_WITHOUT_FACT',
+            message: '无 authoritative STRUCTURAL_MSS 时 delivery.mss 必须为空'
+        });
+    }
+
+    (marketFacts.protectedSwings || []).filter(function (s) {
+        return s.status === 'ACTIVE_PROTECTED';
+    }).forEach(function (s) {
+        var list = s.side === 'HIGH'
+            ? (identified.majorSwingHighs || [])
+            : (identified.majorSwingLows || []);
+        var exists = list.some(function (x) {
+            return samePrice(x.price, s.price) && sameTime(x.time, s.occurredAt);
+        });
+        if (!exists) {
+            out.push({
+                code: 'ACTIVE_PROTECTED_SWING_OMITTED',
+                message: 'identifiedStructure 缺少 authoritative ' + s.role +
+                    ' @ ' + s.price + ' occurredAt=' + s.occurredAt,
+                deterministic: s
+            });
+        }
+    });
+    return out;
+}
+
+function validateStructuralFacts(parsed, marketFacts) {
+    var contradictions = structuralFactContradictions(parsed, marketFacts);
+    if (contradictions.length) throw fail(contradictions[0].message);
 }
 
 // 校验单个带 price+time 的引用对象
@@ -75,16 +169,6 @@ function validate(parsed, opts) {
     }
     if (CONF_VALUES.indexOf(parsed.confidence) < 0) {
         throw fail('confidence 必须是 HIGH|MEDIUM|LOW，实际=' + JSON.stringify(parsed.confidence));
-    }
-
-    // 契约约束：当 marketFacts 由代码提供（strictMssEmpty=true）时，
-    // delivery.mss 必须为空数组 —— 唯一合法的 MSS 来源是 deterministic
-    // classification=MSS，而半保守版不产出 MSS，故 AI 不得把任何
-    // mssCandidate 升级为 confirmed MSS 写进 delivery.mss。
-    if (o.strictMssEmpty && Array.isArray((parsed.delivery || {}).mss) &&
-        (parsed.delivery.mss).length > 0) {
-        throw fail('marketFacts 已提供时 delivery.mss 必须为空（AI 不得把 mssCandidate 升级为 confirmed MSS）；' +
-            'candidate 评估请写在 mssAssessment 字段');
     }
 
     var is = parsed.identifiedStructure || {};
@@ -158,22 +242,6 @@ function validate(parsed, opts) {
         throw fail('delivery.currentDelivery 非法');
     }
 
-    // mssAssessment：AI 对 code-supplied mssCandidate 的解释层评估。
-    // 每项必须含 level（数字）、assessment ∈ {LIKELY_MSS,NOT_MSS,UNCERTAIN}、reason（字符串）。
-    // 此字段为"解释层"，不进入 delivery.mss（事实层）。
-    (parsed.mssAssessment || []).forEach(function (a, i) {
-        if (!isNum(a.level)) {
-            throw fail('mssAssessment[' + i + '].level 必须是数字');
-        }
-        if (MSS_ASSESS_VALUES.indexOf(a.assessment) < 0) {
-            throw fail('mssAssessment[' + i + '].assessment 必须是 LIKELY_MSS|NOT_MSS|UNCERTAIN，实际=' +
-                JSON.stringify(a.assessment));
-        }
-        if (!isStr(a.reason)) {
-            throw fail('mssAssessment[' + i + '].reason 必须是字符串');
-        }
-    });
-
     // dealingRange
     if (!isNum(dr.high) || !isNum(dr.low) || !isNum(dr.equilibrium)) {
         throw fail('dealingRange 必须带 high/low/equilibrium 数字');
@@ -192,7 +260,11 @@ function validate(parsed, opts) {
             throw fail('drawOnLiquidity.targetPrice 必须是数字（当 direction 非 NONE）');
         }
     }
+    if (draw.direction === 'NONE' && draw.targetPrice !== null) {
+        throw fail('drawOnLiquidity.direction=NONE 时 targetPrice 必须为 null');
+    }
     validateDrawTarget(draw, o.marketFacts);
+    validateStructuralFacts(parsed, o.marketFacts);
 
     if (!isStr(parsed.biasReason)) {
         throw fail('biasReason 必须是字符串');
@@ -227,6 +299,7 @@ function parseAndValidate(text, opts) {
 module.exports = {
     validate: validate,
     parseAndValidate: parseAndValidate,
+    structuralFactContradictions: structuralFactContradictions,
     BIAS_VALUES: BIAS_VALUES,
     CONF_VALUES: CONF_VALUES
 };

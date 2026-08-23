@@ -51,6 +51,10 @@ function detectDistribution(input, options) {
     var direction = manip.direction; // 'BULLISH' | 'BEARISH'
 
     var mssEvents = reg ? reg.getByType(symbol, 'MSS') : [];
+    // Compatibility for isolated callers/tests that provide the pre-V1 event
+    // contract. Production emits MSS signals, so this fallback is not a second
+    // production detection path.
+    if (reg && mssEvents.length === 0) mssEvents = reg.getByType(symbol, 'STRUCTURAL_MSS');
     var dispEvents = reg ? reg.getByType(symbol, 'DISPLACEMENT') : [];
     var candidates = [];
 

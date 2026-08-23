@@ -181,6 +181,7 @@ function oppositeMssBeforeDistribution(manip, reg, evaluationTime) {
     }
     var opposite = manip.direction === 'BULLISH' ? 'BEARISH' : 'BULLISH';
     var mss = reg.getByType(manip.symbol, 'MSS');
+    if (mss.length === 0) mss = reg.getByType(manip.symbol, 'STRUCTURAL_MSS');
     var found = null;
     mss.forEach(function (m) {
         if (m.confirmedAt > evaluationTime) return;
