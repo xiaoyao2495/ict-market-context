@@ -119,8 +119,7 @@ test('cluster tolerance：tickSize 存在时升级', function () {
     assert.strictEqual(tolBig, 200);
 });
 
-test('equal 检测：tickSize 使原本不等的 swing 合并', function () {
-    // price 100 与 101.5：percent tolerance = 0.02；tickSize 1×2 = 2 → 1.5 < 2 合并
+test('equal V2：tickSize 不再绕过 distanceATR Price Gate', function () {
     function swing(type, index, price, confirmedAt, openTime) {
         return {
             id: 'BTCUSDT:5m:' + type + ':' + openTime,
@@ -150,7 +149,8 @@ test('equal 检测：tickSize 使原本不等的 swing 合并', function () {
         tickSize: 1,
         tickMultiplier: 2
     });
-    assert.strictEqual(result.length, 1);
+    // V2 缺少 formation-time candles/ATR 时 fail closed；tick tolerance 仅保留 audit 诊断。
+    assert.strictEqual(result.length, 0);
 });
 
 console.log('----');

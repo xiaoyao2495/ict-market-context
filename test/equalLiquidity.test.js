@@ -1,18 +1,7 @@
-/**
- * equalLiquidity 单元测试
- *
- * 核心验证点：
- * - 两个接近 Swing High → 1 个 EQH（BSL）
- * - 两个接近 Swing Low → 1 个 EQL（SSL）
- * - 超出 tolerance → 不形成
- * - 小于 minBarsApart / 大于 maxBarsApart → 不形成
- * - 三个相近成员 → 合并为 1 个 group，不产生 pair duplicate
- * - confirmedAt = max(member.confirmedAt)
- * - evaluationTime 早于第二成员确认时间 → 不提前生成（回放安全）
- * - price = 成员平均价；metadata 含 minPrice/maxPrice/memberCount/members
- */
+/** Equal Liquidity V2 production pipeline tests. */
 var assert = require('assert');
 var equalLiquidity = require('../liquidity/equalLiquidity');
+var productionThresholds = require('../config/thresholds').equalLiquidity;
 
 var passed = 0;
 var failed = 0;
@@ -28,21 +17,39 @@ function test(name, fn) {
     }
 }
 
-/**
- * 构造一条已确认的 swing liquidity
- */
-function swing(type, index, price, confirmedAt, openTime) {
+var STEP = 300000;
+var START = 1700000000000;
+
+function candles(count) {
+    var rows = [];
+    for (var i = 0; i < count; i++) {
+        rows.push({
+            openTime: START + i * STEP,
+            closeTime: START + (i + 1) * STEP - 1,
+            open: 100,
+            high: 101,
+            low: 99,
+            close: 100,
+            closed: true,
+            source: 'futures'
+        });
+    }
+    return rows;
+}
+
+function swing(type, index, price, rows) {
+    var confirmedIndex = index + 2;
     return {
-        id: 'BTCUSDT:5m:' + type + ':' + openTime,
+        id: 'BTCUSDT:5m:' + type + ':' + rows[index].openTime,
         symbol: 'BTCUSDT',
         timeframe: '5m',
         type: type,
         side: type === 'SWING_HIGH' ? 'BSL' : 'SSL',
         price: price,
-        sourceOpenTime: openTime,
-        sourceCloseTime: openTime + 300000 - 1,
-        createdAt: confirmedAt,
-        confirmedAt: confirmedAt,
+        sourceOpenTime: rows[index].openTime,
+        sourceCloseTime: rows[index].closeTime,
+        createdAt: rows[confirmedIndex].closeTime,
+        confirmedAt: rows[confirmedIndex].closeTime,
         status: 'ACTIVE',
         touchedAt: null,
         sweptAt: null,
@@ -51,195 +58,274 @@ function swing(type, index, price, confirmedAt, openTime) {
     };
 }
 
-var OPTS = {
-    symbol: 'BTCUSDT',
-    evaluationTime: 9999999999999
-};
+function highPair(opts) {
+    var o = opts || {};
+    var rows = candles(o.count || 280);
+    var firstIndex = o.firstIndex === undefined ? 20 : o.firstIndex;
+    var secondIndex = o.secondIndex === undefined ? 30 : o.secondIndex;
+    var firstPrice = o.firstPrice === undefined ? 110 : o.firstPrice;
+    var secondPrice = o.secondPrice === undefined ? 109.5 : o.secondPrice;
+    rows[firstIndex].high = firstPrice;
+    rows[secondIndex].high = secondPrice;
+    for (var i = firstIndex + 1; i < secondIndex; i++) {
+        rows[i].high = o.interHigh === undefined ? 101 : o.interHigh;
+        rows[i].low = o.interLow === undefined ? 99 : o.interLow;
+        rows[i].close = o.interClose === undefined ? 100 : o.interClose;
+    }
+    return {
+        candles: rows,
+        swings: [
+            swing('SWING_HIGH', firstIndex, firstPrice, rows),
+            swing('SWING_HIGH', secondIndex, secondPrice, rows)
+        ],
+        evaluationTime: rows[secondIndex + 2].closeTime
+    };
+}
 
-/* ---------- 基础分组 ---------- */
+function lowPair() {
+    var rows = candles(80);
+    rows[20].low = 90;
+    rows[30].low = 90.5;
+    for (var i = 21; i < 30; i++) {
+        rows[i].high = 101;
+        rows[i].low = 99;
+    }
+    return {
+        candles: rows,
+        swings: [
+            swing('SWING_LOW', 20, 90, rows),
+            swing('SWING_LOW', 30, 90.5, rows)
+        ],
+        evaluationTime: rows[32].closeTime
+    };
+}
 
-test('两个接近的 Swing High → 1 个 EQH（BSL，price=均值）', function () {
-    // 63000 与 63010：tolerance = 63000*0.0002 = 12.6，差 10 < 12.6 ✓
-    var swings = [
-        swing('SWING_HIGH', 10, 63000, 1000, 10000),
-        swing('SWING_HIGH', 20, 63010, 2000, 20000)
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(result.length, 1);
-    var eqh = result[0];
-    assert.strictEqual(eqh.type, 'EQH');
-    assert.strictEqual(eqh.side, 'BSL');
-    assert.strictEqual(eqh.price, 63005); // 均值
-    assert.strictEqual(eqh.metadata.memberCount, 2);
-    assert.strictEqual(eqh.metadata.minPrice, 63000);
-    assert.strictEqual(eqh.metadata.maxPrice, 63010);
+function run(fixture, extra) {
+    var opts = extra || {};
+    opts.symbol = 'BTCUSDT';
+    if (opts.evaluationTime === undefined) opts.evaluationTime = fixture.evaluationTime;
+    opts.candles = fixture.candles;
+    return equalLiquidity.evaluateEqualLiquidityPipeline(fixture.swings, opts);
+}
+
+test('Lifecycle → Price → Formation → Grouping 生成 VALID EQH', function () {
+    var f = highPair();
+    var result = run(f);
+    assert.strictEqual(result.validPairs.length, 1);
+    assert.strictEqual(result.objects.length, 1);
+    assert.strictEqual(result.objects[0].type, 'EQH');
+    assert.strictEqual(result.objects[0].metadata.pipelineVersion, 2);
+    assert.strictEqual(result.objects[0].metadata.classification, 'VALID_EQ');
 });
 
-test('两个接近的 Swing Low → 1 个 EQL（SSL）', function () {
-    var swings = [
-        swing('SWING_LOW', 10, 62000, 1000, 10000),
-        swing('SWING_LOW', 20, 62008, 2000, 20000)
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(result.length, 1);
-    var eql = result[0];
-    assert.strictEqual(eql.type, 'EQL');
-    assert.strictEqual(eql.side, 'SSL');
-    assert.strictEqual(eql.price, 62004);
-    assert.strictEqual(eql.metadata.memberCount, 2);
+test('EQL 使用对称 formation geometry', function () {
+    var result = run(lowPair());
+    assert.strictEqual(result.validPairs.length, 1);
+    assert.strictEqual(result.objects[0].type, 'EQL');
+    assert.strictEqual(result.objects[0].side, 'SSL');
 });
 
-test('超出 tolerance → 不形成', function () {
-    // 63000 与 63030：差 30 > 12.6
-    var swings = [
-        swing('SWING_HIGH', 10, 63000, 1000, 10000),
-        swing('SWING_HIGH', 20, 63030, 2000, 20000)
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(result.length, 0);
+test('SWEPT first swing 在 second confirmedAt 时 REJECT', function () {
+    var f = highPair();
+    f.candles[25].high = 111;
+    f.candles[25].close = 100;
+    var result = run(f);
+    assert.strictEqual(result.pairs[0].firstSwingState, 'SWEPT');
+    assert.strictEqual(result.pairs[0].classification, 'REJECT_EQ');
+    assert.strictEqual(result.pairs[0].rejectionReason, 'FIRST_SWING_SWEPT');
+    assert.strictEqual(result.objects.length, 0);
 });
 
-test('小于 minBarsApart（index 间隔 2）→ 不形成', function () {
-    var swings = [
-        swing('SWING_HIGH', 10, 63000, 1000, 10000),
-        swing('SWING_HIGH', 12, 63010, 2000, 20000)
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(result.length, 0);
+test('BROKEN first swing 在 second confirmedAt 时 REJECT', function () {
+    var f = highPair();
+    f.candles[25].high = 112;
+    f.candles[25].close = 111;
+    var result = run(f);
+    assert.strictEqual(result.pairs[0].firstSwingState, 'BROKEN');
+    assert.strictEqual(result.pairs[0].rejectionReason, 'FIRST_SWING_BROKEN');
+    assert.strictEqual(result.objects.length, 0);
 });
 
-test('大于 maxBarsApart（间隔 201）→ 不形成', function () {
-    var swings = [
-        swing('SWING_HIGH', 10, 63000, 1000, 10000),
-        swing('SWING_HIGH', 211, 63010, 2000, 20000)
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(result.length, 0);
-});
-
-/* ---------- 三成员合并 ---------- */
-
-test('三个相近 High 合并为 1 个 EQH（不产生 A+B / A+C / B+C）', function () {
-    var swings = [
-        swing('SWING_HIGH', 10, 63000, 1000, 10000),
-        swing('SWING_HIGH', 20, 63010, 2000, 20000),
-        swing('SWING_HIGH', 30, 62998, 3000, 30000)
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(result.length, 1); // 绝不是 3 个
-    var eqh = result[0];
-    assert.strictEqual(eqh.metadata.memberCount, 3);
-    assert.strictEqual(eqh.price, (63000 + 63010 + 62998) / 3);
-    assert.strictEqual(eqh.metadata.minPrice, 62998);
-    assert.strictEqual(eqh.metadata.maxPrice, 63010);
-    assert.strictEqual(eqh.metadata.members.length, 3);
-});
-
-test('三个相近 Low 合并为 1 个 EQL', function () {
-    var swings = [
-        swing('SWING_LOW', 10, 62000, 1000, 10000),
-        swing('SWING_LOW', 20, 62005, 2000, 20000),
-        swing('SWING_LOW', 30, 61998, 3000, 30000)
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(result.length, 1);
-    assert.strictEqual(result[0].type, 'EQL');
-    assert.strictEqual(result[0].metadata.memberCount, 3);
-});
-
-test('两簇独立 equal（高簇 + 低簇）各生成 1 个，互不混淆', function () {
-    var swings = [
-        swing('SWING_HIGH', 10, 63000, 1000, 10000),
-        swing('SWING_HIGH', 20, 63008, 2000, 20000),
-        swing('SWING_LOW', 30, 62000, 3000, 30000),
-        swing('SWING_LOW', 40, 62006, 4000, 40000)
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(result.length, 2);
-    assert.strictEqual(result[0].type, 'EQH');
-    assert.strictEqual(result[1].type, 'EQL');
-});
-
-/* ---------- confirmedAt 与回放安全 ---------- */
-
-test('confirmedAt = max(member.confirmedAt)', function () {
-    var swings = [
-        swing('SWING_HIGH', 10, 63000, 1000, 10000),
-        swing('SWING_HIGH', 20, 63010, 5000, 20000) // 第二个成员 11:00 才确认
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(result.length, 1);
-    assert.strictEqual(result[0].confirmedAt, 5000);
-    assert.strictEqual(result[0].createdAt, 5000);
-});
-
-test('evaluationTime 早于第二成员 confirmedAt → EQH 不提前出现', function () {
-    var swings = [
-        swing('SWING_HIGH', 10, 63000, 1000, 10000), // 10:15 确认
-        swing('SWING_HIGH', 20, 63010, 5000, 20000) // 11:00 确认
-    ];
-    // 回放到 10:30（第二成员尚未确认）→ 只有第一个成员 → 不构成
-    var early = equalLiquidity.detectEqualLiquidity(swings, {
+test('production replay fast path 会计入当前 confirmation candle 的 lifecycle', function () {
+    var f = highPair();
+    var secondConfirmIndex = f.swings[1].metadata.index + 2;
+    f.candles[secondConfirmIndex].high = 111;
+    f.candles[secondConfirmIndex].close = 100;
+    var result = equalLiquidity.evaluateEqualLiquidityPipeline(f.swings, {
         symbol: 'BTCUSDT',
-        evaluationTime: 3000
+        evaluationTime: f.evaluationTime,
+        candles: f.candles,
+        canonicalClosedCandles: true,
+        lifecycleFromCurrentState: true,
+        secondSwingIds: [f.swings[1].id]
     });
-    assert.strictEqual(early.length, 0);
+    assert.strictEqual(result.pairs[0].firstSwingState, 'SWEPT');
+    assert.strictEqual(result.pairs[0].classification, 'REJECT_EQ');
+});
 
-    // 回放到 11:30 → 两个成员都确认 → 生成，confirmedAt = 11:00
-    var late = equalLiquidity.detectEqualLiquidity(swings, {
+test('TOUCHED first swing 保持 lifecycle eligible', function () {
+    var f = highPair({ secondPrice: 110 });
+    var result = run(f);
+    assert.strictEqual(result.pairs[0].firstSwingState, 'TOUCHED');
+    assert.strictEqual(result.pairs[0].lifecycleEligible, true);
+    assert.strictEqual(result.pairs[0].classification, 'VALID_EQ');
+});
+
+test('distanceATR > 1.1 即使 formation 很强仍 REJECT', function () {
+    var f = highPair({ firstPrice: 130, secondPrice: 100, interLow: 80 });
+    var result = run(f);
+    assert(result.pairs[0].distanceATR > 1.1);
+    assert.strictEqual(result.pairs[0].departureATR, null);
+    assert.strictEqual(result.pairs[0].rejectionReason, 'PRICE_FAIL');
+    assert.strictEqual(result.objects.length, 0);
+});
+
+test('Price PASS 但 formation 不独立 → BORDERLINE_EQ', function () {
+    var f = highPair({ interHigh: 109.4, interLow: 108.7, interClose: 109 });
+    var result = run(f);
+    assert(result.pairs[0].distanceATR <= 0.7);
+    assert(result.pairs[0].departureATR < 1.75);
+    assert.strictEqual(result.pairs[0].classification, 'BORDERLINE_EQ');
+    assert.strictEqual(result.objects.length, 0);
+});
+
+test('Price gray band + strong formation → BORDERLINE_EQ', function () {
+    var f = highPair({ secondPrice: 108 });
+    var cfg = Object.assign({}, productionThresholds, {
+        priceStrongMaxATR: 0.1,
+        priceFailAboveATR: 1.1
+    });
+    var result = run(f, { thresholds: cfg });
+    assert(result.pairs[0].distanceATR > cfg.priceStrongMaxATR);
+    assert(result.pairs[0].distanceATR <= cfg.priceFailAboveATR);
+    assert(result.pairs[0].departureATR >= cfg.formationDepartureMinATR);
+    assert.strictEqual(result.pairs[0].classification, 'BORDERLINE_EQ');
+});
+
+test('barsApart 小于旧 minBarsApart 不再 hard reject', function () {
+    var f = highPair({ firstIndex: 20, secondIndex: 22, interHigh: 90, interLow: 80 });
+    var cfg = Object.assign({}, productionThresholds, {
+        formationDepartureMinATR: 0,
+        formationMinConsecutiveOutsideBars: 0
+    });
+    var result = run(f, { thresholds: cfg });
+    assert.strictEqual(result.pairs[0].barsApart, 2);
+    assert.notStrictEqual(result.pairs[0].rejectionReason, 'BARS_APART');
+});
+
+test('barsApart 大于旧 maxBarsApart 不再 hard reject', function () {
+    var f = highPair({ count: 280, firstIndex: 20, secondIndex: 225 });
+    var result = run(f);
+    assert.strictEqual(result.pairs[0].barsApart, 205);
+    assert.notStrictEqual(result.pairs[0].rejectionReason, 'BARS_APART');
+    assert.strictEqual(result.pairs[0].classification, 'VALID_EQ');
+});
+
+test('0.5 ATR outside 使用完整 wick range，而非 close', function () {
+    var f = highPair();
+    var result = run(f);
+    var pair = result.pairs[0];
+    assert(pair.maxConsecutiveBarsOutsideZone_0_5ATR >= 1);
+    // 让所有 inter-swing high 回到 zone，但 close 仍远离：full-range persistence 应归零。
+    for (var i = 21; i < 30; i++) {
+        f.candles[i].high = 109.5;
+        f.candles[i].close = 100;
+    }
+    result = run(f);
+    assert.strictEqual(result.pairs[0].maxConsecutiveBarsOutsideZone_0_5ATR, 0);
+    assert.strictEqual(result.pairs[0].classification, 'BORDERLINE_EQ');
+});
+
+test('bounded grouping 不做 graph transitive closure', function () {
+    var rows = candles(90);
+    [20, 30, 40].forEach(function (idx) {
+        for (var i = idx + 1; i < idx + 10; i++) {
+            rows[i].high = 101;
+            rows[i].low = 99;
+        }
+    });
+    rows[20].high = 110;
+    rows[30].high = 109.7;
+    rows[40].high = 109.4;
+    var swings = [
+        swing('SWING_HIGH', 20, 110, rows),
+        swing('SWING_HIGH', 30, 109.7, rows),
+        swing('SWING_HIGH', 40, 109.4, rows)
+    ];
+    var cfg = Object.assign({}, productionThresholds, {
+        priceStrongMaxATR: 0.12,
+        priceFailAboveATR: 1.1
+    });
+    var result = equalLiquidity.evaluateEqualLiquidityPipeline(swings, {
         symbol: 'BTCUSDT',
-        evaluationTime: 6000
+        evaluationTime: rows[42].closeTime,
+        candles: rows,
+        thresholds: cfg
     });
-    assert.strictEqual(late.length, 1);
-    assert.strictEqual(late[0].confirmedAt, 5000);
+    assert.strictEqual(result.validPairs.length, 2); // A-B, B-C；A-C 不是 valid
+    assert.strictEqual(result.objects.length, 1);
+    assert.strictEqual(result.objects[0].metadata.memberCount, 2);
 });
 
-test('tolerance 随价格缩放：BTC 与低价币使用同一百分比', function () {
-    // 100 与 100.05：tolerance = 100*0.0002 = 0.02，差 0.05 > 0.02 → 不形成
-    var swings = [
-        swing('SWING_HIGH', 10, 100, 1000, 10000),
-        swing('SWING_HIGH', 20, 100.05, 2000, 20000)
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(result.length, 0);
+test('second swing confirmedAt 之前不生成 pair/object', function () {
+    var f = highPair();
+    var early = run(f, { evaluationTime: f.swings[1].confirmedAt - 1 });
+    assert.strictEqual(early.pairs.length, 0);
+    assert.strictEqual(early.objects.length, 0);
 });
 
-test('tickSize 参与 tolerance：max(percent, tickSize*2)', function () {
-    // price=100，tickSize=1 → tick tolerance = 2 > percent tolerance 0.02
-    // 100 与 101.5：差 1.5 < 2 → 形成
-    var swings = [
-        swing('SWING_HIGH', 10, 100, 1000, 10000),
-        swing('SWING_HIGH', 20, 101.5, 2000, 20000)
-    ];
-    var result = equalLiquidity.detectEqualLiquidity(swings, {
+test('second confirmedAt 之后的 extreme candle 不改变 formation features', function () {
+    var f = highPair();
+    var atFormation = run(f).pairs[0];
+    f.candles[40].high = 200;
+    f.candles[40].low = 1;
+    f.candles[40].close = 150;
+    f.evaluationTime = f.candles[45].closeTime;
+    var later = run(f).pairs[0];
+    assert.strictEqual(later.distanceATR, atFormation.distanceATR);
+    assert.strictEqual(later.departureATR, atFormation.departureATR);
+    assert.strictEqual(
+        later.maxConsecutiveBarsOutsideZone_0_5ATR,
+        atFormation.maxConsecutiveBarsOutsideZone_0_5ATR
+    );
+    assert.strictEqual(later.firstSwingState, atFormation.firstSwingState);
+});
+
+test('未收盘 candle 不参与 lifecycle / formation', function () {
+    var f = highPair();
+    f.candles[25].closed = false;
+    f.candles[25].high = 120;
+    f.candles[25].close = 100;
+    var result = run(f);
+    assert.notStrictEqual(result.pairs[0].firstSwingState, 'SWEPT');
+});
+
+test('缺少 ATR/candle context 时 fail closed，不回退旧 percentage detector', function () {
+    var f = highPair();
+    var result = equalLiquidity.evaluateEqualLiquidityPipeline(f.swings, {
         symbol: 'BTCUSDT',
-        evaluationTime: OPTS.evaluationTime,
-        tickSize: 1
+        evaluationTime: f.evaluationTime
     });
-    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result.pairs[0].classification, 'REJECT_EQ');
+    assert.strictEqual(result.pairs[0].rejectionReason, 'SECOND_CONFIRMATION_CANDLE_UNAVAILABLE');
+    assert.strictEqual(result.objects.length, 0);
 });
 
-test('members 保存原始 swing liquidity 引用', function () {
-    var s1 = swing('SWING_HIGH', 10, 63000, 1000, 10000);
-    var s2 = swing('SWING_HIGH', 20, 63010, 2000, 20000);
-    var result = equalLiquidity.detectEqualLiquidity([s1, s2], OPTS);
-    assert.strictEqual(result[0].metadata.members[0], s1);
-    assert.strictEqual(result[0].metadata.members[1], s2);
+test('object confirmedAt、member reference 与 id deterministic', function () {
+    var f = highPair();
+    var r1 = run(f).objects[0];
+    var r2 = run(f).objects[0];
+    assert.strictEqual(r1.confirmedAt, f.swings[1].confirmedAt);
+    assert.strictEqual(r1.metadata.members[0], f.swings[0]);
+    assert.strictEqual(r1.metadata.members[1], f.swings[1]);
+    assert.strictEqual(r1.id, r2.id);
+    assert.strictEqual(r1.price, (110 + 109.5) / 2);
 });
 
-test('id 稳定：同一组在任何调用下产生相同 id', function () {
-    var swings = [
-        swing('SWING_HIGH', 10, 63000, 1000, 10000),
-        swing('SWING_HIGH', 20, 63010, 2000, 20000)
-    ];
-    var r1 = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    var r2 = equalLiquidity.detectEqualLiquidity(swings, OPTS);
-    assert.strictEqual(r1[0].id, r2[0].id);
-    assert.strictEqual(r1[0].id, 'BTCUSDT:EQH:10000');
+test('历史 tolerance helper 保持 audit 兼容', function () {
+    assert.strictEqual(equalLiquidity.toleranceFor(100, 0.0002, 1, 2), 2);
 });
 
 console.log('----');
-console.log('equalLiquidity: ' + passed + ' passed, ' + failed + ' failed');
-if (failed > 0) {
-    process.exit(1);
-}
+console.log('equalLiquidity V2: ' + passed + ' passed, ' + failed + ' failed');
+if (failed > 0) process.exit(1);

@@ -3,16 +3,23 @@
  */
 module.exports = {
     /**
-     * Equal Liquidity（EQH / EQL）检测参数
-     * - percentageTolerance: 价格相等判定的百分比容差（0.0002 = 0.02%）
-     * - minBarsApart: 两个成员在原始 K 线中的最小间隔（避免把相邻过近的 swing 当成独立 equal）
-     * - maxBarsApart: 最大间隔（避免跨度无限的配对）
-     * - minTouches: 至少多少个成员才构成一个 equal group
+     * Equal Liquidity V2（EQH / EQL）
+     * Pipeline: Lifecycle → Price → Formation → bounded anchor grouping
      *
-     * tolerance 计算：max(price * percentageTolerance, tickSize * 2)
-     * tickSize 来自交易所 PRICE_FILTER，暂未接入时 percentageTolerance 独立工作。
+     * Price Gate 主尺度：distanceATR（第二个 swing confirmedAt 时的 ATR）。
+     * Formation Gate：departureATR + 0.5 ATR zone 外完整 candle 的最大连续根数。
+     * barsApart 仅保留为 diagnostic，不再参与 hard gate。
+     * percentageTolerance / minBarsApart / maxBarsApart 仅保留给历史 audit 兼容读取，
+     * V2 production classifier 不使用它们作判定。
      */
     equalLiquidity: {
+        version: 2,
+        atrPeriod: 14,
+        priceStrongMaxATR: 0.7,
+        priceFailAboveATR: 1.1,
+        formationDepartureMinATR: 1.75,
+        formationZoneATR: 0.5,
+        formationMinConsecutiveOutsideBars: 1,
         percentageTolerance: 0.0002,
         minBarsApart: 3,
         maxBarsApart: 200,

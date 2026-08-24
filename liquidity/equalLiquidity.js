@@ -1,132 +1,311 @@
 /**
- * Equal Liquidity 检测器（EQH / EQL）
+ * Equal Liquidity V2（EQH / EQL）
  *
- * 输入：已确认的 Swing Liquidity（SWING_HIGH / SWING_LOW）
- * 输出：EQH / EQL 分组（group）
+ * 固定顺序：Lifecycle eligibility → Price equality → Formation independence
+ * → bounded anchor grouping。
  *
- * 规则：
- * - EQH 只比较 SWING_HIGH（side = BSL）
- * - EQL 只比较 SWING_LOW（side = SSL）
- * - 价格相等判定：abs(priceA - priceB) <= tolerance
- *   tolerance = max(price * percentageTolerance, tickSize * 2)
- * - 成员在原始 K 线中的间隔必须满足：
- *   minBarsApart <= barsApart <= maxBarsApart
- * - 三个及以上成员自动合并为【一个】group，绝不生成 A+B / A+C / B+C 的重复对
- * - price = 成员平均价；metadata 保存 minPrice / maxPrice / memberCount / members
- * - confirmedAt = max(member.confirmedAt)
- * - 只有 confirmedAt <= evaluationTime 的成员才允许参与（历史回放安全）
- *
- * 聚类策略：按价格升序排序后贪心分组（每组只与组内第一个成员比较），
- * 扫描指针跳过已归属成员 → 保证分组不重叠、不产生 pair duplicate。
+ * Pair 三状态：VALID_EQ / BORDERLINE_EQ / REJECT_EQ。只有 VALID_EQ pair 可以形成
+ * production EQH/EQL liquidity object；其余状态由 pipeline 保留作诊断。
  */
 var thresholds = require('../config/thresholds');
+var atrIndicator = require('../indicators/atr');
+var liquidityLifecycle = require('./liquidityLifecycle');
 
 var INTERVAL_MS = {
-    '1m': 60000,
-    '3m': 180000,
-    '5m': 300000,
-    '15m': 900000,
-    '30m': 1800000,
-    '1h': 3600000,
-    '2h': 7200000,
-    '4h': 14400000,
-    '6h': 21600000,
-    '8h': 28800000,
-    '12h': 43200000,
-    '1d': 86400000,
-    '3d': 259200000,
-    '1w': 604800000,
+    '1m': 60000, '3m': 180000, '5m': 300000, '15m': 900000,
+    '30m': 1800000, '1h': 3600000, '2h': 7200000, '4h': 14400000,
+    '6h': 21600000, '8h': 28800000, '12h': 43200000,
+    '1d': 86400000, '3d': 259200000, '1w': 604800000,
     '1M': 2592000000
 };
 
-/**
- * tolerance = max(price * percentageTolerance, tickSize * tickMultiplier)
- * tickSize 缺失时退化为纯百分比（不阻塞系统）
- */
+var PAIR_STATE = {
+    VALID: 'VALID_EQ',
+    BORDERLINE: 'BORDERLINE_EQ',
+    REJECT: 'REJECT_EQ'
+};
+
+/** 历史 audit 使用；V2 Price Gate 不使用 percentage tolerance。 */
 function toleranceFor(price, percentageTolerance, tickSize, tickMultiplier) {
     var percent = (percentageTolerance || 0) * price;
     var tick = (tickSize || 0) * (tickMultiplier || 2);
     return Math.max(percent, tick);
 }
 
-/**
- * 两个成员在原始 K 线中的间隔（根数）
- * 优先用 metadata.index，缺失时用 sourceOpenTime 差值推算
- */
+/** V2 仅记录 barsApart，不据此拒绝。 */
 function barsApart(a, b) {
     var ai = a.metadata && typeof a.metadata.index === 'number' ? a.metadata.index : null;
     var bi = b.metadata && typeof b.metadata.index === 'number' ? b.metadata.index : null;
-    if (ai !== null && bi !== null) {
-        return Math.abs(ai - bi);
-    }
+    if (ai !== null && bi !== null) return Math.abs(ai - bi);
     var ms = INTERVAL_MS[a.timeframe] || 300000;
-    var ta = a.sourceOpenTime || 0;
-    var tb = b.sourceOpenTime || 0;
-    return Math.round(Math.abs(tb - ta) / ms);
+    return Math.round(Math.abs((b.sourceOpenTime || 0) - (a.sourceOpenTime || 0)) / ms);
 }
 
-/**
- * 价格接近 + 间隔合法 → 可配对
- */
-function isCompatible(a, b, opts) {
-    var apart = barsApart(a, b);
-    if (apart < opts.minBarsApart) {
-        return false;
-    }
-    if (apart > opts.maxBarsApart) {
-        return false;
-    }
-    return true;
+function finitePositive(value) {
+    return typeof value === 'number' && isFinite(value) && value > 0;
 }
 
-/**
- * 对同一方向的一组 swing 做贪心聚类
- * @returns {Array} group 成员数组的数组
- */
-function clusterItems(items, opts) {
-    // 按价格升序
-    var sorted = items.slice().sort(function (x, y) {
-        return x.price - y.price;
+function chronological(a, b) {
+    if (a.confirmedAt !== b.confirmedAt) return a.confirmedAt - b.confirmedAt;
+    if (a.sourceOpenTime !== b.sourceOpenTime) return a.sourceOpenTime - b.sourceOpenTime;
+    return String(a.id).localeCompare(String(b.id));
+}
+
+function closedCandlesThrough(candles, evaluationTime) {
+    return (candles || []).filter(function (c) {
+        return c && c.closed !== false && c.closeTime <= evaluationTime;
+    }).sort(function (a, b) { return a.openTime - b.openTime; });
+}
+
+function indexCandles(candles) {
+    var byOpen = {};
+    var byClose = {};
+    candles.forEach(function (c, index) {
+        byOpen[c.openTime] = index;
+        byClose[c.closeTime] = index;
     });
-    var groups = [];
-    var i = 0;
-    while (i < sorted.length) {
-        var anchor = sorted[i];
-        var group = [anchor];
-        var tol = toleranceFor(
-            anchor.price,
-            opts.percentageTolerance,
-            opts.tickSize,
-            opts.tickMultiplier
-        );
-        var j = i + 1;
-        while (j < sorted.length) {
-            var cand = sorted[j];
-            // 已按价格排序：与 anchor 的价差超过 tolerance 后，后续只会更远
-            if (cand.price - anchor.price > tol) {
-                break;
-            }
-            if (isCompatible(anchor, cand, opts)) {
-                group.push(cand);
-            }
-            j++;
-        }
-        if (group.length >= opts.minTouches) {
-            groups.push(group);
-        }
-        i = j; // 跳过已考察区域，避免重叠分组 → 不产生 pair duplicate
+    return { byOpen: byOpen, byClose: byClose };
+}
+
+function sourceIndexOf(swing, context) {
+    var metadataIndex = swing.metadata && typeof swing.metadata.index === 'number'
+        ? swing.metadata.index
+        : undefined;
+    if (metadataIndex !== undefined && context.candles[metadataIndex] &&
+        context.candles[metadataIndex].openTime === swing.sourceOpenTime) {
+        return metadataIndex;
     }
+    return context.candleIndex.byOpen[swing.sourceOpenTime];
+}
+
+function confirmationIndexOf(swing, context) {
+    var sourceIndex = sourceIndexOf(swing, context);
+    var right = swing.metadata && typeof swing.metadata.right === 'number'
+        ? swing.metadata.right
+        : 2;
+    var inferred = sourceIndex === undefined ? undefined : sourceIndex + right;
+    if (inferred !== undefined && context.candles[inferred] &&
+        context.candles[inferred].closeTime === swing.confirmedAt) return inferred;
+    return context.candleIndex.byClose[swing.confirmedAt];
+}
+
+/**
+ * formation time 的 lifecycle state。优先从 closed candles 重放，避免更晚调用时把
+ * future status 倒灌；无 path 时才使用带时间戳的对象状态作 fail-closed fallback。
+ */
+function lifecycleStateAt(firstSwing, secondConfirmedAt, candles) {
+    var visible = (candles || []).filter(function (c) {
+        return c && c.closed !== false &&
+            c.closeTime > firstSwing.confirmedAt &&
+            c.closeTime <= secondConfirmedAt;
+    }).sort(function (a, b) { return a.closeTime - b.closeTime; });
+
+    if (visible.length > 0) {
+        var simulated = {
+            price: firstSwing.price,
+            side: firstSwing.side,
+            status: 'ACTIVE',
+            touchedAt: null,
+            sweptAt: null,
+            brokenAt: null
+        };
+        visible.forEach(function (c) {
+            var event = liquidityLifecycle.evaluateLiquidity(simulated, c);
+            if (!event) return;
+            simulated.status = event.status;
+            simulated.touchedAt = event.touchedAt;
+            simulated.sweptAt = event.sweptAt;
+            simulated.brokenAt = event.brokenAt;
+        });
+        return simulated.status;
+    }
+
+    if (firstSwing.brokenAt !== null && firstSwing.brokenAt !== undefined &&
+        firstSwing.brokenAt <= secondConfirmedAt) return 'BROKEN';
+    if (firstSwing.sweptAt !== null && firstSwing.sweptAt !== undefined &&
+        firstSwing.sweptAt <= secondConfirmedAt) return 'SWEPT';
+    if (firstSwing.touchedAt !== null && firstSwing.touchedAt !== undefined &&
+        firstSwing.touchedAt <= secondConfirmedAt) return 'TOUCHED';
+    if (firstSwing.status === 'BROKEN' || firstSwing.status === 'SWEPT') {
+        return firstSwing.status;
+    }
+    return firstSwing.status === 'TOUCHED' ? 'TOUCHED' : 'ACTIVE';
+}
+
+function lifecycleEligible(state) {
+    return state === 'ACTIVE' || state === 'TOUCHED';
+}
+
+/** Replay fast path：registry state 已推进到前一根，只补 second confirmedAt 当前 closed candle。 */
+function lifecycleStateFromCurrent(firstSwing, secondSwing, context) {
+    var secondConfirmedAt = secondSwing.confirmedAt;
+    var current = firstSwing.status || 'ACTIVE';
+    if (current === 'SWEPT' || current === 'BROKEN') return current;
+    var index = confirmationIndexOf(secondSwing, context);
+    if (index === undefined || firstSwing.confirmedAt >= secondConfirmedAt) return current;
+    var c = context.candles[index];
+    if (!c || c.closed === false) return current;
+    var simulated = {
+        price: firstSwing.price,
+        side: firstSwing.side,
+        status: current,
+        touchedAt: firstSwing.touchedAt || null,
+        sweptAt: firstSwing.sweptAt || null,
+        brokenAt: firstSwing.brokenAt || null
+    };
+    var event = liquidityLifecycle.evaluateLiquidity(simulated, c);
+    return event ? event.status : current;
+}
+
+function maxConsecutiveOutside(path, side, lower, upper) {
+    var current = 0;
+    var max = 0;
+    path.forEach(function (c) {
+        var outside = side === 'EQH' ? c.high < lower : c.low > upper;
+        if (outside) {
+            current++;
+            if (current > max) max = current;
+        } else {
+            current = 0;
+        }
+    });
+    return max;
+}
+
+function pairId(side, first, second) {
+    return side + ':' + first.id + ':' + second.id;
+}
+
+function rejectPair(base, reason) {
+    base.classification = PAIR_STATE.REJECT;
+    base.rejectionReason = reason;
+    return base;
+}
+
+/** 构造并分类一个 chronological same-side pair。 */
+function classifyPair(first, second, side, context) {
+    var cfg = context.cfg;
+    var state = context.lifecycleFromCurrentState
+        ? lifecycleStateFromCurrent(first, second, context)
+        : lifecycleStateAt(first, second.confirmedAt, context.candles);
+    var base = {
+        pairId: pairId(side, first, second),
+        side: side,
+        firstSwingId: first.id,
+        secondSwingId: second.id,
+        firstSwingState: state,
+        lifecycleEligible: lifecycleEligible(state),
+        price1: first.price,
+        price2: second.price,
+        absoluteDistance: Math.abs(first.price - second.price),
+        distanceATR: null,
+        departureATR: null,
+        maxConsecutiveBarsOutsideZone_0_5ATR: null,
+        barsApart: barsApart(first, second),
+        atrAtSecondSwingConfirmation: null,
+        secondSwingConfirmedAt: second.confirmedAt,
+        classification: null,
+        rejectionReason: null,
+        members: [first, second]
+    };
+    if (!base.lifecycleEligible) return rejectPair(base, 'FIRST_SWING_' + state);
+
+    var secondConfirmIndex = confirmationIndexOf(second, context);
+    if (secondConfirmIndex === undefined) {
+        return rejectPair(base, 'SECOND_CONFIRMATION_CANDLE_UNAVAILABLE');
+    }
+    var atr = context.atrByConfirmedAt[second.confirmedAt];
+    if (atr === undefined) {
+        atr = atrIndicator.atr(context.candles, cfg.atrPeriod, secondConfirmIndex);
+        context.atrByConfirmedAt[second.confirmedAt] = atr;
+    }
+    if (!finitePositive(atr)) return rejectPair(base, 'ATR_UNAVAILABLE');
+    base.atrAtSecondSwingConfirmation = atr;
+    base.distanceATR = base.absoluteDistance / atr;
+    if (base.distanceATR > cfg.priceFailAboveATR) return rejectPair(base, 'PRICE_FAIL');
+
+    var firstIndex = sourceIndexOf(first, context);
+    var secondIndex = sourceIndexOf(second, context);
+    if (firstIndex === undefined || secondIndex === undefined || secondIndex <= firstIndex) {
+        return rejectPair(base, 'FORMATION_PATH_UNAVAILABLE');
+    }
+    var interSwing = context.candles.slice(firstIndex + 1, secondIndex).filter(function (c) {
+        return c.closed !== false && c.closeTime <= second.confirmedAt;
+    });
+    var eqZonePrice;
+    var departure;
+    if (side === 'EQH') {
+        eqZonePrice = Math.min(first.price, second.price);
+        var lowest = Infinity;
+        interSwing.forEach(function (c) { if (c.low < lowest) lowest = c.low; });
+        departure = lowest === Infinity ? 0 : eqZonePrice - lowest;
+    } else {
+        eqZonePrice = Math.max(first.price, second.price);
+        var highest = -Infinity;
+        interSwing.forEach(function (c) { if (c.high > highest) highest = c.high; });
+        departure = highest === -Infinity ? 0 : highest - eqZonePrice;
+    }
+    if (departure < 0) departure = 0;
+    var zoneWidth = cfg.formationZoneATR * atr;
+    base.departureATR = departure / atr;
+    base.maxConsecutiveBarsOutsideZone_0_5ATR = maxConsecutiveOutside(
+        interSwing, side, eqZonePrice - zoneWidth, eqZonePrice + zoneWidth
+    );
+
+    var strongPrice = base.distanceATR <= cfg.priceStrongMaxATR;
+    var strongFormation =
+        base.departureATR >= cfg.formationDepartureMinATR &&
+        base.maxConsecutiveBarsOutsideZone_0_5ATR >=
+            cfg.formationMinConsecutiveOutsideBars;
+    base.classification = strongPrice && strongFormation
+        ? PAIR_STATE.VALID
+        : PAIR_STATE.BORDERLINE;
+    return base;
+}
+
+function classifySidePairs(items, side, context) {
+    var sorted = items.slice().sort(chronological);
+    var pairs = [];
+    var allowed = context.secondSwingIds;
+    for (var j = 1; j < sorted.length; j++) {
+        if (allowed && !allowed[sorted[j].id]) continue;
+        for (var i = 0; i < j; i++) {
+            pairs.push(classifyPair(sorted[i], sorted[j], side, context));
+        }
+    }
+    return pairs;
+}
+
+/** Anchor-bounded grouping；禁止通过 B 做 graph transitive chain expansion。 */
+function groupValidPairs(items, validPairs, side) {
+    var sorted = items.slice().sort(chronological);
+    var validByKey = {};
+    validPairs.forEach(function (p) {
+        validByKey[p.firstSwingId + '|' + p.secondSwingId] = p;
+    });
+    var used = {};
+    var groups = [];
+    sorted.forEach(function (anchor) {
+        if (used[anchor.id]) return;
+        var members = [anchor];
+        var pairRows = [];
+        sorted.forEach(function (candidate) {
+            if (candidate.id === anchor.id || used[candidate.id]) return;
+            var p = validByKey[anchor.id + '|' + candidate.id];
+            if (!p) return;
+            members.push(candidate);
+            pairRows.push(p);
+        });
+        if (members.length >= 2) {
+            members.forEach(function (m) { used[m.id] = true; });
+            groups.push({ side: side, members: members, pairs: pairRows });
+        }
+    });
     return groups;
 }
 
-/**
- * 由 group 成员构建统一的 EQH / EQL liquidity 对象
- */
-function buildGroup(members, type, side, symbol) {
-    // 按时间升序排列成员（stable）
-    var sorted = members.slice().sort(function (a, b) {
-        return a.sourceOpenTime - b.sourceOpenTime;
-    });
+function buildGroup(group, type, side, symbol) {
+    var sorted = group.members.slice().sort(chronological);
     var sum = 0;
     var minPrice = Infinity;
     var maxPrice = -Infinity;
@@ -141,14 +320,13 @@ function buildGroup(members, type, side, symbol) {
         if (m.sourceOpenTime < minOpen) minOpen = m.sourceOpenTime;
         if (m.sourceCloseTime > maxClose) maxClose = m.sourceCloseTime;
     });
-    var avgPrice = sum / sorted.length;
     return {
         id: symbol + ':' + type + ':' + minOpen,
         symbol: symbol,
         timeframe: sorted[0].timeframe,
         type: type,
         side: side,
-        price: avgPrice,
+        price: sum / sorted.length,
         sourceOpenTime: minOpen,
         sourceCloseTime: maxClose,
         createdAt: maxConfirmed,
@@ -158,72 +336,100 @@ function buildGroup(members, type, side, symbol) {
         sweptAt: null,
         brokenAt: null,
         metadata: {
+            pipelineVersion: 2,
+            classification: PAIR_STATE.VALID,
             minPrice: minPrice,
             maxPrice: maxPrice,
             memberCount: sorted.length,
             members: sorted,
+            validPairIds: group.pairs.map(function (p) { return p.pairId; }),
+            pairFeatures: group.pairs.map(function (p) {
+                return {
+                    pairId: p.pairId,
+                    distanceATR: p.distanceATR,
+                    departureATR: p.departureATR,
+                    maxConsecutiveBarsOutsideZone_0_5ATR:
+                        p.maxConsecutiveBarsOutsideZone_0_5ATR,
+                    barsApart: p.barsApart,
+                    firstSwingState: p.firstSwingState
+                };
+            }),
             source: sorted[0].metadata ? sorted[0].metadata.source : null
         }
     };
 }
 
-/**
- * 检测 EQH / EQL
- * @param {Array} swings 已确认的 Swing liquidity 数组
- * @param {Object} [options]
- *   symbol, evaluationTime, thresholds(可选覆盖),
- *   percentageTolerance / minBarsApart / maxBarsApart / minTouches / tickSize(可选)
- * @returns {Array} [EQH..., EQL...]
- */
-function detectEqualLiquidity(swings, options) {
+/** 完整 V2 pipeline。 */
+function evaluateEqualLiquidityPipeline(swings, options) {
     var opts = options || {};
-    var symbol = opts.symbol || (swings[0] && swings[0].symbol) || 'UNKNOWN';
-    var evaluationTime =
-        opts.evaluationTime !== undefined ? opts.evaluationTime : Date.now();
+    var symbol = opts.symbol || (swings && swings[0] && swings[0].symbol) || 'UNKNOWN';
+    var evaluationTime = opts.evaluationTime !== undefined ? opts.evaluationTime : Date.now();
     var cfg = opts.thresholds || thresholds.equalLiquidity;
-    var tickCfg = (opts.thresholds || thresholds).tickSize || thresholds.tickSize;
-    var eOpts = {
-        percentageTolerance:
-            opts.percentageTolerance !== undefined
-                ? opts.percentageTolerance
-                : cfg.percentageTolerance,
-        minBarsApart:
-            opts.minBarsApart !== undefined ? opts.minBarsApart : cfg.minBarsApart,
-        maxBarsApart:
-            opts.maxBarsApart !== undefined ? opts.maxBarsApart : cfg.maxBarsApart,
-        minTouches:
-            opts.minTouches !== undefined ? opts.minTouches : cfg.minTouches,
-        tickSize: opts.tickSize || 0,
-        tickMultiplier:
-            opts.tickMultiplier !== undefined
-                ? opts.tickMultiplier
-                : tickCfg.equalMultiplier
-    };
-
-    // 未来数据防线：只允许已确认（confirmedAt <= evaluationTime）的成员参与
+    // Replay fast path 可传 canonicalClosedCandles=true：保留全量数组索引，但所有 feature
+    // 仍由 second confirmedAt/source index 截断，未来 candle 不会被读取。
+    var candles = opts.canonicalClosedCandles
+        ? (opts.candles || [])
+        : closedCandlesThrough(opts.candles, evaluationTime);
+    var seen = {};
     var confirmed = (swings || []).filter(function (s) {
-        return s && s.confirmedAt <= evaluationTime;
+        if (!s || s.confirmedAt > evaluationTime || seen[s.id]) return false;
+        seen[s.id] = true;
+        return true;
     });
+    var highs = confirmed.filter(function (s) { return s.type === 'SWING_HIGH'; });
+    var lows = confirmed.filter(function (s) { return s.type === 'SWING_LOW'; });
+    var allowed = null;
+    if (opts.secondSwingIds) {
+        allowed = {};
+        opts.secondSwingIds.forEach(function (id) { allowed[id] = true; });
+    }
+    var context = {
+        cfg: cfg,
+        candles: candles,
+        candleIndex: opts.canonicalClosedCandles ? { byOpen: {}, byClose: {} } : indexCandles(candles),
+        atrByConfirmedAt: {},
+        secondSwingIds: allowed,
+        lifecycleFromCurrentState: !!opts.lifecycleFromCurrentState
+    };
+    var pairs = classifySidePairs(highs, 'EQH', context)
+        .concat(classifySidePairs(lows, 'EQL', context));
+    var valid = pairs.filter(function (p) { return p.classification === PAIR_STATE.VALID; });
+    var highGroups = groupValidPairs(
+        highs,
+        valid.filter(function (p) { return p.side === 'EQH'; }),
+        'EQH'
+    );
+    var lowGroups = groupValidPairs(
+        lows,
+        valid.filter(function (p) { return p.side === 'EQL'; }),
+        'EQL'
+    );
+    var objects = [];
+    highGroups.forEach(function (g) { objects.push(buildGroup(g, 'EQH', 'BSL', symbol)); });
+    lowGroups.forEach(function (g) { objects.push(buildGroup(g, 'EQL', 'SSL', symbol)); });
+    return {
+        pairs: pairs,
+        validPairs: valid,
+        borderlinePairs: pairs.filter(function (p) {
+            return p.classification === PAIR_STATE.BORDERLINE;
+        }),
+        rejectedPairs: pairs.filter(function (p) {
+            return p.classification === PAIR_STATE.REJECT;
+        }),
+        objects: objects
+    };
+}
 
-    var highs = confirmed.filter(function (s) {
-        return s.type === 'SWING_HIGH';
-    });
-    var lows = confirmed.filter(function (s) {
-        return s.type === 'SWING_LOW';
-    });
-
-    var result = [];
-    clusterItems(highs, eOpts).forEach(function (group) {
-        result.push(buildGroup(group, 'EQH', 'BSL', symbol));
-    });
-    clusterItems(lows, eOpts).forEach(function (group) {
-        result.push(buildGroup(group, 'EQL', 'SSL', symbol));
-    });
-    return result;
+function detectEqualLiquidity(swings, options) {
+    return evaluateEqualLiquidityPipeline(swings, options).objects;
 }
 
 module.exports = {
+    PAIR_STATE: PAIR_STATE,
     toleranceFor: toleranceFor,
     barsApart: barsApart,
+    lifecycleStateAt: lifecycleStateAt,
+    classifyPair: classifyPair,
+    evaluateEqualLiquidityPipeline: evaluateEqualLiquidityPipeline,
     detectEqualLiquidity: detectEqualLiquidity
 };

@@ -52,7 +52,9 @@ function fullStep(candles, index, registry) {
     var added = [];
     newSwings.forEach(function (s) { if (registry.add(s)) added.push(s); });
     var equal = equalLiquidity.detectEqualLiquidity(newSwings, {
-        symbol: 'TEST', evaluationTime: candles[index].closeTime, tickSize: 0.01
+        symbol: 'TEST', evaluationTime: candles[index].closeTime, tickSize: 0.01,
+        candles: slice,
+        secondSwingIds: added.map(function (s) { return s.id; })
     });
     equal.forEach(function (e) { registry.add(e); });
     return added;
@@ -82,7 +84,11 @@ function incrStep(candles, index, registry, swingsArr) {
             registry.getByType('TEST', 'SWING_HIGH'),
             registry.getByType('TEST', 'SWING_LOW')
         ),
-        { symbol: 'TEST', evaluationTime: candles[index].closeTime, tickSize: 0.01 }
+        {
+            symbol: 'TEST', evaluationTime: candles[index].closeTime, tickSize: 0.01,
+            candles: candles.slice(0, index + 1),
+            secondSwingIds: added.map(function (s) { return s.id; })
+        }
     );
     equal.forEach(function (e) { registry.add(e); });
     added.forEach(function (s) { swingsArr.push(s); });

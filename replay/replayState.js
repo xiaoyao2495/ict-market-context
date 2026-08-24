@@ -144,17 +144,26 @@ function incrementalLiquidity(state, candles, index, exchangeInfo, evaluationTim
     });
 
     // 3. equal liquidity（新 swing + registry 已有 swing 一起聚类，等价于全量每次重建全部）
-    var equal = equalLiquidity.detectEqualLiquidity(
-        addedSwings.concat(
-            state.registry.getByType(state.symbol, 'SWING_HIGH'),
-            state.registry.getByType(state.symbol, 'SWING_LOW')
-        ),
-        {
-            symbol: state.symbol,
-            evaluationTime: evaluationTime,
-            tickSize: exchangeInfo.tickSize
-        }
-    );
+    var equal = [];
+    if (addedSwings.length > 0) {
+        equal = equalLiquidity.detectEqualLiquidity(
+            addedSwings.concat(
+                state.registry.getByType(state.symbol, 'SWING_HIGH'),
+                state.registry.getByType(state.symbol, 'SWING_LOW')
+            ),
+            {
+                symbol: state.symbol,
+                evaluationTime: evaluationTime,
+                tickSize: exchangeInfo.tickSize,
+                // 只分类本根新确认 swing 作为 subsequent swing 的 pairs。已有 registry
+                // lifecycle 已推进到前一根，pipeline 只补当前 confirmation candle。
+                secondSwingIds: addedSwings.map(function (s) { return s.id; }),
+                lifecycleFromCurrentState: true,
+                canonicalClosedCandles: true,
+                candles: candles
+            }
+        );
+    }
     equal.forEach(function (e) {
         state.registry.add(e);
     });
