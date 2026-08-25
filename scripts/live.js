@@ -31,6 +31,8 @@ var alertPrioritization = require('../stats/alertPrioritization');
 var thresholds = require('../config/thresholds');
 var displacementWatch = require('../stats/displacementWatch');
 var futuresPriceStream = require('../live/futuresPriceStream');
+var watchNotificationPresentationV1 = require('../notify/watchNotificationPresentationV1');
+var watchNotificationZhV1Flag = require('../config/watchNotificationZhV1');
 
 var CONFIG = require('../config/live.json');
 
@@ -162,7 +164,7 @@ function buildMessage(opp, symbol) {
     return lines.join('\n');
 }
 
-function buildFvgRetracementMessage(watch, currentPrice) {
+function buildLegacyFvgRetracementMessage(watch, currentPrice) {
     var keyword = CONFIG.dingtalk.keyword || '检测';
     var dir = watch.direction === 'BULLISH' ? 'LONG' : 'SHORT';
     var liq = watch.liquidityTaken && watch.liquidityTaken.primary;
@@ -196,6 +198,13 @@ function buildFvgRetracementMessage(watch, currentPrice) {
         '',
         '仅为市场结构监测，不是自动交易指令。'
     ].join('\n');
+}
+
+function buildFvgRetracementMessage(watch, currentPrice, options) {
+    var opts = options || {};
+    var enabled = opts.zhEnabled !== undefined ? !!opts.zhEnabled : watchNotificationZhV1Flag.isEnabled(opts.env);
+    if (!enabled) return buildLegacyFvgRetracementMessage(watch, currentPrice);
+    return watchNotificationPresentationV1.build(watch, currentPrice, { formatPrice: fmtPrice });
 }
 
 // ---------- 每个 symbol 的运行时 ----------
@@ -831,6 +840,7 @@ if (require.main === module) main();
 
 module.exports = {
     buildMessage: buildMessage,
+    buildLegacyFvgRetracementMessage: buildLegacyFvgRetracementMessage,
     buildFvgRetracementMessage: buildFvgRetracementMessage,
     createRunner: createRunner,
     main: main
