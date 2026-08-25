@@ -28,10 +28,36 @@ var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
 var structuralProvenance5m = require('../structure/structuralProvenance5m');
 var displacementWatch = require('../stats/displacementWatch');
+var watchLiquidityEvidenceV1 = require('../stats/watchLiquidityEvidenceV1');
+var watchLiquidityEvidenceFlag = require('../config/watchLiquidityEvidenceV1');
 var dailyBiasAlignment = require('../bias/dailyBiasAlignment');
 var thresholds = require('../config/thresholds');
 
 var LEG_MAX_BARS = 3;
+
+function attachWatchLiquidityEvidenceV1(candidate, context) {
+    var ctx = context || {};
+    if (!ctx.enabled || !candidate) return candidate;
+    try {
+        watchLiquidityEvidenceV1.attach(candidate, {
+            enabled: true,
+            evaluationTime: ctx.evaluationTime,
+            registry: ctx.registry,
+            candles: ctx.candles,
+            dailyBias: ctx.dailyBias
+        });
+    } catch (e) {
+        // P1 is observability-only: enrichment failure must never alter
+        // WATCH existence, identity, direction, timing, or transitions.
+        if (ctx.errors) ctx.errors.push({
+            watchId: candidate.id,
+            evaluationTime: ctx.evaluationTime,
+            code: e && e.code || 'WATCH_LIQUIDITY_EVIDENCE_V1_ERROR',
+            message: e && e.message || String(e)
+        });
+    }
+    return candidate;
+}
 
 function attachDailyBias(opp, provider) {
     try {
@@ -56,6 +82,9 @@ function createLiveEngine(data, options) {
     var snapshotInterval = opts.snapshotInterval !== undefined ? opts.snapshotInterval : 12;
     var baseIndex = opts.baseIndex !== undefined ? opts.baseIndex : 0;
     var dailyBiasProvider = opts.dailyBiasProvider;
+    var watchLiquidityEvidenceV1Enabled = opts.watchLiquidityEvidenceV1Enabled !== undefined
+        ? !!opts.watchLiquidityEvidenceV1Enabled
+        : watchLiquidityEvidenceFlag.isEnabled();
 
     var state = replayState.createReplayState({ symbol: symbol, timeframe: '5m', snapshotInterval: snapshotInterval });
     state.eventRegistry = eventRegistry.createEventRegistry();
@@ -114,6 +143,17 @@ function createLiveEngine(data, options) {
             existing: watchById['WATCH:' + symbol + ':' + leg.direction + ':LEG:' + leg.ids[0]] || null
         });
         if (!candidate) return null;
+        if (watchLiquidityEvidenceV1Enabled) {
+            if (!state.watchLiquidityEvidenceV1Errors) state.watchLiquidityEvidenceV1Errors = [];
+            attachWatchLiquidityEvidenceV1(candidate, {
+                enabled: true,
+                evaluationTime: evaluationTime,
+                registry: state.registry,
+                candles: window,
+                dailyBias: dailyBias,
+                errors: state.watchLiquidityEvidenceV1Errors
+            });
+        }
         var old = watchById[candidate.id];
         var changed = !old || displacementWatch.watchFingerprint(old) !== displacementWatch.watchFingerprint(candidate);
         watchById[candidate.id] = candidate;
@@ -423,6 +463,7 @@ function createLiveEngine(data, options) {
 }
 
 module.exports = {
+    attachWatchLiquidityEvidenceV1: attachWatchLiquidityEvidenceV1,
     createLiveEngine: createLiveEngine,
     attachDailyBias: attachDailyBias,
     LEG_MAX_BARS: LEG_MAX_BARS
