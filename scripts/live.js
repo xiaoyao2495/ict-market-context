@@ -74,6 +74,55 @@ function log(msg) {
         fs.appendFileSync(path.join(CONFIG.dataDir, 'live.log'), line + '\n');
     } catch (e) {}
 }
+
+function yieldToEventLoop() {
+    return new Promise(function (resolve) {
+        setImmediate(resolve);
+    });
+}
+
+/**
+ * Sequential historical bootstrap with one cooperative macrotask yield after each
+ * fully completed bar. This preserves ordering and side effects while allowing
+ * existing realtime symbol callbacks/timers to run during a new-symbol bootstrap.
+ */
+function replayBootstrapBars(candles, onBar, afterBar, onProgress) {
+    var rows = candles || [];
+    var startedAt = Date.now();
+    var blockStartedAt = startedAt;
+    var blockStartIndex = 0;
+    var chain = Promise.resolve();
+    rows.forEach(function (candle, index) {
+        chain = chain.then(function () {
+            return onBar(candle, index);
+        }).then(function (value) {
+            return Promise.resolve(afterBar ? afterBar(candle, index, value) : null).then(function () {
+                return value;
+            });
+        }).then(function (value) {
+            return yieldToEventLoop().then(function () {
+                var completed = index + 1;
+                if (onProgress && (completed % 500 === 0 || completed === rows.length)) {
+                    var now = Date.now();
+                    var blockBars = completed - blockStartIndex;
+                    var blockMs = now - blockStartedAt;
+                    onProgress({
+                        completed: completed,
+                        total: rows.length,
+                        progressPct: rows.length ? completed / rows.length * 100 : 100,
+                        blockMs: blockMs,
+                        elapsedMs: now - startedAt,
+                        barsPerSecond: blockMs > 0 ? blockBars / (blockMs / 1000) : null
+                    });
+                    blockStartedAt = now;
+                    blockStartIndex = completed;
+                }
+                return value;
+            });
+        });
+    });
+    return chain;
+}
 /**
  * 价格自适应精度（Phase 11L.7b fix，2026-08-19）：
  * 低价币（如 TUTUSDT 0.039）用 toFixed(1) 会显示成 0.0，目标价不可读。
@@ -400,16 +449,20 @@ function createRunner(symbol) {
                 ' 条旧 HIGH outbox 保留在磁盘但不再发送；FVG FIRST_TOUCH 是唯一新通知入口');
         }
 
-        // 逐根推进历史（warmup 段机会不推送：已过去）
-        var chain = Promise.resolve();
-        all.forEach(function (c, idx) {
-            chain = chain.then(function () {
-                return engine.onBar(c, idx).then(function () {
-                    // Bootstrap reconstructs lifecycle but never sends historical touches.
-                    engine.drainDisplacementWatchUpdates().forEach(function (w) { watchStore.upsert(w); });
-                    watchStore.onCandle(c);
-                });
-            });
+        // 逐根推进历史（warmup 段机会不推送：已过去）。每根完整完成后显式
+        // macrotask yield，避免新 symbol bootstrap 饿死已有 symbol 的 realtime callbacks。
+        var chain = replayBootstrapBars(all, function (c, idx) {
+            return engine.onBar(c, idx);
+        }, function (c) {
+            // Bootstrap reconstructs lifecycle but never sends historical touches.
+            engine.drainDisplacementWatchUpdates().forEach(function (w) { watchStore.upsert(w); });
+            watchStore.onCandle(c);
+        }, function (progress) {
+            log(symbol + ' [BOOTSTRAP] ' + progress.completed + ' / ' + progress.total +
+                ' ' + progress.progressPct.toFixed(1) + '%' +
+                ' block=' + (progress.blockMs / 1000).toFixed(3) + 's' +
+                ' elapsed=' + (progress.elapsedMs / 1000).toFixed(3) + 's' +
+                ' bars/s=' + (progress.barsPerSecond === null ? '-' : progress.barsPerSecond.toFixed(1)));
         });
         return chain.then(function () {
             return refreshDailyBias();
@@ -842,6 +895,8 @@ module.exports = {
     buildMessage: buildMessage,
     buildLegacyFvgRetracementMessage: buildLegacyFvgRetracementMessage,
     buildFvgRetracementMessage: buildFvgRetracementMessage,
+    yieldToEventLoop: yieldToEventLoop,
+    replayBootstrapBars: replayBootstrapBars,
     createRunner: createRunner,
     main: main
 };

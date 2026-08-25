@@ -279,20 +279,43 @@ function classifySidePairs(items, side, context) {
 /** Anchor-bounded grouping；禁止通过 B 做 graph transitive chain expansion。 */
 function groupValidPairs(items, validPairs, side) {
     var sorted = items.slice().sort(chronological);
+    var itemById = {};
+    var itemIndexById = {};
+    sorted.forEach(function (item, index) {
+        itemById[item.id] = item;
+        itemIndexById[item.id] = index;
+    });
+
+    // Preserve the old last-pair-wins behavior for duplicate pair keys, then build
+    // a sparse anchor adjacency list. The previous implementation scanned every
+    // same-side swing for every anchor even though only validPairs can join a group.
     var validByKey = {};
     validPairs.forEach(function (p) {
         validByKey[p.firstSwingId + '|' + p.secondSwingId] = p;
     });
+    var validByAnchor = {};
+    Object.keys(validByKey).forEach(function (key) {
+        var pair = validByKey[key];
+        if (itemIndexById[pair.firstSwingId] === undefined ||
+            itemIndexById[pair.secondSwingId] === undefined) return;
+        if (!validByAnchor[pair.firstSwingId]) validByAnchor[pair.firstSwingId] = [];
+        validByAnchor[pair.firstSwingId].push(pair);
+    });
+    Object.keys(validByAnchor).forEach(function (anchorId) {
+        validByAnchor[anchorId].sort(function (a, b) {
+            return itemIndexById[a.secondSwingId] - itemIndexById[b.secondSwingId];
+        });
+    });
+
     var used = {};
     var groups = [];
     sorted.forEach(function (anchor) {
         if (used[anchor.id]) return;
         var members = [anchor];
         var pairRows = [];
-        sorted.forEach(function (candidate) {
+        (validByAnchor[anchor.id] || []).forEach(function (p) {
+            var candidate = itemById[p.secondSwingId];
             if (candidate.id === anchor.id || used[candidate.id]) return;
-            var p = validByKey[anchor.id + '|' + candidate.id];
-            if (!p) return;
             members.push(candidate);
             pairRows.push(p);
         });
@@ -430,6 +453,7 @@ module.exports = {
     barsApart: barsApart,
     lifecycleStateAt: lifecycleStateAt,
     classifyPair: classifyPair,
+    groupValidPairs: groupValidPairs,
     evaluateEqualLiquidityPipeline: evaluateEqualLiquidityPipeline,
     detectEqualLiquidity: detectEqualLiquidity
 };
