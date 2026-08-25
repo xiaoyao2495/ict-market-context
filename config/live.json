@@ -1,5 +1,5 @@
 {
-  "symbols": ["BTCUSDT"],
+  "symbols": ["BTCUSDT", "SNDKUSDT"],
   "symbolsMode": "fixed",
   "warmupDays": 30,
   "pollMs": 30000,

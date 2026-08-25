@@ -64,6 +64,12 @@ function candle(closeTime) {
     return { openTime: closeTime - serviceModule.FOUR_HOURS_MS + 1, closeTime: closeTime, closed: true };
 }
 
+function closeAtBeijingHour(isoDate, hour) {
+    var utcBoundary = Date.parse(isoDate + 'T' + String((hour + 16) % 24).padStart(2, '0') + ':00:00.000Z');
+    if (hour < 8) utcBoundary -= 24 * 60 * 60 * 1000;
+    return utcBoundary - 1;
+}
+
 test('computeBiasAlignment: MATCH / OPPOSITE / UNCLEAR / STALE / UNKNOWN', function () {
     assert.strictEqual(alignment.computeBiasAlignment({ bias: 'BULLISH', status: 'VALID' }, 'LONG'), 'MATCH');
     assert.strictEqual(alignment.computeBiasAlignment({ bias: 'BULLISH', status: 'VALID' }, 'SHORT'), 'OPPOSITE');
@@ -108,6 +114,39 @@ test('每个新 CLOSED 4H 只请求一次；同一 4H 不随 5m 重复请求', f
     }).then(function (second) {
         assert.strictEqual(second.attempted, false);
         assert.strictEqual(second.reason, 'ALREADY_ATTEMPTED');
+        assert.strictEqual(requests, 1);
+    });
+});
+
+test('北京时间 04:00 / 08:00 CLOSED 4H 不请求 DeepSeek，12:00 恢复', function () {
+    var requests = 0;
+    var now = Date.parse('2026-08-25T04:00:00.000Z');
+    var service = serviceModule.createDailyBiasService({
+        symbol: 'BTCUSDT', store: memoryStore(), now: function () { return now; },
+        requestBias: function (symbol, candles, evaluationTime) {
+            requests++;
+            return Promise.resolve({ bias: 'BULLISH', confidence: 'HIGH', evaluationTime: evaluationTime });
+        }
+    });
+    var close04 = closeAtBeijingHour('2026-08-25', 4);
+    var close08 = closeAtBeijingHour('2026-08-25', 8);
+    var close12 = closeAtBeijingHour('2026-08-25', 12);
+    assert.strictEqual(serviceModule.beijingCloseHour(close04), 4);
+    assert.strictEqual(serviceModule.beijingCloseHour(close08), 8);
+    assert.strictEqual(serviceModule.beijingCloseHour(close12), 12);
+    return service.updateOnClosed4h([candle(close04)]).then(function (at04) {
+        assert.strictEqual(at04.attempted, false);
+        assert.strictEqual(at04.reason, 'BEIJING_CLOSE_HOUR_SKIPPED');
+        now = close08 + 1;
+        return service.updateOnClosed4h([candle(close04), candle(close08)]);
+    }).then(function (at08) {
+        assert.strictEqual(at08.attempted, false);
+        assert.strictEqual(at08.reason, 'BEIJING_CLOSE_HOUR_SKIPPED');
+        assert.strictEqual(requests, 0);
+        now = close12 + 1;
+        return service.updateOnClosed4h([candle(close04), candle(close08), candle(close12)]);
+    }).then(function (at12) {
+        assert.strictEqual(at12.updated, true);
         assert.strictEqual(requests, 1);
     });
 });

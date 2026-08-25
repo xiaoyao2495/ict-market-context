@@ -14,6 +14,27 @@ var storeModule = require('./dailyBiasStore');
 
 var FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
 var EIGHT_HOURS_MS = 8 * 60 * 60 * 1000;
+var BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+var DEFAULT_SKIP_BEIJING_CLOSE_HOURS = [4, 8];
+
+/**
+ * Binance candle closeTime is the next interval boundary minus 1ms. Resolve
+ * that boundary in Beijing time and only match an exact hour boundary, so
+ * arbitrary historical/test timestamps are never mistaken for scheduled 4H
+ * closes.
+ */
+function beijingCloseHour(closeTime) {
+    if (typeof closeTime !== 'number' || !isFinite(closeTime)) return null;
+    var boundary = new Date(closeTime + 1 + BEIJING_OFFSET_MS);
+    if (boundary.getUTCMinutes() !== 0 || boundary.getUTCSeconds() !== 0 || boundary.getUTCMilliseconds() !== 0) return null;
+    return boundary.getUTCHours();
+}
+
+function shouldSkipDeepSeekAtClose(closeTime, skipHours) {
+    var hour = beijingCloseHour(closeTime);
+    var hours = skipHours || DEFAULT_SKIP_BEIJING_CLOSE_HOURS;
+    return hour !== null && hours.indexOf(hour) >= 0;
+}
 
 function defaultRequestBias(symbol, candles, evaluationTime) {
     var context = contextBuilder.buildDailyBiasContext(candles, evaluationTime);
@@ -67,12 +88,23 @@ function createDailyBiasService(options) {
     var symbol = opts.symbol;
     var nowFn = opts.now || Date.now;
     var requestBias = opts.requestBias || defaultRequestBias;
+    var skipBeijingCloseHours = opts.skipBeijingCloseHours || DEFAULT_SKIP_BEIJING_CLOSE_HOURS;
     var store = opts.store || storeModule.createDailyBiasStore(
         opts.file || path.join(opts.dataDir || '.live-state', symbol, 'daily-bias.json'), symbol);
 
     function updateOnClosed4h(candles) {
         var latest = latestClosed4h(candles, nowFn());
         if (!latest) return Promise.resolve({ attempted: false, reason: 'NO_CLOSED_4H' });
+
+        if (shouldSkipDeepSeekAtClose(latest.closeTime, skipBeijingCloseHours)) {
+            return Promise.resolve({
+                attempted: false,
+                reason: 'BEIJING_CLOSE_HOUR_SKIPPED',
+                evaluationTime: latest.closeTime,
+                beijingCloseHour: beijingCloseHour(latest.closeTime),
+                snapshot: store.getSnapshot()
+            });
+        }
 
         var lastAttempt = store.getLastAttempt();
         if (lastAttempt && lastAttempt.evaluationTime >= latest.closeTime) {
@@ -139,6 +171,9 @@ module.exports = {
     createDailyBiasService: createDailyBiasService,
     defaultRequestBias: defaultRequestBias,
     latestClosed4h: latestClosed4h,
+    beijingCloseHour: beijingCloseHour,
+    shouldSkipDeepSeekAtClose: shouldSkipDeepSeekAtClose,
+    DEFAULT_SKIP_BEIJING_CLOSE_HOURS: DEFAULT_SKIP_BEIJING_CLOSE_HOURS,
     FOUR_HOURS_MS: FOUR_HOURS_MS,
     EIGHT_HOURS_MS: EIGHT_HOURS_MS
 };

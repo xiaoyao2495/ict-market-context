@@ -419,10 +419,10 @@ test('Prompt 序列化 structuralState/protectedSwings/structuralEvents 且过�
     assert.ok(prompt.indexOf('Classify each supplied pivot') < 0, '旧 pivot reclassification 指令应删除');
 });
 
-test('Live 默认配置固定 BTCUSDT，不启用 top10', function () {
+test('Live 默认配置固定 BTCUSDT + SNDKUSDT，不启用 top10', function () {
     var liveConfig = require('../config/live.json');
     assert.strictEqual(liveConfig.symbolsMode, 'fixed');
-    assert.deepStrictEqual(liveConfig.symbols, ['BTCUSDT']);
+    assert.deepStrictEqual(liveConfig.symbols, ['BTCUSDT', 'SNDKUSDT']);
 });
 
 test('allowedDrawTargets 只包含 time-local INTACT liquidity', function () {
