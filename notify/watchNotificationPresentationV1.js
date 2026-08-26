@@ -23,6 +23,18 @@ var ENUM_ZH = {
     FVG_TOUCHED: 'FVG 已触及', NOTIFIED: '已通知', EXPIRED: '已过期'
 };
 
+var BEIJING_TIMEZONE = 'Asia/Shanghai';
+var BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+var SOURCE_ZH = {
+    NEW_YORK_HIGH: '纽约时段高点', NEW_YORK_LOW: '纽约时段低点',
+    LONDON_HIGH: '伦敦时段高点', LONDON_LOW: '伦敦时段低点',
+    ASIA_HIGH: '亚洲时段高点', ASIA_LOW: '亚洲时段低点',
+    SWING_HIGH: '5m 摆动高点', SWING_LOW: '5m 摆动低点',
+    PDH: '前一日高点', PDL: '前一日低点',
+    PWH: '前一周高点', PWL: '前一周低点',
+    EQH: '等高点', EQL: '等低点'
+};
+
 function raw(value) {
     return value === null || value === undefined || value === '' ? null : String(value);
 }
@@ -50,9 +62,13 @@ function liquiditySide(primary, evidence) {
 function sourceLabel(primary) {
     if (!primary) return '-';
     var type = primary.sourceType || 'UNKNOWN';
-    var labels = { SWING_LOW:'Swing Low', SWING_HIGH:'Swing High', EQH:'Equal High', EQL:'Equal Low' };
-    var timeframe = primary.sourceTimeframe && primary.sourceTimeframe !== 'UNKNOWN' ? primary.sourceTimeframe + ' ' : '';
-    return timeframe + (labels[type] || type) + '（' + type + '）';
+    return SOURCE_ZH[type] ? SOURCE_ZH[type] + '（' + type + '）' : type;
+}
+
+function formatBeijingTime(epochMs) {
+    var value = typeof epochMs === 'number' && isFinite(epochMs) ? epochMs : Date.now();
+    var text = new Date(value + BEIJING_OFFSET_MS).toISOString();
+    return text.slice(5, 10).replace('-', '/') + ' ' + text.slice(11, 16);
 }
 
 function evidencePrimary(watch) {
@@ -90,8 +106,55 @@ function biasView(watch) {
 
 function directionInfo(direction) {
     return direction === 'BEARISH'
-        ? { side:'SHORT', title:'做空机会观察', liquidity:'上方买方流动性', displacement:'空头位移', move:'向下', mss:'Bearish MSS' }
-        : { side:'LONG', title:'做多机会观察', liquidity:'下方卖方流动性', displacement:'多头位移', move:'向上', mss:'Bullish MSS' };
+        ? { side:'SHORT', title:'做空机会观察', liquidity:'上方 BSL', displacement:'空头位移', move:'向下', mss:'Bearish MSS', watchIcon:'🔴' }
+        : { side:'LONG', title:'做多机会观察', liquidity:'下方 SSL', displacement:'多头位移', move:'向上', mss:'Bullish MSS', watchIcon:'🟢' };
+}
+
+function biasIsUnknown(bias) {
+    return !bias || bias.direction === 'UNKNOWN' || bias.status === 'UNKNOWN' ||
+        bias.status === 'BYPASSED' || bias.status === 'NOT_APPLICABLE';
+}
+
+function biasConflict(bias) {
+    return !biasIsUnknown(bias) && bias.alignment === 'OPPOSITE';
+}
+
+function biasDirectionLine(bias, withPrefix) {
+    var icon = bias.direction === 'BULLISH' ? '🟢 ' : bias.direction === 'BEARISH' ? '🔴 ' : '';
+    var value = icon + translate(bias.direction) + '/ ' + (bias.confidence ? translate(bias.confidence) : '-');
+    return (withPrefix ? '4H Daily Bias：' : '') + value;
+}
+
+function buildBiasLines(bias, info, conflict) {
+    if (biasIsUnknown(bias)) {
+        var status = bias && bias.status || 'UNKNOWN';
+        var wording = status === 'BYPASSED' ? '未知 / 未参与判断（BYPASSED）'
+            : status === 'NOT_APPLICABLE' ? '未知 / 不适用（NOT_APPLICABLE）'
+                : '未知（' + status + '）';
+        return ['🧭 4H Daily Bias', '状态：' + wording];
+    }
+    if (conflict) return [
+        '⚠️ 高周期方向冲突',
+        biasDirectionLine(bias, true),
+        '当前观察：' + info.watchIcon + ' ' + (info.side === 'SHORT' ? '做空' : '做多') + '（' + info.side + '）',
+        '方向关系：⚠️ 相反（OPPOSITE）',
+        'Bias 状态：' + translate(bias.status)
+    ];
+    return [
+        '🧭 4H Daily Bias',
+        biasDirectionLine(bias, false),
+        '方向关系：' + (bias.alignment === 'MATCH' ? '✅ 一致（MATCH）' : translate(bias.alignment)),
+        'Bias 状态：' + translate(bias.status)
+    ];
+}
+
+function friendlyWatchState(state) {
+    if (state === 'FVG_TOUCHED' || state === 'NOTIFIED') return 'FVG 已首次触及';
+    if (state === 'WATCH_WAIT_FVG') return '等待 FVG 回踩';
+    if (state === 'WATCH_NO_FVG') return '尚未形成原生 FVG';
+    if (state === 'INVALIDATED') return '观察已失效';
+    if (state === 'EXPIRED') return '观察已过期';
+    return translate(state);
 }
 
 function buildSummary(watch, primary, bias, info) {
@@ -100,16 +163,23 @@ function buildSummary(watch, primary, bias, info) {
     var hasDisplacement = !!(watch && watch.displacement);
     var hasMss = !!(watch && watch.mss && watch.mss.exists);
     if (hasLiquidity || hasDisplacement || hasMss) {
-        var sentence = hasLiquidity ? info.liquidity + '已被扫取' : '';
-        if (hasDisplacement) sentence += (sentence ? '，随后' : '') + '出现' + info.displacement;
-        if (hasMss) sentence += (sentence ? '并' : '') + '确认 ' + info.mss;
+        var sentence = hasLiquidity ? info.liquidity + ' 被扫后' : '';
+        if (hasMss) sentence += (sentence ? '出现 ' : '') + info.mss;
+        if (hasDisplacement) sentence += (sentence ? ' 与' : '出现') + info.displacement;
+        if (watch && watch.nativeFvg) sentence += (sentence ? '，并' : '') + (biasConflict(bias) ? '回到' : '形成') + '原生 FVG';
         sentences.push(sentence + '。');
     } else {
         sentences.push('当前 WATCH 的结构证据未完整提供。');
     }
-    if (bias.alignment === 'MATCH') sentences.push('当前 4H Bias 与本次' + info.title.replace('机会观察','方向') + '一致。');
-    else if (bias.alignment === 'OPPOSITE') sentences.push('当前 4H Bias 与本次观察方向相反。');
-    sentences.push('目前处于 WATCH 阶段，继续观察 FVG 回踩、价格接受与后续结构延续。');
+    if (!biasIsUnknown(bias) && bias.alignment === 'MATCH') {
+        sentences.push('当前 4H Daily Bias 与本次 ' + info.side + ' WATCH 方向一致。');
+        sentences.push('继续观察 FVG 回踩、价格接受及 ' + (info.side === 'SHORT' ? 'bearish' : 'bullish') + ' delivery 是否延续。');
+    } else if (biasConflict(bias)) {
+        sentences.push('但当前有效的 4H Daily Bias 为' + (bias.direction === 'BULLISH' ? '看多' : '看空') + '，本次 ' + info.side + ' WATCH 属于反 HTF 方向观察，不是当前优先 Narrative。');
+        sentences.push('继续观察价格对 FVG 的接受情况及 ' + (info.side === 'SHORT' ? 'bearish' : 'bullish') + ' delivery 是否延续。');
+    } else {
+        sentences.push('继续观察 FVG 回踩、价格接受与后续结构延续。');
+    }
     return sentences;
 }
 
@@ -125,24 +195,23 @@ function build(watch, currentPrice, options) {
     var mss = watch && watch.mss;
     var fvg = watch && watch.nativeFvg;
     var bias = biasView(watch);
+    var conflict = biasConflict(bias);
+    var generatedAt = opts.notificationGeneratedAt !== undefined ? opts.notificationGeneratedAt : Date.now();
     var lines = [
-        '🔔 ' + (watch && watch.symbol || 'UNKNOWN') + ' · ' + info.title,
+        '🔔 ' + (watch && watch.symbol || 'UNKNOWN') + ' · ' + info.title + (conflict ? ' ⚠️ 逆 4H Bias' : ''),
         '',
-        '当前状态：' + info.side + ' WATCH 已触发',
-        '系统状态：' + translate(watch && watch.state),
-        '',
-        '💧 流动性扫取'
+        '时间：' + formatBeijingTime(generatedAt),
+        '状态：' + friendlyWatchState(watch && watch.state)
     ];
 
+    if (conflict) lines.push('', ...buildBiasLines(bias, info, true));
+    lines.push('', '💧 流动性扫取');
+
     if (primary) {
-        lines.push('检测到' + info.liquidity + (side ? '（' + side + '）' : '') + '被扫取');
-        lines.push('来源：' + sourceLabel(primary) + ' @ ' + formatPrice(primary.sourcePrice, fmtPrice));
+        lines.push((side || '流动性') + '：' + sourceLabel(primary) + ' @ ' + formatPrice(primary.sourcePrice, fmtPrice));
         lines.push('时机：' + translate(primary.relation || 'BEFORE_LEG'));
-        if (evidence && evidence.liquidity) lines.push('当前流动性状态：' + translate(evidence.liquidity.lifecycleStatus));
         if (count > 1) {
-            lines.push('候选流动性：共 ' + count + ' 个（另有 ' + (count - 1) + ' 个合法候选）');
-            lines.push('当前主显示：' + sourceLabel(primary) + ' @ ' + formatPrice(primary.sourcePrice, fmtPrice));
-            lines.push('选择方式：最近方向匹配扫取（' + currentPrimarySemantic(watch) + '）');
+            lines.push('候选：' + count + ' 个 · 当前按最近方向匹配扫取显示');
         }
     } else {
         lines.push('未提供');
@@ -152,8 +221,9 @@ function build(watch, currentPrice, options) {
     if (displacement) {
         lines.push('方向：' + info.move + '（' + (displacement.direction || watch.direction || 'UNKNOWN') + '）');
         lines.push('强度：' + translate(displacement.quality));
-        lines.push('位移区间：' + (displacement.startIndex === null || displacement.startIndex === undefined ? '-' : displacement.startIndex) +
-            ' → ' + (displacement.endIndex === null || displacement.endIndex === undefined ? '-' : displacement.endIndex));
+        if (typeof displacement.startIndex === 'number' && typeof displacement.endIndex === 'number' && displacement.endIndex >= displacement.startIndex) {
+            lines.push('持续：' + (displacement.endIndex - displacement.startIndex + 1) + ' 根 5m K线');
+        }
     } else lines.push('未提供');
 
     lines.push('', '📐 市场结构转换（MSS）');
@@ -169,17 +239,10 @@ function build(watch, currentPrice, options) {
         lines.push('区间：' + formatPrice(fvg.low, fmtPrice) + ' – ' + formatPrice(fvg.high, fmtPrice));
         lines.push('中点：' + formatPrice(fvg.midpoint, fmtPrice));
         lines.push('当前价格：' + formatPrice(currentPrice, fmtPrice));
-        lines.push('触及状态：' + translate(watch.touchStatus || fvg.touchStatus || 'FIRST_TOUCH'));
+        lines.push('状态：' + translate(watch.touchStatus || fvg.touchStatus || 'FIRST_TOUCH'));
     } else lines.push('未提供');
 
-    lines.push('', '🧭 4H Daily Bias');
-    if (bias.direction === 'UNKNOWN' && (bias.status === 'UNKNOWN' || bias.status === 'BYPASSED')) {
-        lines.push('4H Daily Bias：未知 / ' + (bias.status === 'BYPASSED' ? '未参与判断（BYPASSED）' : '未知（UNKNOWN）'));
-    } else {
-        lines.push(translate(bias.direction) + ' / ' + (bias.confidence ? translate(bias.confidence) : '-'));
-        lines.push('方向一致性：' + translate(bias.alignment));
-        lines.push('Bias 状态：' + translate(bias.status));
-    }
+    if (!conflict) lines.push('', ...buildBiasLines(bias, info, false));
 
     lines.push('', '📌 当前结构解读');
     buildSummary(watch, primary, bias, info).forEach(function (sentence) { lines.push(sentence); });
@@ -192,10 +255,14 @@ module.exports = {
     translate: translate,
     liquiditySide: liquiditySide,
     sourceLabel: sourceLabel,
+    formatBeijingTime: formatBeijingTime,
+    BEIJING_TIMEZONE: BEIJING_TIMEZONE,
+    SOURCE_ZH: SOURCE_ZH,
     evidencePrimary: evidencePrimary,
     candidateCount: candidateCount,
     biasView: biasView,
     directionInfo: directionInfo,
     buildSummary: buildSummary,
+    buildBiasLines: buildBiasLines,
     build: build
 };

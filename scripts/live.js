@@ -253,7 +253,13 @@ function buildFvgRetracementMessage(watch, currentPrice, options) {
     var opts = options || {};
     var enabled = opts.zhEnabled !== undefined ? !!opts.zhEnabled : watchNotificationZhV1Flag.isEnabled(opts.env);
     if (!enabled) return buildLegacyFvgRetracementMessage(watch, currentPrice);
-    return watchNotificationPresentationV1.build(watch, currentPrice, { formatPrice: fmtPrice });
+    return watchNotificationPresentationV1.build(watch, currentPrice, {
+        formatPrice: fmtPrice,
+        // Actual formatter/send-attempt time. This is presentation-only and is
+        // intentionally not derived from candle or WATCH evaluation timestamps.
+        notificationGeneratedAt: opts.notificationGeneratedAt !== undefined
+            ? opts.notificationGeneratedAt : Date.now()
+    });
 }
 
 // ---------- 每个 symbol 的运行时 ----------
