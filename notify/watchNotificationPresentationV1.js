@@ -187,6 +187,7 @@ function buildSummary(watch, primary, bias, info) {
 
 function build(watch, currentPrice, options) {
     var opts = options || {};
+    var keyword = raw(opts.keyword) || '检测';
     var fmtPrice = opts.formatPrice;
     var info = directionInfo(watch && watch.direction);
     var primary = evidencePrimary(watch);
@@ -200,7 +201,7 @@ function build(watch, currentPrice, options) {
     var conflict = biasConflict(bias);
     var generatedAt = opts.notificationGeneratedAt !== undefined ? opts.notificationGeneratedAt : Date.now();
     var lines = [
-        '🔔 ' + (watch && watch.symbol || 'UNKNOWN') + ' · ' + info.title + (conflict ? ' ⚠️ 逆 4H Bias' : ''),
+        '🔔 ' + keyword + ' · ' + (watch && watch.symbol || 'UNKNOWN') + ' · ' + info.title + (conflict ? ' ⚠️ 逆 4H Bias' : ''),
         '',
         '时间：' + formatBeijingTime(generatedAt),
         '状态：' + friendlyWatchState(watch && watch.state)

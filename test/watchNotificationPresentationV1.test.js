@@ -49,5 +49,7 @@ test('36 friendly state replaces debug state lines',function(){var s=zh(watch('B
 test('37 LONG MATCH mirror has no SHORT leakage',function(){var s=zh(watch('BULLISH'));assert.ok(/SSL：.*SWING_LOW/.test(s));assert.ok(s.includes('Bullish MSS'));assert.ok(s.includes('向上（BULLISH）'));assert.ok(!/SHORT|做空|空头位移|Bearish MSS/.test(s));});
 test('38 source unknown falls back raw without throw',function(){var w=watch('BULLISH');w.liquidityTaken.primary.sourceType='CUSTOM_HIGH';assert.ok(zh(w).includes('SSL：CUSTOM_HIGH @'));});
 test('39 INTERNAL remains neutral translation',function(){assert.strictEqual(presentation.translate('INTERNAL'),'内部结构（INTERNAL）');});
+test('40 Chinese notification includes configured DingTalk keyword',function(){assert.ok(zh(watch('BULLISH')).startsWith('🔔 检测 · BTCUSDT'));});
+test('41 custom DingTalk keyword is forwarded to Chinese formatter',function(){var s=live.buildFvgRetracementMessage(watch('BULLISH'),78871.8,{zhEnabled:true,keyword:'监测',notificationGeneratedAt:FIXED_TIME});assert.ok(s.startsWith('🔔 监测 · BTCUSDT'));});
 
 if(failed){console.error('WATCH Notification Presentation V1 failed '+failed+'/'+(passed+failed));process.exit(1);}console.log('WATCH Notification Presentation V1 '+passed+'/'+passed);

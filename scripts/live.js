@@ -258,6 +258,7 @@ function buildFvgRetracementMessage(watch, currentPrice, options) {
         ? !!opts.sweepContextEnabled : sweepContextV1Flag.isEnabled(opts.env);
     return watchNotificationPresentationV1.build(watch, currentPrice, {
         formatPrice: fmtPrice,
+        keyword: opts.keyword !== undefined ? opts.keyword : (CONFIG.dingtalk.keyword || '检测'),
         sweepContextEnabled: sweepContextEnabled,
         // Actual formatter/send-attempt time. This is presentation-only and is
         // intentionally not derived from candle or WATCH evaluation timestamps.
