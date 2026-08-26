@@ -22,6 +22,7 @@ var ENUM_ZH = {
     WATCH_WAIT_FVG: '等待 FVG 回踩', WATCH_NO_FVG: '未形成原生 FVG',
     FVG_TOUCHED: 'FVG 已触及', NOTIFIED: '已通知', EXPIRED: '已过期'
 };
+var sweepContextPresentationV1 = require('./sweepContextPresentationV1');
 
 var BEIJING_TIMEZONE = 'Asia/Shanghai';
 var BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -32,6 +33,7 @@ var SOURCE_ZH = {
     SWING_HIGH: '5m 摆动高点', SWING_LOW: '5m 摆动低点',
     PDH: '前一日高点', PDL: '前一日低点',
     PWH: '前一周高点', PWL: '前一周低点',
+    PMH: '前一月高点', PML: '前一月低点',
     EQH: '等高点', EQL: '等低点'
 };
 
@@ -210,6 +212,9 @@ function build(watch, currentPrice, options) {
     if (primary) {
         lines.push((side || '流动性') + '：' + sourceLabel(primary) + ' @ ' + formatPrice(primary.sourcePrice, fmtPrice));
         lines.push('时机：' + translate(primary.relation || 'BEFORE_LEG'));
+        if (opts.sweepContextEnabled) {
+            sweepContextPresentationV1.lines(primary).forEach(function (line) { lines.push(line); });
+        }
         if (count > 1) {
             lines.push('候选：' + count + ' 个 · 当前按最近方向匹配扫取显示');
         }
@@ -264,5 +269,6 @@ module.exports = {
     directionInfo: directionInfo,
     buildSummary: buildSummary,
     buildBiasLines: buildBiasLines,
+    sweepContextLines: sweepContextPresentationV1.lines,
     build: build
 };

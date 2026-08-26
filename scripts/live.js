@@ -33,6 +33,7 @@ var displacementWatch = require('../stats/displacementWatch');
 var futuresPriceStream = require('../live/futuresPriceStream');
 var watchNotificationPresentationV1 = require('../notify/watchNotificationPresentationV1');
 var watchNotificationZhV1Flag = require('../config/watchNotificationZhV1');
+var sweepContextV1Flag = require('../config/sweepContextV1');
 
 var CONFIG = require('../config/live.json');
 
@@ -253,8 +254,11 @@ function buildFvgRetracementMessage(watch, currentPrice, options) {
     var opts = options || {};
     var enabled = opts.zhEnabled !== undefined ? !!opts.zhEnabled : watchNotificationZhV1Flag.isEnabled(opts.env);
     if (!enabled) return buildLegacyFvgRetracementMessage(watch, currentPrice);
+    var sweepContextEnabled = opts.sweepContextEnabled !== undefined
+        ? !!opts.sweepContextEnabled : sweepContextV1Flag.isEnabled(opts.env);
     return watchNotificationPresentationV1.build(watch, currentPrice, {
         formatPrice: fmtPrice,
+        sweepContextEnabled: sweepContextEnabled,
         // Actual formatter/send-attempt time. This is presentation-only and is
         // intentionally not derived from candle or WATCH evaluation timestamps.
         notificationGeneratedAt: opts.notificationGeneratedAt !== undefined
@@ -437,6 +441,7 @@ function createRunner(symbol) {
         engine = liveEngineMod.createLiveEngine({
             symbol: symbol,
             exchangeInfo: data.exchangeInfo,
+            contextCandles5m: all,
             structureCandles: structureCandles,
             calendarCandles: calendarCandles,
             fetcher: dataSource.makeFetcher(calendarCandles),

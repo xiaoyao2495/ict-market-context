@@ -30,6 +30,8 @@ var structuralProvenance5m = require('../structure/structuralProvenance5m');
 var displacementWatch = require('../stats/displacementWatch');
 var watchLiquidityEvidenceV1 = require('../stats/watchLiquidityEvidenceV1');
 var watchLiquidityEvidenceFlag = require('../config/watchLiquidityEvidenceV1');
+var sweepContextFlag = require('../config/sweepContextV1');
+var runtimeSwingContextV1 = require('../stats/runtimeSwingContextV1');
 var dailyBiasAlignment = require('../bias/dailyBiasAlignment');
 var thresholds = require('../config/thresholds');
 
@@ -44,7 +46,9 @@ function attachWatchLiquidityEvidenceV1(candidate, context) {
             evaluationTime: ctx.evaluationTime,
             registry: ctx.registry,
             candles: ctx.candles,
-            dailyBias: ctx.dailyBias
+            dailyBias: ctx.dailyBias,
+            sweepContextV1Enabled: ctx.sweepContextV1Enabled,
+            projectSwingContextV1: ctx.projectSwingContextV1
         });
     } catch (e) {
         // P1 is observability-only: enrichment failure must never alter
@@ -85,6 +89,8 @@ function createLiveEngine(data, options) {
     var watchLiquidityEvidenceV1Enabled = opts.watchLiquidityEvidenceV1Enabled !== undefined
         ? !!opts.watchLiquidityEvidenceV1Enabled
         : watchLiquidityEvidenceFlag.isEnabled();
+    var sweepContextV1Enabled = opts.sweepContextV1Enabled !== undefined
+        ? !!opts.sweepContextV1Enabled : sweepContextFlag.isEnabled();
 
     var state = replayState.createReplayState({ symbol: symbol, timeframe: '5m', snapshotInterval: snapshotInterval });
     state.eventRegistry = eventRegistry.createEventRegistry();
@@ -98,6 +104,14 @@ function createLiveEngine(data, options) {
     var window = []; // 全局 index 对齐的已收盘 5m 序列（window.length === 最后 index + 1）
     var watchById = {};
     var watchUpdates = [];
+    var runtimeSwingContext = sweepContextV1Enabled ? runtimeSwingContextV1.createRuntimeSwingContextV1({
+        symbol: symbol,
+        initialCandles5m: data.contextCandles5m || [],
+        structureCandles: data.structureCandles || {},
+        getCandles5m: function () { return window; },
+        getRegistry: function () { return state.registry; },
+        getStructuralState: function () { return state.structural5m; }
+    }) : null;
 
     var fullData = {
         symbol: symbol,
@@ -143,7 +157,7 @@ function createLiveEngine(data, options) {
             existing: watchById['WATCH:' + symbol + ':' + leg.direction + ':LEG:' + leg.ids[0]] || null
         });
         if (!candidate) return null;
-        if (watchLiquidityEvidenceV1Enabled) {
+        if (watchLiquidityEvidenceV1Enabled || sweepContextV1Enabled) {
             if (!state.watchLiquidityEvidenceV1Errors) state.watchLiquidityEvidenceV1Errors = [];
             attachWatchLiquidityEvidenceV1(candidate, {
                 enabled: true,
@@ -151,6 +165,8 @@ function createLiveEngine(data, options) {
                 registry: state.registry,
                 candles: window,
                 dailyBias: dailyBias,
+                sweepContextV1Enabled: sweepContextV1Enabled,
+                projectSwingContextV1: runtimeSwingContext && runtimeSwingContext.projectSwingContextV1,
                 errors: state.watchLiquidityEvidenceV1Errors
             });
         }

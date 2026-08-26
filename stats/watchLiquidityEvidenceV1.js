@@ -8,6 +8,8 @@
  */
 var liquidityLifecycle = require('../liquidity/liquidityLifecycle');
 var featureFlag = require('../config/watchLiquidityEvidenceV1');
+var sweepContextFlag = require('../config/sweepContextV1');
+var sweepContextV1 = require('./sweepContextV1');
 
 var SCHEMA_VERSION = 'WatchLiquidityEvidenceV1';
 var PRIMARY_SELECTION_SEMANTIC = 'CURRENT_PRODUCTION_RECENCY_HEURISTIC';
@@ -127,7 +129,7 @@ function mapCandidate(sweep, opts) {
     var source = opts.registry && opts.registry.getById ? opts.registry.getById(sweep.sourceId) : null;
     var identity = identityOf(sweep, source, evaluationTime);
     var lifecycle = projectLifecycle(sweep, source, opts.candles, evaluationTime);
-    return {
+    var candidate = {
         candidateKey: String(sweep.id) + '|' + String(sweep.sourceId),
         sweepEventId: sweep.id || null,
         sourceId: sweep.sourceId || null,
@@ -151,14 +153,24 @@ function mapCandidate(sweep, opts) {
         lifecycleTransitionAt: lifecycle.transitionAt,
         provenance: lifecycle.provenance
     };
+    if (opts.sweepContextV1Enabled) {
+        candidate.sweepContextV1 = sweepContextV1.buildSweepContextV1(sweep, {
+            registry: opts.registry,
+            projectSwingContextV1: opts.projectSwingContextV1
+        });
+    }
+    return candidate;
 }
 
 function build(watch, options) {
     var opts = options || {};
     var evaluationTime = opts.evaluationTime !== undefined ? opts.evaluationTime : watch.updatedAt;
+    var sweepContextV1Enabled = opts.sweepContextV1Enabled !== undefined
+        ? !!opts.sweepContextV1Enabled : sweepContextFlag.isEnabled(opts.env);
     var legacyPrimary = watch.liquidityTaken && watch.liquidityTaken.primary || null;
     var candidates = (watch.liquidityTaken && watch.liquidityTaken.allCandidates || []).map(function (item) {
-        return mapCandidate(item, { evaluationTime:evaluationTime, registry:opts.registry, candles:opts.candles });
+        return mapCandidate(item, { evaluationTime:evaluationTime, registry:opts.registry, candles:opts.candles,
+            sweepContextV1Enabled:sweepContextV1Enabled, projectSwingContextV1:opts.projectSwingContextV1 });
     }).filter(Boolean).sort(candidateOrder);
     var primaryCandidate = legacyPrimary && candidates.filter(function (item) {
         return item.sweepEventId === legacyPrimary.id && item.sourceId === legacyPrimary.sourceId;
