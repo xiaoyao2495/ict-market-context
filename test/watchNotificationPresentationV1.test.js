@@ -51,5 +51,11 @@ test('38 source unknown falls back raw without throw',function(){var w=watch('BU
 test('39 INTERNAL remains neutral translation',function(){assert.strictEqual(presentation.translate('INTERNAL'),'内部结构（INTERNAL）');});
 test('40 Chinese notification includes configured DingTalk keyword',function(){assert.ok(zh(watch('BULLISH')).startsWith('🔔 检测 · BTCUSDT'));});
 test('41 custom DingTalk keyword is forwarded to Chinese formatter',function(){var s=live.buildFvgRetracementMessage(watch('BULLISH'),78871.8,{zhEnabled:true,keyword:'监测',notificationGeneratedAt:FIXED_TIME});assert.ok(s.startsWith('🔔 监测 · BTCUSDT'));});
+test('42 LONG summary honors raw bullish MSS',function(){var s=zh(watch('BULLISH')).split('📌 当前结构解读')[1];assert.ok(s.includes('Bullish MSS'));assert.ok(!s.includes('Bearish MSS'));});
+test('43 SHORT summary honors raw bearish MSS',function(){var s=zh(watch('BEARISH')).split('📌 当前结构解读')[1];assert.ok(s.includes('Bearish MSS'));assert.ok(!s.includes('Bullish MSS'));});
+test('44 LONG without MSS summary does not invent MSS direction',function(){var w=watch('BULLISH');w.mss={exists:false,direction:null};var s=zh(w).split('📌 当前结构解读')[1];assert.ok(!/Bullish MSS|Bearish MSS/.test(s));});
+test('45 SHORT without MSS summary does not invent MSS direction',function(){var w=watch('BEARISH');w.mss={exists:false,direction:null};var s=zh(w).split('📌 当前结构解读')[1];assert.ok(!/Bullish MSS|Bearish MSS/.test(s));});
+test('46 LONG formatter defensively honors raw opposite bearish MSS',function(){var w=watch('BULLISH');w.mss.direction='BEARISH';var s=zh(w).split('📌 当前结构解读')[1];assert.ok(s.includes('Bearish MSS'));assert.ok(!s.includes('Bullish MSS'));});
+test('47 SHORT formatter defensively honors raw opposite bullish MSS',function(){var w=watch('BEARISH');w.mss.direction='BULLISH';var s=zh(w).split('📌 当前结构解读')[1];assert.ok(s.includes('Bullish MSS'));assert.ok(!s.includes('Bearish MSS'));});
 
 if(failed){console.error('WATCH Notification Presentation V1 failed '+failed+'/'+(passed+failed));process.exit(1);}console.log('WATCH Notification Presentation V1 '+passed+'/'+passed);

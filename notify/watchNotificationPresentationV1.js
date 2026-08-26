@@ -166,7 +166,12 @@ function buildSummary(watch, primary, bias, info) {
     var hasMss = !!(watch && watch.mss && watch.mss.exists);
     if (hasLiquidity || hasDisplacement || hasMss) {
         var sentence = hasLiquidity ? info.liquidity + ' 被扫后' : '';
-        if (hasMss) sentence += (sentence ? '出现 ' : '') + info.mss;
+        if (hasMss) {
+            var rawMssDirection = watch.mss.direction;
+            var mssLabel = rawMssDirection === 'BULLISH' ? 'Bullish MSS'
+                : rawMssDirection === 'BEARISH' ? 'Bearish MSS' : 'MSS';
+            sentence += (sentence ? '出现 ' : '') + mssLabel;
+        }
         if (hasDisplacement) sentence += (sentence ? ' 与' : '出现') + info.displacement;
         if (watch && watch.nativeFvg) sentence += (sentence ? '，并' : '') + (biasConflict(bias) ? '回到' : '形成') + '原生 FVG';
         sentences.push(sentence + '。');

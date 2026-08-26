@@ -1,0 +1,29 @@
+{
+  "WATCH_ID": "WATCH:BTCUSDT:BULLISH:LEG:BTCUSDT:5m:DISPLACEMENT:BULLISH:1787734800000",
+  "DISPLACEMENT_ID": "BTCUSDT:5m:DISPLACEMENT:BULLISH:1787734800000",
+  "WATCH_DIRECTION": "BULLISH",
+  "DISPLACEMENT_DIRECTION": "BULLISH",
+  "BEFORE_MSS": {
+    "exists": true,
+    "id": "BTCUSDT:5m:MSS:BEARISH:BTCUSDT:5m:SWING_LOW:1787731500000",
+    "direction": "BEARISH",
+    "confirmedAt": 1787735099999,
+    "referencePrice": 78792.8,
+    "referenceRole": "INTERNAL",
+    "protectedBreak": false,
+    "mssGrade": "LOCAL"
+  },
+  "AFTER_MSS": {
+    "exists": false,
+    "id": null,
+    "direction": null,
+    "confirmedAt": null,
+    "referencePrice": null,
+    "referenceRole": null,
+    "protectedBreak": false,
+    "mssGrade": null
+  },
+  "BEFORE_MSS_EVENT_ID": "BTCUSDT:5m:MSS:BEARISH:BTCUSDT:5m:SWING_LOW:1787731500000",
+  "AFTER_MSS_EVENT_ID": null,
+  "TARGET_CASE_AFTER_FIX_PASS": true
+}

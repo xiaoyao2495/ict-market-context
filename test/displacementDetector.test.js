@@ -106,6 +106,88 @@ test('same-candle MSS bonus：2 分 + MSS → 生成', function () {
     assert.strictEqual(d[0].metadata.mssEventId, 'M1');
 });
 
+test('bearish displacement links same-bar bearish MSS', function () {
+    var candles = baseCandles();
+    candles.push(m5(140, 142, 98, 100, 1000000 + 20 * 300000));
+    var d = displacementDetector.detectDisplacement(candles, [
+        { id: 'MB', candleIndex: 20, direction: 'BEARISH' }
+    ], OPTS);
+    assert.strictEqual(d.length, 1);
+    assert.strictEqual(d[0].metadata.mssEventId, 'MB');
+});
+
+test('bullish displacement does not link opposite-only bearish MSS', function () {
+    var candles = baseCandles();
+    candles.push(m5(100, 140, 98, 138, 1000000 + 20 * 300000));
+    var d = displacementDetector.detectDisplacement(candles, [
+        { id: 'MB', candleIndex: 20, direction: 'BEARISH' }
+    ], OPTS);
+    assert.strictEqual(d.length, 1);
+    assert.strictEqual(d[0].metadata.mssEventId, null);
+});
+
+test('bearish displacement does not link opposite-only bullish MSS', function () {
+    var candles = baseCandles();
+    candles.push(m5(140, 142, 98, 100, 1000000 + 20 * 300000));
+    var d = displacementDetector.detectDisplacement(candles, [
+        { id: 'MU', candleIndex: 20, direction: 'BULLISH' }
+    ], OPTS);
+    assert.strictEqual(d.length, 1);
+    assert.strictEqual(d[0].metadata.mssEventId, null);
+});
+
+test('mixed same-bar MSS selects bullish match even when bearish is first', function () {
+    var candles = baseCandles();
+    candles.push(m5(100, 140, 98, 138, 1000000 + 20 * 300000));
+    var d = displacementDetector.detectDisplacement(candles, [
+        { id: 'MB', candleIndex: 20, direction: 'BEARISH' },
+        { id: 'MU', candleIndex: 20, direction: 'BULLISH' }
+    ], OPTS);
+    assert.strictEqual(d[0].metadata.mssEventId, 'MU');
+});
+
+test('mixed same-bar MSS selects bearish match even when bullish is first', function () {
+    var candles = baseCandles();
+    candles.push(m5(140, 142, 98, 100, 1000000 + 20 * 300000));
+    var d = displacementDetector.detectDisplacement(candles, [
+        { id: 'MU', candleIndex: 20, direction: 'BULLISH' },
+        { id: 'MB', candleIndex: 20, direction: 'BEARISH' }
+    ], OPTS);
+    assert.strictEqual(d[0].metadata.mssEventId, 'MB');
+});
+
+test('multiple same-direction MSS preserves deterministic input ordering', function () {
+    var candles = baseCandles();
+    candles.push(m5(100, 140, 98, 138, 1000000 + 20 * 300000));
+    var d = displacementDetector.detectDisplacement(candles, [
+        { id: 'MU-FIRST', candleIndex: 20, direction: 'BULLISH' },
+        { id: 'MU-SECOND', candleIndex: 20, direction: 'BULLISH' }
+    ], OPTS);
+    assert.strictEqual(d[0].metadata.mssEventId, 'MU-FIRST');
+});
+
+test('opposite-only same-bar MSS preserves displacement detection score', function () {
+    var candles = baseCandles();
+    candles.push(m5(95.1, 108, 95, 103.3, 1000000 + 20 * 300000));
+    var d = displacementDetector.detectDisplacement(candles, [
+        { id: 'MB', candleIndex: 20, direction: 'BEARISH' }
+    ], OPTS);
+    assert.strictEqual(d.length, 1);
+    assert.strictEqual(d[0].metadata.score, 3);
+    assert.strictEqual(d[0].metadata.mssEventId, null);
+});
+
+test('future same-direction MSS is not searched when current bar has only opposite MSS', function () {
+    var candles = baseCandles();
+    candles.push(m5(100, 140, 98, 138, 1000000 + 20 * 300000));
+    var d = displacementDetector.detectDisplacement(candles, [
+        { id: 'MB-NOW', candleIndex: 20, direction: 'BEARISH' },
+        { id: 'MU-FUTURE', candleIndex: 21, direction: 'BULLISH' }
+    ], OPTS);
+    assert.strictEqual(d.length, 1);
+    assert.strictEqual(d[0].metadata.mssEventId, null);
+});
+
 test('无 MSS 时同 candle 只有 2 分 → 不生成', function () {
     var candles = baseCandles();
     candles.push(m5(95.1, 108, 95, 103.3, 1000000 + 20 * 300000));

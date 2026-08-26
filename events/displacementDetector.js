@@ -88,7 +88,18 @@ function detectDisplacement(candles, mssEvents, options) {
         if (closeExtremeRatio >= cfg.closeExtremeThreshold) {
             score++;
         }
-        var sameMss = mssByIndex[index] && mssByIndex[index].length > 0;
+        var sameBarMss = mssByIndex[index] || [];
+        // Detection score intentionally preserves the existing "any same-bar MSS"
+        // semantic. Direction filtering applies only to provenance linkage.
+        var sameMss = sameBarMss.length > 0;
+        var linkedMss = null;
+        sameBarMss.some(function (mss) {
+            if (mss.direction === direction) {
+                linkedMss = mss;
+                return true;
+            }
+            return false;
+        });
         if (sameMss) {
             score++;
         }
@@ -122,7 +133,7 @@ function detectDisplacement(candles, mssEvents, options) {
                     closeExtremeRatio: round4(closeExtremeRatio),
                     score: score,
                     maxScore: cfg.maxScore,
-                    mssEventId: sameMss ? mssByIndex[index][0].id : null
+                    mssEventId: linkedMss ? linkedMss.id : null
                 }
             });
         }

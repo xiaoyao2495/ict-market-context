@@ -29,6 +29,22 @@ test('matching liquidity creates WATCH without MSS and without native FVG', func
     assert.strictEqual(w.dailyBias.bias, 'OPPOSITE');
 });
 
+test('WATCH MSS enrichment preserves exact leg.mssId lookup', function () {
+    var d = disp('BULLISH', 2), l = leg(d);
+    l.mssId = 'M-EXACT';
+    var w = dw.buildWatch({ symbol: 'X', leg: l, evaluationTime: d.confirmedAt,
+        sweepEvents: [sweep('SSL', 1)], displacements: [d],
+        mssEvents: [
+            { id: 'M-OTHER', direction: 'BULLISH', confirmedAt: d.confirmedAt, referenceLevel: 98 },
+            { id: 'M-EXACT', direction: 'BULLISH', confirmedAt: d.confirmedAt, referenceLevel: 99 }
+        ],
+        candles: [c(0, 99, 100, 98, 99), c(1, 99, 101, 98, 100), c(2, 100, 108, 99, 107)] });
+    assert.ok(w);
+    assert.strictEqual(w.mss.exists, true);
+    assert.strictEqual(w.mss.id, 'M-EXACT');
+    assert.strictEqual(w.mss.referencePrice, 99);
+});
+
 test('opposite liquidity cannot create watch', function () {
     var d = disp('BULLISH', 2);
     assert.strictEqual(dw.buildWatch({ symbol: 'X', leg: leg(d), evaluationTime: d.confirmedAt,
