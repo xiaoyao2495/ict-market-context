@@ -1,51 +1,102 @@
 'use strict';
 
 /** Pure, deterministic presentation of an existing candidate.sweepContextV1. */
-var HTF_ORDER = ['15m', '1h', '4h'];
-var HTF_LABEL = { '15m':'15m', '1h':'1H', '4h':'4H' };
+var TIMEFRAME_ORDER = ['5m', '15m', '1h', '4h'];
+var TIMEFRAME_LABEL = { '5m':'5m', '15m':'15m', '1h':'1H', '4h':'4H' };
 var ROLE_ZH = {
-    LOCAL_SWING: '局部摆动',
     INTERNAL: '内部结构',
-    CONTROLLING_SWING: '控制结构',
-    ACTIVE_PROTECTED: '受保护',
-    SUPERSEDED_PROTECTED: '已取代的受保护',
+    LOCAL: '局部结构',
+    LOCAL_SWING: '局部结构',
+    CONTROLLING: '控制结构 Swing',
+    CONTROLLING_SWING: '控制结构 Swing',
+    ACTIVE_PROTECTED: '当前受保护结构',
+    SUPERSEDED_PROTECTED: '已被替代的受保护结构',
     BROKEN: '已破坏结构'
 };
 
-function sideSuffix(side) {
-    if (side === 'HIGH') return '高点';
-    if (side === 'LOW') return '低点';
-    return '点位';
-}
-function roleLabel(role, side) {
+function roleLabel(role) {
     if (!role) return null;
-    return (ROLE_ZH[role] || role) + sideSuffix(side);
+    return (ROLE_ZH[role] || '未知结构角色') + '（' + role + '）';
 }
-function confirmedHtf(contexts) {
-    var seen={};(contexts||[]).forEach(function(context){var memberships=context&&context.timeframeMembership||{};HTF_ORDER.forEach(function(tf){if(memberships[tf]&&memberships[tf].confirmed)seen[tf]=true;});});
-    return HTF_ORDER.filter(function(tf){return seen[tf];});
+
+function confirmedTimeframes(contexts) {
+    var seen = {};
+    (contexts || []).forEach(function (context) {
+        var memberships = context && context.timeframeMembership || {};
+        TIMEFRAME_ORDER.forEach(function (timeframe) {
+            if (memberships[timeframe] && memberships[timeframe].confirmed === true) seen[timeframe] = true;
+        });
+    });
+    return TIMEFRAME_ORDER.filter(function (timeframe) { return seen[timeframe]; });
 }
-function htfLine(contexts, side, prefix) {
-    var timeframes=confirmedHtf(contexts);if(!timeframes.length)return null;
-    return (prefix||'高周期')+'：'+timeframes.map(function(tf){return HTF_LABEL[tf];}).join(' / ')+' 摆动'+sideSuffix(side);
+
+function timeframeLine(contexts) {
+    var timeframes = confirmedTimeframes(contexts);
+    if (!timeframes.length) return null;
+    if (timeframes.length === 1 && timeframes[0] === '5m') return '周期层级：仅 5m';
+    return '周期层级：' + timeframes.map(function (timeframe) { return TIMEFRAME_LABEL[timeframe]; }).join(' / ');
 }
+
+function highestTimeframeLine(contexts) {
+    var timeframes = confirmedTimeframes(contexts);
+    if (!timeframes.length) return null;
+    return '最高已确认周期覆盖：' + TIMEFRAME_LABEL[timeframes[timeframes.length - 1]];
+}
+
+function nonSwingType(sourceType) {
+    if (/^P[DM][HL]$/.test(sourceType || '')) return sourceType.indexOf('PM') === 0 ? '月线流动性' : '日线流动性';
+    if (/^PW[HL]$/.test(sourceType || '')) return '周线流动性';
+    if (/^(SESSION|ASIA|LONDON|NEW_YORK)_(HIGH|LOW)$/.test(sourceType || '')) return '时段流动性';
+    return '原生流动性';
+}
+
+function contextualSourceLabel(candidate) {
+    var context = candidate && candidate.sweepContextV1;
+    if (!context || context.contextApplicability !== 'SWING_DERIVED' || !context.swingContext) return null;
+    if (candidate.sourceType === 'SWING_HIGH') return '摆动高点（SWING_HIGH）';
+    if (candidate.sourceType === 'SWING_LOW') return '摆动低点（SWING_LOW）';
+    return null;
+}
+
 function lines(candidate) {
-    var context=candidate&&candidate.sweepContextV1;if(!context)return[];
-    if(context.contextApplicability==='SWING_DERIVED'&&context.swingContext){
-        var swing=context.swingContext,role=swing.structural&&swing.structural.currentRole,out=[];
-        var structural=roleLabel(role,swing.side);if(structural)out.push('结构：'+structural);
-        var higher=htfLine([swing],swing.side,'高周期');if(higher)out.push(higher);
+    var context = candidate && candidate.sweepContextV1;
+    if (!context) return [];
+    if (context.contextApplicability === 'SWING_DERIVED' && context.swingContext) {
+        var swing = context.swingContext;
+        var out = [];
+        var timeframes = timeframeLine([swing]);
+        var role = roleLabel(swing.structural && swing.structural.currentRole);
+        if (timeframes) out.push(timeframes);
+        if (role) out.push('结构角色：' + role);
         return out;
     }
-    if(context.contextApplicability==='EQ_MULTI_MEMBER'){
-        var members=context.memberSwingContexts||[],side=members[0]&&members[0].side;
-        var eq=['结构：EQ 多成员（'+members.length+' 个，不指定主成员）'];
-        var memberHtf=htfLine(members,side,'成员高周期');if(memberHtf)eq.push(memberHtf);
+    if (context.contextApplicability === 'EQ_MULTI_MEMBER') {
+        var members = context.memberSwingContexts || [];
+        var eq = ['成员 Swing：' + members.length + ' 个'];
+        var highest = highestTimeframeLine(members);
+        if (highest) eq.push(highest);
         return eq;
     }
-    // NON_SWING_LIQUIDITY / UNRESOLVED / missing remain concise. Native
-    // identity is already displayed by the parent formatter; no error wording.
+    if (context.contextApplicability === 'NON_SWING_LIQUIDITY') {
+        return ['类型：' + nonSwingType(candidate.sourceType)];
+    }
+    // UNRESOLVED remains identity-only. Never expose internal error reasons or
+    // guess Swing/MTF/structural facts in presentation.
     return [];
 }
 
-module.exports={HTF_ORDER:HTF_ORDER,HTF_LABEL:HTF_LABEL,ROLE_ZH:ROLE_ZH,sideSuffix:sideSuffix,roleLabel:roleLabel,confirmedHtf:confirmedHtf,lines:lines};
+module.exports = {
+    HTF_ORDER: TIMEFRAME_ORDER.slice(1),
+    HTF_LABEL: TIMEFRAME_LABEL,
+    TIMEFRAME_ORDER: TIMEFRAME_ORDER,
+    TIMEFRAME_LABEL: TIMEFRAME_LABEL,
+    ROLE_ZH: ROLE_ZH,
+    roleLabel: roleLabel,
+    confirmedHtf: confirmedTimeframes,
+    confirmedTimeframes: confirmedTimeframes,
+    timeframeLine: timeframeLine,
+    highestTimeframeLine: highestTimeframeLine,
+    nonSwingType: nonSwingType,
+    contextualSourceLabel: contextualSourceLabel,
+    lines: lines
+};

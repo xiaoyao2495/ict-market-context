@@ -30,6 +30,7 @@ var SOURCE_ZH = {
     NEW_YORK_HIGH: '纽约时段高点', NEW_YORK_LOW: '纽约时段低点',
     LONDON_HIGH: '伦敦时段高点', LONDON_LOW: '伦敦时段低点',
     ASIA_HIGH: '亚洲时段高点', ASIA_LOW: '亚洲时段低点',
+    SESSION_HIGH: '时段高点', SESSION_LOW: '时段低点',
     SWING_HIGH: '5m 摆动高点', SWING_LOW: '5m 摆动低点',
     PDH: '前一日高点', PDL: '前一日低点',
     PWH: '前一周高点', PWL: '前一周低点',
@@ -216,11 +217,13 @@ function build(watch, currentPrice, options) {
     lines.push('', '💧 流动性扫取');
 
     if (primary) {
-        lines.push((side || '流动性') + '：' + sourceLabel(primary) + ' @ ' + formatPrice(primary.sourcePrice, fmtPrice));
-        lines.push('时机：' + translate(primary.relation || 'BEFORE_LEG'));
+        var contextSourceLabel = opts.sweepContextEnabled
+            ? sweepContextPresentationV1.contextualSourceLabel(primary) : null;
+        lines.push((side || '流动性') + '：' + (contextSourceLabel || sourceLabel(primary)) + ' @ ' + formatPrice(primary.sourcePrice, fmtPrice));
         if (opts.sweepContextEnabled) {
             sweepContextPresentationV1.lines(primary).forEach(function (line) { lines.push(line); });
         }
+        lines.push('时机：' + translate(primary.relation || 'BEFORE_LEG'));
         if (count > 1) {
             lines.push('候选：' + count + ' 个 · 当前按最近方向匹配扫取显示');
         }

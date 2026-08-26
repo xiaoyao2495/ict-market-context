@@ -1,29 +1,92 @@
 'use strict';
 
-var test=require('node:test'),assert=require('node:assert/strict'),crypto=require('crypto');
-var live=require('../scripts/live'),helper=require('../notify/sweepContextPresentationV1');
-function hash(v){return crypto.createHash('sha256').update(JSON.stringify(v)).digest('hex');}
-function membership(tfs){var o={};['5m','15m','1h','4h'].forEach(function(tf){o[tf]={confirmed:tf==='5m'||tfs.indexOf(tf)>=0,swingId:null,occurredAt:null,confirmedAt:null,provenance:null};});return o;}
-function swingContext(side,role,tfs){return{schemaVersion:'SweepContextV1',contextApplicability:'SWING_DERIVED',canonicalSwingId:'S',swingContext:{canonicalSwingId:'S',side:side,structural:{currentRole:role,currentStatus:'CANDIDATE',roleAsOf:20,provenance:{}},timeframeMembership:membership(tfs||[])},memberSwingContexts:[],evaluationTime:50,provenance:{}};}
-function candidate(type,side,context){return{id:'SWEEP:1',sweepEventId:'SWEEP:1',sourceId:'SOURCE:1',sourceType:type,sourceTimeframe:'5m',sourcePrice:78690.1,side:side,confirmedAt:50,relation:'BEFORE_LEG',sweepContextV1:context};}
-function watch(direction,type,context){var short=direction==='BEARISH',p=candidate(type|| (short?'SWING_HIGH':'SWING_LOW'),short?'BSL':'SSL',context);return{id:'W',symbol:'BTCUSDT',direction:direction,state:'FVG_TOUCHED',createdAt:100,updatedAt:100,notificationKey:'N',liquidityTaken:{primary:{id:p.id,sourceId:p.sourceId,sourceType:p.sourceType,sourceTimeframe:p.sourceTimeframe,sourcePrice:p.sourcePrice,side:p.side,confirmedAt:p.confirmedAt,relation:p.relation},allCandidates:[p]},liquidityEvidenceV1:{currentPrimary:{sweepEventId:p.id,sourceId:p.sourceId,selectionSemantic:'CURRENT_PRODUCTION_RECENCY_HEURISTIC',causalPrimaryClaim:false},candidates:[p],allCandidates:[p],liquidity:{liquiditySide:p.side}},displacement:{direction:direction,quality:'NORMAL',startIndex:1,endIndex:1},nativeFvg:{low:1,high:2,midpoint:1.5},mss:{exists:true,direction:direction,referencePrice:3,referenceRole:'LOCAL',protectedBreak:false},dailyBias:{bias:direction,confidence:'MEDIUM',alignment:'MATCH',status:'VALID'}};}
-function render(w,on){return live.buildFvgRetracementMessage(w,1.5,{zhEnabled:true,sweepContextEnabled:on,notificationGeneratedAt:1});}
+var test = require('node:test');
+var assert = require('node:assert/strict');
+var crypto = require('crypto');
+var live = require('../scripts/live');
+var helper = require('../notify/sweepContextPresentationV1');
 
-test('1 structural role maps with LOW side',function(){var s=render(watch('BULLISH','SWING_LOW',swingContext('LOW','ACTIVE_PROTECTED',[])),true);assert.ok(s.includes('结构：受保护低点'));});
-test('2 structural role maps symmetrically with HIGH side',function(){var s=render(watch('BEARISH','SWING_HIGH',swingContext('HIGH','ACTIVE_PROTECTED',[])),true);assert.ok(s.includes('结构：受保护高点'));});
-test('3 INTERNAL mapping',function(){assert.equal(helper.roleLabel('INTERNAL','LOW'),'内部结构低点');});
-test('4 position mapping remains Chinese',function(){var s=render(watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL_SWING',[])),true);assert.ok(s.includes('时机：位移形成前（BEFORE_LEG）'));});
-test('5 bullish and bearish mapping remain symmetric',function(){assert.ok(render(watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL_SWING',[])),true).includes('方向：向上（BULLISH）'));assert.ok(render(watch('BEARISH','SWING_HIGH',swingContext('HIGH','LOCAL_SWING',[])),true).includes('方向：向下（BEARISH）'));});
-test('6 HTF ordering is deterministic 15m then 1H then 4H',function(){var s=render(watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL_SWING',['4h','15m','1h'])),true);assert.ok(s.includes('高周期：15m / 1H / 4H 摆动低点'));});
-test('7 individual 15m context',function(){assert.ok(render(watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL_SWING',['15m'])),true).includes('高周期：15m 摆动低点'));});
-test('8 individual 1H and 4H context',function(){var s=render(watch('BEARISH','SWING_HIGH',swingContext('HIGH','LOCAL_SWING',['1h','4h'])),true);assert.ok(s.includes('高周期：1H / 4H 摆动高点'));});
-test('9 EQH/EQL retain multi-member semantics without primary member',function(){var c={contextApplicability:'EQ_MULTI_MEMBER',memberSwingContexts:[{side:'HIGH',timeframeMembership:membership(['15m'])},{side:'HIGH',timeframeMembership:membership(['1h'])}]},w=watch('BEARISH','EQH',c),s=render(w,true);assert.ok(s.includes('等高点（EQH）'));assert.ok(s.includes('结构：EQ 多成员（2 个，不指定主成员）'));assert.ok(s.includes('成员高周期：15m / 1H 摆动高点'));assert.ok(!/主成员：/.test(s));});
-test('10 P(D/W/M) native labels do not invent context',function(){[['PDH','前一日高点'],['PDL','前一日低点'],['PWH','前一周高点'],['PWL','前一周低点'],['PMH','前一月高点'],['PML','前一月低点']].forEach(function(x){var s=render(watch(/H$/.test(x[0])?'BEARISH':'BULLISH',x[0],{contextApplicability:'NON_SWING_LIQUIDITY',swingContext:null,memberSwingContexts:[]}),true);assert.ok(s.includes(x[1]+'（'+x[0]+'）'));assert.ok(!s.includes('结构：'));});});
-test('11 unresolved fails safe without error wording',function(){var s=render(watch('BULLISH','SWING_LOW',{contextApplicability:'UNRESOLVED',swingContext:null,memberSwingContexts:[],unresolvedReason:'MISSING_PROVENANCE'}),true);assert.ok(s.includes('5m 摆动低点（SWING_LOW）'));assert.ok(!/ERROR|FAILED|MISSING_PROVENANCE|结构：未解析/.test(s));});
-test('12 missing context fails safe',function(){var w=watch('BULLISH','SWING_LOW',null);delete w.liquidityEvidenceV1.candidates[0].sweepContextV1;assert.doesNotThrow(function(){render(w,true);});assert.ok(!render(w,true).includes('结构：'));});
-test('13 unknown structural enum falls back to raw role',function(){var s=render(watch('BULLISH','SWING_LOW',swingContext('LOW','CUSTOM_ROLE',[])),true);assert.ok(s.includes('结构：CUSTOM_ROLE低点'));});
-test('14 formatter does not mutate evidence or WATCH',function(){var w=watch('BULLISH','SWING_LOW',swingContext('LOW','ACTIVE_PROTECTED',['15m'])),before=hash(w);render(w,true);assert.equal(hash(w),before);});
-test('15 SweepContext flag OFF preserves current Chinese text exactly',function(){var w=watch('BULLISH','SWING_LOW',swingContext('LOW','ACTIVE_PROTECTED',['15m'])),without=JSON.parse(JSON.stringify(w));delete without.liquidityEvidenceV1.candidates[0].sweepContextV1;delete without.liquidityEvidenceV1.allCandidates[0].sweepContextV1;assert.equal(render(w,false),render(without,false));assert.ok(!render(w,false).includes('结构：受保护低点'));});
-test('16 flag ON changes presentation only',function(){var w=watch('BULLISH','SWING_LOW',swingContext('LOW','ACTIVE_PROTECTED',['15m'])),before=hash(w),off=render(w,false),on=render(w,true);assert.notEqual(on,off);assert.equal(hash(w),before);assert.ok(on.includes('结构：受保护低点'));});
-test('17 primary and candidate ordering remain unchanged',function(){var w=watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL_SWING',[])),p2=candidate('PDL','SSL',{contextApplicability:'NON_SWING_LIQUIDITY',swingContext:null,memberSwingContexts:[]}),before=hash(w.liquidityEvidenceV1.currentPrimary),order=[w.liquidityEvidenceV1.candidates[0].sourceId,p2.sourceId];w.liquidityEvidenceV1.candidates.push(p2);render(w,true);assert.equal(hash(w.liquidityEvidenceV1.currentPrimary),before);assert.deepEqual(w.liquidityEvidenceV1.candidates.map(function(c){return c.sourceId;}),order);});
-test('18 notification count target and dedup key are unchanged',function(){var ws=[watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL_SWING',[])),watch('BEARISH','SWING_HIGH',swingContext('HIGH','LOCAL_SWING',[]))],keys=ws.map(function(w){return w.notificationKey;}),out=ws.map(function(w){return render(w,true);});assert.equal(out.length,ws.length);assert.deepEqual(ws.map(function(w){return w.notificationKey;}),keys);});
+var FIXED_TIME = Date.parse('2026-08-26T00:12:00.000Z');
+
+function hash(value) { return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex'); }
+function membership(confirmed) {
+    var out = {};
+    ['5m', '15m', '1h', '4h'].forEach(function (timeframe) {
+        out[timeframe] = { confirmed: confirmed.indexOf(timeframe) >= 0, swingId:null, occurredAt:null, confirmedAt:null, provenance:null };
+    });
+    return out;
+}
+function swingContext(side, role, confirmed) {
+    return {
+        schemaVersion:'SweepContextV1', contextApplicability:'SWING_DERIVED', canonicalSwingId:'S',
+        swingContext:{ canonicalSwingId:'S', side:side, structural:{currentRole:role,currentStatus:'CANDIDATE',roleAsOf:20,provenance:{}}, timeframeMembership:membership(confirmed || ['5m']) },
+        memberSwingContexts:[], evaluationTime:50, provenance:{}
+    };
+}
+function eqContext(side, memberships) {
+    return {
+        schemaVersion:'SweepContextV1', contextApplicability:'EQ_MULTI_MEMBER', canonicalSwingId:null,
+        swingContext:null,
+        memberSwingContexts:(memberships || []).map(function (confirmed, index) {
+            return { canonicalSwingId:'M' + index, side:side, structural:null, timeframeMembership:membership(confirmed) };
+        }),
+        evaluationTime:50, provenance:{singleMemberPrimarySelected:false}
+    };
+}
+function nonSwingContext() { return {schemaVersion:'SweepContextV1',contextApplicability:'NON_SWING_LIQUIDITY',canonicalSwingId:null,swingContext:null,memberSwingContexts:[],evaluationTime:50,provenance:{}}; }
+function candidate(type, side, context, id) {
+    return {id:id||'SWEEP:1',sweepEventId:id||'SWEEP:1',sourceId:'SOURCE:'+(id||'1'),sourceType:type,sourceTimeframe:'5m',sourcePrice:78690.1,side:side,confirmedAt:50,relation:'BEFORE_LEG',sweepContextV1:context};
+}
+function watch(direction, type, context) {
+    var short = direction === 'BEARISH';
+    var primary = candidate(type || (short ? 'SWING_HIGH' : 'SWING_LOW'), short ? 'BSL' : 'SSL', context);
+    var legacyPrimary = {id:primary.id,sourceId:primary.sourceId,sourceType:primary.sourceType,sourceTimeframe:primary.sourceTimeframe,sourcePrice:primary.sourcePrice,side:primary.side,confirmedAt:primary.confirmedAt,relation:primary.relation};
+    return {
+        id:'W',symbol:'BTCUSDT',direction:direction,state:'FVG_TOUCHED',createdAt:100,updatedAt:100,notificationKey:'N',
+        liquidityTaken:{primary:legacyPrimary,allCandidates:[primary]},
+        liquidityEvidenceV1:{currentPrimary:{sweepEventId:primary.id,sourceId:primary.sourceId,selectionSemantic:'CURRENT_PRODUCTION_RECENCY_HEURISTIC',causalPrimaryClaim:false},candidates:[primary],allCandidates:[primary],liquidity:{liquiditySide:primary.side}},
+        displacement:{direction:direction,quality:'NORMAL',startIndex:1,endIndex:1},nativeFvg:{low:1,high:2,midpoint:1.5},
+        mss:{exists:true,direction:direction,referencePrice:3,referenceRole:'LOCAL',protectedBreak:false},
+        dailyBias:{bias:direction,confidence:'MEDIUM',alignment:'MATCH',status:'VALID'}
+    };
+}
+function render(watchValue, enabled, at) {
+    return live.buildFvgRetracementMessage(watchValue, 1.5, {zhEnabled:true,sweepContextEnabled:enabled,notificationGeneratedAt:at === undefined ? FIXED_TIME : at});
+}
+function liquiditySection(message) { return (message.split('💧 流动性扫取')[1] || '').split('⚡')[0]; }
+function summarySection(message) { return (message.split('📌 当前结构解读')[1] || '').split('仅用于')[0]; }
+
+test('1 SWING_HIGH with 5m-only context', function () { var s=liquiditySection(render(watch('BEARISH','SWING_HIGH',swingContext('HIGH','LOCAL',['5m'])),true));assert.ok(s.includes('BSL：摆动高点（SWING_HIGH）'));assert.ok(s.includes('周期层级：仅 5m')); });
+test('2 SWING_LOW with 15m membership', function () { var s=liquiditySection(render(watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL',['5m','15m'])),true));assert.ok(s.includes('SSL：摆动低点（SWING_LOW）'));assert.ok(s.includes('周期层级：5m / 15m')); });
+test('3 1H membership display', function () { assert.ok(render(watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL',['5m','15m','1h'])),true).includes('周期层级：5m / 15m / 1H')); });
+test('4 4H membership display', function () { assert.ok(render(watch('BEARISH','SWING_HIGH',swingContext('HIGH','LOCAL',['5m','15m','1h','4h'])),true).includes('周期层级：5m / 15m / 1H / 4H')); });
+test('5 non-confirmed timeframes are hidden', function () { var s=liquiditySection(render(watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL',['5m'])),true));assert.ok(!/15m|1H|4H/.test(s)); });
+test('6 INTERNAL Chinese mapping', function () { assert.equal(helper.roleLabel('INTERNAL'),'内部结构（INTERNAL）'); });
+test('7 LOCAL Chinese mapping', function () { assert.equal(helper.roleLabel('LOCAL'),'局部结构（LOCAL）'); });
+test('8 CONTROLLING Chinese mapping', function () { assert.equal(helper.roleLabel('CONTROLLING_SWING'),'控制结构 Swing（CONTROLLING_SWING）'); });
+test('9 ACTIVE_PROTECTED Chinese mapping', function () { assert.equal(helper.roleLabel('ACTIVE_PROTECTED'),'当前受保护结构（ACTIVE_PROTECTED）'); });
+test('10 SUPERSEDED_PROTECTED Chinese mapping', function () { assert.equal(helper.roleLabel('SUPERSEDED_PROTECTED'),'已被替代的受保护结构（SUPERSEDED_PROTECTED）'); });
+test('11 BROKEN Chinese mapping', function () { assert.equal(helper.roleLabel('BROKEN'),'已破坏结构（BROKEN）'); });
+test('12 unknown structural enum fallback', function () { assert.equal(helper.roleLabel('CUSTOM_ROLE'),'未知结构角色（CUSTOM_ROLE）'); });
+test('13 EQH multi-member summary', function () { var s=liquiditySection(render(watch('BEARISH','EQH',eqContext('HIGH',[['5m'],['5m','15m','1h'],['5m','15m']])),true));assert.ok(s.includes('BSL：等高点（EQH）'));assert.ok(s.includes('成员 Swing：3 个'));assert.ok(s.includes('最高已确认周期覆盖：1H')); });
+test('14 EQL multi-member summary', function () { var s=liquiditySection(render(watch('BULLISH','EQL',eqContext('LOW',[['5m'],['5m','15m']])),true));assert.ok(s.includes('SSL：等低点（EQL）'));assert.ok(s.includes('成员 Swing：2 个'));assert.ok(s.includes('最高已确认周期覆盖：15m')); });
+test('15 EQ presentation never selects a single member', function () { var s=render(watch('BEARISH','EQH',eqContext('HIGH',[['5m'],['5m','1h']])),true);assert.ok(!/主成员|primary member|M0|M1/i.test(s)); });
+test('16 PDH non-swing display', function () { var s=liquiditySection(render(watch('BEARISH','PDH',nonSwingContext()),true));assert.ok(s.includes('前一日高点（PDH）'));assert.ok(s.includes('类型：日线流动性'));assert.ok(!/周期层级|结构角色/.test(s)); });
+test('17 PDL non-swing display', function () { var s=liquiditySection(render(watch('BULLISH','PDL',nonSwingContext()),true));assert.ok(s.includes('前一日低点（PDL）'));assert.ok(s.includes('类型：日线流动性')); });
+test('18 NEW_YORK_HIGH non-swing display', function () { var s=liquiditySection(render(watch('BEARISH','NEW_YORK_HIGH',nonSwingContext()),true));assert.ok(s.includes('纽约时段高点（NEW_YORK_HIGH）'));assert.ok(s.includes('类型：时段流动性')); });
+test('19 SESSION_LOW non-swing display', function () { var s=liquiditySection(render(watch('BULLISH','SESSION_LOW',nonSwingContext()),true));assert.ok(s.includes('时段低点（SESSION_LOW）'));assert.ok(s.includes('类型：时段流动性')); });
+test('20 UNRESOLVED safely preserves raw identity', function () { var c={contextApplicability:'UNRESOLVED',swingContext:null,memberSwingContexts:[],unresolvedReason:'MISSING_PROVENANCE'},s=liquiditySection(render(watch('BULLISH','SWING_LOW',c),true));assert.ok(s.includes('5m 摆动低点（SWING_LOW）'));assert.ok(!/MISSING_PROVENANCE|周期层级|结构角色/.test(s)); });
+test('21 missing context uses exact legacy display', function () { var w=watch('BULLISH','SWING_LOW',null);delete w.liquidityEvidenceV1.candidates[0].sweepContextV1;delete w.liquidityEvidenceV1.allCandidates[0].sweepContextV1;assert.equal(render(w,true),render(w,false)); });
+test('22 multiple candidate count is preserved', function () { var w=watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL',['5m'])),extra=candidate('PDL','SSL',nonSwingContext(),'SWEEP:2');w.liquidityEvidenceV1.candidates.push(extra);w.liquidityEvidenceV1.allCandidates.push(extra);assert.ok(render(w,true).includes('候选：2 个 · 当前按最近方向匹配扫取显示')); });
+test('23 current primary remains unchanged', function () { var w=watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL',['5m','1h'])),before=hash(w.liquidityEvidenceV1.currentPrimary);render(w,true);assert.equal(hash(w.liquidityEvidenceV1.currentPrimary),before);assert.equal(w.liquidityEvidenceV1.currentPrimary.causalPrimaryClaim,false); });
+test('24 LONG and SHORT mapping is symmetric', function () { var long=liquiditySection(render(watch('BULLISH','SWING_LOW',swingContext('LOW','ACTIVE_PROTECTED',['5m','15m'])),true)),short=liquiditySection(render(watch('BEARISH','SWING_HIGH',swingContext('HIGH','ACTIVE_PROTECTED',['5m','15m'])),true));assert.ok(long.includes('SSL：摆动低点'));assert.ok(short.includes('BSL：摆动高点'));assert.ok(long.includes('周期层级：5m / 15m'));assert.ok(short.includes('周期层级：5m / 15m')); });
+test('25 MSS exists=false summary is safe', function () { var w=watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL',['5m']));w.mss={exists:false,direction:null};assert.ok(!/Bullish MSS|Bearish MSS/.test(summarySection(render(w,true)))); });
+test('26 raw MSS direction summary is preserved', function () { var w=watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL',['5m']));w.mss.direction='BEARISH';var s=summarySection(render(w,true));assert.ok(s.includes('Bearish MSS'));assert.ok(!s.includes('Bullish MSS')); });
+test('27 OPPOSITE Bias warning is preserved', function () { var w=watch('BEARISH','SWING_HIGH',swingContext('HIGH','LOCAL',['5m']));w.dailyBias={bias:'BULLISH',confidence:'MEDIUM',alignment:'OPPOSITE',status:'VALID'};var s=render(w,true);assert.ok(s.includes('做空机会观察 ⚠️ 逆 4H Bias'));assert.ok(s.indexOf('⚠️ 高周期方向冲突')<s.indexOf('💧 流动性扫取')); });
+test('28 Beijing notification time is preserved', function () { assert.ok(render(watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL',['5m'])),true,Date.parse('2026-08-25T17:30:00Z')).includes('时间：08/26 01:30')); });
+test('29 notification trigger identity remains unchanged', function () { var w=watch('BULLISH','SWING_LOW',swingContext('LOW','LOCAL',['5m'])),key=w.notificationKey,state=w.state;render(w,true);assert.equal(w.notificationKey,key);assert.equal(w.state,state); });
+test('30 no importance or ranking wording', function () { var s=render(watch('BEARISH','SWING_HIGH',swingContext('HIGH','ACTIVE_PROTECTED',['5m','15m','1h','4h'])),true);assert.ok(!/重要 Swing|高质量 Swing|高级流动性|核心流动性|主导流动性|最重要候选|更高胜率|推荐交易|建议入场/.test(s)); });
+test('31 flag OFF preserves legacy notification exactly', function () { var w=watch('BULLISH','SWING_LOW',swingContext('LOW','ACTIVE_PROTECTED',['5m','15m'])),without=JSON.parse(JSON.stringify(w));delete without.liquidityEvidenceV1.candidates[0].sweepContextV1;delete without.liquidityEvidenceV1.allCandidates[0].sweepContextV1;assert.equal(render(w,false),render(without,false)); });
+test('32 formatter never mutates WATCH or evidence', function () { var w=watch('BEARISH','SWING_HIGH',swingContext('HIGH','BROKEN',['5m','1h'])),before=hash(w);render(w,true);assert.equal(hash(w),before); });
+test('33 unknown non-swing source remains raw and null-safe', function () { var w=watch('BEARISH','CUSTOM_HIGH',nonSwingContext());assert.doesNotThrow(function(){render(w,true);});assert.ok(render(w,true).includes('CUSTOM_HIGH @')); });
+test('34 context lines stay inside liquidity section only', function () { var s=render(watch('BULLISH','SWING_LOW',swingContext('LOW','ACTIVE_PROTECTED',['5m','15m'])),true),parts=s.split('⚡');assert.ok(parts[0].includes('结构角色：'));assert.ok(!parts.slice(1).join('⚡').includes('结构角色：')); });
