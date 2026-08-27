@@ -68,6 +68,31 @@ function sourceLabel(primary) {
     return SOURCE_ZH[type] ? SOURCE_ZH[type] + '（' + type + '）' : type;
 }
 
+function eqMemberLines(primary, formatter) {
+    if (!primary || (primary.sourceType !== 'EQH' && primary.sourceType !== 'EQL')) return [];
+    var provenance = primary.eqMemberProvenance;
+    var asOf = provenance && typeof provenance.asOf === 'number'
+        ? provenance.asOf : primary.confirmedAt;
+    var members = provenance && provenance.members;
+    if (Array.isArray(members) && typeof asOf === 'number') {
+        members = members.filter(function (member) {
+            var addedAt = member.memberAddedAt === undefined ? member.confirmedAt : member.memberAddedAt;
+            return member.confirmedAt <= asOf && addedAt <= asOf;
+        });
+    }
+    if (!Array.isArray(members) || members.length === 0) return ['EQ 构成：信息暂缺'];
+    var noun = primary.sourceType === 'EQH' ? '高点' : '低点';
+    var displayed = members.slice(0, 6);
+    var prices = displayed.map(function (member) {
+        return formatPrice(member.price, formatter);
+    }).join(' / ');
+    if (members.length > 6) prices += ' … 共 ' + members.length + ' 个';
+    return [
+        'EQ 构成：' + members.length + ' 个' + noun,
+        '构成点位：' + prices
+    ];
+}
+
 function formatBeijingTime(epochMs) {
     var value = typeof epochMs === 'number' && isFinite(epochMs) ? epochMs : Date.now();
     var text = new Date(value + BEIJING_OFFSET_MS).toISOString();
@@ -223,6 +248,7 @@ function build(watch, currentPrice, options) {
         var contextSourceLabel = opts.sweepContextEnabled
             ? sweepContextPresentationV1.contextualSourceLabel(primary) : null;
         lines.push((side || '流动性') + '：' + (contextSourceLabel || sourceLabel(primary)) + ' @ ' + formatPrice(primary.sourcePrice, fmtPrice));
+        eqMemberLines(primary, fmtPrice).forEach(function (line) { lines.push(line); });
         if (opts.sweepContextEnabled) {
             sweepContextPresentationV1.lines(primary).forEach(function (line) { lines.push(line); });
         }
@@ -272,6 +298,7 @@ module.exports = {
     translate: translate,
     liquiditySide: liquiditySide,
     sourceLabel: sourceLabel,
+    eqMemberLines: eqMemberLines,
     formatBeijingTime: formatBeijingTime,
     BEIJING_TIMEZONE: BEIJING_TIMEZONE,
     SOURCE_ZH: SOURCE_ZH,

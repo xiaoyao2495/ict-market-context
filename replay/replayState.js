@@ -25,6 +25,8 @@
 var pivotDetector = require('../structure/pivotDetector');
 var swingLiquidity = require('../liquidity/swingLiquidity');
 var equalLiquidity = require('../liquidity/equalLiquidity');
+var persistentEqualLiquidityV3 = require('../liquidity/persistentEqualLiquidityV3');
+var eqProductionVersion = require('../config/eqProductionVersion');
 var liquidityLifecycle = require('../liquidity/liquidityLifecycle');
 var liquidityRegistry = require('../liquidity/liquidityRegistry');
 var sweepEventAdapter = require('../events/sweepEventAdapter');
@@ -41,6 +43,8 @@ function createReplayState(options) {
     return {
         symbol: opts.symbol || 'UNKNOWN',
         timeframe: opts.timeframe || '5m',
+        eqProductionVersion: opts.eqProductionVersion === undefined
+            ? eqProductionVersion.get(opts.env) : eqProductionVersion.normalize(opts.eqProductionVersion),
         index: 0,
 
         // ---- 持久 liquidity registry（增量加入，不重建） ----
@@ -146,23 +150,31 @@ function incrementalLiquidity(state, candles, index, exchangeInfo, evaluationTim
     // 3. equal liquidity（新 swing + registry 已有 swing 一起聚类，等价于全量每次重建全部）
     var equal = [];
     if (addedSwings.length > 0) {
-        equal = equalLiquidity.detectEqualLiquidity(
-            addedSwings.concat(
-                state.registry.getByType(state.symbol, 'SWING_HIGH'),
-                state.registry.getByType(state.symbol, 'SWING_LOW')
-            ),
-            {
+        if (state.eqProductionVersion === 'V3') {
+            persistentEqualLiquidityV3.processCandidates(state, addedSwings, {
                 symbol: state.symbol,
                 evaluationTime: evaluationTime,
                 tickSize: exchangeInfo.tickSize,
-                // 只分类本根新确认 swing 作为 subsequent swing 的 pairs。已有 registry
-                // lifecycle 已推进到前一根，pipeline 只补当前 confirmation candle。
-                secondSwingIds: addedSwings.map(function (s) { return s.id; }),
-                lifecycleFromCurrentState: true,
-                canonicalClosedCandles: true,
-                candles: candles
-            }
-        );
+                candles: candles,
+                index: index
+            });
+        } else {
+            equal = equalLiquidity.detectEqualLiquidity(
+                addedSwings.concat(
+                    state.registry.getByType(state.symbol, 'SWING_HIGH'),
+                    state.registry.getByType(state.symbol, 'SWING_LOW')
+                ),
+                {
+                    symbol: state.symbol,
+                    evaluationTime: evaluationTime,
+                    tickSize: exchangeInfo.tickSize,
+                    secondSwingIds: addedSwings.map(function (s) { return s.id; }),
+                    lifecycleFromCurrentState: true,
+                    canonicalClosedCandles: true,
+                    candles: candles
+                }
+            );
+        }
     }
     equal.forEach(function (e) {
         state.registry.add(e);

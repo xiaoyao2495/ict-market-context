@@ -14,6 +14,18 @@
  */
 var narrativeEligibilityConfig = require('../config/sweepNarrativeEligibilityV1');
 var narrativeEligibility = require('./sweepNarrativeEligibilityV1');
+var persistentEqualLiquidityV3 = require('../liquidity/persistentEqualLiquidityV3');
+
+function eqMemberProvenance(liquidity, evaluationTime) {
+    if (!liquidity || (liquidity.type !== 'EQH' && liquidity.type !== 'EQL')) return null;
+    var projected = persistentEqualLiquidityV3.projectMembersAsOf(liquidity, evaluationTime);
+    if (!projected.members.length) return null;
+    projected.eqType = liquidity.type;
+    projected.side = liquidity.side;
+    projected.eqModelVersion = liquidity.metadata && liquidity.metadata.eqModelVersion ||
+        'V' + (liquidity.metadata && liquidity.metadata.pipelineVersion || 2);
+    return projected;
+}
 
 /**
  * @param {Object} liquidity 已标记 SWEPT 的 liquidity（status === 'SWEPT', sweptAt = candle.closeTime）
@@ -28,6 +40,9 @@ function buildSweepEvent(liquidity, candle, candleIndex, timeframe) {
     }
     var tf = timeframe || liquidity.timeframe || '5m';
     var direction = liquidity.side === 'BSL' ? 'BEARISH' : 'BULLISH';
+    var eqProvenance = eqMemberProvenance(liquidity, candle.closeTime);
+    var eventPrice = eqProvenance && eqProvenance.referencePrice !== null
+        ? eqProvenance.referencePrice : liquidity.price;
     var event = {
         id: liquidity.symbol + ':' + tf + ':SWEEP:' + liquidity.id,
         symbol: liquidity.symbol,
@@ -39,11 +54,11 @@ function buildSweepEvent(liquidity, candle, candleIndex, timeframe) {
         occurredAt: candle.openTime,
         confirmedAt: candle.closeTime,
         candleIndex: candleIndex,
-        price: liquidity.price,
+        price: eventPrice,
         source: {
             liquidityId: liquidity.id,
             liquidityType: liquidity.type,
-            liquidityPrice: liquidity.price,
+            liquidityPrice: eventPrice,
             side: liquidity.side,
             candle: {
                 open: candle.open,
@@ -54,6 +69,7 @@ function buildSweepEvent(liquidity, candle, candleIndex, timeframe) {
         },
         metadata: {}
     };
+    if (eqProvenance) event.source.eqMemberProvenance = eqProvenance;
     if (narrativeEligibilityConfig.isEnabled()) {
         event.narrativeEligibilityV1 = narrativeEligibility.classifySweep(event);
     }
@@ -61,5 +77,6 @@ function buildSweepEvent(liquidity, candle, candleIndex, timeframe) {
 }
 
 module.exports = {
-    buildSweepEvent: buildSweepEvent
+    buildSweepEvent: buildSweepEvent,
+    eqMemberProvenance: eqMemberProvenance
 };

@@ -34,8 +34,10 @@ var futuresPriceStream = require('../live/futuresPriceStream');
 var watchNotificationPresentationV1 = require('../notify/watchNotificationPresentationV1');
 var watchNotificationZhV1Flag = require('../config/watchNotificationZhV1');
 var sweepContextV1Flag = require('../config/sweepContextV1');
+var eqProductionVersionConfig = require('../config/eqProductionVersion');
 
 var CONFIG = require('../config/live.json');
+var EQ_PRODUCTION_VERSION = eqProductionVersionConfig.get();
 
 // Phase 11L.15：B 口径 Live Shadow Prioritization 开关（thresholds.notify.prioritization.enabled）。
 //   true  → 钉钉只推 PRIORITY_HIGH（HIGH + 48 窗口内 Significant Liquidity），STANDARD_HIGH 只落日志
@@ -400,6 +402,10 @@ function createRunner(symbol) {
                 cursor.structureMode + ' 当前=' + mode + '——请清理 .live-state 后重启重新 bootstrap，' +
                 '请重新 bootstrap（勿用旧结构状态继续运行）');
         }
+        if (cursor && cursor.eqProductionVersion && cursor.eqProductionVersion !== EQ_PRODUCTION_VERSION) {
+            log(symbol + ' EQ producer migration: ' + cursor.eqProductionVersion + ' -> ' +
+                EQ_PRODUCTION_VERSION + '（Registry 由已持久化 closed candles 确定性重建）');
+        }
         // Fix 1 (P0)：runnerData 保存组装后的 HTF 引用（fetchHtfIncrement 增量更新同一对象）
         var structureCandles = { '1d': data['1d'], '4h': data['4h'], '1h': data['1h'] };
         var calendarCandles = { '1d': data['1d'], '1w': data['1w'], '1M': data['1M'] };
@@ -435,7 +441,8 @@ function createRunner(symbol) {
             baseIndex: 0,
             dailyBiasProvider: function (direction, atTime) {
                 return dailyBiasService.getDailyBias(direction, atTime);
-            }
+            },
+            eqProductionVersion: EQ_PRODUCTION_VERSION
         });
 
         delivered = loadPushed();
@@ -463,7 +470,8 @@ function createRunner(symbol) {
             historyLoaded = true;
             persistence.saveJson(pushedFile, delivered);
             saveWatchState();
-            persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: all.length, structureMode: mode });
+            persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: all.length,
+                structureMode: mode, eqProductionVersion: EQ_PRODUCTION_VERSION });
             log(symbol + ' 状态就绪，已推进 ' + all.length + ' 根，去重集合 ' + Object.keys(delivered).length + ' 个已投递机会');
         });
     }
@@ -475,6 +483,12 @@ function createRunner(symbol) {
     function deliverWatchTouch(watch) {
         var key = watch.notificationKey;
         if (!key || watchStore.getDelivered()[key]) return Promise.resolve(true);
+        var eqPrimary = watch.liquidityTaken && watch.liquidityTaken.primary;
+        if (eqPrimary && (eqPrimary.sourceType === 'EQH' || eqPrimary.sourceType === 'EQL') &&
+            !eqPrimary.eqMemberProvenance) {
+            log(symbol + ' EQ_MEMBER_PROVENANCE_MISSING watch=' + watch.id +
+                ' sourceId=' + (eqPrimary.sourceId || 'UNKNOWN') + '（通知安全降级，不阻止发送）');
+        }
         var msg = buildFvgRetracementMessage(watch, watch.firstTouchPrice);
         log('FVG FIRST_TOUCH: ' + symbol + ' ' + watch.direction + ' watch=' + watch.id +
             ' fvg=' + watch.nativeFvg.id + ' price=' + fmtPrice(watch.firstTouchPrice));
@@ -594,7 +608,8 @@ function createRunner(symbol) {
             lastOpenTime = list[list.length - 1].openTime;
             persistence.appendCandles(candlesFile, list);
             persistence.saveJson(pushedFile, delivered);
-            persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength(), structureMode: structuralSwingMode() });
+            persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength(),
+                structureMode: structuralSwingMode(), eqProductionVersion: EQ_PRODUCTION_VERSION });
         });
     }
 
@@ -721,6 +736,8 @@ function main() {
     log('=== Live Opportunity Radar 启动 ===');
     log('STRUCTURAL_SWING_MODE=' + structuralSwingMode() +
         '（MSS reference source：confirmed 2L/2R pivots + Structural Provenance）');
+    log('EQ_PRODUCTION_VERSION=' + EQ_PRODUCTION_VERSION +
+        (EQ_PRODUCTION_VERSION === 'V3' ? '（Persistent Cluster V3）' : '（V2 emergency rollback）'));
     log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED
         ? 'ENABLED（钉钉只推 PRIORITY_HIGH = HIGH + 48 窗口内 Significant Liquidity；STANDARD_HIGH 只落日志）'
         : 'DISABLED（全部 HIGH 照常推钉钉，仅记录 notifyPriority 字段）'));

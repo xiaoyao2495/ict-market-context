@@ -117,6 +117,9 @@ function buildCandidate(se, leg) {
         candleIndex: se.candleIndex,
         relation: classifySweepLegRelation(se, leg)
     };
+    if (se.source && se.source.eqMemberProvenance) {
+        c.eqMemberProvenance = JSON.parse(JSON.stringify(se.source.eqMemberProvenance));
+    }
     if (leg && typeof leg.startIndex === 'number' && typeof se.candleIndex === 'number') {
         c.barsBeforeLegStart = leg.startIndex - se.candleIndex;
     } else {

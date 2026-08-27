@@ -113,7 +113,8 @@ function identityOf(sweep, source, evaluationTime) {
             canonicalSwingIds: sweep.sourceId ? [sweep.sourceId] : [], eqObjectId: null };
     }
     if (sweep.sourceType === 'EQH' || sweep.sourceType === 'EQL') {
-        var members = source && source.confirmedAt <= evaluationTime && source.metadata && source.metadata.members || [];
+        var frozen = sweep.eqMemberProvenance && sweep.eqMemberProvenance.members || null;
+        var members = frozen || source && source.confirmedAt <= evaluationTime && source.metadata && source.metadata.members || [];
         var ids = members.filter(function (member) { return member.confirmedAt <= evaluationTime; }).map(function (member) { return member.id; });
         ids = ids.filter(function (id, index) { return id && ids.indexOf(id) === index; }).sort();
         return { status: sweep.sourceId ? 'REGISTRY_IDENTITY_RESOLVED' : 'UNRESOLVED', canonicalSwingId: null,
@@ -153,6 +154,7 @@ function mapCandidate(sweep, opts) {
         lifecycleTransitionAt: lifecycle.transitionAt,
         provenance: lifecycle.provenance
     };
+    if (sweep.eqMemberProvenance) candidate.eqMemberProvenance = clone(sweep.eqMemberProvenance);
     if (opts.sweepContextV1Enabled) {
         candidate.sweepContextV1 = sweepContextV1.buildSweepContextV1(sweep, {
             registry: opts.registry,

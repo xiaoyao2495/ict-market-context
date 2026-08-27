@@ -92,7 +92,8 @@ function createLiveEngine(data, options) {
     var sweepContextV1Enabled = opts.sweepContextV1Enabled !== undefined
         ? !!opts.sweepContextV1Enabled : sweepContextFlag.isEnabled();
 
-    var state = replayState.createReplayState({ symbol: symbol, timeframe: '5m', snapshotInterval: snapshotInterval });
+    var state = replayState.createReplayState({ symbol: symbol, timeframe: '5m', snapshotInterval: snapshotInterval,
+        eqProductionVersion: opts.eqProductionVersion });
     state.eventRegistry = eventRegistry.createEventRegistry();
     var atrSeries = {};
     var prevAtr = null;
@@ -475,6 +476,7 @@ function createLiveEngine(data, options) {
         },
         symbol: symbol
     };
+    engine.eqProductionVersion = state.eqProductionVersion;
     return engine;
 }
 
