@@ -12,6 +12,9 @@
  *
  * id 确定性：symbol:timeframe:SWEEP:liquidityId（一条 liquidity 只 sweep 一次 → 天然唯一）
  */
+var narrativeEligibilityConfig = require('../config/sweepNarrativeEligibilityV1');
+var narrativeEligibility = require('./sweepNarrativeEligibilityV1');
+
 /**
  * @param {Object} liquidity 已标记 SWEPT 的 liquidity（status === 'SWEPT', sweptAt = candle.closeTime）
  * @param {Object} candle 触发 K 线（已收盘）
@@ -25,7 +28,7 @@ function buildSweepEvent(liquidity, candle, candleIndex, timeframe) {
     }
     var tf = timeframe || liquidity.timeframe || '5m';
     var direction = liquidity.side === 'BSL' ? 'BEARISH' : 'BULLISH';
-    return {
+    var event = {
         id: liquidity.symbol + ':' + tf + ':SWEEP:' + liquidity.id,
         symbol: liquidity.symbol,
         timeframe: tf,
@@ -51,6 +54,10 @@ function buildSweepEvent(liquidity, candle, candleIndex, timeframe) {
         },
         metadata: {}
     };
+    if (narrativeEligibilityConfig.isEnabled()) {
+        event.narrativeEligibilityV1 = narrativeEligibility.classifySweep(event);
+    }
+    return event;
 }
 
 module.exports = {

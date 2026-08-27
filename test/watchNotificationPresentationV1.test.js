@@ -57,5 +57,6 @@ test('44 LONG without MSS summary does not invent MSS direction',function(){var 
 test('45 SHORT without MSS summary does not invent MSS direction',function(){var w=watch('BEARISH');w.mss={exists:false,direction:null};var s=zh(w).split('📌 当前结构解读')[1];assert.ok(!/Bullish MSS|Bearish MSS/.test(s));});
 test('46 LONG formatter defensively honors raw opposite bearish MSS',function(){var w=watch('BULLISH');w.mss.direction='BEARISH';var s=zh(w).split('📌 当前结构解读')[1];assert.ok(s.includes('Bearish MSS'));assert.ok(!s.includes('Bullish MSS'));});
 test('47 SHORT formatter defensively honors raw opposite bullish MSS',function(){var w=watch('BEARISH');w.mss.direction='BULLISH';var s=zh(w).split('📌 当前结构解读')[1];assert.ok(s.includes('Bullish MSS'));assert.ok(!s.includes('Bearish MSS'));});
+test('48 MSS-absent summary grammar uses 被扫后出现',function(){var w=watch('BULLISH');w.mss={exists:false,direction:null};var s=zh(w);assert.ok(s.includes('被扫后出现多头位移'));assert.ok(!s.includes('被扫后 与多头位移'));});
 
 if(failed){console.error('WATCH Notification Presentation V1 failed '+failed+'/'+(passed+failed));process.exit(1);}console.log('WATCH Notification Presentation V1 '+passed+'/'+passed);

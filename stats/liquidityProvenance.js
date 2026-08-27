@@ -35,6 +35,7 @@
  *      不强制它们按流水线先后出现；先诊断分布再决定是否需要改判定。
  */
 var thresholds = require('../config/thresholds');
+var narrativeLiquidityV1 = require('../events/sweepNarrativeEligibilityV1');
 
 var DEFAULT_MAX_LOOKBACK_BARS = 48; // 11L.8 定稿：production explainability 窗口
 
@@ -158,7 +159,7 @@ function pickImmediate(leg, candidates) {
  *     availableAt: number,        // 通知可用时点（leg 关闭确认）—— leakage 硬边界
  *     sweepEvents: Array,         // LIQUIDITY_SWEEP 事件（confirmedAt 已确认）
  *     maxLookbackBars: number     // 候选窗口（leg.startIndex - N → leg.endIndex）；默认 48
- *     excludeSwing: boolean       // 11L.11 Shadow：排除普通 5m SWING_HIGH/SWING_LOW（生产默认 false）
+ *     excludeStructuralPrimitives: boolean // WATCH Narrative V1：排除 SWING_HIGH/SWING_LOW
  *   }
  * @returns {Object|null} {
  *   allCandidates: [...], immediateSweep
@@ -184,11 +185,12 @@ function associateSweeps(opts) {
         if (typeof availableAt === 'number') {
             if (typeof se.confirmedAt !== 'number' || se.confirmedAt > availableAt) return;
         }
-        // 11L.11（Shadow，生产默认 false）：排除普通 5m SWING —— 从 Liquidity Object 候选回归 Structure。
-        //   仅审计用：验证"普通 swing 从解释层移除后覆盖率/NearHit 变化"，不改变生产。
-        if (opts.excludeSwing) {
+        // Narrative Liquidity V1 consumer gate. Raw Sweep events remain intact for
+        // AMD/structure; only the requesting WATCH candidate projection excludes
+        // structural primitives.
+        if (opts.excludeStructuralPrimitives) {
             var st = (se.source && se.source.liquidityType) || se.liquidityType || '';
-            if (st === 'SWING_HIGH' || st === 'SWING_LOW') return;
+            if (narrativeLiquidityV1.isStructuralPrimitive(st)) return;
         }
         // 窗口：leg.startIndex - N → leg.endIndex（sweep 可在 leg 内，禁止 leg 后）
         if (typeof se.candleIndex !== 'number') return;

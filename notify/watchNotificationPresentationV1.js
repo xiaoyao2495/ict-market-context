@@ -173,7 +173,10 @@ function buildSummary(watch, primary, bias, info) {
                 : rawMssDirection === 'BEARISH' ? 'Bearish MSS' : 'MSS';
             sentence += (sentence ? '出现 ' : '') + mssLabel;
         }
-        if (hasDisplacement) sentence += (sentence ? ' 与' : '出现') + info.displacement;
+        if (hasDisplacement) {
+            sentence += hasLiquidity && !hasMss ? '出现' + info.displacement
+                : (sentence ? ' 与' : '出现') + info.displacement;
+        }
         if (watch && watch.nativeFvg) sentence += (sentence ? '，并' : '') + (biasConflict(bias) ? '回到' : '形成') + '原生 FVG';
         sentences.push(sentence + '。');
     } else {

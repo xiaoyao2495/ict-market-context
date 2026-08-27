@@ -11,7 +11,7 @@
  *   ① Liquidity Taken 覆盖率（~90% → 掉到多少）
  *   ② SIGNIFICANT / SWING_ONLY / NONE 三组的 NearHit30m/1h、MFE/MAE
  *   ③ SIGNIFICANT 示例通知行（肉眼 ICT Narrative 检查）
- * 纯诊断：生产 associateSweeps 默认 excludeSwing=false，行为不变。
+ * 历史诊断：使用 authoritative structural-primitive exclusion projection。
  */
 var historicalLoader = require('../replay/historicalLoader');
 var replayEngine = require('../replay/replayEngine');
@@ -121,7 +121,7 @@ historicalLoader.loadAll(SYMBOL, startTime, endTime)
             console.log('  - SIGNIFICANT NearHit 明显优于 SWING_ONLY（如 72%+ vs 65%）→ 有理由正式删普通 5m Swing');
             console.log('  - SIGNIFICANT 样本只有几十笔且 NearHit 与 Swing 差不多 → 需定义 EXTERNAL_SWING / LIQUIDITY_BEARING_SWING');
             console.log('  - 覆盖率掉幅 = 普通 Swing 在解释层的占比（当前 ~90% 里绝大部分是 SWING）');
-            console.log('  - 纯诊断：生产 associateSweeps 默认 excludeSwing=false，行为不变');
+            console.log('  - 历史诊断：使用 authoritative structural-primitive exclusion projection');
             console.log('');
         });
     })

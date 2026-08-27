@@ -12,6 +12,38 @@
  */
 'use strict';
 var liquidityProvenance = require('./liquidityProvenance');
+var narrativeLiquidityV1 = require('../events/sweepNarrativeEligibilityV1');
+
+function pickNarrativePrimary(watch, candidates) {
+    var startIndex = watch && watch.displacement && watch.displacement.startIndex;
+    var best = null, bestDistance = Infinity, bestConfirmedAt = -Infinity;
+    (candidates || []).forEach(function (candidate) {
+        var distance = typeof startIndex === 'number' && typeof candidate.candleIndex === 'number'
+            ? Math.abs(startIndex - candidate.candleIndex) : Infinity;
+        var confirmedAt = typeof candidate.confirmedAt === 'number' ? candidate.confirmedAt : -Infinity;
+        if (distance < bestDistance || (distance === bestDistance && confirmedAt > bestConfirmedAt)) {
+            best = candidate; bestDistance = distance; bestConfirmedAt = confirmedAt;
+        }
+    });
+    return best;
+}
+
+function normalizeNarrativeLiquidityV1Watch(watch) {
+    if (!watch || !watch.liquidityTaken) return null;
+    var candidates = (watch.liquidityTaken.allCandidates || []).filter(function (candidate) {
+        return !narrativeLiquidityV1.isStructuralPrimitive(candidate && candidate.sourceType);
+    });
+    if (!candidates.length) return null;
+    var normalized = JSON.parse(JSON.stringify(watch));
+    normalized.liquidityTaken.allCandidates = candidates.map(function (candidate) { return JSON.parse(JSON.stringify(candidate)); });
+    normalized.liquidityTaken.primary = JSON.parse(JSON.stringify(pickNarrativePrimary(normalized, normalized.liquidityTaken.allCandidates)));
+    normalized.liquidityTaken.matched = true;
+    // The additive envelope is derived from liquidityTaken. A persisted legacy
+    // envelope may still point at the removed Swing primary, so discard it and
+    // let the live engine rebuild it from the normalized WATCH when applicable.
+    delete normalized.liquidityEvidenceV1;
+    return normalized;
+}
 
 function nativeFvgForDisplacement(displacement, candles) {
     if (!displacement || typeof displacement.candleIndex !== 'number') return null;
@@ -84,7 +116,10 @@ function buildWatch(opts) {
         leg: leg,
         availableAt: evaluationTime,
         sweepEvents: opts.sweepEvents || [],
-        maxLookbackBars: null
+        maxLookbackBars: null,
+        // Narrative Liquidity V1: 2/2 Swing remains a raw Sweep/structural
+        // primitive, but cannot independently support a WATCH narrative.
+        excludeStructuralPrimitives: true
     });
     if (!association || !association.allCandidates || association.allCandidates.length === 0) return null;
 
@@ -163,7 +198,10 @@ function watchFingerprint(w) {
 function createWatchStore(initialWatches, deliveredKeys) {
     var byId = {};
     var delivered = deliveredKeys || {};
-    (initialWatches || []).forEach(function (w) { if (w && w.id) byId[w.id] = w; });
+    (initialWatches || []).forEach(function (w) {
+        var normalized = normalizeNarrativeLiquidityV1Watch(w);
+        if (normalized && normalized.id) byId[normalized.id] = normalized;
+    });
 
     function upsert(incoming) {
         if (!incoming || !incoming.id) return null;
@@ -251,5 +289,6 @@ module.exports = {
     nativeFvgForDisplacement: nativeFvgForDisplacement,
     buildWatch: buildWatch,
     watchFingerprint: watchFingerprint,
-    createWatchStore: createWatchStore
+    createWatchStore: createWatchStore,
+    normalizeNarrativeLiquidityV1Watch: normalizeNarrativeLiquidityV1Watch
 };

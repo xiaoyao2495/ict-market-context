@@ -5,7 +5,7 @@ var BAR = 300000, passed = 0, failed = 0;
 function test(name, fn) { try { fn(); passed++; console.log('PASS  ' + name); } catch (e) { failed++; console.log('FAIL  ' + name + ' -> ' + e.stack); } }
 function c(i, o, h, l, close) { return { openTime: i * BAR, closeTime: (i + 1) * BAR - 1, open: o, high: h, low: l, close: close, closed: true }; }
 function disp(direction, i) { return { id: 'X:5m:DISPLACEMENT:' + direction + ':' + i, direction: direction, candleIndex: i, confirmedAt: (i + 1) * BAR - 1 }; }
-function sweep(side, i) { return { id: 'SW:' + side + ':' + i, side: side, candleIndex: i, confirmedAt: (i + 1) * BAR - 1, liquidityId: 'L:' + i, price: 99, timeframe: '5m', source: { liquidityType: side === 'SSL' ? 'SWING_LOW' : 'SWING_HIGH' } }; }
+function sweep(side, i, type) { return { id: 'SW:' + side + ':' + i, side: side, candleIndex: i, confirmedAt: (i + 1) * BAR - 1, liquidityId: 'L:' + i, price: 99, timeframe: '5m', source: { liquidityType: type || (side === 'SSL' ? 'EQL' : 'EQH') } }; }
 function leg(d) { return { ids: [d.id], direction: d.direction, startIndex: d.candleIndex, lastIndex: d.candleIndex, firstConfirmedAt: d.confirmedAt, lastConfirmedAt: d.confirmedAt, quality: 'STRONG' }; }
 
 test('native FVG belongs to displacement K1/K2/K3 and needs closed K3', function () {
@@ -49,6 +49,32 @@ test('opposite liquidity cannot create watch', function () {
     var d = disp('BULLISH', 2);
     assert.strictEqual(dw.buildWatch({ symbol: 'X', leg: leg(d), evaluationTime: d.confirmedAt,
         sweepEvents: [sweep('BSL', 1)], displacements: [d], candles: [] }), null);
+});
+
+test('Swing-only raw Sweep cannot create Narrative Liquidity WATCH', function () {
+    var d = disp('BULLISH', 2);
+    assert.strictEqual(dw.buildWatch({ symbol: 'X', leg: leg(d), evaluationTime: d.confirmedAt,
+        sweepEvents: [sweep('SSL', 1, 'SWING_LOW')], displacements: [d], candles: [] }), null);
+});
+
+test('mixed Swing + EQL keeps only EQL and uses it as primary', function () {
+    var d = disp('BULLISH', 3), l = leg(d);
+    var w = dw.buildWatch({ symbol: 'X', leg: l, evaluationTime: d.confirmedAt,
+        sweepEvents: [sweep('SSL', 2, 'SWING_LOW'), sweep('SSL', 1, 'EQL')], displacements: [d], candles: [] });
+    assert.ok(w);
+    assert.deepStrictEqual(w.liquidityTaken.allCandidates.map(function (x) { return x.sourceType; }), ['EQL']);
+    assert.strictEqual(w.liquidityTaken.primary.sourceType, 'EQL');
+});
+
+test('persisted WATCH migration removes Swing primary without changing Session policy', function () {
+    var swing = {id:'S',sourceType:'SWING_HIGH',candleIndex:9,confirmedAt:90};
+    var session = {id:'N',sourceType:'NEW_YORK_HIGH',candleIndex:8,confirmedAt:80};
+    var store = dw.createWatchStore([{id:'W',direction:'BEARISH',displacement:{startIndex:10},
+        liquidityTaken:{matched:true,primary:swing,allCandidates:[session,swing]},
+        liquidityEvidenceV1:{currentPrimary:{sweepEventId:'S'},candidates:[{sweepEventId:'S',sourceType:'SWING_HIGH'}]}}], {});
+    assert.strictEqual(store.get('W').liquidityTaken.primary.id, 'N');
+    assert.deepStrictEqual(store.get('W').liquidityTaken.allCandidates.map(function (x) { return x.id; }), ['N']);
+    assert.strictEqual(store.get('W').liquidityEvidenceV1, undefined);
 });
 
 test('K3 upgrade uses native geometry, not a global FVG registry', function () {

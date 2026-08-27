@@ -21,7 +21,7 @@
  *   - Significant 样本只有几十笔、NearHit 与 Swing 差不多 → 需定义 EXTERNAL_SWING /
  *     LIQUIDITY_BEARING_SWING（问题不是删 Swing 这么简单）
  *
- * 纯诊断：生产 associateSweeps 默认 excludeSwing=false（行为不变）。
+ * 历史诊断：使用 authoritative structural-primitive exclusion projection。
  */
 var liquidityProvenance = require('./liquidityProvenance');
 
@@ -46,7 +46,7 @@ function shadowAssociate(alert, sweepEvents, candles, opts) {
         availableAt: availAt,
         sweepEvents: sweepEvents,
         maxLookbackBars: opts && opts.maxLookbackBars !== undefined ? opts.maxLookbackBars : null,
-        excludeSwing: true
+        excludeStructuralPrimitives: true
     });
 }
 

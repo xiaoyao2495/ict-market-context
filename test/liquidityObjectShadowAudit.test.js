@@ -2,7 +2,7 @@
  * Phase 11L.11 — Liquidity Object Reclassification Shadow 测试
  *
  * 覆盖：
- *   - associateSweeps excludeSwing 选项：排除 SWING_HIGH/LOW、保留 EQL 等；生产默认 false 不变
+ *   - associateSweeps excludeStructuralPrimitives：排除 SWING_HIGH/LOW、保留 EQL 等
  *   - auditObjectShadow：SIGNIFICANT / SWING_ONLY / NONE 分组 + 覆盖率 + 统计
  */
 var assert = require('assert');
@@ -39,9 +39,9 @@ function m5(open, high, low, close, i) {
     return { openTime: t, open: open, high: high, low: low, close: close, closeTime: t + BAR - 1, closed: true, source: 'futures' };
 }
 
-/* ---------- excludeSwing 选项 ---------- */
+/* ---------- structural primitive exclusion ---------- */
 
-test('11L.11：excludeSwing=true 排除 SWING、保留 EQL（生产默认 false 不变）', function () {
+test('11L.11：excludeStructuralPrimitives 排除 SWING、保留 EQL', function () {
     var sweeps = [
         mkSweep('s1', 'SSL', 'SWING_LOW', 6, 1200001),
         mkSweep('s2', 'SSL', 'EQL', 8, 1250001)
@@ -50,14 +50,13 @@ test('11L.11：excludeSwing=true 排除 SWING、保留 EQL（生产默认 false 
     var prod = lp.associateSweeps({ direction: 'BULLISH', leg: mkLeg(), availableAt: 2000000, sweepEvents: sweeps });
     assert.strictEqual(prod.immediateSweep.id, 's2', '生产：EQL 距 2 < SWING 距 4');
     assert.strictEqual(prod.allCandidates.length, 2);
-    // shadow（excludeSwing）：只剩 EQL
-    var shadow = lp.associateSweeps({ direction: 'BULLISH', leg: mkLeg(), availableAt: 2000000, sweepEvents: sweeps, excludeSwing: true });
+    var shadow = lp.associateSweeps({ direction: 'BULLISH', leg: mkLeg(), availableAt: 2000000, sweepEvents: sweeps, excludeStructuralPrimitives: true });
     assert.ok(shadow, '排除 SWING 后仍有 EQL');
     assert.strictEqual(shadow.allCandidates.length, 1, 'SWING 被排除');
     assert.strictEqual(shadow.immediateSweep.id, 's2');
     // shadow 且只剩 SWING → null（NONE）
     var onlySwing = [mkSweep('s1', 'SSL', 'SWING_LOW', 6, 1200001)];
-    var shadow2 = lp.associateSweeps({ direction: 'BULLISH', leg: mkLeg(), availableAt: 2000000, sweepEvents: onlySwing, excludeSwing: true });
+    var shadow2 = lp.associateSweeps({ direction: 'BULLISH', leg: mkLeg(), availableAt: 2000000, sweepEvents: onlySwing, excludeStructuralPrimitives: true });
     assert.strictEqual(shadow2, null, '仅 SWING 候选 → shadow 下 NONE');
 });
 
@@ -120,10 +119,10 @@ test('11L.11：SWING_ONLY 分组（窗口内只有 SWING 时）', function () {
 
 /* ---------- 生产默认不变（回归保护） ---------- */
 
-test('11L.11：生产路径 excludeSwing 默认 false（无回归）', function () {
+test('11L.11：generic association 未请求 consumer gate 时仍保留 raw Swing', function () {
     var sweeps = [mkSweep('s1', 'SSL', 'SWING_LOW', 6, 1200001)];
     var prod = lp.associateSweeps({ direction: 'BULLISH', leg: mkLeg(), availableAt: 2000000, sweepEvents: sweeps });
-    assert.ok(prod, '生产默认仍关联 SWING（excludeSwing 未传 = false）');
+    assert.ok(prod, 'generic association preserves raw Swing unless consumer gate is requested');
     assert.strictEqual(prod.immediateSweep.id, 's1');
 });
 
