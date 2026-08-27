@@ -1,0 +1,11 @@
+{
+  "registryPersistenceArchitecture": "DETERMINISTIC_REBUILD_FROM_PERSISTED_CLOSED_CANDLES",
+  "registryObjectsDeserialized": false,
+  "cursorRecordsEqProductionVersion": true,
+  "v2StateConvertedToV3": false,
+  "existingTerminalWatchesPreserved": true,
+  "nonTerminalWatchIdentity": "DISPLACEMENT_LEG_BASED",
+  "v2V3PersistedEqCoexistenceRisk": false,
+  "mitigation": "Only one producer is selected during Registry rebuild. Existing and rebuilt non-terminal WATCHes share the deterministic displacement-leg WATCH ID, so upsert replaces rather than duplicates; terminal WATCHes remain frozen.",
+  "rollback": "Set EQ_PRODUCTION_VERSION=V2 and restart with environment refresh; Registry is rebuilt from the same closed candles using V2 only."
+}

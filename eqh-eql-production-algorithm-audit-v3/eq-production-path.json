@@ -1,0 +1,95 @@
+{
+  "path": [
+    {
+      "stage": "LOCAL_PIVOT_CONFIRMATION",
+      "input": "closed 5m candles",
+      "output": "HIGH/LOW pivot confirmed 2 bars right",
+      "file": "structure/pivotDetector.js",
+      "lines": "23-113",
+      "function": "detectPivots"
+    },
+    {
+      "stage": "SWING_WRAPPER",
+      "input": "confirmed pivot",
+      "output": "SWING_HIGH/SWING_LOW liquidity-shaped structural primitive",
+      "file": "liquidity/swingLiquidity.js",
+      "lines": "32-109",
+      "function": "buildSwingLiquidity"
+    },
+    {
+      "stage": "INCREMENTAL_INPUT",
+      "input": "new swing + registry same-side swings",
+      "output": "pairs restricted to new swing as second member",
+      "file": "replay/replayState.js",
+      "lines": "108-169",
+      "function": "incrementalLiquidity"
+    },
+    {
+      "stage": "LIFECYCLE_GATE",
+      "input": "first swing state as-of second confirmedAt",
+      "output": "ACTIVE/TOUCHED eligible; SWEPT/BROKEN reject",
+      "file": "liquidity/equalLiquidity.js",
+      "lines": "92-225",
+      "function": "classifyPair"
+    },
+    {
+      "stage": "PRICE_GATE",
+      "input": "absolute member price distance / ATR14 at second confirmation",
+      "output": "strong <=0.7; gray (0.7,1.1]; reject >1.1",
+      "file": "liquidity/equalLiquidity.js",
+      "lines": "213-225",
+      "function": "classifyPair"
+    },
+    {
+      "stage": "FORMATION_GATE",
+      "input": "inter-swing path through second confirmedAt",
+      "output": "departureATR and max consecutive full-wick bars outside 0.5 ATR zone",
+      "file": "liquidity/equalLiquidity.js",
+      "lines": "227-263",
+      "function": "classifyPair"
+    },
+    {
+      "stage": "BOUNDED_ANCHOR_GROUPING",
+      "input": "VALID_EQ pairs",
+      "output": "direct anchor members only; no transitive closure",
+      "file": "liquidity/equalLiquidity.js",
+      "lines": "279-328",
+      "function": "groupValidPairs"
+    },
+    {
+      "stage": "EQ_OBJECT_BUILD",
+      "input": "group >=2",
+      "output": "EQH/BSL or EQL/SSL object at member mean price",
+      "file": "liquidity/equalLiquidity.js",
+      "lines": "330-382",
+      "function": "buildGroup"
+    },
+    {
+      "stage": "REGISTRY",
+      "input": "EQ object",
+      "output": "first object per id retained; duplicate id rejected without merge/update",
+      "file": "liquidity/liquidityRegistry.js",
+      "lines": "15-33",
+      "function": "add"
+    },
+    {
+      "stage": "LIFECYCLE_AND_SWEEP",
+      "input": "registered EQ + closed candle",
+      "output": "ACTIVE/TOUCHED/SWEPT/BROKEN and EQ-identity sweep event",
+      "file": "replay/replayState.js",
+      "lines": "184-209",
+      "function": "incrementalEvents"
+    },
+    {
+      "stage": "WATCH_CANDIDATE",
+      "input": "EQ sweep event",
+      "output": "candidate.sourceId equals EQ liquidityId; raw Swing filtered",
+      "file": "stats/liquidityProvenance.js",
+      "lines": "103-210",
+      "function": "associateSweeps"
+    }
+  ],
+  "productionOntology": "Lifecycle -> Price -> Formation -> bounded-anchor Grouping -> immutable-by-id Registry -> Lifecycle/Sweep -> WATCH candidate",
+  "historicalPercentageToleranceHelperOnProductionPath": false,
+  "networkUsed": false
+}

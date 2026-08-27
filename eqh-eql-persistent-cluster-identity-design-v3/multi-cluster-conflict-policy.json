@@ -1,0 +1,40 @@
+{
+  "problem": "One newly confirmed Swing is compatible with more than one active cluster",
+  "options": [
+    {
+      "option": "A_RECENT_CLUSTER",
+      "identityStability": "medium",
+      "determinism": "high with explicit ordering",
+      "overlapReduction": "high",
+      "semanticClarity": "low; recency is an invented preference"
+    },
+    {
+      "option": "B_NEAREST_PRICE",
+      "identityStability": "medium",
+      "determinism": "high with tie-breaker",
+      "overlapReduction": "high",
+      "semanticClarity": "medium-low; distance to a moving mean creates gate drift unless anchor distance is substituted"
+    },
+    {
+      "option": "C_EARLIEST_CLUSTER",
+      "identityStability": "high",
+      "determinism": "high",
+      "overlapReduction": "high",
+      "semanticClarity": "medium-low; earliest wins is still an arbitrary ownership preference"
+    },
+    {
+      "option": "D_AMBIGUOUS_DO_NOT_APPEND",
+      "identityStability": "highest",
+      "determinism": "highest",
+      "overlapReduction": "highest because no third overlapping identity is created",
+      "semanticClarity": "highest; evidence is explicitly insufficient to choose ownership"
+    }
+  ],
+  "selectedPolicy": "D_AMBIGUOUS_DO_NOT_APPEND",
+  "result": "Candidate remains unassigned at that evaluationTime",
+  "createNewClusterOnAmbiguity": false,
+  "appendToBoth": false,
+  "importanceScoreUsed": false,
+  "tieBreakerRequired": false,
+  "reason": "Persistent identity should not invent a ranking rule merely to force assignment. Abstention preserves both existing identities, exclusivity, and deterministic semantics."
+}

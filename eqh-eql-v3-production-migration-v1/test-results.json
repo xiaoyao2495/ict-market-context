@@ -1,0 +1,6 @@
+{
+  "targetedProductionIntegration": { "passed": 12, "failed": 0 },
+  "targetedNotification": { "passed": 8, "failed": 0 },
+  "fullNpmTest": "PASS",
+  "allTestsPassed": true
+}

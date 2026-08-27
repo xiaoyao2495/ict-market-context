@@ -1,0 +1,56 @@
+{
+  "EQ_MEMBER_INDEPENDENCE_MODEL_EXISTS": true,
+  "definition": {
+    "departureEQH": "min(H1,H2) - lowest inter-swing low",
+    "departureEQL": "highest inter-swing high - max(L1,L2)",
+    "departureATR": "departure / ATR14 at second confirmation",
+    "persistence": "max consecutive inter-swing candles whose full wick range is outside +/-0.5 ATR EQ zone",
+    "validFormation": "departureATR >= 1.75 AND maxConsecutiveBarsOutsideZone_0_5ATR >= 1"
+  },
+  "scopeLimit": "pair-level independence only; no cluster-wide independence model and no distinct semantic for 3+ touches",
+  "adjacencyStillPossible": true,
+  "observed": {
+    "departureATR": {
+      "count": 463,
+      "min": 1.752407,
+      "P10": 1.996095,
+      "P25": 2.314671,
+      "median": 3.310094,
+      "P75": 6.027512,
+      "P90": 10.660276,
+      "max": 43.684157,
+      "mean": 5.305005
+    },
+    "maxConsecutiveOutside": {
+      "count": 463,
+      "min": 1,
+      "P10": 2,
+      "P25": 4,
+      "median": 9,
+      "P75": 34.5,
+      "P90": 118.4,
+      "max": 3162,
+      "mean": 78.034557
+    },
+    "sameSideSwingsBetween": {
+      "count": 457,
+      "min": 0,
+      "P10": 0,
+      "P25": 0,
+      "median": 1,
+      "P75": 4,
+      "P90": 17,
+      "max": 452,
+      "mean": 10.201313
+    },
+    "adjacentSameSideCount": 165
+  },
+  "suspiciousSelectionIsAuditOnly": true,
+  "suspiciousCaseCount": 20,
+  "cleanCaseCount": 20,
+  "source": {
+    "file": "liquidity/equalLiquidity.js",
+    "lines": "227-263",
+    "function": "classifyPair"
+  }
+}

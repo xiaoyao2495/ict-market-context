@@ -1,0 +1,37 @@
+{
+  "options": [
+    {
+      "id": "OPTION_A_MUTABLE_PERSISTENT_OBJECT",
+      "implementationComplexity": "low",
+      "temporalSafety": "low unless every mutation is separately timestamped",
+      "identityStability": "high",
+      "incrementalRuntimeCompatibility": "high",
+      "determinism": "medium-high with strict single-thread ordering",
+      "pastStateImmutability": "poor; old references can observe future members",
+      "verdict": "NOT_RECOMMENDED"
+    },
+    {
+      "id": "OPTION_B_IMMUTABLE_CLUSTER_PLUS_MEMBER_APPEND_LEDGER",
+      "implementationComplexity": "medium",
+      "temporalSafety": "high",
+      "identityStability": "high",
+      "incrementalRuntimeCompatibility": "high with an incremental projector and active membership index",
+      "determinism": "high with canonical event ordering and deterministic event ids",
+      "pastStateImmutability": "high",
+      "verdict": "RECOMMENDED"
+    },
+    {
+      "id": "OPTION_C_RECOMPUTE_AS_OF_FROM_COMPLETE_MEMBER_LEDGER",
+      "implementationComplexity": "medium-high",
+      "temporalSafety": "high",
+      "identityStability": "high",
+      "incrementalRuntimeCompatibility": "medium-low if every query rescans the ledger",
+      "determinism": "high",
+      "pastStateImmutability": "high",
+      "verdict": "VALID_REFERENCE_PROJECTOR, NOT_PRIMARY_RUNTIME_ARCHITECTURE"
+    }
+  ],
+  "RECOMMENDED_CLUSTER_ARCHITECTURE": "OPTION_B_IMMUTABLE_CLUSTER_PLUS_MEMBER_APPEND_LEDGER",
+  "runtimeShape": "Immutable base cluster record + immutable append records + incremental materialized current projection + independent as-of projector for verification",
+  "why": "It solves persistent identity and temporal provenance without changing production gates or requiring a full ledger rescan on every bar."
+}

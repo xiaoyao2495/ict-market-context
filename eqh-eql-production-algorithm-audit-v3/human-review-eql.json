@@ -1,0 +1,1847 @@
+{
+  "type": "EQL",
+  "requestedCases": 30,
+  "actualCases": 30,
+  "selectionCoverage": [
+    "overlapping members",
+    "short duration",
+    "long duration",
+    "suspicious grouping",
+    "clean grouping"
+  ],
+  "threePlusUnavailableReason": "NO_3_PLUS_OBJECTS_IN_RETAINED_30D_PRODUCTION_REGISTRY",
+  "compactOhlcIncluded": false,
+  "cases": [
+    {
+      "objectId": "BTCUSDT:EQL:1784674800000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 66226.5,
+      "formationConfirmedAt": 1784685299999,
+      "formationConfirmedAtIso": "2026-07-22T01:54:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784674800000",
+          "type": "SWING_LOW",
+          "price": 66200,
+          "occurredAt": 1784674800000,
+          "occurredAtIso": "2026-07-21T23:00:00.000Z",
+          "confirmedAt": 1784675699999,
+          "confirmedAtIso": "2026-07-21T23:14:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784674800000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784684400000",
+          "type": "SWING_LOW",
+          "price": 66253,
+          "occurredAt": 1784684400000,
+          "occurredAtIso": "2026-07-22T01:40:00.000Z",
+          "confirmedAt": 1784685299999,
+          "confirmedAtIso": "2026-07-22T01:54:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784674800000",
+            "BTCUSDT:EQL:1784684400000"
+          ]
+        }
+      ],
+      "minPrice": 66200,
+      "maxPrice": 66253,
+      "priceSpread": 53,
+      "distancePct": 0.0008,
+      "distanceBps": 8.002839,
+      "distanceTicks": 530,
+      "atrAtSecondConfirmation": 83.587917,
+      "distanceATR": 0.6340629353699744,
+      "departureATR": 5.479260837725439,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 22,
+      "barsApart": 32,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": null,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1784690099999,
+          "confirmedAtIso": "2026-07-22T03:14:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784684400000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 66261.5,
+      "formationConfirmedAt": 1784688599999,
+      "formationConfirmedAtIso": "2026-07-22T02:49:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784684400000",
+          "type": "SWING_LOW",
+          "price": 66253,
+          "occurredAt": 1784684400000,
+          "occurredAtIso": "2026-07-22T01:40:00.000Z",
+          "confirmedAt": 1784685299999,
+          "confirmedAtIso": "2026-07-22T01:54:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784674800000",
+            "BTCUSDT:EQL:1784684400000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784687700000",
+          "type": "SWING_LOW",
+          "price": 66270,
+          "occurredAt": 1784687700000,
+          "occurredAtIso": "2026-07-22T02:35:00.000Z",
+          "confirmedAt": 1784688599999,
+          "confirmedAtIso": "2026-07-22T02:49:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784684400000"
+          ]
+        }
+      ],
+      "minPrice": 66253,
+      "maxPrice": 66270,
+      "priceSpread": 17,
+      "distancePct": 0.000257,
+      "distanceBps": 2.565592,
+      "distanceTicks": 170,
+      "atrAtSecondConfirmation": 74.086314,
+      "distanceATR": 0.22946208443201643,
+      "departureATR": 3.2907562461486046,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 9,
+      "barsApart": 11,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 1,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1784689499999,
+          "confirmedAtIso": "2026-07-22T03:04:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784609700000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 65479.25,
+      "formationConfirmedAt": 1784725799999,
+      "formationConfirmedAtIso": "2026-07-22T13:09:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784609700000",
+          "type": "SWING_LOW",
+          "price": 65453.5,
+          "occurredAt": 1784609700000,
+          "occurredAtIso": "2026-07-21T04:55:00.000Z",
+          "confirmedAt": 1784610599999,
+          "confirmedAtIso": "2026-07-21T05:09:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784609700000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784724900000",
+          "type": "SWING_LOW",
+          "price": 65505,
+          "occurredAt": 1784724900000,
+          "occurredAtIso": "2026-07-22T12:55:00.000Z",
+          "confirmedAt": 1784725799999,
+          "confirmedAtIso": "2026-07-22T13:09:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784609700000",
+            "BTCUSDT:EQL:1784724900000"
+          ]
+        }
+      ],
+      "minPrice": 65453.5,
+      "maxPrice": 65505,
+      "priceSpread": 51.5,
+      "distancePct": 0.000787,
+      "distanceBps": 7.865087,
+      "distanceTicks": 515,
+      "atrAtSecondConfirmation": 81.740399,
+      "distanceATR": 0.6300434110647132,
+      "departureATR": 17.36106028430948,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 374,
+      "barsApart": 384,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": null,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1784790899999,
+          "confirmedAtIso": "2026-07-23T07:14:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784724900000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 65530.65,
+      "formationConfirmedAt": 1784731499999,
+      "formationConfirmedAtIso": "2026-07-22T14:44:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784724900000",
+          "type": "SWING_LOW",
+          "price": 65505,
+          "occurredAt": 1784724900000,
+          "occurredAtIso": "2026-07-22T12:55:00.000Z",
+          "confirmedAt": 1784725799999,
+          "confirmedAtIso": "2026-07-22T13:09:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784609700000",
+            "BTCUSDT:EQL:1784724900000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784730600000",
+          "type": "SWING_LOW",
+          "price": 65556.3,
+          "occurredAt": 1784730600000,
+          "occurredAtIso": "2026-07-22T14:30:00.000Z",
+          "confirmedAt": 1784731499999,
+          "confirmedAtIso": "2026-07-22T14:44:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784724900000"
+          ]
+        }
+      ],
+      "minPrice": 65505,
+      "maxPrice": 65556.3,
+      "priceSpread": 51.3,
+      "distancePct": 0.000783,
+      "distanceBps": 7.828398,
+      "distanceTicks": 513,
+      "atrAtSecondConfirmation": 129.884071,
+      "distanceATR": 0.3949676027904086,
+      "departureATR": 4.8820459440425035,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 9,
+      "barsApart": 19,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 1,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1784790899999,
+          "confirmedAtIso": "2026-07-23T07:14:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784726700000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 65574.54999999999,
+      "formationConfirmedAt": 1784732399999,
+      "formationConfirmedAtIso": "2026-07-22T14:59:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784726700000",
+          "type": "SWING_LOW",
+          "price": 65531.7,
+          "occurredAt": 1784726700000,
+          "occurredAtIso": "2026-07-22T13:25:00.000Z",
+          "confirmedAt": 1784727599999,
+          "confirmedAtIso": "2026-07-22T13:39:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784726700000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784731500000",
+          "type": "SWING_LOW",
+          "price": 65617.4,
+          "occurredAt": 1784731500000,
+          "occurredAtIso": "2026-07-22T14:45:00.000Z",
+          "confirmedAt": 1784732399999,
+          "confirmedAtIso": "2026-07-22T14:59:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784726700000",
+            "BTCUSDT:EQL:1784731500000"
+          ]
+        }
+      ],
+      "minPrice": 65531.7,
+      "maxPrice": 65617.4,
+      "priceSpread": 85.7,
+      "distancePct": 0.001307,
+      "distanceBps": 13.069095,
+      "distanceTicks": 857,
+      "atrAtSecondConfirmation": 124.21651,
+      "distanceATR": 0.6899243916220791,
+      "departureATR": 4.612913376889903,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 8,
+      "barsApart": 16,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 1,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1784776499999,
+          "confirmedAtIso": "2026-07-23T03:14:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784731500000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 65633.79999999999,
+      "formationConfirmedAt": 1784748299999,
+      "formationConfirmedAtIso": "2026-07-22T19:24:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784731500000",
+          "type": "SWING_LOW",
+          "price": 65617.4,
+          "occurredAt": 1784731500000,
+          "occurredAtIso": "2026-07-22T14:45:00.000Z",
+          "confirmedAt": 1784732399999,
+          "confirmedAtIso": "2026-07-22T14:59:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784726700000",
+            "BTCUSDT:EQL:1784731500000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784747400000",
+          "type": "SWING_LOW",
+          "price": 65650.2,
+          "occurredAt": 1784747400000,
+          "occurredAtIso": "2026-07-22T19:10:00.000Z",
+          "confirmedAt": 1784748299999,
+          "confirmedAtIso": "2026-07-22T19:24:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784731500000"
+          ]
+        }
+      ],
+      "minPrice": 65617.4,
+      "maxPrice": 65650.2,
+      "priceSpread": 32.8,
+      "distancePct": 0.0005,
+      "distanceBps": 4.997425,
+      "distanceTicks": 328,
+      "atrAtSecondConfirmation": 92.192305,
+      "distanceATR": 0.35577806660129135,
+      "departureATR": 7.738172948577494,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 50,
+      "barsApart": 53,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 5,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1784773799999,
+          "confirmedAtIso": "2026-07-23T02:29:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784754900000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 65872.5,
+      "formationConfirmedAt": 1784759699999,
+      "formationConfirmedAtIso": "2026-07-22T22:34:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784754900000",
+          "type": "SWING_LOW",
+          "price": 65853.2,
+          "occurredAt": 1784754900000,
+          "occurredAtIso": "2026-07-22T21:15:00.000Z",
+          "confirmedAt": 1784755799999,
+          "confirmedAtIso": "2026-07-22T21:29:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784754900000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784758800000",
+          "type": "SWING_LOW",
+          "price": 65891.8,
+          "occurredAt": 1784758800000,
+          "occurredAtIso": "2026-07-22T22:20:00.000Z",
+          "confirmedAt": 1784759699999,
+          "confirmedAtIso": "2026-07-22T22:34:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784754900000",
+            "BTCUSDT:EQL:1784758800000"
+          ]
+        }
+      ],
+      "minPrice": 65853.2,
+      "maxPrice": 65891.8,
+      "priceSpread": 38.6,
+      "distancePct": 0.000586,
+      "distanceBps": 5.859805,
+      "distanceTicks": 386,
+      "atrAtSecondConfirmation": 57.707404,
+      "distanceATR": 0.6688916353742488,
+      "departureATR": 3.6615751957139744,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 8,
+      "barsApart": 13,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 1,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1784762099999,
+          "confirmedAtIso": "2026-07-22T23:14:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784758800000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 65894.55,
+      "formationConfirmedAt": 1784760599999,
+      "formationConfirmedAtIso": "2026-07-22T22:49:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784758800000",
+          "type": "SWING_LOW",
+          "price": 65891.8,
+          "occurredAt": 1784758800000,
+          "occurredAtIso": "2026-07-22T22:20:00.000Z",
+          "confirmedAt": 1784759699999,
+          "confirmedAtIso": "2026-07-22T22:34:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784754900000",
+            "BTCUSDT:EQL:1784758800000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784759700000",
+          "type": "SWING_LOW",
+          "price": 65897.3,
+          "occurredAt": 1784759700000,
+          "occurredAtIso": "2026-07-22T22:35:00.000Z",
+          "confirmedAt": 1784760599999,
+          "confirmedAtIso": "2026-07-22T22:49:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784758800000"
+          ]
+        }
+      ],
+      "minPrice": 65891.8,
+      "maxPrice": 65897.3,
+      "priceSpread": 5.5,
+      "distancePct": 0.000083,
+      "distanceBps": 0.834667,
+      "distanceTicks": 55,
+      "atrAtSecondConfirmation": 57.413144,
+      "distanceATR": 0.09579687885031,
+      "departureATR": 1.7887889923502835,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 2,
+      "barsApart": 3,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 0,
+      "adjacentSameSideLocalPivots": true,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1784762099999,
+          "confirmedAtIso": "2026-07-22T23:14:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784860500000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 64905.1,
+      "formationConfirmedAt": 1784885699999,
+      "formationConfirmedAtIso": "2026-07-24T09:34:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784860500000",
+          "type": "SWING_LOW",
+          "price": 64890.5,
+          "occurredAt": 1784860500000,
+          "occurredAtIso": "2026-07-24T02:35:00.000Z",
+          "confirmedAt": 1784861399999,
+          "confirmedAtIso": "2026-07-24T02:49:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784860500000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784884800000",
+          "type": "SWING_LOW",
+          "price": 64919.7,
+          "occurredAt": 1784884800000,
+          "occurredAtIso": "2026-07-24T09:20:00.000Z",
+          "confirmedAt": 1784885699999,
+          "confirmedAtIso": "2026-07-24T09:34:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784860500000",
+            "BTCUSDT:EQL:1784884800000"
+          ]
+        }
+      ],
+      "minPrice": 64890.5,
+      "maxPrice": 64919.7,
+      "priceSpread": 29.2,
+      "distancePct": 0.00045,
+      "distanceBps": 4.498876,
+      "distanceTicks": 292,
+      "atrAtSecondConfirmation": 73.394036,
+      "distanceATR": 0.3978524892293551,
+      "departureATR": 11.721660838494845,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 76,
+      "barsApart": 81,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 10,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1784890499999,
+          "confirmedAtIso": "2026-07-24T10:54:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784884800000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 64930.05,
+      "formationConfirmedAt": 1784888999999,
+      "formationConfirmedAtIso": "2026-07-24T10:29:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784884800000",
+          "type": "SWING_LOW",
+          "price": 64919.7,
+          "occurredAt": 1784884800000,
+          "occurredAtIso": "2026-07-24T09:20:00.000Z",
+          "confirmedAt": 1784885699999,
+          "confirmedAtIso": "2026-07-24T09:34:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784860500000",
+            "BTCUSDT:EQL:1784884800000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1784888100000",
+          "type": "SWING_LOW",
+          "price": 64940.4,
+          "occurredAt": 1784888100000,
+          "occurredAtIso": "2026-07-24T10:15:00.000Z",
+          "confirmedAt": 1784888999999,
+          "confirmedAtIso": "2026-07-24T10:29:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1784884800000"
+          ]
+        }
+      ],
+      "minPrice": 64919.7,
+      "maxPrice": 64940.4,
+      "priceSpread": 20.7,
+      "distancePct": 0.000319,
+      "distanceBps": 3.188046,
+      "distanceTicks": 207,
+      "atrAtSecondConfirmation": 64.918969,
+      "distanceATR": 0.31885903603813553,
+      "departureATR": 2.9544523242560436,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 6,
+      "barsApart": 11,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 0,
+      "adjacentSameSideLocalPivots": true,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1784890499999,
+          "confirmedAtIso": "2026-07-24T10:54:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785089700000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 64636.4,
+      "formationConfirmedAt": 1785093899999,
+      "formationConfirmedAtIso": "2026-07-26T19:24:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785089700000",
+          "type": "SWING_LOW",
+          "price": 64634,
+          "occurredAt": 1785089700000,
+          "occurredAtIso": "2026-07-26T18:15:00.000Z",
+          "confirmedAt": 1785090599999,
+          "confirmedAtIso": "2026-07-26T18:29:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785089700000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785093000000",
+          "type": "SWING_LOW",
+          "price": 64638.8,
+          "occurredAt": 1785093000000,
+          "occurredAtIso": "2026-07-26T19:10:00.000Z",
+          "confirmedAt": 1785093899999,
+          "confirmedAtIso": "2026-07-26T19:24:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785089700000",
+            "BTCUSDT:EQL:1785093000000"
+          ]
+        }
+      ],
+      "minPrice": 64634,
+      "maxPrice": 64638.8,
+      "priceSpread": 4.8,
+      "distancePct": 0.000074,
+      "distanceBps": 0.742616,
+      "distanceTicks": 48,
+      "atrAtSecondConfirmation": 34.400767,
+      "distanceATR": 0.13953177305199493,
+      "departureATR": 3.2150446040710583,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 6,
+      "barsApart": 11,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 0,
+      "adjacentSameSideLocalPivots": true,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1785097199999,
+          "confirmedAtIso": "2026-07-26T20:19:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785093000000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 64647.3,
+      "formationConfirmedAt": 1785096899999,
+      "formationConfirmedAtIso": "2026-07-26T20:14:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785093000000",
+          "type": "SWING_LOW",
+          "price": 64638.8,
+          "occurredAt": 1785093000000,
+          "occurredAtIso": "2026-07-26T19:10:00.000Z",
+          "confirmedAt": 1785093899999,
+          "confirmedAtIso": "2026-07-26T19:24:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785089700000",
+            "BTCUSDT:EQL:1785093000000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785096000000",
+          "type": "SWING_LOW",
+          "price": 64655.8,
+          "occurredAt": 1785096000000,
+          "occurredAtIso": "2026-07-26T20:00:00.000Z",
+          "confirmedAt": 1785096899999,
+          "confirmedAtIso": "2026-07-26T20:14:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785093000000"
+          ]
+        }
+      ],
+      "minPrice": 64638.8,
+      "maxPrice": 64655.8,
+      "priceSpread": 17,
+      "distancePct": 0.000263,
+      "distanceBps": 2.629654,
+      "distanceTicks": 170,
+      "atrAtSecondConfirmation": 26.317052,
+      "distanceATR": 0.645968999854699,
+      "departureATR": 2.7966657876061713,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 4,
+      "barsApart": 10,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 0,
+      "adjacentSameSideLocalPivots": true,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1785097199999,
+          "confirmedAtIso": "2026-07-26T20:19:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785102000000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 64786.6,
+      "formationConfirmedAt": 1785156299999,
+      "formationConfirmedAtIso": "2026-07-27T12:44:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785102000000",
+          "type": "SWING_LOW",
+          "price": 64762.2,
+          "occurredAt": 1785102000000,
+          "occurredAtIso": "2026-07-26T21:40:00.000Z",
+          "confirmedAt": 1785102899999,
+          "confirmedAtIso": "2026-07-26T21:54:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785102000000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785155400000",
+          "type": "SWING_LOW",
+          "price": 64811,
+          "occurredAt": 1785155400000,
+          "occurredAtIso": "2026-07-27T12:30:00.000Z",
+          "confirmedAt": 1785156299999,
+          "confirmedAtIso": "2026-07-27T12:44:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785102000000",
+            "BTCUSDT:EQL:1785155400000"
+          ]
+        }
+      ],
+      "minPrice": 64762.2,
+      "maxPrice": 64811,
+      "priceSpread": 48.8,
+      "distancePct": 0.000753,
+      "distanceBps": 7.532422,
+      "distanceTicks": 488,
+      "atrAtSecondConfirmation": 78.325625,
+      "distanceATR": 0.6230400361370858,
+      "departureATR": 11.637315429076226,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 173,
+      "barsApart": 178,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 25,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1785162899999,
+          "confirmedAtIso": "2026-07-27T14:34:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785155400000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 64848.15,
+      "formationConfirmedAt": 1785159599999,
+      "formationConfirmedAtIso": "2026-07-27T13:39:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785155400000",
+          "type": "SWING_LOW",
+          "price": 64811,
+          "occurredAt": 1785155400000,
+          "occurredAtIso": "2026-07-27T12:30:00.000Z",
+          "confirmedAt": 1785156299999,
+          "confirmedAtIso": "2026-07-27T12:44:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785102000000",
+            "BTCUSDT:EQL:1785155400000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785158700000",
+          "type": "SWING_LOW",
+          "price": 64885.3,
+          "occurredAt": 1785158700000,
+          "occurredAtIso": "2026-07-27T13:25:00.000Z",
+          "confirmedAt": 1785159599999,
+          "confirmedAtIso": "2026-07-27T13:39:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785155400000"
+          ]
+        }
+      ],
+      "minPrice": 64811,
+      "maxPrice": 64885.3,
+      "priceSpread": 74.3,
+      "distancePct": 0.001146,
+      "distanceBps": 11.457536,
+      "distanceTicks": 743,
+      "atrAtSecondConfirmation": 112.443533,
+      "distanceATR": 0.6607761045594592,
+      "departureATR": 2.0072297011986833,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 6,
+      "barsApart": 11,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 0,
+      "adjacentSameSideLocalPivots": true,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1785162599999,
+          "confirmedAtIso": "2026-07-27T14:29:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785260100000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 63501.6,
+      "formationConfirmedAt": 1785281999999,
+      "formationConfirmedAtIso": "2026-07-28T23:39:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785260100000",
+          "type": "SWING_LOW",
+          "price": 63477.2,
+          "occurredAt": 1785260100000,
+          "occurredAtIso": "2026-07-28T17:35:00.000Z",
+          "confirmedAt": 1785260999999,
+          "confirmedAtIso": "2026-07-28T17:49:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785260100000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785281100000",
+          "type": "SWING_LOW",
+          "price": 63526,
+          "occurredAt": 1785281100000,
+          "occurredAtIso": "2026-07-28T23:25:00.000Z",
+          "confirmedAt": 1785281999999,
+          "confirmedAtIso": "2026-07-28T23:39:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785260100000",
+            "BTCUSDT:EQL:1785281100000"
+          ]
+        }
+      ],
+      "minPrice": 63477.2,
+      "maxPrice": 63526,
+      "priceSpread": 48.8,
+      "distancePct": 0.000768,
+      "distanceBps": 7.684846,
+      "distanceTicks": 488,
+      "atrAtSecondConfirmation": 72.96204,
+      "distanceATR": 0.6688409445886248,
+      "departureATR": 7.153034610261955,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 66,
+      "barsApart": 70,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 9,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1785354599999,
+          "confirmedAtIso": "2026-07-29T19:49:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785281100000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 63547.75,
+      "formationConfirmedAt": 1785298799999,
+      "formationConfirmedAtIso": "2026-07-29T04:19:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785281100000",
+          "type": "SWING_LOW",
+          "price": 63526,
+          "occurredAt": 1785281100000,
+          "occurredAtIso": "2026-07-28T23:25:00.000Z",
+          "confirmedAt": 1785281999999,
+          "confirmedAtIso": "2026-07-28T23:39:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785260100000",
+            "BTCUSDT:EQL:1785281100000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785297900000",
+          "type": "SWING_LOW",
+          "price": 63569.5,
+          "occurredAt": 1785297900000,
+          "occurredAtIso": "2026-07-29T04:05:00.000Z",
+          "confirmedAt": 1785298799999,
+          "confirmedAtIso": "2026-07-29T04:19:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785281100000"
+          ]
+        }
+      ],
+      "minPrice": 63526,
+      "maxPrice": 63569.5,
+      "priceSpread": 43.5,
+      "distancePct": 0.000685,
+      "distanceBps": 6.845246,
+      "distanceTicks": 435,
+      "atrAtSecondConfirmation": 100.894988,
+      "distanceATR": 0.4311413352668014,
+      "departureATR": 6.001289161012603,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 54,
+      "barsApart": 56,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 7,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1785354599999,
+          "confirmedAtIso": "2026-07-29T19:49:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785251100000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 63283.95,
+      "formationConfirmedAt": 1785356399999,
+      "formationConfirmedAtIso": "2026-07-29T20:19:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785251100000",
+          "type": "SWING_LOW",
+          "price": 63231.9,
+          "occurredAt": 1785251100000,
+          "occurredAtIso": "2026-07-28T15:05:00.000Z",
+          "confirmedAt": 1785251999999,
+          "confirmedAtIso": "2026-07-28T15:19:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785251100000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785355500000",
+          "type": "SWING_LOW",
+          "price": 63336,
+          "occurredAt": 1785355500000,
+          "occurredAtIso": "2026-07-29T20:05:00.000Z",
+          "confirmedAt": 1785356399999,
+          "confirmedAtIso": "2026-07-29T20:19:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785251100000",
+            "BTCUSDT:EQL:1785355500000"
+          ]
+        }
+      ],
+      "minPrice": 63231.9,
+      "maxPrice": 63336,
+      "priceSpread": 104.1,
+      "distancePct": 0.001645,
+      "distanceBps": 16.449669,
+      "distanceTicks": 1041,
+      "atrAtSecondConfirmation": 203.123884,
+      "distanceATR": 0.5124951241963673,
+      "departureATR": 6.793391180389798,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 343,
+      "barsApart": 348,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 48,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1785359099999,
+          "confirmedAtIso": "2026-07-29T21:04:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785355500000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 63353.8,
+      "formationConfirmedAt": 1785357599999,
+      "formationConfirmedAtIso": "2026-07-29T20:39:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785355500000",
+          "type": "SWING_LOW",
+          "price": 63336,
+          "occurredAt": 1785355500000,
+          "occurredAtIso": "2026-07-29T20:05:00.000Z",
+          "confirmedAt": 1785356399999,
+          "confirmedAtIso": "2026-07-29T20:19:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785251100000",
+            "BTCUSDT:EQL:1785355500000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785356700000",
+          "type": "SWING_LOW",
+          "price": 63371.6,
+          "occurredAt": 1785356700000,
+          "occurredAtIso": "2026-07-29T20:25:00.000Z",
+          "confirmedAt": 1785357599999,
+          "confirmedAtIso": "2026-07-29T20:39:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785355500000"
+          ]
+        }
+      ],
+      "minPrice": 63336,
+      "maxPrice": 63371.6,
+      "priceSpread": 35.6,
+      "distancePct": 0.000562,
+      "distanceBps": 5.619237,
+      "distanceTicks": 356,
+      "atrAtSecondConfirmation": 186.516151,
+      "distanceATR": 0.19086818960237897,
+      "departureATR": 1.767675340222128,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 2,
+      "barsApart": 4,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 0,
+      "adjacentSameSideLocalPivots": true,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1785359099999,
+          "confirmedAtIso": "2026-07-29T21:04:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785388800000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 63897.3,
+      "formationConfirmedAt": 1785397799999,
+      "formationConfirmedAtIso": "2026-07-30T07:49:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785388800000",
+          "type": "SWING_LOW",
+          "price": 63881,
+          "occurredAt": 1785388800000,
+          "occurredAtIso": "2026-07-30T05:20:00.000Z",
+          "confirmedAt": 1785389699999,
+          "confirmedAtIso": "2026-07-30T05:34:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785388800000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785396900000",
+          "type": "SWING_LOW",
+          "price": 63913.6,
+          "occurredAt": 1785396900000,
+          "occurredAtIso": "2026-07-30T07:35:00.000Z",
+          "confirmedAt": 1785397799999,
+          "confirmedAtIso": "2026-07-30T07:49:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785388800000",
+            "BTCUSDT:EQL:1785396900000"
+          ]
+        }
+      ],
+      "minPrice": 63881,
+      "maxPrice": 63913.6,
+      "priceSpread": 32.6,
+      "distancePct": 0.00051,
+      "distanceBps": 5.101937,
+      "distanceTicks": 326,
+      "atrAtSecondConfirmation": 75.065351,
+      "distanceATR": 0.4342882486765043,
+      "departureATR": 3.2345149318607733,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 10,
+      "barsApart": 27,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 4,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1785483899999,
+          "confirmedAtIso": "2026-07-31T07:44:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785423600000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 64585.8,
+      "formationConfirmedAt": 1785426299999,
+      "formationConfirmedAtIso": "2026-07-30T15:44:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785423600000",
+          "type": "SWING_LOW",
+          "price": 64571.4,
+          "occurredAt": 1785423600000,
+          "occurredAtIso": "2026-07-30T15:00:00.000Z",
+          "confirmedAt": 1785424499999,
+          "confirmedAtIso": "2026-07-30T15:14:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785423600000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785425400000",
+          "type": "SWING_LOW",
+          "price": 64600.2,
+          "occurredAt": 1785425400000,
+          "occurredAtIso": "2026-07-30T15:30:00.000Z",
+          "confirmedAt": 1785426299999,
+          "confirmedAtIso": "2026-07-30T15:44:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785423600000",
+            "BTCUSDT:EQL:1785425400000"
+          ]
+        }
+      ],
+      "minPrice": 64571.4,
+      "maxPrice": 64600.2,
+      "priceSpread": 28.8,
+      "distancePct": 0.000446,
+      "distanceBps": 4.459185,
+      "distanceTicks": 288,
+      "atrAtSecondConfirmation": 103.976076,
+      "distanceATR": 0.2769867954758096,
+      "departureATR": 2.5121163534129742,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 3,
+      "barsApart": 6,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 0,
+      "adjacentSameSideLocalPivots": true,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1785462599999,
+          "confirmedAtIso": "2026-07-31T01:49:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785425400000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 64618.25,
+      "formationConfirmedAt": 1785449699999,
+      "formationConfirmedAtIso": "2026-07-30T22:14:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785425400000",
+          "type": "SWING_LOW",
+          "price": 64600.2,
+          "occurredAt": 1785425400000,
+          "occurredAtIso": "2026-07-30T15:30:00.000Z",
+          "confirmedAt": 1785426299999,
+          "confirmedAtIso": "2026-07-30T15:44:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785423600000",
+            "BTCUSDT:EQL:1785425400000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785448800000",
+          "type": "SWING_LOW",
+          "price": 64636.3,
+          "occurredAt": 1785448800000,
+          "occurredAtIso": "2026-07-30T22:00:00.000Z",
+          "confirmedAt": 1785449699999,
+          "confirmedAtIso": "2026-07-30T22:14:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785425400000"
+          ]
+        }
+      ],
+      "minPrice": 64600.2,
+      "maxPrice": 64636.3,
+      "priceSpread": 36.1,
+      "distancePct": 0.000559,
+      "distanceBps": 5.586657,
+      "distanceTicks": 361,
+      "atrAtSecondConfirmation": 62.004864,
+      "distanceATR": 0.5822123916858604,
+      "departureATR": 5.175400456840971,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 36,
+      "barsApart": 78,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 11,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1785462599999,
+          "confirmedAtIso": "2026-07-31T01:49:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785396900000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 63935.5,
+      "formationConfirmedAt": 1785482399999,
+      "formationConfirmedAtIso": "2026-07-31T07:19:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785396900000",
+          "type": "SWING_LOW",
+          "price": 63913.6,
+          "occurredAt": 1785396900000,
+          "occurredAtIso": "2026-07-30T07:35:00.000Z",
+          "confirmedAt": 1785397799999,
+          "confirmedAtIso": "2026-07-30T07:49:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785388800000",
+            "BTCUSDT:EQL:1785396900000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785481500000",
+          "type": "SWING_LOW",
+          "price": 63957.4,
+          "occurredAt": 1785481500000,
+          "occurredAtIso": "2026-07-31T07:05:00.000Z",
+          "confirmedAt": 1785482399999,
+          "confirmedAtIso": "2026-07-31T07:19:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785396900000"
+          ]
+        }
+      ],
+      "minPrice": 63913.6,
+      "maxPrice": 63957.4,
+      "priceSpread": 43.8,
+      "distancePct": 0.000685,
+      "distanceBps": 6.850654,
+      "distanceTicks": 438,
+      "atrAtSecondConfirmation": 76.705622,
+      "distanceATR": 0.5710142078151916,
+      "departureATR": 18.693545036213465,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 272,
+      "barsApart": 282,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 42,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1785483299999,
+          "confirmedAtIso": "2026-07-31T07:34:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785517500000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 62797.45,
+      "formationConfirmedAt": 1785532499999,
+      "formationConfirmedAtIso": "2026-07-31T21:14:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785517500000",
+          "type": "SWING_LOW",
+          "price": 62780.8,
+          "occurredAt": 1785517500000,
+          "occurredAtIso": "2026-07-31T17:05:00.000Z",
+          "confirmedAt": 1785518399999,
+          "confirmedAtIso": "2026-07-31T17:19:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785517500000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785531600000",
+          "type": "SWING_LOW",
+          "price": 62814.1,
+          "occurredAt": 1785531600000,
+          "occurredAtIso": "2026-07-31T21:00:00.000Z",
+          "confirmedAt": 1785532499999,
+          "confirmedAtIso": "2026-07-31T21:14:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785517500000",
+            "BTCUSDT:EQL:1785531600000"
+          ]
+        }
+      ],
+      "minPrice": 62780.8,
+      "maxPrice": 62814.1,
+      "priceSpread": 33.3,
+      "distancePct": 0.00053,
+      "distanceBps": 5.302763,
+      "distanceTicks": 333,
+      "atrAtSecondConfirmation": 57.614821,
+      "distanceATR": 0.5779762772034956,
+      "departureATR": 8.01182731402906,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 45,
+      "barsApart": 47,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 4,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1785605399999,
+          "confirmedAtIso": "2026-08-01T17:29:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785531600000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 62824.55,
+      "formationConfirmedAt": 1785536099999,
+      "formationConfirmedAtIso": "2026-07-31T22:14:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785531600000",
+          "type": "SWING_LOW",
+          "price": 62814.1,
+          "occurredAt": 1785531600000,
+          "occurredAtIso": "2026-07-31T21:00:00.000Z",
+          "confirmedAt": 1785532499999,
+          "confirmedAtIso": "2026-07-31T21:14:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785517500000",
+            "BTCUSDT:EQL:1785531600000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785535200000",
+          "type": "SWING_LOW",
+          "price": 62835,
+          "occurredAt": 1785535200000,
+          "occurredAtIso": "2026-07-31T22:00:00.000Z",
+          "confirmedAt": 1785536099999,
+          "confirmedAtIso": "2026-07-31T22:14:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785531600000"
+          ]
+        }
+      ],
+      "minPrice": 62814.1,
+      "maxPrice": 62835,
+      "priceSpread": 20.9,
+      "distancePct": 0.000333,
+      "distanceBps": 3.326725,
+      "distanceTicks": 209,
+      "atrAtSecondConfirmation": 54.766246,
+      "distanceATR": 0.38162192357144736,
+      "departureATR": 3.6884032804510527,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 11,
+      "barsApart": 12,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 1,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1785604799999,
+          "confirmedAtIso": "2026-08-01T17:19:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785549000000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 62927.15,
+      "formationConfirmedAt": 1785554999999,
+      "formationConfirmedAtIso": "2026-08-01T03:29:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785549000000",
+          "type": "SWING_LOW",
+          "price": 62916.8,
+          "occurredAt": 1785549000000,
+          "occurredAtIso": "2026-08-01T01:50:00.000Z",
+          "confirmedAt": 1785549899999,
+          "confirmedAtIso": "2026-08-01T02:04:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785549000000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785554100000",
+          "type": "SWING_LOW",
+          "price": 62937.5,
+          "occurredAt": 1785554100000,
+          "occurredAtIso": "2026-08-01T03:15:00.000Z",
+          "confirmedAt": 1785554999999,
+          "confirmedAtIso": "2026-08-01T03:29:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785549000000",
+            "BTCUSDT:EQL:1785554100000"
+          ]
+        }
+      ],
+      "minPrice": 62916.8,
+      "maxPrice": 62937.5,
+      "priceSpread": 20.7,
+      "distancePct": 0.000329,
+      "distanceBps": 3.289518,
+      "distanceTicks": 207,
+      "atrAtSecondConfirmation": 32.43269,
+      "distanceATR": 0.6382449360873417,
+      "departureATR": 4.535547347751702,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 14,
+      "barsApart": 17,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 0,
+      "adjacentSameSideLocalPivots": true,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1785600299999,
+          "confirmedAtIso": "2026-08-01T16:04:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785554100000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 62941.05,
+      "formationConfirmedAt": 1785555899999,
+      "formationConfirmedAtIso": "2026-08-01T03:44:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785554100000",
+          "type": "SWING_LOW",
+          "price": 62937.5,
+          "occurredAt": 1785554100000,
+          "occurredAtIso": "2026-08-01T03:15:00.000Z",
+          "confirmedAt": 1785554999999,
+          "confirmedAtIso": "2026-08-01T03:29:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785549000000",
+            "BTCUSDT:EQL:1785554100000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785555000000",
+          "type": "SWING_LOW",
+          "price": 62944.6,
+          "occurredAt": 1785555000000,
+          "occurredAtIso": "2026-08-01T03:30:00.000Z",
+          "confirmedAt": 1785555899999,
+          "confirmedAtIso": "2026-08-01T03:44:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785554100000"
+          ]
+        }
+      ],
+      "minPrice": 62937.5,
+      "maxPrice": 62944.6,
+      "priceSpread": 7.1,
+      "distancePct": 0.000113,
+      "distanceBps": 1.12804,
+      "distanceTicks": 71,
+      "atrAtSecondConfirmation": 33.1218,
+      "distanceATR": 0.214360330204663,
+      "departureATR": 2.427404302599824,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 2,
+      "barsApart": 3,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 0,
+      "adjacentSameSideLocalPivots": true,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1785600299999,
+          "confirmedAtIso": "2026-08-01T16:04:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785619500000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 62727.1,
+      "formationConfirmedAt": 1785627299999,
+      "formationConfirmedAtIso": "2026-08-01T23:34:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785619500000",
+          "type": "SWING_LOW",
+          "price": 62717.1,
+          "occurredAt": 1785619500000,
+          "occurredAtIso": "2026-08-01T21:25:00.000Z",
+          "confirmedAt": 1785620399999,
+          "confirmedAtIso": "2026-08-01T21:39:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785619500000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785626400000",
+          "type": "SWING_LOW",
+          "price": 62737.1,
+          "occurredAt": 1785626400000,
+          "occurredAtIso": "2026-08-01T23:20:00.000Z",
+          "confirmedAt": 1785627299999,
+          "confirmedAtIso": "2026-08-01T23:34:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785619500000",
+            "BTCUSDT:EQL:1785626400000"
+          ]
+        }
+      ],
+      "minPrice": 62717.1,
+      "maxPrice": 62737.1,
+      "priceSpread": 20,
+      "distancePct": 0.000319,
+      "distanceBps": 3.188415,
+      "distanceTicks": 200,
+      "atrAtSecondConfirmation": 30.68554,
+      "distanceATR": 0.6517727941492941,
+      "departureATR": 3.51305536046479,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 16,
+      "barsApart": 23,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 4,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1785733799999,
+          "confirmedAtIso": "2026-08-03T05:09:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785636000000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 62943.35,
+      "formationConfirmedAt": 1785672599999,
+      "formationConfirmedAtIso": "2026-08-02T12:09:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785636000000",
+          "type": "SWING_LOW",
+          "price": 62925.6,
+          "occurredAt": 1785636000000,
+          "occurredAtIso": "2026-08-02T02:00:00.000Z",
+          "confirmedAt": 1785636899999,
+          "confirmedAtIso": "2026-08-02T02:14:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785636000000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785671700000",
+          "type": "SWING_LOW",
+          "price": 62961.1,
+          "occurredAt": 1785671700000,
+          "occurredAtIso": "2026-08-02T11:55:00.000Z",
+          "confirmedAt": 1785672599999,
+          "confirmedAtIso": "2026-08-02T12:09:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785636000000",
+            "BTCUSDT:EQL:1785671700000"
+          ]
+        }
+      ],
+      "minPrice": 62925.6,
+      "maxPrice": 62961.1,
+      "priceSpread": 35.5,
+      "distancePct": 0.000564,
+      "distanceBps": 5.639992,
+      "distanceTicks": 355,
+      "atrAtSecondConfirmation": 57.352471,
+      "distanceATR": 0.6189794340028013,
+      "departureATR": 11.488607015899907,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 116,
+      "barsApart": 119,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 15,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1785728999999,
+          "confirmedAtIso": "2026-08-03T03:49:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785671700000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 62967.75,
+      "formationConfirmedAt": 1785678599999,
+      "formationConfirmedAtIso": "2026-08-02T13:49:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785671700000",
+          "type": "SWING_LOW",
+          "price": 62961.1,
+          "occurredAt": 1785671700000,
+          "occurredAtIso": "2026-08-02T11:55:00.000Z",
+          "confirmedAt": 1785672599999,
+          "confirmedAtIso": "2026-08-02T12:09:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785636000000",
+            "BTCUSDT:EQL:1785671700000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785677700000",
+          "type": "SWING_LOW",
+          "price": 62974.4,
+          "occurredAt": 1785677700000,
+          "occurredAtIso": "2026-08-02T13:35:00.000Z",
+          "confirmedAt": 1785678599999,
+          "confirmedAtIso": "2026-08-02T13:49:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785671700000",
+            "BTCUSDT:EQL:1785677700000"
+          ]
+        }
+      ],
+      "minPrice": 62961.1,
+      "maxPrice": 62974.4,
+      "priceSpread": 13.3,
+      "distancePct": 0.000211,
+      "distanceBps": 2.112192,
+      "distanceTicks": 133,
+      "atrAtSecondConfirmation": 49.849068,
+      "distanceATR": 0.2668053910881687,
+      "departureATR": 4.828575762023111,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 19,
+      "barsApart": 20,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 2,
+      "adjacentSameSideLocalPivots": false,
+      "hasReusedMember": true,
+      "currentLifecycleState": "BROKEN",
+      "sweepStatus": false,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "BROKEN",
+          "confirmedAt": 1785728999999,
+          "confirmedAtIso": "2026-08-03T03:49:59.999Z"
+        }
+      ]
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785682800000",
+      "type": "EQL",
+      "side": "SSL",
+      "referencePrice": 63030.5,
+      "formationConfirmedAt": 1785687299999,
+      "formationConfirmedAtIso": "2026-08-02T16:14:59.999Z",
+      "memberCount": 2,
+      "members": [
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785682800000",
+          "type": "SWING_LOW",
+          "price": 63023,
+          "occurredAt": 1785682800000,
+          "occurredAtIso": "2026-08-02T15:00:00.000Z",
+          "confirmedAt": 1785683699999,
+          "confirmedAtIso": "2026-08-02T15:14:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785682800000"
+          ]
+        },
+        {
+          "swingId": "BTCUSDT:5m:SWING_LOW:1785686400000",
+          "type": "SWING_LOW",
+          "price": 63038,
+          "occurredAt": 1785686400000,
+          "occurredAtIso": "2026-08-02T16:00:00.000Z",
+          "confirmedAt": 1785687299999,
+          "confirmedAtIso": "2026-08-02T16:14:59.999Z",
+          "objectsUsingMember": [
+            "BTCUSDT:EQL:1785682800000",
+            "BTCUSDT:EQL:1785686400000"
+          ]
+        }
+      ],
+      "minPrice": 63023,
+      "maxPrice": 63038,
+      "priceSpread": 15,
+      "distancePct": 0.000238,
+      "distanceBps": 2.3798,
+      "distanceTicks": 150,
+      "atrAtSecondConfirmation": 36.906952,
+      "distanceATR": 0.40642749505308534,
+      "departureATR": 3.2568389936919786,
+      "maxConsecutiveBarsOutsideZone_0_5ATR": 10,
+      "barsApart": 12,
+      "firstSwingState": "ACTIVE",
+      "sameSideSwingsBetween": 0,
+      "adjacentSameSideLocalPivots": true,
+      "hasReusedMember": true,
+      "currentLifecycleState": "SWEPT",
+      "sweepStatus": true,
+      "lifecycleEvents": [
+        {
+          "from": "ACTIVE",
+          "to": "SWEPT",
+          "confirmedAt": 1785728099999,
+          "confirmedAtIso": "2026-08-03T03:34:59.999Z"
+        }
+      ]
+    }
+  ]
+}

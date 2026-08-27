@@ -1,0 +1,64 @@
+{
+  "name": "Persistent EQ Cluster Identity V3 recommended contract",
+  "scope": "Persistent cluster identity, member append, active member exclusivity, stable id only",
+  "creation": {
+    "minimumMembers": 2,
+    "sourcePrimitives": { "EQH": "confirmed SWING_HIGH", "EQL": "confirmed SWING_LOW" },
+    "contract": "Unchanged Lifecycle eligibility + Price Gate + Formation Independence + bounded-anchor grouping",
+    "id": "Preserve current first-formation id formula; immutable after creation",
+    "formationAnchor": "Earliest initial member; immutable"
+  },
+  "append": {
+    "allowedState": ["ACTIVE"],
+    "disallowedState": ["TOUCHED", "SWEPT", "BROKEN"],
+    "priceAndFormationReference": "immutable formationAnchor Swing",
+    "oneMatch": "append exactly once",
+    "multipleMatches": "AMBIGUOUS_UNASSIGNED",
+    "zeroMatches": "unchanged new two-member creation path",
+    "borderlineAppends": false,
+    "futureMemberAppends": false
+  },
+  "identity": {
+    "CLUSTER_ID_STABLE_AFTER_MEMBER_APPEND": true,
+    "CLUSTER_ORIGINAL_CONFIRMED_AT_IMMUTABLE": true,
+    "ACTIVE_EQ_MEMBER_EXCLUSIVITY": true,
+    "CLUSTER_TRANSITIVE_EXPANSION_PREVENTED": true,
+    "referencePrice": "arithmetic mean of visible members",
+    "referenceMeanUsedForAppendGate": false
+  },
+  "temporal": {
+    "storage": "immutable base cluster + append-only member records",
+    "runtime": "incremental current-state projector",
+    "verification": "as-of projector",
+    "memberVisibility": "memberAddedAt <= evaluationTime",
+    "referenceRevisionEffectiveFrom": "memberAddedAt",
+    "retroactiveMutation": false
+  },
+  "lifecycleBoundary": {
+    "ACTIVE_CLUSTER_APPEND_ALLOWED": true,
+    "TOUCHED_CLUSTER_APPEND_ALLOWED": false,
+    "SWEPT_CLUSTER_APPEND_ALLOWED": false,
+    "BROKEN_CLUSTER_APPEND_ALLOWED": false,
+    "terminalClusterReopenAllowed": false,
+    "afterSwept": "Old cluster stays SWEPT. A future cluster requires two new qualified Swing primitives and a new formation anchor.",
+    "afterBroken": "Old cluster stays BROKEN. It cannot accept members or be reopened."
+  },
+  "unsupported": {
+    "CLUSTER_MERGE_V3": "NOT_SUPPORTED",
+    "CLUSTER_SPLIT_V3": "NOT_SUPPORTED",
+    "qualityRanking": false,
+    "memberCountScore": false
+  },
+  "frozen": {
+    "distanceATRValidMax": 0.7,
+    "distanceATRBorderlineMax": 1.1,
+    "formationDepartureMinATR": 1.75,
+    "formationZoneATR": 0.5,
+    "formationMinConsecutiveOutsideBars": 1,
+    "atrPeriod": 14,
+    "pivot": "2/2",
+    "referencePriceFormula": "arithmetic mean",
+    "sweepAndLifecycleSemantics": "unchanged",
+    "watchSemantics": "unchanged"
+  }
+}

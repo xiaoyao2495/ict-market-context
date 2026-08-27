@@ -1,0 +1,42 @@
+{
+  "designInputs": {
+    "predecessorAudit": "EQH/EQL Production Algorithm Audit V3 = PASS",
+    "v2Population": {
+      "bars": 8640,
+      "EQH": 219,
+      "EQL": 244,
+      "twoMember": 463,
+      "threePlus": 0,
+      "swingsUsedInMultipleEq": 59,
+      "eqWithOverlappingMembers": 112
+    },
+    "shadowSimulation": {
+      "status": "NOT_RUN",
+      "reason": "The frozen event artifact contains retained V2 pairs, not the complete anchor-to-new-Swing qualified pair ledger needed for an honest persistent-cluster projection. Design PASS does not depend on manufacturing incomplete population metrics.",
+      "networkRequested": false,
+      "outcomeUsed": false
+    }
+  },
+  "contracts": {
+    "persistentCluster": true,
+    "memberAppend": true,
+    "activeMemberExclusivity": true,
+    "stableId": true,
+    "boundedAnchor": true,
+    "asOfTemporalProvenance": true,
+    "multiClusterConflict": true,
+    "syntheticCases": 14
+  },
+  "PERSISTENT_CLUSTER_CONTRACT_READY": true,
+  "MEMBER_APPEND_CONTRACT_READY": true,
+  "ACTIVE_MEMBER_EXCLUSIVITY_READY": true,
+  "STABLE_CLUSTER_ID_READY": true,
+  "READY_FOR_EQH_EQL_PERSISTENT_CLUSTER_SHADOW": true,
+  "READY_FOR_EQH_EQL_V3_PRODUCTION_IMPLEMENTATION": false,
+  "productionBlockersBeforeImplementation": [
+    "Implement and validate a complete time-ordered qualified-pair/member ledger in shadow",
+    "Prove incremental projection equals an independent as-of projection",
+    "Measure simultaneous active overlap rather than historical overlap",
+    "Verify existing Sweep and WATCH identities remain unchanged under append events"
+  ]
+}

@@ -1,0 +1,3281 @@
+{
+  "dataWindow": {
+    "start": 1784678400000,
+    "startIso": "2026-07-22T00:00:00.000Z",
+    "end": 1787270399999,
+    "endIso": "2026-08-20T23:59:59.999Z",
+    "bars": 8640
+  },
+  "memberCountDistribution": {
+    "2": 463
+  },
+  "firstToLastBars": {
+    "count": 463,
+    "min": 3,
+    "P10": 5,
+    "P25": 8,
+    "median": 15,
+    "P75": 40,
+    "P90": 140.2,
+    "max": 3163,
+    "mean": 85.665227
+  },
+  "firstToLastMinutes": {
+    "count": 463,
+    "min": 15,
+    "P10": 25,
+    "P25": 40,
+    "median": 75,
+    "P75": 200,
+    "P90": 701,
+    "max": 15815,
+    "mean": 428.326134
+  },
+  "adjacentSameSideLocalPivotEqCount": 165,
+  "veryCloseObservation": "No hard minimum; observed minimum is the distribution min.",
+  "longDurationObservation": "No hard maximum; observed P90/max are reported without proposing a gate.",
+  "twoTouchVsThreePlusSemantics": "No separate classification semantics. In this production incremental population every retained object has two members; 3+ is only representable by a batch call, not accumulated by registry.",
+  "objects": [
+    {
+      "objectId": "BTCUSDT:EQH:1784649600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 104,
+      "minutesApart": 520
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784674800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 32,
+      "minutesApart": 160
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784684400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784689800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784699400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784717100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784609700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 384,
+      "minutesApart": 1920
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784724900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 19,
+      "minutesApart": 95
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784726700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784729100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 24,
+      "minutesApart": 120
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784695200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 143,
+      "minutesApart": 715
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784737500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 12,
+      "minutesApart": 60
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784739600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784731500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 53,
+      "minutesApart": 265
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784754900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784758800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784771700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784785500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784774700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 49,
+      "minutesApart": 245
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784790600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784810700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784811000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784561700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 842,
+      "minutesApart": 4210
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784819400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784830800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784832600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784829300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 23,
+      "minutesApart": 115
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784814600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 79,
+      "minutesApart": 395
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784816400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 111,
+      "minutesApart": 555
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784863800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784869200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784873100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 28,
+      "minutesApart": 140
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784860500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 81,
+      "minutesApart": 405
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784884800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784887200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 29,
+      "minutesApart": 145
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784559000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 1133,
+      "minutesApart": 5665
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784536500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 1216,
+      "minutesApart": 6080
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784901900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784905500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 20,
+      "minutesApart": 100
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784909400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 17,
+      "minutesApart": 85
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784907600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 40,
+      "minutesApart": 200
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784917200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784919600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784922900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784926800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 20,
+      "minutesApart": 100
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784930100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784936100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784939400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784941800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784943900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 30,
+      "minutesApart": 150
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784913000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 179,
+      "minutesApart": 895
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784964900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 27,
+      "minutesApart": 135
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784960100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 48,
+      "minutesApart": 240
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784924700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 208,
+      "minutesApart": 1040
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784985300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784923200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 231,
+      "minutesApart": 1155
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1784991000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784993700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784900700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 339,
+      "minutesApart": 1695
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785004800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785002100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 40,
+      "minutesApart": 200
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785015900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785028500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785031500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785039300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785042900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 45,
+      "minutesApart": 225
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785059100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785041100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 72,
+      "minutesApart": 360
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785060900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785065700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785074700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785078600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785085500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785086100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 19,
+      "minutesApart": 95
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785089700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785091800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785093000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785076200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 70,
+      "minutesApart": 350
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785083400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 63,
+      "minutesApart": 315
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785111300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785111900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 18,
+      "minutesApart": 90
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785119400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785126600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785137100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 40,
+      "minutesApart": 200
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785142800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 30,
+      "minutesApart": 150
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785102000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 178,
+      "minutesApart": 890
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785155400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1784789400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 1235,
+      "minutesApart": 6175
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785051600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 372,
+      "minutesApart": 1860
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785165600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785171600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785173700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 24,
+      "minutesApart": 120
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785182400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785183300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785177600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 36,
+      "minutesApart": 180
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785193200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785197400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785200700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 20,
+      "minutesApart": 100
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785202500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 25,
+      "minutesApart": 125
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785218700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 29,
+      "minutesApart": 145
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785225900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785223500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 27,
+      "minutesApart": 135
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785237600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785237300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785238500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785263400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785269700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785270900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785257400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 59,
+      "minutesApart": 295
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785260100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 70,
+      "minutesApart": 350
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785283500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785290400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 18,
+      "minutesApart": 90
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785281100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 56,
+      "minutesApart": 280
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785294300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 18,
+      "minutesApart": 90
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785190500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 425,
+      "minutesApart": 2125
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785315900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 22,
+      "minutesApart": 110
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785331200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785302400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 119,
+      "minutesApart": 595
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785337800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785344700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 17,
+      "minutesApart": 85
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785251100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 348,
+      "minutesApart": 1740
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785355500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785249300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 366,
+      "minutesApart": 1830
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785363300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 24,
+      "minutesApart": 120
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785381000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785383400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 20,
+      "minutesApart": 100
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785389400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 18,
+      "minutesApart": 90
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785393900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785388800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 27,
+      "minutesApart": 135
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785351000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 177,
+      "minutesApart": 885
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785409200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785423600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785427800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785431400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785434700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785441600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785441600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785425400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 78,
+      "minutesApart": 390
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785433200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 54,
+      "minutesApart": 270
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785455400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785470400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785471600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 17,
+      "minutesApart": 85
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785475200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785467400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 43,
+      "minutesApart": 215
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785396900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 282,
+      "minutesApart": 1410
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785372900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 391,
+      "minutesApart": 1955
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785484200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 39,
+      "minutesApart": 195
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785495900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785507000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785508500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785526800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785517500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 47,
+      "minutesApart": 235
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785527100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 19,
+      "minutesApart": 95
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785531600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 12,
+      "minutesApart": 60
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785535800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785547200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785549000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 17,
+      "minutesApart": 85
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785554100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785560400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785557100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 24,
+      "minutesApart": 120
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785573900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785582900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 30,
+      "minutesApart": 150
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785593100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785547500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 175,
+      "minutesApart": 875
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785541800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 205,
+      "minutesApart": 1025
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785609000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785619800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785619500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 23,
+      "minutesApart": 115
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785623400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785603900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 85,
+      "minutesApart": 425
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785636300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785637200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 17,
+      "minutesApart": 85
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785640500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785648000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785649200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785652200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785656400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785661500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785666900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785636000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 119,
+      "minutesApart": 595
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785665700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 25,
+      "minutesApart": 125
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785671700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 20,
+      "minutesApart": 100
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785681300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785682800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 12,
+      "minutesApart": 60
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785691200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785646800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 164,
+      "minutesApart": 820
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785504000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 677,
+      "minutesApart": 3385
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785706800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785698700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 38,
+      "minutesApart": 190
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785695100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 57,
+      "minutesApart": 285
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785690600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 88,
+      "minutesApart": 440
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785686400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 113,
+      "minutesApart": 565
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785677700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 167,
+      "minutesApart": 835
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785626400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 346,
+      "minutesApart": 1730
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785616500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 413,
+      "minutesApart": 2065
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785737100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 46,
+      "minutesApart": 230
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785754500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785752400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 29,
+      "minutesApart": 145
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785717600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 159,
+      "minutesApart": 795
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785772500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785778200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785775200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 25,
+      "minutesApart": 125
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785783900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785782700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785795300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785798900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785794700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 26,
+      "minutesApart": 130
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785788400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 75,
+      "minutesApart": 375
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785480900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 1126,
+      "minutesApart": 5630
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785816300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 17,
+      "minutesApart": 85
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785813300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 43,
+      "minutesApart": 215
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785828000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 24,
+      "minutesApart": 120
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785833400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785822000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 61,
+      "minutesApart": 305
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785842100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785846900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785848400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785846000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785852000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785858300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785867600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785880800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785885300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 35,
+      "minutesApart": 175
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785900600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785903300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785892500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 77,
+      "minutesApart": 385
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785915600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 38,
+      "minutesApart": 190
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785928500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785927000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785857400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 265,
+      "minutesApart": 1325
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785932400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 23,
+      "minutesApart": 115
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785942600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785940800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785947100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785954600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 30,
+      "minutesApart": 150
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785953100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 40,
+      "minutesApart": 200
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785950400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 77,
+      "minutesApart": 385
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785972300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785977700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785945300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 125,
+      "minutesApart": 625
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785983700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785992700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 27,
+      "minutesApart": 135
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785996900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 24,
+      "minutesApart": 120
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786009800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786011600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786017600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 28,
+      "minutesApart": 140
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785961200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 226,
+      "minutesApart": 1130
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786030200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 19,
+      "minutesApart": 95
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786026600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 53,
+      "minutesApart": 265
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786042800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786046700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786045800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 21,
+      "minutesApart": 105
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786044600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 30,
+      "minutesApart": 150
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786059900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786052400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 40,
+      "minutesApart": 200
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786050900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 51,
+      "minutesApart": 255
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786040400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 95,
+      "minutesApart": 475
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786068600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786062000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 28,
+      "minutesApart": 140
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786070400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786073400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786022700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 185,
+      "minutesApart": 925
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786071000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 43,
+      "minutesApart": 215
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786082400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785461100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 2135,
+      "minutesApart": 10675
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786101600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1785460200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 2157,
+      "minutesApart": 10785
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786107300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786110300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786114800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786119000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 46,
+      "minutesApart": 230
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786132200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786132800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786143000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786160100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786161900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 21,
+      "minutesApart": 105
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786166700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 17,
+      "minutesApart": 85
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786171800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 21,
+      "minutesApart": 105
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786182300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786184700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786158000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 109,
+      "minutesApart": 545
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786164000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 91,
+      "minutesApart": 455
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786194300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786199400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786191900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 114,
+      "minutesApart": 570
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786233000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786247700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786246500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 19,
+      "minutesApart": 95
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786254300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 35,
+      "minutesApart": 175
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786270800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786237200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 129,
+      "minutesApart": 645
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786113300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 565,
+      "minutesApart": 2825
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786284300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786291500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786299300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786292700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 40,
+      "minutesApart": 200
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786279800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 120,
+      "minutesApart": 600
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786267500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 169,
+      "minutesApart": 845
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786264800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 183,
+      "minutesApart": 915
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786325700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786329600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786328700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 18,
+      "minutesApart": 90
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786335300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786326600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 69,
+      "minutesApart": 345
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786348500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786355400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786351800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 38,
+      "minutesApart": 190
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786383600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786388400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786390800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 28,
+      "minutesApart": 140
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786403700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786402800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 18,
+      "minutesApart": 90
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786408500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786425000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786425600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786422000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 45,
+      "minutesApart": 225
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786434900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786418700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 65,
+      "minutesApart": 325
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786440900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786442700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786451700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785806100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 2189,
+      "minutesApart": 10945
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786464600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 21,
+      "minutesApart": 105
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786479300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786482900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786488900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786461900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 125,
+      "minutesApart": 625
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786498200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 21,
+      "minutesApart": 105
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786501800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 22,
+      "minutesApart": 110
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786504500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786508400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786516200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786528800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 12,
+      "minutesApart": 60
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786531500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786450200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 292,
+      "minutesApart": 1460
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786493100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 168,
+      "minutesApart": 840
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786475400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 238,
+      "minutesApart": 1190
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786546800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786552200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786555800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786551000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 26,
+      "minutesApart": 130
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786554900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786570500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786575900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786574400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 33,
+      "minutesApart": 165
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786584900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786580100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 43,
+      "minutesApart": 215
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786612500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786562700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 194,
+      "minutesApart": 970
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786622400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786615200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 37,
+      "minutesApart": 185
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786608000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 68,
+      "minutesApart": 340
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786598100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 112,
+      "minutesApart": 560
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786627800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 23,
+      "minutesApart": 115
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786563900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 243,
+      "minutesApart": 1215
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786642500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786638000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 33,
+      "minutesApart": 165
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786650300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786651200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786647900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 30,
+      "minutesApart": 150
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786657500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786669500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786659600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 45,
+      "minutesApart": 225
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786670400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786665300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 37,
+      "minutesApart": 185
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786680000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786683600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786697700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786703700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786700400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 30,
+      "minutesApart": 150
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786696200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 51,
+      "minutesApart": 255
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1785763800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3163,
+      "minutesApart": 15815
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786714200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786692000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 103,
+      "minutesApart": 515
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786722600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 26,
+      "minutesApart": 130
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786731900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 65,
+      "minutesApart": 325
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786759800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 17,
+      "minutesApart": 85
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786768800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786766100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 21,
+      "minutesApart": 105
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786758600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 55,
+      "minutesApart": 275
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786776900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786775100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 18,
+      "minutesApart": 90
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786750500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 113,
+      "minutesApart": 565
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786783500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786787700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786789800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786780500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 62,
+      "minutesApart": 310
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786802100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786811400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 35,
+      "minutesApart": 175
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786832100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786819800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 76,
+      "minutesApart": 380
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786843200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786841100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786844100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786833900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 47,
+      "minutesApart": 235
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786858500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786859700000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786859700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786866000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786798200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 254,
+      "minutesApart": 1270
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786879500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786869300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 56,
+      "minutesApart": 280
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786890000000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786855800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 124,
+      "minutesApart": 620
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786920000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 23,
+      "minutesApart": 115
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786921200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 20,
+      "minutesApart": 100
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786909200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 65,
+      "minutesApart": 325
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786899900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 101,
+      "minutesApart": 505
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786929300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786673100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 897,
+      "minutesApart": 4485
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786947600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786938000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 62,
+      "minutesApart": 310
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786955400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786949100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 51,
+      "minutesApart": 255
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786969500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786969800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786975500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786537800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 1498,
+      "minutesApart": 7490
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786989600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 12,
+      "minutesApart": 60
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786998300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786997100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 29,
+      "minutesApart": 145
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787021100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787020500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787018700000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 30,
+      "minutesApart": 150
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787031300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787025600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 49,
+      "minutesApart": 245
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787037300000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1786986900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 244,
+      "minutesApart": 1220
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787065800000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 16,
+      "minutesApart": 80
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787068800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787070600000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787074200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787078100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787086200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787087400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 17,
+      "minutesApart": 85
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787081100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 52,
+      "minutesApart": 260
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787098800000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787101200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787104500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 17,
+      "minutesApart": 85
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787109000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 11,
+      "minutesApart": 55
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787109600000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 12,
+      "minutesApart": 60
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787112300000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 15,
+      "minutesApart": 75
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787121900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787132400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 6,
+      "minutesApart": 30
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787101500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 120,
+      "minutesApart": 600
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787137500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 9,
+      "minutesApart": 45
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787144400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 8,
+      "minutesApart": 40
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1786313400000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 2785,
+      "minutesApart": 13925
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787163000000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 12,
+      "minutesApart": 60
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787173500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787179200000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787195400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 3,
+      "minutesApart": 15
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787194500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787198100000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787175900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 113,
+      "minutesApart": 565
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787219400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 10,
+      "minutesApart": 50
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787216400000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 37,
+      "minutesApart": 185
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787231100000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 13,
+      "minutesApart": 65
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787239200000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 5,
+      "minutesApart": 25
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787244900000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 7,
+      "minutesApart": 35
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787254500000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 18,
+      "minutesApart": 90
+    },
+    {
+      "objectId": "BTCUSDT:EQL:1787259900000",
+      "type": "EQL",
+      "memberCount": 2,
+      "barsApart": 4,
+      "minutesApart": 20
+    },
+    {
+      "objectId": "BTCUSDT:EQH:1787260500000",
+      "type": "EQH",
+      "memberCount": 2,
+      "barsApart": 14,
+      "minutesApart": 70
+    }
+  ]
+}

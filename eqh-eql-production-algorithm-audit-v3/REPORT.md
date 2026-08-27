@@ -1,0 +1,168 @@
+# EQH/EQL Production Algorithm Audit V3
+
+## Result
+
+**PASS.** The current production path is fully traced without changing production or using network/outcome data. The 30D population is read from the previously validated one-pass production EQ event capture (8640 closed bars).
+
+## Population
+
+```json
+{
+  "DATA_WINDOW_USED": "2026-07-22T00:00:00.000Z to 2026-08-20T23:59:59.999Z",
+  "BAR_COUNT": 8640,
+  "dataSource": "previously captured one-pass production replay append-only EQ event stream; no replay and no network in V3",
+  "TOTAL_SWING_HIGH": 1204,
+  "TOTAL_SWING_LOW": 1212,
+  "TOTAL_EQH": 219,
+  "TOTAL_EQL": 244,
+  "EQ_MEMBER_COUNT_2": 463,
+  "EQ_MEMBER_COUNT_3": 0,
+  "EQ_MEMBER_COUNT_4": 0,
+  "EQ_MEMBER_COUNT_5_PLUS": 0,
+  "EQ_WITH_OVERLAPPING_MEMBERS": 112,
+  "SWING_USED_IN_MULTIPLE_EQ": 59,
+  "DUPLICATE_OR_NEAR_DUPLICATE_EQ": 112
+}
+```
+
+## Actual algorithm
+
+A production EQ is a VALID_EQ same-side pair/group of confirmed 2/2 Swing primitives. First swing must be ACTIVE/TOUCHED at second confirmation; distanceATR must be <=0.7; departureATR >=1.75 and max consecutive full-wick bars outside +/-0.5 ATR zone >=1. Only then bounded-anchor grouping emits EQH/EQL.
+
+OTHER: pair-classification feeding bounded-anchor grouping. The batch function can build a direct-anchor cluster, but the actual incremental retained registry population is pairwise (all 463 objects have 2 members).
+
+**Price formula:** distanceATR = abs(price1-price2)/ATR14 at second swing confirmedAt. VALID price requires <=0.7; >0.7 to <=1.1 is BORDERLINE; >1.1 REJECT. Tick and percentage helper are not used by V2 production.
+
+**Reference:** Arithmetic mean of retained member prices. **Formation confirmedAt:** Maximum member confirmedAt; in incremental production this is the newly confirmed second Swing confirmedAt.
+
+## Direct answers
+
+### Q1
+
+A production EQ is a VALID_EQ same-side pair/group of confirmed 2/2 Swing primitives. First swing must be ACTIVE/TOUCHED at second confirmation; distanceATR must be <=0.7; departureATR >=1.75 and max consecutive full-wick bars outside +/-0.5 ATR zone >=1. Only then bounded-anchor grouping emits EQH/EQL.
+
+### Q2
+
+OTHER: pair-classification feeding bounded-anchor grouping. The batch function can build a direct-anchor cluster, but the actual incremental retained registry population is pairwise (all 463 objects have 2 members).
+
+### Q3
+
+distanceATR = abs(price1-price2)/ATR14 at second swing confirmedAt. VALID price requires <=0.7; >0.7 to <=1.1 is BORDERLINE; >1.1 REJECT. Tick and percentage helper are not used by V2 production.
+
+### Q4
+
+Yes, pair-level formation independence exists: departureATR >=1.75 and at least one consecutive full-wick candle outside the 0.5 ATR zone. There is no cluster-wide/3+ independence semantic.
+
+### Q5
+
+They can: barsApart has no minimum and adjacent same-side pivots are allowed, but they still must pass lifecycle, ATR price and formation gates. Observed adjacent count is 165.
+
+### Q6
+
+Yes. 59 Swing identities occur in multiple retained EQ objects.
+
+### Q7
+
+Overlap is material but exact member-set duplication is not: 112 EQ objects contain reused members across 59 overlapping object pairs; exact duplicate member sets=0.
+
+### Q8
+
+No distinct semantics. Actual retained 30D objects are all 2-touch; no 3+/4+ object exists.
+
+### Q9
+
+Arithmetic mean of retained member prices.
+
+### Q10
+
+Maximum member confirmedAt; in incremental production this is the newly confirmed second Swing confirmedAt.
+
+### Q11
+
+No detected future leak: bounded 30D prior production validation reports 0 violations and current source guards confirm the same contract.
+
+### Q12
+
+Against mean EQ reference: EQH sweep high>level and close<level; EQL sweep low<level and close>level. Close beyond level is BROKEN; equality touch is TOUCHED.
+
+### Q13
+
+Yes. Sweep liquidityId is the EQ id and WATCH candidate.sourceId copies it; no member Swing fallback occurs. Raw Swing candidates are filtered for Narrative WATCH.
+
+### Q14
+
+- Incremental secondSwingIds + immutable id registry collapses real retained population to 2-member snapshots: later valid touches do not enrich an existing EQ, and a same-anchor id collision is silently ignored.
+- Grouping exclusivity is invocation-local, so a Swing can bridge multiple EQ identities across time; overlapping identities survive even though transitive expansion is blocked within one call.
+- Lifecycle/sweep evaluates the arithmetic mean only. For wider valid member spreads, wick/close interaction with the member extrema is not represented in EQ taken semantics.
+
+### Q15
+
+- 2/2 pivot and confirmedAt discipline
+- closed-candle and evaluationTime guards
+- explicit lifecycle eligibility before price/formation
+- ATR-normalized price feature
+- symmetric formation independence features
+- bounded-anchor anti-transitive grouping intent
+- deterministic EQ identity and monotonic lifecycle
+- EQ identity preserved into Sweep and WATCH
+
+## Acceptance
+
+```json
+{
+  "EQH_EQL_PRODUCTION_ALGORITHM_AUDIT_V3": "PASS",
+  "PRODUCTION_CHANGED": false,
+  "EQ_DETECTOR_CHANGED": false,
+  "EQ_THRESHOLD_CHANGED": false,
+  "PIVOT_CHANGED": false,
+  "SWING_DETECTOR_CHANGED": false,
+  "REGISTRY_CHANGED": false,
+  "SWEEP_CHANGED": false,
+  "WATCH_CHANGED": false,
+  "AMD_CHANGED": false,
+  "NOTIFICATION_CHANGED": false,
+  "EQ_PRODUCTION_PATH_TRACED": true,
+  "EQ_MEMBER_CONTRACT_TRACED": true,
+  "EQ_TOLERANCE_FORMULA_TRACED": true,
+  "EQ_IDENTITY_SEMANTICS_TRACED": true,
+  "EQ_LIFECYCLE_TRACED": true,
+  "EQ_WATCH_IDENTITY_VERIFIED": true,
+  "EQ_MEMBER_INDEPENDENCE_MODEL_EXISTS": true,
+  "FUTURE_LEAK_VIOLATIONS": 0,
+  "PAST_STATE_IMMUTABILITY_VIOLATIONS": 0,
+  "DETERMINISM_VIOLATIONS": 0,
+  "OUTCOME_USED": false,
+  "PNL_USED": false,
+  "NETWORK_REQUESTS_RUN": false,
+  "WATCH_EQ_CANDIDATE_USES_EQ_IDENTITY": true,
+  "SWING_AS_WATCH_NARRATIVE_LIQUIDITY": false,
+  "READY_FOR_EQH_EQL_V3_DESIGN": true,
+  "READY_FOR_EQH_EQL_V3_PRODUCTION_IMPLEMENTATION": false,
+  "HARD_STOP_REACHED": true,
+  "productionFileHashesBefore": {
+    "structure/pivotDetector.js": "cde3cd56392785d99c17db55fdff6e2fcc3afcf8ffdfcd266c2616e024712b5a",
+    "liquidity/swingLiquidity.js": "76cccada77af3de5263da9cfe3c7568a5e4f4eeb3afc0ce75ecfd5bdc8befa90",
+    "liquidity/equalLiquidity.js": "da7cc96b7c06b275fc2c82865e1c60bd7fd53ca8af44a97dfc05c876d2bf3880",
+    "config/thresholds.js": "4daf3e4b9f99858478b60a2dd431c6ba41ee11ec576793999a8ba0f7594bbdfa",
+    "replay/replayState.js": "73b93be83b98417196c3434db8a63629aad3f18262fda09e4ff21ef81074d59a",
+    "liquidity/liquidityRegistry.js": "c00d96061271fc383c02009075cee057c53cd07cf2ac16f463f6b2a1e20db747",
+    "liquidity/liquidityLifecycle.js": "5f38c389461d3ac7c11b0865e67970c9953682ee6ec7ccfba88593148d274ee1",
+    "events/sweepEventAdapter.js": "f03193f7231479e95cdf0b706e8399e771275b12f27acaa0459cd5fce2bee242",
+    "stats/liquidityProvenance.js": "0850b80112e0e156482bc5f0d45bcc10139e42f9e65b8e0788269e59eee349b4",
+    "stats/displacementWatch.js": "95c72124249653f6766c21bfd5e79afca9888a28d803ffd76a66335385b1588f"
+  },
+  "productionFileHashesAfter": {
+    "structure/pivotDetector.js": "cde3cd56392785d99c17db55fdff6e2fcc3afcf8ffdfcd266c2616e024712b5a",
+    "liquidity/swingLiquidity.js": "76cccada77af3de5263da9cfe3c7568a5e4f4eeb3afc0ce75ecfd5bdc8befa90",
+    "liquidity/equalLiquidity.js": "da7cc96b7c06b275fc2c82865e1c60bd7fd53ca8af44a97dfc05c876d2bf3880",
+    "config/thresholds.js": "4daf3e4b9f99858478b60a2dd431c6ba41ee11ec576793999a8ba0f7594bbdfa",
+    "replay/replayState.js": "73b93be83b98417196c3434db8a63629aad3f18262fda09e4ff21ef81074d59a",
+    "liquidity/liquidityRegistry.js": "c00d96061271fc383c02009075cee057c53cd07cf2ac16f463f6b2a1e20db747",
+    "liquidity/liquidityLifecycle.js": "5f38c389461d3ac7c11b0865e67970c9953682ee6ec7ccfba88593148d274ee1",
+    "events/sweepEventAdapter.js": "f03193f7231479e95cdf0b706e8399e771275b12f27acaa0459cd5fce2bee242",
+    "stats/liquidityProvenance.js": "0850b80112e0e156482bc5f0d45bcc10139e42f9e65b8e0788269e59eee349b4",
+    "stats/displacementWatch.js": "95c72124249653f6766c21bfd5e79afca9888a28d803ffd76a66335385b1588f"
+  },
+  "changedProductionFiles": []
+}
+```

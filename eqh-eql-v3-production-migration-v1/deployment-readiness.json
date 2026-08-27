@@ -1,0 +1,18 @@
+{
+  "readyForDeployment": true,
+  "commitCompleted": true,
+  "commit": "bdd076217fe9d47a8d6d516ed78c600679d11336",
+  "pushCompleted": true,
+  "originMainEqualsHead": true,
+  "productionTopologyConfirmedFromCurrentEnvironment": false,
+  "deploymentStatus": "BLOCKED_NO_PRODUCTION_ACCESS",
+  "requiredStartupLog": "EQ_PRODUCTION_VERSION=V3（Persistent Cluster V3）",
+  "postDeploySmoke": [
+    "process online",
+    "no startup exception",
+    "no module error",
+    "data stream active",
+    "5m processing continues",
+    "EQ V3 selected"
+  ]
+}

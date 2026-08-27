@@ -1,0 +1,17 @@
+{
+  "externalContract": [
+    "id",
+    "symbol",
+    "timeframe",
+    "liquidityType",
+    "side",
+    "price",
+    "occurredAt",
+    "confirmedAt",
+    "status",
+    "metadata"
+  ],
+  "productionSourceCount": 1,
+  "productionSource": "V3",
+  "watchEqCandidateUsesV3ClusterId": true
+}

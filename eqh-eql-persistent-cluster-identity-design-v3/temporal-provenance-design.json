@@ -1,0 +1,32 @@
+{
+  "timeFields": {
+    "cluster.createdAt": "First two-member formation confirmation time; immutable",
+    "cluster.confirmedAt": "Same as createdAt; immutable and the first time cluster identity exists",
+    "member.confirmedAt": "Canonical Swing confirmedAt",
+    "member.memberAddedAt": "First time that member is visible in this cluster",
+    "cluster.lastMemberConfirmedAt": "Derived max confirmedAt among members visible as-of evaluationTime",
+    "referencePriceEffectiveAt": "The memberAddedAt that created the current projected mean"
+  },
+  "asOfProjection": {
+    "clusterVisible": "cluster.confirmedAt <= evaluationTime",
+    "visibleMembers": "member.memberAddedAt <= evaluationTime AND member.confirmedAt <= evaluationTime",
+    "referencePrice": "mean(visibleMembers.price)",
+    "memberCount": "visibleMembers.length",
+    "state": "Existing lifecycle projected only from events/candles confirmed at or before evaluationTime"
+  },
+  "appendOrdering": "Existing cluster lifecycle is projected through candidate confirmedAt before append eligibility is checked",
+  "pastStateExample": {
+    "T1": "EQ#17 members [A,B], reference mean(A,B)",
+    "T2": "EQ_MEMBER_APPENDED(C) becomes effective",
+    "queryAsOfT1AfterT2": "Still [A,B] and mean(A,B)",
+    "queryAsOfT2": "[A,B,C] and mean(A,B,C)"
+  },
+  "immutability": {
+    "CLUSTER_ORIGINAL_CONFIRMED_AT_IMMUTABLE": true,
+    "PAST_MEMBER_SET_IMMUTABLE": true,
+    "PAST_REFERENCE_PRICE_IMMUTABLE": true,
+    "PAST_LIFECYCLE_NOT_RECOMPUTED_AFTER_APPEND": true,
+    "FUTURE_MEMBER_VISIBLE_IN_PAST": false
+  },
+  "minimalImplementationRequirement": "An append-only member ledger plus an incremental current-state projector; full general-purpose event sourcing is not required"
+}

@@ -1,0 +1,30 @@
+{
+  "idFormula": "symbol + \":\" + type + \":\" + minimum member sourceOpenTime",
+  "idDependsOnAllMembers": false,
+  "anchorDependency": "earliest member sourceOpenTime",
+  "referencePriceFormula": "arithmetic mean of retained member prices",
+  "identityStableAfterRegistryAdd": true,
+  "laterMembersAppended": false,
+  "membersOrReferenceMutatedByRegistryAddCollision": false,
+  "mergeSupported": false,
+  "splitSupported": false,
+  "collisionBehavior": "same id is rejected; existing object is not recomputed or enriched",
+  "metadataMemberReferenceCaveat": "metadata.members stores live Swing object references; later lifecycle mutation of those Swing objects can change nested status fields, although member ids/prices and EQ reference remain unchanged.",
+  "overlapAndDuplicateCounts": {
+    "swingUsedInMultipleEq": 59,
+    "overlappingObjectPairs": 59,
+    "exactDuplicateMemberSets": 0
+  },
+  "source": [
+    {
+      "file": "liquidity/equalLiquidity.js",
+      "lines": "330-382",
+      "function": "buildGroup"
+    },
+    {
+      "file": "liquidity/liquidityRegistry.js",
+      "lines": "23-33",
+      "function": "add"
+    }
+  ]
+}
