@@ -1,0 +1,1288 @@
+{
+  "roots": [
+    "test/accumulationDetector.test.js",
+    "test/alertPrioritization.test.js",
+    "test/amdDetectors.test.js",
+    "test/amdStateMachine.test.js",
+    "test/atr.test.js",
+    "test/availabilityTime.test.js",
+    "test/biasComponents.test.js",
+    "test/biasContextAudit.test.js",
+    "test/biasEngine.test.js",
+    "test/biasResponseValidator.test.js",
+    "test/dailyBiasIntegration.test.js",
+    "test/dailyBiasMssDiagnostic.test.js",
+    "test/dailyLiquidity.test.js",
+    "test/dealingRange.test.js",
+    "test/deepseek4hBiasAudit.test.js",
+    "test/deliveryBias.test.js",
+    "test/dingTalk.test.js",
+    "test/displacementDetector.test.js",
+    "test/displacementWatch.test.js",
+    "test/distanceScorer.test.js",
+    "test/drawCandidate.test.js",
+    "test/drawEngine.test.js",
+    "test/drawLiquidityAudit.test.js",
+    "test/drawScorer.test.js",
+    "test/eqHistoricalMembershipEventStreamAuditV1.test.js",
+    "test/equalLiquidity.test.js",
+    "test/equalLiquidityAudit.test.js",
+    "test/eventRegistry.test.js",
+    "test/exchangeInfo.test.js",
+    "test/externalSwingAudit.test.js",
+    "test/freshnessScorer.test.js",
+    "test/fvgEntry.test.js",
+    "test/htfClosure.test.js",
+    "test/incrementalLiquidityEquiv.test.js",
+    "test/liquidityCluster.test.js",
+    "test/liquidityLifecycle.test.js",
+    "test/liquidityObjectQualificationRegistrySemanticsV1.test.js",
+    "test/liquidityObjectShadowAudit.test.js",
+    "test/liquidityProvenance.test.js",
+    "test/liquidityRecencyAudit.test.js",
+    "test/liquidityRegistry.test.js",
+    "test/liquidityRelevanceAudit.test.js",
+    "test/liquidityScorer.test.js",
+    "test/liquiditySweepContextConsumptionV1.test.js",
+    "test/liveBootstrapPerformanceV1.test.js",
+    "test/liveDataGuard.test.js",
+    "test/livePrioritizationAudit.test.js",
+    "test/marketFactsAudit.test.js",
+    "test/minimalSweepContextProductionIntegrationV1.test.js",
+    "test/monthlyLiquidity.test.js",
+    "test/mssDirectionAudit.test.js",
+    "test/mssSignalDetector.test.js",
+    "test/mtfSwingRealTimeAvailabilityV1.test.js",
+    "test/multiTimeframeSwingHierarchyV1.test.js",
+    "test/narrativeBoundary.test.js",
+    "test/narrativeLabelAudit.test.js",
+    "test/narrativeLiquidityEvidenceShadowEvaluationV1.test.js",
+    "test/narrativeLiquidityV1ProductionSimplification.test.js",
+    "test/narrativeStats.test.js",
+    "test/nearStaleness.test.js",
+    "test/pivotDetector.test.js",
+    "test/pivotPopulationAudit.test.js",
+    "test/reactionBoundaryPolicyV1.test.js",
+    "test/reactionLegParameterizationAuditV1.test.js",
+    "test/replayIntegrity.test.js",
+    "test/replayStats.test.js",
+    "test/retraceDiagnostics.test.js",
+    "test/run.js",
+    "test/scenarioEngine.test.js",
+    "test/sessionLiquidity.test.js",
+    "test/shadowWatchConsumptionAdapterV1.test.js",
+    "test/stopDiagnostics.test.js",
+    "test/stopSemantics.test.js",
+    "test/stopV2Counterfactual.test.js",
+    "test/structuralProvenance4hAudit.test.js",
+    "test/structuralProvenance5m.test.js",
+    "test/sweepCentricAudit.test.js",
+    "test/sweepContextNotificationPresentationV1.test.js",
+    "test/sweepIncrementalAudit.test.js",
+    "test/sweepNarrativeEligibilityShadowIntegrationV1.test.js",
+    "test/swingClassifier.test.js",
+    "test/swingContextProjectionV1.test.js",
+    "test/swingLiquidity.test.js",
+    "test/swingMultiDimensionalStateModelDesignV1.test.js",
+    "test/swingOutcomeReactionPopulationAuditV1.test.js",
+    "test/swingReactionLegStructuralAttributionAuditV1.test.js",
+    "test/swingSignificanceHumanReview.test.js",
+    "test/swingStateFinalizationV1.test.js",
+    "test/tradePlan.test.js",
+    "test/triggerPriceAudit.test.js",
+    "test/utcTime.test.js",
+    "test/watchLiquidityEvidenceV1.test.js",
+    "test/watchNarrativeEligibleCandidateShadowComparisonV1.test.js",
+    "test/watchNarrativeLiquidityPolicyDesignV1.test.js",
+    "test/watchNotificationPresentationV1.test.js",
+    "test/watchShadowConsumptionIntegrationV1.test.js",
+    "test/weeklyLiquidity.test.js"
+  ],
+  "nodes": [
+    "test/accumulationDetector.test.js",
+    "test/alertPrioritization.test.js",
+    "test/amdDetectors.test.js",
+    "test/amdStateMachine.test.js",
+    "test/atr.test.js",
+    "test/availabilityTime.test.js",
+    "test/biasComponents.test.js",
+    "test/biasContextAudit.test.js",
+    "test/biasEngine.test.js",
+    "test/biasResponseValidator.test.js",
+    "test/dailyBiasIntegration.test.js",
+    "test/dailyBiasMssDiagnostic.test.js",
+    "test/dailyLiquidity.test.js",
+    "test/dealingRange.test.js",
+    "test/deepseek4hBiasAudit.test.js",
+    "test/deliveryBias.test.js",
+    "test/dingTalk.test.js",
+    "test/displacementDetector.test.js",
+    "test/displacementWatch.test.js",
+    "test/distanceScorer.test.js",
+    "test/drawCandidate.test.js",
+    "test/drawEngine.test.js",
+    "test/drawLiquidityAudit.test.js",
+    "test/drawScorer.test.js",
+    "test/eqHistoricalMembershipEventStreamAuditV1.test.js",
+    "test/equalLiquidity.test.js",
+    "test/equalLiquidityAudit.test.js",
+    "test/eventRegistry.test.js",
+    "test/exchangeInfo.test.js",
+    "test/externalSwingAudit.test.js",
+    "test/freshnessScorer.test.js",
+    "test/fvgEntry.test.js",
+    "test/htfClosure.test.js",
+    "test/incrementalLiquidityEquiv.test.js",
+    "test/liquidityCluster.test.js",
+    "test/liquidityLifecycle.test.js",
+    "test/liquidityObjectQualificationRegistrySemanticsV1.test.js",
+    "test/liquidityObjectShadowAudit.test.js",
+    "test/liquidityProvenance.test.js",
+    "test/liquidityRecencyAudit.test.js",
+    "test/liquidityRegistry.test.js",
+    "test/liquidityRelevanceAudit.test.js",
+    "test/liquidityScorer.test.js",
+    "test/liquiditySweepContextConsumptionV1.test.js",
+    "test/liveBootstrapPerformanceV1.test.js",
+    "test/liveDataGuard.test.js",
+    "test/livePrioritizationAudit.test.js",
+    "test/marketFactsAudit.test.js",
+    "test/minimalSweepContextProductionIntegrationV1.test.js",
+    "test/monthlyLiquidity.test.js",
+    "test/mssDirectionAudit.test.js",
+    "test/mssSignalDetector.test.js",
+    "test/mtfSwingRealTimeAvailabilityV1.test.js",
+    "test/multiTimeframeSwingHierarchyV1.test.js",
+    "test/narrativeBoundary.test.js",
+    "test/narrativeLabelAudit.test.js",
+    "test/narrativeLiquidityEvidenceShadowEvaluationV1.test.js",
+    "test/narrativeLiquidityV1ProductionSimplification.test.js",
+    "test/narrativeStats.test.js",
+    "test/nearStaleness.test.js",
+    "test/pivotDetector.test.js",
+    "test/pivotPopulationAudit.test.js",
+    "test/reactionBoundaryPolicyV1.test.js",
+    "test/reactionLegParameterizationAuditV1.test.js",
+    "test/replayIntegrity.test.js",
+    "test/replayStats.test.js",
+    "test/retraceDiagnostics.test.js",
+    "test/run.js",
+    "test/scenarioEngine.test.js",
+    "test/sessionLiquidity.test.js",
+    "test/shadowWatchConsumptionAdapterV1.test.js",
+    "test/stopDiagnostics.test.js",
+    "test/stopSemantics.test.js",
+    "test/stopV2Counterfactual.test.js",
+    "test/structuralProvenance4hAudit.test.js",
+    "test/structuralProvenance5m.test.js",
+    "test/sweepCentricAudit.test.js",
+    "test/sweepContextNotificationPresentationV1.test.js",
+    "test/sweepIncrementalAudit.test.js",
+    "test/sweepNarrativeEligibilityShadowIntegrationV1.test.js",
+    "test/swingClassifier.test.js",
+    "test/swingContextProjectionV1.test.js",
+    "test/swingLiquidity.test.js",
+    "test/swingMultiDimensionalStateModelDesignV1.test.js",
+    "test/swingOutcomeReactionPopulationAuditV1.test.js",
+    "test/swingReactionLegStructuralAttributionAuditV1.test.js",
+    "test/swingSignificanceHumanReview.test.js",
+    "test/swingStateFinalizationV1.test.js",
+    "test/tradePlan.test.js",
+    "test/triggerPriceAudit.test.js",
+    "test/utcTime.test.js",
+    "test/watchLiquidityEvidenceV1.test.js",
+    "test/watchNarrativeEligibleCandidateShadowComparisonV1.test.js",
+    "test/watchNarrativeLiquidityPolicyDesignV1.test.js",
+    "test/watchNotificationPresentationV1.test.js",
+    "test/watchShadowConsumptionIntegrationV1.test.js",
+    "test/weeklyLiquidity.test.js",
+    "amd/accumulationDetector.js",
+    "liquidity/liquidityRegistry.js",
+    "stats/alertPrioritization.js",
+    "amd/manipulationDetector.js",
+    "amd/distributionDetector.js",
+    "events/eventRegistry.js",
+    "amd/amdStateMachine.js",
+    "amd/amdScorer.js",
+    "amd/amdAlignment.js",
+    "amd/amdExplanation.js",
+    "indicators/atr.js",
+    "stats/displacementLeg.js",
+    "stats/alertReplay.js",
+    "stats/opportunityQuality.js",
+    "bias/liquidityBias.js",
+    "bias/structureBias.js",
+    "bias/locationBias.js",
+    "stats/biasContextAudit.js",
+    "stats/drawLiquidityAudit.js",
+    "bias/conflictDetector.js",
+    "bias/biasScorer.js",
+    "bias/biasEngine.js",
+    "bias/biasExplanation.js",
+    "config/thresholds.js",
+    "ai/biasResponseValidator.js",
+    "ai/structuralEventReference.js",
+    "bias/dailyBiasAlignment.js",
+    "live/dailyBiasService.js",
+    "live/dailyBiasStore.js",
+    "live/liveEngine.js",
+    "stats/dailyBiasIntegrationAudit.js",
+    "scripts/live.js",
+    "scripts/diagnoseDailyBiasMss.js",
+    "utils/utcTime.js",
+    "liquidity/dailyLiquidity.js",
+    "structure/dealingRange.js",
+    "context/premiumDiscount.js",
+    "scripts/auditDeepSeek4hBias.js",
+    "ai/deepseekClient.js",
+    "ai/auditPivots.js",
+    "ai/ictBiasPrompt.js",
+    "config/live.json",
+    "bias/deliveryBias.js",
+    "notify/dingTalk.js",
+    "events/displacementDetector.js",
+    "stats/displacementWatch.js",
+    "draw/distanceScorer.js",
+    "draw/drawCandidate.js",
+    "draw/drawEngine.js",
+    "draw/drawScorer.js",
+    "audit/eqHistoricalStateProjectorV1.js",
+    "scripts/eqHistoricalMembershipEventStreamAuditV1.js",
+    "liquidity/equalLiquidity.js",
+    "stats/equalLiquidityAudit.js",
+    "events/sweepEventAdapter.js",
+    "data/binanceRest.js",
+    "liquidity/liquidityCluster.js",
+    "stats/externalSwingAudit.js",
+    "draw/freshnessScorer.js",
+    "fvg/fvgDetector.js",
+    "fvg/fvgRegistry.js",
+    "fvg/fvgLifecycle.js",
+    "fvg/fvgScorer.js",
+    "entry/entryGate.js",
+    "entry/entryExplanation.js",
+    "entry/entryInvalidation.js",
+    "structure/pivotDetector.js",
+    "structure/swingClassifier.js",
+    "liquidity/swingLiquidity.js",
+    "replay/replayState.js",
+    "liquidity/liquidityLifecycle.js",
+    "audit/liquidityObjectQualificationRegistrySemanticsV1.js",
+    "stats/liquidityProvenance.js",
+    "stats/liquidityObjectShadowAudit.js",
+    "stats/liquidityRecencyAudit.js",
+    "stats/liquidityRelevanceAudit.js",
+    "liquidity/liquidityScorer.js",
+    "audit/swingContextProjectorV1.js",
+    "audit/liquiditySweepContextConsumptionV1.js",
+    "stats/livePrioritizationAudit.js",
+    "ai/auditMarketFacts.js",
+    "test/fixtures/deepseek4h-case02.json",
+    "config/sweepContextV1.js",
+    "stats/watchLiquidityEvidenceV1.js",
+    "stats/sweepContextV1.js",
+    "stats/runtimeSwingContextV1.js",
+    "liquidity/monthlyLiquidity.js",
+    "stats/mssDirectionAudit.js",
+    "events/mssSignalDetector.js",
+    "audit/mtfSwingRealTimeAvailabilityV1.js",
+    "audit/multiTimeframeSwingHierarchyV1.js",
+    "stats/narrativeBoundary.js",
+    "replay/retraceTracker.js",
+    "stats/shadowEntry.js",
+    "amd/amdState.js",
+    "trade/stopPlanner.js",
+    "trade/tradePlan.js",
+    "stats/narrativeDirection.js",
+    "stats/opportunity.js",
+    "stats/deliveryAlignment.js",
+    "stats/htfLiquidityContext.js",
+    "live/persistence.js",
+    "stats/narrativeLabelAudit.js",
+    "audit/narrativeLiquidityEvidenceShadowEvaluationV1.js",
+    "events/sweepNarrativeEligibilityV1.js",
+    "stats/narrativeStats.js",
+    "stats/nearStaleness.js",
+    "stats/pivotPopulationAudit.js",
+    "audit/reactionBoundaryPolicyV1.js",
+    "scripts/reactionLegParameterizationAuditV1.js",
+    "scripts/swingReactionLegStructuralAttributionAuditV1.js",
+    "replay/replayEngine.js",
+    "stats/replayStats.js",
+    "scenario/scenarioEngine.js",
+    "scenario/actionEngine.js",
+    "scenario/scenarioScorer.js",
+    "scenario/invalidationEngine.js",
+    "scenario/scenarioExplanation.js",
+    "liquidity/sessionLiquidity.js",
+    "config/sessions.js",
+    "audit/shadowWatchConsumptionAdapterV1.js",
+    "stats/stopDiagnostics.js",
+    "stats/stopSemantics.js",
+    "stats/stopV2Counterfactual.js",
+    "ai/auditStructuralProvenance.js",
+    "structure/structuralProvenance5m.js",
+    "stats/sweepCentricAudit.js",
+    "notify/sweepContextPresentationV1.js",
+    "stats/sweepIncrementalAudit.js",
+    "config/sweepNarrativeEligibilityV1.js",
+    "audit/swingStateProjectorV1.js",
+    "scripts/swingMultiDimensionalStateModelDesignV1.js",
+    "scripts/swingOutcomeReactionPopulationAuditV1.js",
+    "scripts/swingSignificanceHumanReview.js",
+    "trade/entryPlanner.js",
+    "trade/targetPlanner.js",
+    "trade/rrCalculator.js",
+    "trade/tradeSimulator.js",
+    "stats/triggerPriceAudit.js",
+    "config/watchLiquidityEvidenceV1.js",
+    "audit/watchNarrativeEligibleCandidateShadowComparisonV1.js",
+    "audit/watchNarrativeLiquidityPolicyDesignV1.js",
+    "config/watchNotificationZhV1.js",
+    "notify/watchNotificationPresentationV1.js",
+    "liquidity/weeklyLiquidity.js",
+    "ai/dailyBiasContext.js",
+    "live/dataSource.js",
+    "replay/continuityChecker.js",
+    "live/futuresPriceStream.js",
+    "replay/historicalLoader.js",
+    "config/network.js",
+    "trade/tradeExplanation.js"
+  ],
+  "adjacency": {
+    "test/accumulationDetector.test.js": [
+      "amd/accumulationDetector.js",
+      "liquidity/liquidityRegistry.js"
+    ],
+    "test/alertPrioritization.test.js": [
+      "stats/alertPrioritization.js"
+    ],
+    "test/amdDetectors.test.js": [
+      "amd/manipulationDetector.js",
+      "amd/distributionDetector.js",
+      "events/eventRegistry.js"
+    ],
+    "test/amdStateMachine.test.js": [
+      "amd/amdStateMachine.js",
+      "amd/amdScorer.js",
+      "amd/amdAlignment.js",
+      "amd/amdExplanation.js",
+      "liquidity/liquidityRegistry.js",
+      "events/eventRegistry.js"
+    ],
+    "test/atr.test.js": [
+      "indicators/atr.js"
+    ],
+    "test/availabilityTime.test.js": [
+      "stats/displacementLeg.js",
+      "stats/alertReplay.js",
+      "stats/opportunityQuality.js"
+    ],
+    "test/biasComponents.test.js": [
+      "bias/liquidityBias.js",
+      "bias/structureBias.js",
+      "bias/locationBias.js"
+    ],
+    "test/biasContextAudit.test.js": [
+      "stats/biasContextAudit.js",
+      "stats/drawLiquidityAudit.js"
+    ],
+    "test/biasEngine.test.js": [
+      "bias/conflictDetector.js",
+      "bias/biasScorer.js",
+      "bias/biasEngine.js",
+      "bias/biasExplanation.js",
+      "config/thresholds.js"
+    ],
+    "test/biasResponseValidator.test.js": [
+      "ai/biasResponseValidator.js",
+      "ai/structuralEventReference.js"
+    ],
+    "test/dailyBiasIntegration.test.js": [
+      "bias/dailyBiasAlignment.js",
+      "live/dailyBiasService.js",
+      "live/dailyBiasStore.js",
+      "live/liveEngine.js",
+      "stats/dailyBiasIntegrationAudit.js",
+      "scripts/live.js"
+    ],
+    "test/dailyBiasMssDiagnostic.test.js": [
+      "scripts/diagnoseDailyBiasMss.js",
+      "ai/structuralEventReference.js"
+    ],
+    "test/dailyLiquidity.test.js": [
+      "utils/utcTime.js",
+      "liquidity/dailyLiquidity.js"
+    ],
+    "test/dealingRange.test.js": [
+      "structure/dealingRange.js",
+      "context/premiumDiscount.js"
+    ],
+    "test/deepseek4hBiasAudit.test.js": [
+      "scripts/auditDeepSeek4hBias.js",
+      "ai/biasResponseValidator.js",
+      "ai/deepseekClient.js",
+      "ai/auditPivots.js",
+      "ai/ictBiasPrompt.js",
+      "config/live.json"
+    ],
+    "test/deliveryBias.test.js": [
+      "bias/deliveryBias.js",
+      "config/thresholds.js"
+    ],
+    "test/dingTalk.test.js": [
+      "notify/dingTalk.js"
+    ],
+    "test/displacementDetector.test.js": [
+      "events/displacementDetector.js"
+    ],
+    "test/displacementWatch.test.js": [
+      "stats/displacementWatch.js"
+    ],
+    "test/distanceScorer.test.js": [
+      "draw/distanceScorer.js"
+    ],
+    "test/drawCandidate.test.js": [
+      "draw/drawCandidate.js"
+    ],
+    "test/drawEngine.test.js": [
+      "draw/drawEngine.js",
+      "liquidity/liquidityRegistry.js",
+      "config/thresholds.js"
+    ],
+    "test/drawLiquidityAudit.test.js": [
+      "stats/drawLiquidityAudit.js"
+    ],
+    "test/drawScorer.test.js": [
+      "draw/drawScorer.js"
+    ],
+    "test/eqHistoricalMembershipEventStreamAuditV1.test.js": [
+      "audit/eqHistoricalStateProjectorV1.js",
+      "scripts/eqHistoricalMembershipEventStreamAuditV1.js"
+    ],
+    "test/equalLiquidity.test.js": [
+      "liquidity/equalLiquidity.js",
+      "config/thresholds.js"
+    ],
+    "test/equalLiquidityAudit.test.js": [
+      "stats/equalLiquidityAudit.js"
+    ],
+    "test/eventRegistry.test.js": [
+      "events/eventRegistry.js",
+      "events/sweepEventAdapter.js"
+    ],
+    "test/exchangeInfo.test.js": [
+      "data/binanceRest.js",
+      "liquidity/equalLiquidity.js",
+      "liquidity/liquidityCluster.js"
+    ],
+    "test/externalSwingAudit.test.js": [
+      "stats/externalSwingAudit.js"
+    ],
+    "test/freshnessScorer.test.js": [
+      "draw/freshnessScorer.js"
+    ],
+    "test/fvgEntry.test.js": [
+      "fvg/fvgDetector.js",
+      "fvg/fvgRegistry.js",
+      "fvg/fvgLifecycle.js",
+      "fvg/fvgScorer.js",
+      "entry/entryGate.js",
+      "entry/entryExplanation.js",
+      "entry/entryInvalidation.js"
+    ],
+    "test/htfClosure.test.js": [
+      "structure/pivotDetector.js",
+      "structure/swingClassifier.js",
+      "structure/dealingRange.js"
+    ],
+    "test/incrementalLiquidityEquiv.test.js": [
+      "structure/pivotDetector.js",
+      "liquidity/swingLiquidity.js",
+      "liquidity/equalLiquidity.js",
+      "liquidity/liquidityRegistry.js",
+      "replay/replayState.js"
+    ],
+    "test/liquidityCluster.test.js": [
+      "liquidity/liquidityCluster.js"
+    ],
+    "test/liquidityLifecycle.test.js": [
+      "liquidity/liquidityLifecycle.js"
+    ],
+    "test/liquidityObjectQualificationRegistrySemanticsV1.test.js": [
+      "audit/liquidityObjectQualificationRegistrySemanticsV1.js"
+    ],
+    "test/liquidityObjectShadowAudit.test.js": [
+      "stats/liquidityProvenance.js",
+      "stats/liquidityObjectShadowAudit.js"
+    ],
+    "test/liquidityProvenance.test.js": [
+      "stats/liquidityProvenance.js",
+      "stats/alertReplay.js"
+    ],
+    "test/liquidityRecencyAudit.test.js": [
+      "stats/liquidityRecencyAudit.js"
+    ],
+    "test/liquidityRegistry.test.js": [
+      "liquidity/liquidityRegistry.js"
+    ],
+    "test/liquidityRelevanceAudit.test.js": [
+      "stats/liquidityRelevanceAudit.js",
+      "stats/alertPrioritization.js"
+    ],
+    "test/liquidityScorer.test.js": [
+      "liquidity/liquidityScorer.js"
+    ],
+    "test/liquiditySweepContextConsumptionV1.test.js": [
+      "audit/swingContextProjectorV1.js",
+      "audit/liquiditySweepContextConsumptionV1.js"
+    ],
+    "test/liveBootstrapPerformanceV1.test.js": [
+      "liquidity/equalLiquidity.js",
+      "scripts/live.js"
+    ],
+    "test/liveDataGuard.test.js": [
+      "data/binanceRest.js"
+    ],
+    "test/livePrioritizationAudit.test.js": [
+      "stats/livePrioritizationAudit.js"
+    ],
+    "test/marketFactsAudit.test.js": [
+      "ai/auditMarketFacts.js",
+      "ai/auditPivots.js",
+      "ai/ictBiasPrompt.js",
+      "test/fixtures/deepseek4h-case02.json"
+    ],
+    "test/minimalSweepContextProductionIntegrationV1.test.js": [
+      "config/sweepContextV1.js",
+      "stats/watchLiquidityEvidenceV1.js",
+      "stats/sweepContextV1.js",
+      "audit/liquiditySweepContextConsumptionV1.js",
+      "audit/swingContextProjectorV1.js",
+      "stats/runtimeSwingContextV1.js",
+      "live/liveEngine.js"
+    ],
+    "test/monthlyLiquidity.test.js": [
+      "utils/utcTime.js",
+      "liquidity/monthlyLiquidity.js"
+    ],
+    "test/mssDirectionAudit.test.js": [
+      "stats/mssDirectionAudit.js"
+    ],
+    "test/mssSignalDetector.test.js": [
+      "events/mssSignalDetector.js"
+    ],
+    "test/mtfSwingRealTimeAvailabilityV1.test.js": [
+      "audit/mtfSwingRealTimeAvailabilityV1.js"
+    ],
+    "test/multiTimeframeSwingHierarchyV1.test.js": [
+      "audit/multiTimeframeSwingHierarchyV1.js"
+    ],
+    "test/narrativeBoundary.test.js": [
+      "stats/narrativeBoundary.js",
+      "replay/retraceTracker.js",
+      "stats/shadowEntry.js",
+      "amd/amdState.js",
+      "config/thresholds.js",
+      "config/thresholds.js",
+      "config/thresholds.js",
+      "trade/stopPlanner.js",
+      "amd/amdState.js",
+      "config/thresholds.js",
+      "trade/tradePlan.js",
+      "stats/narrativeDirection.js",
+      "stats/opportunity.js",
+      "stats/displacementLeg.js",
+      "stats/opportunityQuality.js",
+      "stats/alertReplay.js",
+      "stats/deliveryAlignment.js",
+      "stats/htfLiquidityContext.js",
+      "notify/dingTalk.js",
+      "live/persistence.js",
+      "stats/displacementLeg.js",
+      "stats/displacementLeg.js",
+      "stats/displacementLeg.js",
+      "data/binanceRest.js"
+    ],
+    "test/narrativeLabelAudit.test.js": [
+      "stats/narrativeLabelAudit.js"
+    ],
+    "test/narrativeLiquidityEvidenceShadowEvaluationV1.test.js": [
+      "audit/narrativeLiquidityEvidenceShadowEvaluationV1.js"
+    ],
+    "test/narrativeLiquidityV1ProductionSimplification.test.js": [
+      "events/sweepNarrativeEligibilityV1.js",
+      "stats/liquidityProvenance.js",
+      "stats/displacementWatch.js",
+      "events/sweepEventAdapter.js",
+      "amd/amdState.js"
+    ],
+    "test/narrativeStats.test.js": [
+      "stats/narrativeStats.js"
+    ],
+    "test/nearStaleness.test.js": [
+      "stats/nearStaleness.js"
+    ],
+    "test/pivotDetector.test.js": [
+      "structure/pivotDetector.js"
+    ],
+    "test/pivotPopulationAudit.test.js": [
+      "stats/pivotPopulationAudit.js"
+    ],
+    "test/reactionBoundaryPolicyV1.test.js": [
+      "audit/reactionBoundaryPolicyV1.js"
+    ],
+    "test/reactionLegParameterizationAuditV1.test.js": [
+      "scripts/reactionLegParameterizationAuditV1.js",
+      "scripts/swingReactionLegStructuralAttributionAuditV1.js"
+    ],
+    "test/replayIntegrity.test.js": [
+      "replay/replayState.js",
+      "fvg/fvgRegistry.js",
+      "events/eventRegistry.js",
+      "replay/replayEngine.js",
+      "indicators/atr.js",
+      "config/thresholds.js",
+      "config/thresholds.js"
+    ],
+    "test/replayStats.test.js": [
+      "replay/replayEngine.js",
+      "stats/replayStats.js"
+    ],
+    "test/retraceDiagnostics.test.js": [
+      "replay/retraceTracker.js",
+      "stats/shadowEntry.js",
+      "config/thresholds.js"
+    ],
+    "test/run.js": [],
+    "test/scenarioEngine.test.js": [
+      "scenario/scenarioEngine.js",
+      "scenario/actionEngine.js",
+      "scenario/scenarioScorer.js",
+      "scenario/invalidationEngine.js",
+      "scenario/scenarioExplanation.js"
+    ],
+    "test/sessionLiquidity.test.js": [
+      "utils/utcTime.js",
+      "liquidity/sessionLiquidity.js",
+      "config/sessions.js"
+    ],
+    "test/shadowWatchConsumptionAdapterV1.test.js": [
+      "audit/shadowWatchConsumptionAdapterV1.js"
+    ],
+    "test/stopDiagnostics.test.js": [
+      "trade/stopPlanner.js",
+      "stats/stopDiagnostics.js"
+    ],
+    "test/stopSemantics.test.js": [
+      "stats/stopSemantics.js",
+      "trade/stopPlanner.js"
+    ],
+    "test/stopV2Counterfactual.test.js": [
+      "stats/stopV2Counterfactual.js"
+    ],
+    "test/structuralProvenance4hAudit.test.js": [
+      "ai/auditPivots.js",
+      "ai/auditMarketFacts.js",
+      "ai/auditStructuralProvenance.js",
+      "test/fixtures/deepseek4h-case02.json"
+    ],
+    "test/structuralProvenance5m.test.js": [
+      "structure/structuralProvenance5m.js"
+    ],
+    "test/sweepCentricAudit.test.js": [
+      "stats/sweepCentricAudit.js"
+    ],
+    "test/sweepContextNotificationPresentationV1.test.js": [
+      "scripts/live.js",
+      "notify/sweepContextPresentationV1.js"
+    ],
+    "test/sweepIncrementalAudit.test.js": [
+      "stats/sweepIncrementalAudit.js"
+    ],
+    "test/sweepNarrativeEligibilityShadowIntegrationV1.test.js": [
+      "config/sweepNarrativeEligibilityV1.js",
+      "events/sweepNarrativeEligibilityV1.js",
+      "events/sweepEventAdapter.js",
+      "amd/amdState.js",
+      "stats/displacementWatch.js"
+    ],
+    "test/swingClassifier.test.js": [
+      "structure/swingClassifier.js"
+    ],
+    "test/swingContextProjectionV1.test.js": [
+      "audit/swingContextProjectorV1.js"
+    ],
+    "test/swingLiquidity.test.js": [
+      "liquidity/swingLiquidity.js"
+    ],
+    "test/swingMultiDimensionalStateModelDesignV1.test.js": [
+      "audit/swingStateProjectorV1.js",
+      "scripts/swingMultiDimensionalStateModelDesignV1.js"
+    ],
+    "test/swingOutcomeReactionPopulationAuditV1.test.js": [
+      "scripts/swingOutcomeReactionPopulationAuditV1.js"
+    ],
+    "test/swingReactionLegStructuralAttributionAuditV1.test.js": [
+      "scripts/swingReactionLegStructuralAttributionAuditV1.js"
+    ],
+    "test/swingSignificanceHumanReview.test.js": [
+      "scripts/swingSignificanceHumanReview.js"
+    ],
+    "test/swingStateFinalizationV1.test.js": [
+      "audit/swingStateProjectorV1.js",
+      "audit/reactionBoundaryPolicyV1.js"
+    ],
+    "test/tradePlan.test.js": [
+      "trade/entryPlanner.js",
+      "trade/stopPlanner.js",
+      "trade/targetPlanner.js",
+      "trade/rrCalculator.js",
+      "trade/tradePlan.js",
+      "trade/tradeSimulator.js"
+    ],
+    "test/triggerPriceAudit.test.js": [
+      "stats/triggerPriceAudit.js"
+    ],
+    "test/utcTime.test.js": [
+      "utils/utcTime.js"
+    ],
+    "test/watchLiquidityEvidenceV1.test.js": [
+      "config/watchLiquidityEvidenceV1.js",
+      "stats/watchLiquidityEvidenceV1.js",
+      "audit/shadowWatchConsumptionAdapterV1.js",
+      "scenario/scenarioEngine.js",
+      "live/liveEngine.js"
+    ],
+    "test/watchNarrativeEligibleCandidateShadowComparisonV1.test.js": [
+      "audit/watchNarrativeEligibleCandidateShadowComparisonV1.js",
+      "events/sweepNarrativeEligibilityV1.js",
+      "amd/amdState.js"
+    ],
+    "test/watchNarrativeLiquidityPolicyDesignV1.test.js": [
+      "audit/watchNarrativeLiquidityPolicyDesignV1.js",
+      "events/sweepNarrativeEligibilityV1.js"
+    ],
+    "test/watchNotificationPresentationV1.test.js": [
+      "config/watchNotificationZhV1.js",
+      "notify/watchNotificationPresentationV1.js",
+      "scripts/live.js"
+    ],
+    "test/watchShadowConsumptionIntegrationV1.test.js": [
+      "audit/shadowWatchConsumptionAdapterV1.js",
+      "stats/displacementWatch.js"
+    ],
+    "test/weeklyLiquidity.test.js": [
+      "utils/utcTime.js",
+      "liquidity/weeklyLiquidity.js"
+    ],
+    "amd/accumulationDetector.js": [
+      "indicators/atr.js",
+      "config/thresholds.js"
+    ],
+    "liquidity/liquidityRegistry.js": [],
+    "stats/alertPrioritization.js": [
+      "stats/liquidityRelevanceAudit.js"
+    ],
+    "amd/manipulationDetector.js": [
+      "config/thresholds.js"
+    ],
+    "amd/distributionDetector.js": [
+      "config/thresholds.js"
+    ],
+    "events/eventRegistry.js": [],
+    "amd/amdStateMachine.js": [
+      "amd/accumulationDetector.js",
+      "amd/manipulationDetector.js",
+      "amd/distributionDetector.js",
+      "config/thresholds.js"
+    ],
+    "amd/amdScorer.js": [
+      "config/thresholds.js"
+    ],
+    "amd/amdAlignment.js": [],
+    "amd/amdExplanation.js": [],
+    "indicators/atr.js": [
+      "config/thresholds.js"
+    ],
+    "stats/displacementLeg.js": [
+      "structure/structuralProvenance5m.js"
+    ],
+    "stats/alertReplay.js": [
+      "stats/opportunityQuality.js",
+      "stats/nearStaleness.js",
+      "stats/liquidityProvenance.js"
+    ],
+    "stats/opportunityQuality.js": [],
+    "bias/liquidityBias.js": [
+      "config/thresholds.js"
+    ],
+    "bias/structureBias.js": [
+      "config/thresholds.js",
+      "structure/swingClassifier.js"
+    ],
+    "bias/locationBias.js": [
+      "config/thresholds.js"
+    ],
+    "stats/biasContextAudit.js": [
+      "stats/drawLiquidityAudit.js"
+    ],
+    "stats/drawLiquidityAudit.js": [],
+    "bias/conflictDetector.js": [
+      "config/thresholds.js"
+    ],
+    "bias/biasScorer.js": [
+      "config/thresholds.js"
+    ],
+    "bias/biasEngine.js": [
+      "bias/liquidityBias.js",
+      "bias/structureBias.js",
+      "bias/locationBias.js",
+      "bias/deliveryBias.js",
+      "bias/conflictDetector.js",
+      "bias/biasScorer.js",
+      "bias/biasExplanation.js",
+      "config/thresholds.js"
+    ],
+    "bias/biasExplanation.js": [],
+    "config/thresholds.js": [],
+    "ai/biasResponseValidator.js": [
+      "ai/structuralEventReference.js"
+    ],
+    "ai/structuralEventReference.js": [],
+    "bias/dailyBiasAlignment.js": [],
+    "live/dailyBiasService.js": [
+      "ai/deepseekClient.js",
+      "ai/ictBiasPrompt.js",
+      "ai/biasResponseValidator.js",
+      "ai/dailyBiasContext.js",
+      "bias/dailyBiasAlignment.js",
+      "live/dailyBiasStore.js"
+    ],
+    "live/dailyBiasStore.js": [
+      "live/persistence.js"
+    ],
+    "live/liveEngine.js": [
+      "replay/replayState.js",
+      "events/eventRegistry.js",
+      "events/displacementDetector.js",
+      "amd/amdState.js",
+      "replay/replayEngine.js",
+      "stats/displacementLeg.js",
+      "stats/opportunityQuality.js",
+      "stats/nearStaleness.js",
+      "stats/liquidityProvenance.js",
+      "stats/alertPrioritization.js",
+      "structure/structuralProvenance5m.js",
+      "stats/displacementWatch.js",
+      "stats/watchLiquidityEvidenceV1.js",
+      "config/watchLiquidityEvidenceV1.js",
+      "config/sweepContextV1.js",
+      "stats/runtimeSwingContextV1.js",
+      "bias/dailyBiasAlignment.js",
+      "config/thresholds.js"
+    ],
+    "stats/dailyBiasIntegrationAudit.js": [],
+    "scripts/live.js": [
+      "live/liveEngine.js",
+      "live/dataSource.js",
+      "data/binanceRest.js",
+      "live/persistence.js",
+      "live/dailyBiasService.js",
+      "notify/dingTalk.js",
+      "replay/continuityChecker.js",
+      "stats/liquidityProvenance.js",
+      "stats/alertPrioritization.js",
+      "config/thresholds.js",
+      "stats/displacementWatch.js",
+      "live/futuresPriceStream.js",
+      "notify/watchNotificationPresentationV1.js",
+      "config/watchNotificationZhV1.js",
+      "config/sweepContextV1.js",
+      "config/live.json",
+      "config/thresholds.js"
+    ],
+    "scripts/diagnoseDailyBiasMss.js": [
+      "live/dataSource.js",
+      "ai/dailyBiasContext.js",
+      "ai/ictBiasPrompt.js",
+      "ai/deepseekClient.js",
+      "ai/biasResponseValidator.js",
+      "ai/structuralEventReference.js"
+    ],
+    "utils/utcTime.js": [],
+    "liquidity/dailyLiquidity.js": [
+      "utils/utcTime.js",
+      "data/binanceRest.js"
+    ],
+    "structure/dealingRange.js": [],
+    "context/premiumDiscount.js": [
+      "config/thresholds.js"
+    ],
+    "scripts/auditDeepSeek4hBias.js": [
+      "replay/historicalLoader.js",
+      "ai/deepseekClient.js",
+      "ai/ictBiasPrompt.js",
+      "ai/biasResponseValidator.js",
+      "ai/auditPivots.js",
+      "ai/auditMarketFacts.js",
+      "ai/auditStructuralProvenance.js"
+    ],
+    "ai/deepseekClient.js": [],
+    "ai/auditPivots.js": [],
+    "ai/ictBiasPrompt.js": [
+      "ai/structuralEventReference.js"
+    ],
+    "config/live.json": [],
+    "bias/deliveryBias.js": [
+      "config/thresholds.js"
+    ],
+    "notify/dingTalk.js": [],
+    "events/displacementDetector.js": [
+      "indicators/atr.js",
+      "config/thresholds.js"
+    ],
+    "stats/displacementWatch.js": [
+      "stats/liquidityProvenance.js",
+      "events/sweepNarrativeEligibilityV1.js"
+    ],
+    "draw/distanceScorer.js": [
+      "config/thresholds.js"
+    ],
+    "draw/drawCandidate.js": [
+      "liquidity/liquidityScorer.js"
+    ],
+    "draw/drawEngine.js": [
+      "liquidity/liquidityCluster.js",
+      "draw/drawCandidate.js",
+      "draw/distanceScorer.js",
+      "draw/freshnessScorer.js",
+      "draw/drawScorer.js",
+      "config/thresholds.js"
+    ],
+    "draw/drawScorer.js": [
+      "config/thresholds.js"
+    ],
+    "audit/eqHistoricalStateProjectorV1.js": [],
+    "scripts/eqHistoricalMembershipEventStreamAuditV1.js": [
+      "structure/pivotDetector.js",
+      "liquidity/swingLiquidity.js",
+      "replay/replayState.js",
+      "events/eventRegistry.js",
+      "audit/eqHistoricalStateProjectorV1.js"
+    ],
+    "liquidity/equalLiquidity.js": [
+      "config/thresholds.js",
+      "indicators/atr.js",
+      "liquidity/liquidityLifecycle.js"
+    ],
+    "stats/equalLiquidityAudit.js": [
+      "stats/sweepCentricAudit.js",
+      "liquidity/equalLiquidity.js",
+      "config/thresholds.js"
+    ],
+    "events/sweepEventAdapter.js": [
+      "config/sweepNarrativeEligibilityV1.js",
+      "events/sweepNarrativeEligibilityV1.js"
+    ],
+    "data/binanceRest.js": [
+      "config/network.js"
+    ],
+    "liquidity/liquidityCluster.js": [
+      "config/thresholds.js"
+    ],
+    "stats/externalSwingAudit.js": [
+      "stats/sweepCentricAudit.js",
+      "stats/sweepIncrementalAudit.js",
+      "config/thresholds.js"
+    ],
+    "draw/freshnessScorer.js": [
+      "config/thresholds.js"
+    ],
+    "fvg/fvgDetector.js": [
+      "config/thresholds.js",
+      "indicators/atr.js"
+    ],
+    "fvg/fvgRegistry.js": [],
+    "fvg/fvgLifecycle.js": [],
+    "fvg/fvgScorer.js": [
+      "config/thresholds.js"
+    ],
+    "entry/entryGate.js": [
+      "config/thresholds.js",
+      "fvg/fvgScorer.js"
+    ],
+    "entry/entryExplanation.js": [
+      "entry/entryInvalidation.js"
+    ],
+    "entry/entryInvalidation.js": [],
+    "structure/pivotDetector.js": [],
+    "structure/swingClassifier.js": [],
+    "liquidity/swingLiquidity.js": [],
+    "replay/replayState.js": [
+      "structure/pivotDetector.js",
+      "liquidity/swingLiquidity.js",
+      "liquidity/equalLiquidity.js",
+      "liquidity/liquidityLifecycle.js",
+      "liquidity/liquidityRegistry.js",
+      "events/sweepEventAdapter.js",
+      "fvg/fvgDetector.js",
+      "fvg/fvgLifecycle.js",
+      "fvg/fvgRegistry.js",
+      "amd/amdState.js",
+      "structure/structuralProvenance5m.js",
+      "config/thresholds.js"
+    ],
+    "liquidity/liquidityLifecycle.js": [],
+    "audit/liquidityObjectQualificationRegistrySemanticsV1.js": [
+      "liquidity/liquidityLifecycle.js",
+      "events/sweepEventAdapter.js"
+    ],
+    "stats/liquidityProvenance.js": [
+      "config/thresholds.js",
+      "events/sweepNarrativeEligibilityV1.js"
+    ],
+    "stats/liquidityObjectShadowAudit.js": [
+      "stats/liquidityProvenance.js"
+    ],
+    "stats/liquidityRecencyAudit.js": [],
+    "stats/liquidityRelevanceAudit.js": [
+      "stats/liquidityRecencyAudit.js"
+    ],
+    "liquidity/liquidityScorer.js": [
+      "config/thresholds.js"
+    ],
+    "audit/swingContextProjectorV1.js": [],
+    "audit/liquiditySweepContextConsumptionV1.js": [
+      "stats/sweepContextV1.js"
+    ],
+    "stats/livePrioritizationAudit.js": [
+      "stats/alertPrioritization.js"
+    ],
+    "ai/auditMarketFacts.js": [
+      "ai/auditPivots.js"
+    ],
+    "test/fixtures/deepseek4h-case02.json": [],
+    "config/sweepContextV1.js": [],
+    "stats/watchLiquidityEvidenceV1.js": [
+      "liquidity/liquidityLifecycle.js",
+      "config/watchLiquidityEvidenceV1.js",
+      "config/sweepContextV1.js",
+      "stats/sweepContextV1.js"
+    ],
+    "stats/sweepContextV1.js": [],
+    "stats/runtimeSwingContextV1.js": [
+      "structure/pivotDetector.js",
+      "liquidity/swingLiquidity.js"
+    ],
+    "liquidity/monthlyLiquidity.js": [
+      "utils/utcTime.js",
+      "data/binanceRest.js"
+    ],
+    "stats/mssDirectionAudit.js": [],
+    "events/mssSignalDetector.js": [],
+    "audit/mtfSwingRealTimeAvailabilityV1.js": [],
+    "audit/multiTimeframeSwingHierarchyV1.js": [
+      "structure/pivotDetector.js",
+      "liquidity/swingLiquidity.js"
+    ],
+    "stats/narrativeBoundary.js": [
+      "stats/stopSemantics.js"
+    ],
+    "replay/retraceTracker.js": [
+      "stats/narrativeBoundary.js"
+    ],
+    "stats/shadowEntry.js": [
+      "trade/stopPlanner.js",
+      "trade/tradeSimulator.js",
+      "replay/retraceTracker.js",
+      "stats/narrativeBoundary.js",
+      "config/thresholds.js",
+      "config/thresholds.js"
+    ],
+    "amd/amdState.js": [
+      "config/thresholds.js",
+      "amd/accumulationDetector.js"
+    ],
+    "trade/stopPlanner.js": [
+      "config/thresholds.js"
+    ],
+    "trade/tradePlan.js": [
+      "config/thresholds.js",
+      "trade/entryPlanner.js",
+      "trade/stopPlanner.js",
+      "trade/targetPlanner.js",
+      "trade/rrCalculator.js",
+      "trade/tradeExplanation.js"
+    ],
+    "stats/narrativeDirection.js": [
+      "replay/retraceTracker.js"
+    ],
+    "stats/opportunity.js": [],
+    "stats/deliveryAlignment.js": [],
+    "stats/htfLiquidityContext.js": [
+      "structure/pivotDetector.js"
+    ],
+    "live/persistence.js": [],
+    "stats/narrativeLabelAudit.js": [
+      "stats/displacementLeg.js"
+    ],
+    "audit/narrativeLiquidityEvidenceShadowEvaluationV1.js": [
+      "audit/watchNarrativeLiquidityPolicyDesignV1.js"
+    ],
+    "events/sweepNarrativeEligibilityV1.js": [],
+    "stats/narrativeStats.js": [
+      "config/thresholds.js"
+    ],
+    "stats/nearStaleness.js": [],
+    "stats/pivotPopulationAudit.js": [],
+    "audit/reactionBoundaryPolicyV1.js": [],
+    "scripts/reactionLegParameterizationAuditV1.js": [
+      "scripts/swingReactionLegStructuralAttributionAuditV1.js"
+    ],
+    "scripts/swingReactionLegStructuralAttributionAuditV1.js": [
+      "structure/pivotDetector.js",
+      "liquidity/swingLiquidity.js",
+      "structure/structuralProvenance5m.js",
+      "events/displacementDetector.js",
+      "liquidity/liquidityLifecycle.js",
+      "indicators/atr.js",
+      "config/thresholds.js"
+    ],
+    "replay/replayEngine.js": [
+      "config/thresholds.js",
+      "replay/replayState.js",
+      "amd/amdState.js",
+      "events/eventRegistry.js",
+      "events/displacementDetector.js",
+      "indicators/atr.js",
+      "structure/structuralProvenance5m.js",
+      "liquidity/dailyLiquidity.js",
+      "liquidity/weeklyLiquidity.js",
+      "liquidity/monthlyLiquidity.js",
+      "liquidity/sessionLiquidity.js",
+      "liquidity/liquidityCluster.js",
+      "liquidity/liquidityScorer.js",
+      "draw/drawEngine.js",
+      "bias/biasEngine.js",
+      "structure/swingClassifier.js",
+      "structure/dealingRange.js",
+      "context/premiumDiscount.js",
+      "structure/pivotDetector.js",
+      "amd/amdAlignment.js",
+      "scenario/scenarioEngine.js",
+      "entry/entryGate.js",
+      "trade/tradePlan.js",
+      "trade/stopPlanner.js",
+      "replay/retraceTracker.js",
+      "stats/shadowEntry.js",
+      "stats/narrativeBoundary.js"
+    ],
+    "stats/replayStats.js": [],
+    "scenario/scenarioEngine.js": [
+      "config/thresholds.js",
+      "scenario/actionEngine.js",
+      "scenario/scenarioScorer.js",
+      "scenario/scenarioExplanation.js",
+      "scenario/invalidationEngine.js"
+    ],
+    "scenario/actionEngine.js": [
+      "config/thresholds.js"
+    ],
+    "scenario/scenarioScorer.js": [
+      "config/thresholds.js"
+    ],
+    "scenario/invalidationEngine.js": [],
+    "scenario/scenarioExplanation.js": [
+      "scenario/invalidationEngine.js"
+    ],
+    "liquidity/sessionLiquidity.js": [
+      "utils/utcTime.js",
+      "config/sessions.js",
+      "data/binanceRest.js"
+    ],
+    "config/sessions.js": [],
+    "audit/shadowWatchConsumptionAdapterV1.js": [],
+    "stats/stopDiagnostics.js": [],
+    "stats/stopSemantics.js": [
+      "config/thresholds.js",
+      "trade/stopPlanner.js"
+    ],
+    "stats/stopV2Counterfactual.js": [
+      "trade/stopPlanner.js"
+    ],
+    "ai/auditStructuralProvenance.js": [],
+    "structure/structuralProvenance5m.js": [
+      "events/mssSignalDetector.js"
+    ],
+    "stats/sweepCentricAudit.js": [],
+    "notify/sweepContextPresentationV1.js": [],
+    "stats/sweepIncrementalAudit.js": [
+      "stats/sweepCentricAudit.js",
+      "config/thresholds.js"
+    ],
+    "config/sweepNarrativeEligibilityV1.js": [],
+    "audit/swingStateProjectorV1.js": [
+      "audit/reactionBoundaryPolicyV1.js"
+    ],
+    "scripts/swingMultiDimensionalStateModelDesignV1.js": [
+      "audit/swingStateProjectorV1.js",
+      "liquidity/liquidityLifecycle.js"
+    ],
+    "scripts/swingOutcomeReactionPopulationAuditV1.js": [
+      "structure/pivotDetector.js",
+      "liquidity/swingLiquidity.js",
+      "structure/structuralProvenance5m.js",
+      "events/displacementDetector.js",
+      "liquidity/liquidityLifecycle.js",
+      "indicators/atr.js",
+      "config/thresholds.js",
+      "config/sessions.js"
+    ],
+    "scripts/swingSignificanceHumanReview.js": [],
+    "trade/entryPlanner.js": [
+      "config/thresholds.js"
+    ],
+    "trade/targetPlanner.js": [
+      "config/thresholds.js"
+    ],
+    "trade/rrCalculator.js": [
+      "config/thresholds.js"
+    ],
+    "trade/tradeSimulator.js": [
+      "config/thresholds.js"
+    ],
+    "stats/triggerPriceAudit.js": [
+      "stats/opportunityQuality.js",
+      "stats/displacementLeg.js"
+    ],
+    "config/watchLiquidityEvidenceV1.js": [],
+    "audit/watchNarrativeEligibleCandidateShadowComparisonV1.js": [],
+    "audit/watchNarrativeLiquidityPolicyDesignV1.js": [],
+    "config/watchNotificationZhV1.js": [],
+    "notify/watchNotificationPresentationV1.js": [
+      "notify/sweepContextPresentationV1.js"
+    ],
+    "liquidity/weeklyLiquidity.js": [
+      "utils/utcTime.js",
+      "data/binanceRest.js"
+    ],
+    "ai/dailyBiasContext.js": [
+      "ai/auditPivots.js",
+      "ai/auditMarketFacts.js",
+      "ai/auditStructuralProvenance.js"
+    ],
+    "live/dataSource.js": [
+      "data/binanceRest.js",
+      "replay/historicalLoader.js",
+      "replay/continuityChecker.js"
+    ],
+    "replay/continuityChecker.js": [],
+    "live/futuresPriceStream.js": [],
+    "replay/historicalLoader.js": [
+      "data/binanceRest.js"
+    ],
+    "config/network.js": [],
+    "trade/tradeExplanation.js": []
+  }
+}

@@ -1,0 +1,476 @@
+{
+  "roots": [
+    "scripts/live.js",
+    "entry/entryGate.js",
+    "entry/entryExplanation.js",
+    "entry/entryInvalidation.js"
+  ],
+  "nodes": [
+    "scripts/live.js",
+    "entry/entryGate.js",
+    "entry/entryExplanation.js",
+    "entry/entryInvalidation.js",
+    "live/liveEngine.js",
+    "live/dataSource.js",
+    "data/binanceRest.js",
+    "live/persistence.js",
+    "live/dailyBiasService.js",
+    "notify/dingTalk.js",
+    "replay/continuityChecker.js",
+    "stats/liquidityProvenance.js",
+    "stats/alertPrioritization.js",
+    "config/thresholds.js",
+    "stats/displacementWatch.js",
+    "live/futuresPriceStream.js",
+    "notify/watchNotificationPresentationV1.js",
+    "config/watchNotificationZhV1.js",
+    "config/sweepContextV1.js",
+    "config/live.json",
+    "fvg/fvgScorer.js",
+    "replay/replayState.js",
+    "events/eventRegistry.js",
+    "events/displacementDetector.js",
+    "amd/amdState.js",
+    "replay/replayEngine.js",
+    "stats/displacementLeg.js",
+    "stats/opportunityQuality.js",
+    "stats/nearStaleness.js",
+    "structure/structuralProvenance5m.js",
+    "stats/watchLiquidityEvidenceV1.js",
+    "config/watchLiquidityEvidenceV1.js",
+    "stats/runtimeSwingContextV1.js",
+    "bias/dailyBiasAlignment.js",
+    "replay/historicalLoader.js",
+    "config/network.js",
+    "ai/deepseekClient.js",
+    "ai/ictBiasPrompt.js",
+    "ai/biasResponseValidator.js",
+    "ai/dailyBiasContext.js",
+    "live/dailyBiasStore.js",
+    "events/sweepNarrativeEligibilityV1.js",
+    "stats/liquidityRelevanceAudit.js",
+    "notify/sweepContextPresentationV1.js",
+    "structure/pivotDetector.js",
+    "liquidity/swingLiquidity.js",
+    "liquidity/equalLiquidity.js",
+    "liquidity/liquidityLifecycle.js",
+    "liquidity/liquidityRegistry.js",
+    "events/sweepEventAdapter.js",
+    "fvg/fvgDetector.js",
+    "fvg/fvgLifecycle.js",
+    "fvg/fvgRegistry.js",
+    "indicators/atr.js",
+    "amd/accumulationDetector.js",
+    "liquidity/dailyLiquidity.js",
+    "liquidity/weeklyLiquidity.js",
+    "liquidity/monthlyLiquidity.js",
+    "liquidity/sessionLiquidity.js",
+    "liquidity/liquidityCluster.js",
+    "liquidity/liquidityScorer.js",
+    "draw/drawEngine.js",
+    "bias/biasEngine.js",
+    "structure/swingClassifier.js",
+    "structure/dealingRange.js",
+    "context/premiumDiscount.js",
+    "amd/amdAlignment.js",
+    "scenario/scenarioEngine.js",
+    "trade/tradePlan.js",
+    "trade/stopPlanner.js",
+    "replay/retraceTracker.js",
+    "stats/shadowEntry.js",
+    "stats/narrativeBoundary.js",
+    "events/mssSignalDetector.js",
+    "stats/sweepContextV1.js",
+    "ai/structuralEventReference.js",
+    "ai/auditPivots.js",
+    "ai/auditMarketFacts.js",
+    "ai/auditStructuralProvenance.js",
+    "stats/liquidityRecencyAudit.js",
+    "config/sweepNarrativeEligibilityV1.js",
+    "utils/utcTime.js",
+    "config/sessions.js",
+    "draw/drawCandidate.js",
+    "draw/distanceScorer.js",
+    "draw/freshnessScorer.js",
+    "draw/drawScorer.js",
+    "bias/liquidityBias.js",
+    "bias/structureBias.js",
+    "bias/locationBias.js",
+    "bias/deliveryBias.js",
+    "bias/conflictDetector.js",
+    "bias/biasScorer.js",
+    "bias/biasExplanation.js",
+    "scenario/actionEngine.js",
+    "scenario/scenarioScorer.js",
+    "scenario/scenarioExplanation.js",
+    "scenario/invalidationEngine.js",
+    "trade/entryPlanner.js",
+    "trade/targetPlanner.js",
+    "trade/rrCalculator.js",
+    "trade/tradeExplanation.js",
+    "trade/tradeSimulator.js",
+    "stats/stopSemantics.js"
+  ],
+  "adjacency": {
+    "scripts/live.js": [
+      "live/liveEngine.js",
+      "live/dataSource.js",
+      "data/binanceRest.js",
+      "live/persistence.js",
+      "live/dailyBiasService.js",
+      "notify/dingTalk.js",
+      "replay/continuityChecker.js",
+      "stats/liquidityProvenance.js",
+      "stats/alertPrioritization.js",
+      "config/thresholds.js",
+      "stats/displacementWatch.js",
+      "live/futuresPriceStream.js",
+      "notify/watchNotificationPresentationV1.js",
+      "config/watchNotificationZhV1.js",
+      "config/sweepContextV1.js",
+      "config/live.json",
+      "config/thresholds.js"
+    ],
+    "entry/entryGate.js": [
+      "config/thresholds.js",
+      "fvg/fvgScorer.js"
+    ],
+    "entry/entryExplanation.js": [
+      "entry/entryInvalidation.js"
+    ],
+    "entry/entryInvalidation.js": [],
+    "live/liveEngine.js": [
+      "replay/replayState.js",
+      "events/eventRegistry.js",
+      "events/displacementDetector.js",
+      "amd/amdState.js",
+      "replay/replayEngine.js",
+      "stats/displacementLeg.js",
+      "stats/opportunityQuality.js",
+      "stats/nearStaleness.js",
+      "stats/liquidityProvenance.js",
+      "stats/alertPrioritization.js",
+      "structure/structuralProvenance5m.js",
+      "stats/displacementWatch.js",
+      "stats/watchLiquidityEvidenceV1.js",
+      "config/watchLiquidityEvidenceV1.js",
+      "config/sweepContextV1.js",
+      "stats/runtimeSwingContextV1.js",
+      "bias/dailyBiasAlignment.js",
+      "config/thresholds.js"
+    ],
+    "live/dataSource.js": [
+      "data/binanceRest.js",
+      "replay/historicalLoader.js",
+      "replay/continuityChecker.js"
+    ],
+    "data/binanceRest.js": [
+      "config/network.js"
+    ],
+    "live/persistence.js": [],
+    "live/dailyBiasService.js": [
+      "ai/deepseekClient.js",
+      "ai/ictBiasPrompt.js",
+      "ai/biasResponseValidator.js",
+      "ai/dailyBiasContext.js",
+      "bias/dailyBiasAlignment.js",
+      "live/dailyBiasStore.js"
+    ],
+    "notify/dingTalk.js": [],
+    "replay/continuityChecker.js": [],
+    "stats/liquidityProvenance.js": [
+      "config/thresholds.js",
+      "events/sweepNarrativeEligibilityV1.js"
+    ],
+    "stats/alertPrioritization.js": [
+      "stats/liquidityRelevanceAudit.js"
+    ],
+    "config/thresholds.js": [],
+    "stats/displacementWatch.js": [
+      "stats/liquidityProvenance.js",
+      "events/sweepNarrativeEligibilityV1.js"
+    ],
+    "live/futuresPriceStream.js": [],
+    "notify/watchNotificationPresentationV1.js": [
+      "notify/sweepContextPresentationV1.js"
+    ],
+    "config/watchNotificationZhV1.js": [],
+    "config/sweepContextV1.js": [],
+    "config/live.json": [],
+    "fvg/fvgScorer.js": [
+      "config/thresholds.js"
+    ],
+    "replay/replayState.js": [
+      "structure/pivotDetector.js",
+      "liquidity/swingLiquidity.js",
+      "liquidity/equalLiquidity.js",
+      "liquidity/liquidityLifecycle.js",
+      "liquidity/liquidityRegistry.js",
+      "events/sweepEventAdapter.js",
+      "fvg/fvgDetector.js",
+      "fvg/fvgLifecycle.js",
+      "fvg/fvgRegistry.js",
+      "amd/amdState.js",
+      "structure/structuralProvenance5m.js",
+      "config/thresholds.js"
+    ],
+    "events/eventRegistry.js": [],
+    "events/displacementDetector.js": [
+      "indicators/atr.js",
+      "config/thresholds.js"
+    ],
+    "amd/amdState.js": [
+      "config/thresholds.js",
+      "amd/accumulationDetector.js"
+    ],
+    "replay/replayEngine.js": [
+      "config/thresholds.js",
+      "replay/replayState.js",
+      "amd/amdState.js",
+      "events/eventRegistry.js",
+      "events/displacementDetector.js",
+      "indicators/atr.js",
+      "structure/structuralProvenance5m.js",
+      "liquidity/dailyLiquidity.js",
+      "liquidity/weeklyLiquidity.js",
+      "liquidity/monthlyLiquidity.js",
+      "liquidity/sessionLiquidity.js",
+      "liquidity/liquidityCluster.js",
+      "liquidity/liquidityScorer.js",
+      "draw/drawEngine.js",
+      "bias/biasEngine.js",
+      "structure/swingClassifier.js",
+      "structure/dealingRange.js",
+      "context/premiumDiscount.js",
+      "structure/pivotDetector.js",
+      "amd/amdAlignment.js",
+      "scenario/scenarioEngine.js",
+      "entry/entryGate.js",
+      "trade/tradePlan.js",
+      "trade/stopPlanner.js",
+      "replay/retraceTracker.js",
+      "stats/shadowEntry.js",
+      "stats/narrativeBoundary.js"
+    ],
+    "stats/displacementLeg.js": [
+      "structure/structuralProvenance5m.js"
+    ],
+    "stats/opportunityQuality.js": [],
+    "stats/nearStaleness.js": [],
+    "structure/structuralProvenance5m.js": [
+      "events/mssSignalDetector.js"
+    ],
+    "stats/watchLiquidityEvidenceV1.js": [
+      "liquidity/liquidityLifecycle.js",
+      "config/watchLiquidityEvidenceV1.js",
+      "config/sweepContextV1.js",
+      "stats/sweepContextV1.js"
+    ],
+    "config/watchLiquidityEvidenceV1.js": [],
+    "stats/runtimeSwingContextV1.js": [
+      "structure/pivotDetector.js",
+      "liquidity/swingLiquidity.js"
+    ],
+    "bias/dailyBiasAlignment.js": [],
+    "replay/historicalLoader.js": [
+      "data/binanceRest.js"
+    ],
+    "config/network.js": [],
+    "ai/deepseekClient.js": [],
+    "ai/ictBiasPrompt.js": [
+      "ai/structuralEventReference.js"
+    ],
+    "ai/biasResponseValidator.js": [
+      "ai/structuralEventReference.js"
+    ],
+    "ai/dailyBiasContext.js": [
+      "ai/auditPivots.js",
+      "ai/auditMarketFacts.js",
+      "ai/auditStructuralProvenance.js"
+    ],
+    "live/dailyBiasStore.js": [
+      "live/persistence.js"
+    ],
+    "events/sweepNarrativeEligibilityV1.js": [],
+    "stats/liquidityRelevanceAudit.js": [
+      "stats/liquidityRecencyAudit.js"
+    ],
+    "notify/sweepContextPresentationV1.js": [],
+    "structure/pivotDetector.js": [],
+    "liquidity/swingLiquidity.js": [],
+    "liquidity/equalLiquidity.js": [
+      "config/thresholds.js",
+      "indicators/atr.js",
+      "liquidity/liquidityLifecycle.js"
+    ],
+    "liquidity/liquidityLifecycle.js": [],
+    "liquidity/liquidityRegistry.js": [],
+    "events/sweepEventAdapter.js": [
+      "config/sweepNarrativeEligibilityV1.js",
+      "events/sweepNarrativeEligibilityV1.js"
+    ],
+    "fvg/fvgDetector.js": [
+      "config/thresholds.js",
+      "indicators/atr.js"
+    ],
+    "fvg/fvgLifecycle.js": [],
+    "fvg/fvgRegistry.js": [],
+    "indicators/atr.js": [
+      "config/thresholds.js"
+    ],
+    "amd/accumulationDetector.js": [
+      "indicators/atr.js",
+      "config/thresholds.js"
+    ],
+    "liquidity/dailyLiquidity.js": [
+      "utils/utcTime.js",
+      "data/binanceRest.js"
+    ],
+    "liquidity/weeklyLiquidity.js": [
+      "utils/utcTime.js",
+      "data/binanceRest.js"
+    ],
+    "liquidity/monthlyLiquidity.js": [
+      "utils/utcTime.js",
+      "data/binanceRest.js"
+    ],
+    "liquidity/sessionLiquidity.js": [
+      "utils/utcTime.js",
+      "config/sessions.js",
+      "data/binanceRest.js"
+    ],
+    "liquidity/liquidityCluster.js": [
+      "config/thresholds.js"
+    ],
+    "liquidity/liquidityScorer.js": [
+      "config/thresholds.js"
+    ],
+    "draw/drawEngine.js": [
+      "liquidity/liquidityCluster.js",
+      "draw/drawCandidate.js",
+      "draw/distanceScorer.js",
+      "draw/freshnessScorer.js",
+      "draw/drawScorer.js",
+      "config/thresholds.js"
+    ],
+    "bias/biasEngine.js": [
+      "bias/liquidityBias.js",
+      "bias/structureBias.js",
+      "bias/locationBias.js",
+      "bias/deliveryBias.js",
+      "bias/conflictDetector.js",
+      "bias/biasScorer.js",
+      "bias/biasExplanation.js",
+      "config/thresholds.js"
+    ],
+    "structure/swingClassifier.js": [],
+    "structure/dealingRange.js": [],
+    "context/premiumDiscount.js": [
+      "config/thresholds.js"
+    ],
+    "amd/amdAlignment.js": [],
+    "scenario/scenarioEngine.js": [
+      "config/thresholds.js",
+      "scenario/actionEngine.js",
+      "scenario/scenarioScorer.js",
+      "scenario/scenarioExplanation.js",
+      "scenario/invalidationEngine.js"
+    ],
+    "trade/tradePlan.js": [
+      "config/thresholds.js",
+      "trade/entryPlanner.js",
+      "trade/stopPlanner.js",
+      "trade/targetPlanner.js",
+      "trade/rrCalculator.js",
+      "trade/tradeExplanation.js"
+    ],
+    "trade/stopPlanner.js": [
+      "config/thresholds.js"
+    ],
+    "replay/retraceTracker.js": [
+      "stats/narrativeBoundary.js"
+    ],
+    "stats/shadowEntry.js": [
+      "trade/stopPlanner.js",
+      "trade/tradeSimulator.js",
+      "replay/retraceTracker.js",
+      "stats/narrativeBoundary.js",
+      "config/thresholds.js",
+      "config/thresholds.js"
+    ],
+    "stats/narrativeBoundary.js": [
+      "stats/stopSemantics.js"
+    ],
+    "events/mssSignalDetector.js": [],
+    "stats/sweepContextV1.js": [],
+    "ai/structuralEventReference.js": [],
+    "ai/auditPivots.js": [],
+    "ai/auditMarketFacts.js": [
+      "ai/auditPivots.js"
+    ],
+    "ai/auditStructuralProvenance.js": [],
+    "stats/liquidityRecencyAudit.js": [],
+    "config/sweepNarrativeEligibilityV1.js": [],
+    "utils/utcTime.js": [],
+    "config/sessions.js": [],
+    "draw/drawCandidate.js": [
+      "liquidity/liquidityScorer.js"
+    ],
+    "draw/distanceScorer.js": [
+      "config/thresholds.js"
+    ],
+    "draw/freshnessScorer.js": [
+      "config/thresholds.js"
+    ],
+    "draw/drawScorer.js": [
+      "config/thresholds.js"
+    ],
+    "bias/liquidityBias.js": [
+      "config/thresholds.js"
+    ],
+    "bias/structureBias.js": [
+      "config/thresholds.js",
+      "structure/swingClassifier.js"
+    ],
+    "bias/locationBias.js": [
+      "config/thresholds.js"
+    ],
+    "bias/deliveryBias.js": [
+      "config/thresholds.js"
+    ],
+    "bias/conflictDetector.js": [
+      "config/thresholds.js"
+    ],
+    "bias/biasScorer.js": [
+      "config/thresholds.js"
+    ],
+    "bias/biasExplanation.js": [],
+    "scenario/actionEngine.js": [
+      "config/thresholds.js"
+    ],
+    "scenario/scenarioScorer.js": [
+      "config/thresholds.js"
+    ],
+    "scenario/scenarioExplanation.js": [
+      "scenario/invalidationEngine.js"
+    ],
+    "scenario/invalidationEngine.js": [],
+    "trade/entryPlanner.js": [
+      "config/thresholds.js"
+    ],
+    "trade/targetPlanner.js": [
+      "config/thresholds.js"
+    ],
+    "trade/rrCalculator.js": [
+      "config/thresholds.js"
+    ],
+    "trade/tradeExplanation.js": [],
+    "trade/tradeSimulator.js": [
+      "config/thresholds.js"
+    ],
+    "stats/stopSemantics.js": [
+      "config/thresholds.js",
+      "trade/stopPlanner.js"
+    ]
+  }
+}

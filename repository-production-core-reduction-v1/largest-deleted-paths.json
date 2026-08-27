@@ -1,0 +1,252 @@
+[
+  {
+    "path": "data-cache",
+    "sizeMB": 99.298,
+    "classification": "CACHE"
+  },
+  {
+    "path": ".audit-mss-signal-coverage-refactor-v1",
+    "sizeMB": 72.915,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-produced-frontier-extension-rule-v1-shadow",
+    "sizeMB": 62.795,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-opportunity-quality-narrative-refactor-v1",
+    "sizeMB": 51.786,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-opportunity-high-gate-v2",
+    "sizeMB": 43.804,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-structural-swing-refactor-v1-after",
+    "sizeMB": 36.627,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-opportunity-funnel-v1-btcusdt-dc-20260823",
+    "sizeMB": 35.793,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-structural-swing-event-semantics-v1-after",
+    "sizeMB": 33.427,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-5m-structural-swing-refactor-v1",
+    "sizeMB": 16.145,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-5m-structural-swing-event-semantics-v1",
+    "sizeMB": 16.136,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": "liquidity-object-qualification-registry-semantics-audit-v1",
+    "sizeMB": 14.451,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": "outputs",
+    "sizeMB": 12.466,
+    "classification": "OLD_OUTPUT"
+  },
+  {
+    "path": ".audit-5m-displacement-quality-feature-v1",
+    "sizeMB": 11.333,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-displacement-centric-watch-fvg-retracement-v1",
+    "sizeMB": 7.997,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": "swing-context-projection-v1",
+    "sizeMB": 7.967,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": ".audit-directional-run-displacement-shadow-v1",
+    "sizeMB": 7.449,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-displacement-fvg-notification-human-formation-v1",
+    "sizeMB": 5.61,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-displacement-watch-lifecycle-v1",
+    "sizeMB": 4.644,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-watch-rearm-v1",
+    "sizeMB": 3.272,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-funnel-btcusdt",
+    "sizeMB": 3.216,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-funnel-btcusdt-dc",
+    "sizeMB": 2.986,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": "multi-timeframe-swing-hierarchy-audit-v1",
+    "sizeMB": 2.981,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": ".audit-high-liquidity-narrative-population-v1",
+    "sizeMB": 2.589,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": "structural-role-coverage-audit-v1",
+    "sizeMB": 2.103,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": ".audit-mss-quality-near-miss-human-v1-btcusdt-20260823",
+    "sizeMB": 1.269,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": "watch-narrative-liquidity-policy-design-v1",
+    "sizeMB": 1.232,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": ".audit-watch-rearm-shadow-evaluation-v1",
+    "sizeMB": 1.188,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-hr01-liquidity-narrative-trace-v1",
+    "sizeMB": 1.117,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": "watch-narrative-eligible-candidate-shadow-comparison-v1",
+    "sizeMB": 0.756,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": ".audit-5m-structural-provenance-event-completeness-v1",
+    "sizeMB": 0.697,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": ".audit-5m-structural-provenance-event-completeness-v1-after-fix",
+    "sizeMB": 0.681,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": "archive",
+    "sizeMB": 0.644,
+    "classification": "ARCHIVED"
+  },
+  {
+    "path": ".audit-produced-frontier-replacement-v1",
+    "sizeMB": 0.52,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": "narrative-liquidity-evidence-shadow-evaluation-v1",
+    "sizeMB": 0.308,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": "mtf-swing-real-time-availability-audit-v1",
+    "sizeMB": 0.181,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": "displacement-mss-direction-linkage-fix-v1",
+    "sizeMB": 0.12,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": ".audit-hr02-liquidity-narrative-trace-20260823",
+    "sizeMB": 0.12,
+    "classification": "AUDIT_ONLY"
+  },
+  {
+    "path": "watch-mss-direction-conflict-replay-diagnosis-v1",
+    "sizeMB": 0.107,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": "sweep-context-notification-presentation-v1",
+    "sizeMB": 0.051,
+    "classification": "RESEARCH_ONLY"
+  },
+  {
+    "path": "scripts/opportunityFunnelAuditV1.js",
+    "sizeMB": 0.049,
+    "classification": "RESEARCH_ONLY"
+  },
+  {
+    "path": "scripts/directionalRunDisplacementShadowV1.js",
+    "sizeMB": 0.045,
+    "classification": "RESEARCH_ONLY"
+  },
+  {
+    "path": "liquidity-source-sweep-eligibility-design-v1",
+    "sizeMB": 0.039,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": "scripts/displacementQualityFeatureAuditV1.js",
+    "sizeMB": 0.037,
+    "classification": "RESEARCH_ONLY"
+  },
+  {
+    "path": "scripts/structuralProvenancePopulationAudit.js",
+    "sizeMB": 0.03,
+    "classification": "RESEARCH_ONLY"
+  },
+  {
+    "path": "scripts/liquidityObjectQualificationRegistrySemanticsAuditV1.js",
+    "sizeMB": 0.029,
+    "classification": "RESEARCH_ONLY"
+  },
+  {
+    "path": "narrative-liquidity-v1-production-simplification",
+    "sizeMB": 0.029,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": "scripts/narrativeLiquidityEvidenceShadowEvaluationV1.js",
+    "sizeMB": 0.029,
+    "classification": "RESEARCH_ONLY"
+  },
+  {
+    "path": "liquidity-sweep-context-consumption-design-v1",
+    "sizeMB": 0.028,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": "liquidity-source-architecture-audit-v1",
+    "sizeMB": 0.028,
+    "classification": "GENERATED_ARTIFACT"
+  },
+  {
+    "path": "scripts/watchConsumptionAuditV1.js",
+    "sizeMB": 0.028,
+    "classification": "RESEARCH_ONLY"
+  }
+]

@@ -279,7 +279,6 @@ function createRunner(symbol) {
     var candlesFile = path.join(dir, 'candles.jsonl');
     var pushedFile = path.join(dir, 'pushed.json');
     var stateFile = path.join(dir, 'cursor.json');
-    var outboxFile = path.join(dir, 'outbox.json');
     var dailyBiasFile = path.join(dir, 'daily-bias.json');
     var shadowFile = path.join(dir, 'prioritization.jsonl'); // 11L.15：两组 HIGH 的 shadow 记录（3-7 天后 forward 对比）
     var watchFile = path.join(dir, 'displacement-watches.json');
@@ -296,9 +295,6 @@ function createRunner(symbol) {
     var historyLoaded = false;
     var runnerData = null; // Fix 1：{ raw, structureCandles, calendarCandles }（HTF 增量共用同一对象）
     var delivered = {}; // Fix 3（11L.3）：oppId -> anchorIndex（钉钉确认投递成功才写入；持久化跨重启）
-    // Fix 4（11L.4）：pending 改 transactional outbox —— outbox.json 持久化，
-    // 崩溃/重启后仍保留未投递机会（DETECTED → DELIVERY_PENDING → DELIVERED），不漏 HIGH
-    var pending = persistence.loadJson(outboxFile, []); // [{ opp, attempts }]
     var watchStore = displacementWatch.createWatchStore(
         persistence.loadJson(watchFile, []),
         persistence.loadJson(watchDeliveredFile, {})
@@ -311,23 +307,10 @@ function createRunner(symbol) {
         return persistence.loadJson(pushedFile, {});
     }
 
-    function saveOutbox() {
-        persistence.saveJson(outboxFile, pending);
-    }
     function saveWatchState() {
         persistence.saveJson(watchFile, watchStore.getAll());
         persistence.saveJson(watchDeliveredFile, watchStore.getDelivered());
         persistence.saveJson(watchOutboxFile, watchPending);
-    }
-
-    /**
-     * 11L.15：B 口径 —— 是否推钉钉。
-     * PRIORITY_HIGH（HIGH + 48 窗口内 Significant Liquidity）→ 推；
-     * STANDARD_HIGH → 只落日志；PRIORITIZATION_ENABLED=false（回滚）→ 全部照常推。
-     */
-    function shouldNotify(opp) {
-        if (!PRIORITIZATION_ENABLED) return true;
-        return opp.notifyPriority === 'PRIORITY_HIGH';
     }
 
     /**
@@ -456,10 +439,6 @@ function createRunner(symbol) {
         });
 
         delivered = loadPushed();
-        if (pending.length > 0) {
-            log(symbol + ' LEGACY_HIGH_OUTBOX_DISABLED: ' + pending.length +
-                ' 条旧 HIGH outbox 保留在磁盘但不再发送；FVG FIRST_TOUCH 是唯一新通知入口');
-        }
 
         // 逐根推进历史（warmup 段机会不推送：已过去）。每根完整完成后显式
         // macrotask yield，避免新 symbol bootstrap 饿死已有 symbol 的 realtime callbacks。
@@ -564,65 +543,6 @@ function createRunner(symbol) {
             onError: function (e) { log(symbol + ' Futures WebSocket error: ' + (e && e.message || e)); }
         });
         priceStream.start();
-    }
-
-    /**
-     * Fix 3（11L.3 P1）：钉钉投递（确认 errcode===0 才记 delivered 并持久化；失败保留重试）。
-     * 11L.4：outbox 语义 —— 调用方负责 pending 入队/出队 + saveOutbox()。
-     * @returns {Promise<boolean>} 是否投递成功
-     */
-    function deliver(opp) {
-        if (delivered[opp.id]) return Promise.resolve(true); // 已投递（跨重启去重）
-        var msg = buildMessage(opp, symbol);
-        // 11L.15b：日志带优先级前缀（PRIORITY=🔴 / STANDARD=🟡），配合消息文案可追溯判定依据
-        log((opp.notifyPriority === 'PRIORITY_HIGH' ? '🔴 ' : '🟡 ') + 'HIGH 机会: ' + symbol + ' ' + opp.direction +
-            ' ' + opp.mssQuality + '|' + opp.legQuality +
-            ' near ' + (opp.nearDistPct !== null ? opp.nearDistPct.toFixed(2) + '%' : '-') + ' id=' + opp.id +
-            ' 通知=' + fmt(opp.availableAt) + ' 锚=' + fmt(opp.anchorTime) +
-            (opp.nearConsumed ? ' [near 通知前已触及·观察]' : ''));
-        return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {
-            // 双保险：sendText 内部已把 errcode!==0 视为失败，此处再确认一次
-            if (!res || res.errcode !== 0) {
-                throw new Error('errcode=' + (res ? res.errcode : 'none') + ' errmsg=' + (res ? res.errmsg : 'no-response'));
-            }
-            delivered[opp.id] = opp.anchorIndex;
-            persistence.saveJson(pushedFile, delivered);
-            log(symbol + ' 钉钉投递成功 id=' + opp.id + '（errcode=0），已记 delivered');
-            return true;
-        }).catch(function (e) {
-            log(symbol + ' 钉钉投递失败 id=' + opp.id + '：' + e.message + '（保留 outbox，自动重试）');
-            return false;
-        });
-    }
-
-    /** Fix 3+4（11L.3/11L.4）：重试 outbox 中未投递成功的机会（崩溃/重启后从 outbox.json 恢复） */
-    // 12.5A.1：outbox item 带 structureMode —— 跨模式的机会不得重试（quarantine + warning），
-    // 防止"看起来是 DC 模式发出的通知、实际来自 LEGACY"污染人工观察。
-    function retryPending() {
-        if (pending.length === 0) return Promise.resolve();
-        var list = pending.slice();
-        pending = [];
-        var mode = structuralSwingMode();
-        return list.reduce(function (chain2, item) {
-            return chain2.then(function () {
-                if (item.structureMode && item.structureMode !== mode) {
-                    log(symbol + ' OUTBOX_MODE_MISMATCH: 丢弃跨模式机会 id=' + (item.opp && item.opp.id) +
-                        '（outbox.structureMode=' + item.structureMode + ' 当前=' + mode + '，qurantined，不发送）');
-                    return; // quarantine：不发送、不进回队
-                }
-                return deliver(item.opp).then(function (ok) {
-                    if (!ok) {
-                        pending.push(item); // 仍失败 → 留在 outbox，下轮继续
-                    }
-                    saveOutbox(); // 每次出队/回队都落盘（崩溃恢复点）
-                });
-            });
-        }, Promise.resolve());
-    }
-
-    /** 11L.5（P1-3）：outbox 按 oppId 去重（崩溃/重启重放边缘不产生同 id 重复条目） */
-    function isPending(id) {
-        return pending.some(function (x) { return x.opp && x.opp.id === id; });
     }
 
     /** Legacy HIGH remains a statistical/shadow output and no longer drives DingTalk. */

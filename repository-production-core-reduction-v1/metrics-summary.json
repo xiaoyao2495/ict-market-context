@@ -1,0 +1,680 @@
+{
+  "before": {
+    "totalFiles": 1187,
+    "jsFiles": 375,
+    "trackedFiles": 344,
+    "untrackedFiles": 843,
+    "projectSizeBytes": 598046854,
+    "nodeModulesSizeBytes": 0,
+    "perDir": {
+      ".audit-5m-displacement-quality-feature-v1": {
+        "fileCount": 7,
+        "jsFileCount": 0,
+        "sizeBytes": 11883464
+      },
+      ".audit-5m-structural-provenance-event-completeness-v1": {
+        "fileCount": 5,
+        "jsFileCount": 0,
+        "sizeBytes": 730518
+      },
+      ".audit-5m-structural-provenance-event-completeness-v1-after-fix": {
+        "fileCount": 5,
+        "jsFileCount": 0,
+        "sizeBytes": 714264
+      },
+      ".audit-5m-structural-swing-event-semantics-v1": {
+        "fileCount": 6,
+        "jsFileCount": 0,
+        "sizeBytes": 16919302
+      },
+      ".audit-5m-structural-swing-refactor-v1": {
+        "fileCount": 4,
+        "jsFileCount": 0,
+        "sizeBytes": 16929374
+      },
+      ".audit-directional-run-displacement-shadow-v1": {
+        "fileCount": 51,
+        "jsFileCount": 0,
+        "sizeBytes": 7810717
+      },
+      ".audit-displacement-centric-watch-fvg-retracement-v1": {
+        "fileCount": 5,
+        "jsFileCount": 0,
+        "sizeBytes": 8385817
+      },
+      ".audit-displacement-fvg-notification-human-formation-v1": {
+        "fileCount": 44,
+        "jsFileCount": 0,
+        "sizeBytes": 5882172
+      },
+      ".audit-displacement-watch-lifecycle-v1": {
+        "fileCount": 7,
+        "jsFileCount": 1,
+        "sizeBytes": 4870001
+      },
+      ".audit-funnel-btcusdt": {
+        "fileCount": 2,
+        "jsFileCount": 0,
+        "sizeBytes": 3372248
+      },
+      ".audit-funnel-btcusdt-dc": {
+        "fileCount": 1,
+        "jsFileCount": 0,
+        "sizeBytes": 3130978
+      },
+      ".audit-high-liquidity-narrative-population-v1": {
+        "fileCount": 4,
+        "jsFileCount": 0,
+        "sizeBytes": 2714879
+      },
+      ".audit-hr01-liquidity-narrative-trace-v1": {
+        "fileCount": 2,
+        "jsFileCount": 0,
+        "sizeBytes": 1171097
+      },
+      ".audit-hr02-liquidity-narrative-trace-20260823": {
+        "fileCount": 3,
+        "jsFileCount": 0,
+        "sizeBytes": 125372
+      },
+      ".audit-mss-quality-near-miss-human-v1-btcusdt-20260823": {
+        "fileCount": 5,
+        "jsFileCount": 0,
+        "sizeBytes": 1330588
+      },
+      ".audit-mss-signal-coverage-refactor-v1": {
+        "fileCount": 20,
+        "jsFileCount": 0,
+        "sizeBytes": 76457174
+      },
+      ".audit-opportunity-funnel-v1-btcusdt-dc-20260823": {
+        "fileCount": 8,
+        "jsFileCount": 0,
+        "sizeBytes": 37531689
+      },
+      ".audit-opportunity-high-gate-v2": {
+        "fileCount": 13,
+        "jsFileCount": 0,
+        "sizeBytes": 45931748
+      },
+      ".audit-opportunity-quality-narrative-refactor-v1": {
+        "fileCount": 15,
+        "jsFileCount": 0,
+        "sizeBytes": 54301428
+      },
+      ".audit-produced-frontier-extension-rule-v1-shadow": {
+        "fileCount": 21,
+        "jsFileCount": 0,
+        "sizeBytes": 65844904
+      },
+      ".audit-produced-frontier-replacement-v1": {
+        "fileCount": 3,
+        "jsFileCount": 0,
+        "sizeBytes": 545693
+      },
+      ".audit-structural-swing-event-semantics-v1-after": {
+        "fileCount": 8,
+        "jsFileCount": 0,
+        "sizeBytes": 35050709
+      },
+      ".audit-structural-swing-refactor-v1-after": {
+        "fileCount": 8,
+        "jsFileCount": 0,
+        "sizeBytes": 38406681
+      },
+      ".audit-watch-rearm-shadow-evaluation-v1": {
+        "fileCount": 5,
+        "jsFileCount": 0,
+        "sizeBytes": 1245555
+      },
+      ".audit-watch-rearm-v1": {
+        "fileCount": 6,
+        "jsFileCount": 1,
+        "sizeBytes": 3430971
+      },
+      "ai": {
+        "fileCount": 8,
+        "jsFileCount": 8,
+        "sizeBytes": 82644
+      },
+      "amd": {
+        "fileCount": 8,
+        "jsFileCount": 8,
+        "sizeBytes": 54103
+      },
+      "archive": {
+        "fileCount": 55,
+        "jsFileCount": 53,
+        "sizeBytes": 675305
+      },
+      "audit": {
+        "fileCount": 12,
+        "jsFileCount": 12,
+        "sizeBytes": 94093
+      },
+      "bias": {
+        "fileCount": 9,
+        "jsFileCount": 9,
+        "sizeBytes": 31030
+      },
+      "config": {
+        "fileCount": 9,
+        "jsFileCount": 8,
+        "sizeBytes": 26123
+      },
+      "context": {
+        "fileCount": 1,
+        "jsFileCount": 1,
+        "sizeBytes": 2348
+      },
+      "data": {
+        "fileCount": 1,
+        "jsFileCount": 1,
+        "sizeBytes": 12210
+      },
+      "data-cache": {
+        "fileCount": 133,
+        "jsFileCount": 0,
+        "sizeBytes": 104121080
+      },
+      "displacement-mss-direction-linkage-fix-v1": {
+        "fileCount": 9,
+        "jsFileCount": 0,
+        "sizeBytes": 126236
+      },
+      "docs": {
+        "fileCount": 2,
+        "jsFileCount": 0,
+        "sizeBytes": 15057
+      },
+      "draw": {
+        "fileCount": 5,
+        "jsFileCount": 5,
+        "sizeBytes": 17771
+      },
+      "engine": {
+        "fileCount": 0,
+        "jsFileCount": 0,
+        "sizeBytes": 0
+      },
+      "entry": {
+        "fileCount": 3,
+        "jsFileCount": 3,
+        "sizeBytes": 17106
+      },
+      "events": {
+        "fileCount": 5,
+        "jsFileCount": 5,
+        "sizeBytes": 22235
+      },
+      "fvg": {
+        "fileCount": 4,
+        "jsFileCount": 4,
+        "sizeBytes": 18546
+      },
+      "indicators": {
+        "fileCount": 1,
+        "jsFileCount": 1,
+        "sizeBytes": 2052
+      },
+      "liquidity": {
+        "fileCount": 10,
+        "jsFileCount": 10,
+        "sizeBytes": 62048
+      },
+      "liquidity-object-qualification-registry-semantics-audit-v1": {
+        "fileCount": 14,
+        "jsFileCount": 0,
+        "sizeBytes": 15153078
+      },
+      "liquidity-source-architecture-audit-v1": {
+        "fileCount": 7,
+        "jsFileCount": 0,
+        "sizeBytes": 29747
+      },
+      "liquidity-source-sweep-eligibility-design-v1": {
+        "fileCount": 13,
+        "jsFileCount": 0,
+        "sizeBytes": 41261
+      },
+      "liquidity-sweep-context-consumption-design-v1": {
+        "fileCount": 14,
+        "jsFileCount": 0,
+        "sizeBytes": 29836
+      },
+      "live": {
+        "fileCount": 6,
+        "jsFileCount": 6,
+        "sizeBytes": 47650
+      },
+      "live-multi-symbol-bootstrap-performance-fix-v1": {
+        "fileCount": 4,
+        "jsFileCount": 0,
+        "sizeBytes": 27739
+      },
+      "minimal-sweep-context-production-integration-v1": {
+        "fileCount": 13,
+        "jsFileCount": 0,
+        "sizeBytes": 13182
+      },
+      "mtf-swing-real-time-availability-audit-v1": {
+        "fileCount": 13,
+        "jsFileCount": 0,
+        "sizeBytes": 189625
+      },
+      "multi-timeframe-swing-hierarchy-audit-v1": {
+        "fileCount": 14,
+        "jsFileCount": 0,
+        "sizeBytes": 3125538
+      },
+      "narrative-liquidity-evidence-shadow-evaluation-v1": {
+        "fileCount": 17,
+        "jsFileCount": 0,
+        "sizeBytes": 323351
+      },
+      "narrative-liquidity-v1-production-simplification": {
+        "fileCount": 14,
+        "jsFileCount": 0,
+        "sizeBytes": 30531
+      },
+      "notify": {
+        "fileCount": 3,
+        "jsFileCount": 3,
+        "sizeBytes": 19452
+      },
+      "outputs": {
+        "fileCount": 196,
+        "jsFileCount": 0,
+        "sizeBytes": 13071860
+      },
+      "replay": {
+        "fileCount": 5,
+        "jsFileCount": 5,
+        "sizeBytes": 89288
+      },
+      "scenario": {
+        "fileCount": 5,
+        "jsFileCount": 5,
+        "sizeBytes": 26996
+      },
+      "scripts": {
+        "fileCount": 78,
+        "jsFileCount": 78,
+        "sizeBytes": 1478828
+      },
+      "sndkusdt-bootstrap-stall-diagnosis-v1": {
+        "fileCount": 3,
+        "jsFileCount": 0,
+        "sizeBytes": 8465
+      },
+      "stats": {
+        "fileCount": 39,
+        "jsFileCount": 39,
+        "sizeBytes": 383505
+      },
+      "structural-role-coverage-audit-v1": {
+        "fileCount": 8,
+        "jsFileCount": 0,
+        "sizeBytes": 2205425
+      },
+      "structure": {
+        "fileCount": 4,
+        "jsFileCount": 4,
+        "sizeBytes": 30015
+      },
+      "sweep-context-notification-presentation-v1": {
+        "fileCount": 10,
+        "jsFileCount": 0,
+        "sizeBytes": 53777
+      },
+      "sweep-narrative-eligibility-shadow-integration-v1": {
+        "fileCount": 10,
+        "jsFileCount": 0,
+        "sizeBytes": 15156
+      },
+      "swing-context-projection-v1": {
+        "fileCount": 11,
+        "jsFileCount": 0,
+        "sizeBytes": 8354011
+      },
+      "test": {
+        "fileCount": 98,
+        "jsFileCount": 97,
+        "sizeBytes": 891078
+      },
+      "trade": {
+        "fileCount": 7,
+        "jsFileCount": 7,
+        "sizeBytes": 42819
+      },
+      "utils": {
+        "fileCount": 1,
+        "jsFileCount": 1,
+        "sizeBytes": 2197
+      },
+      "watch-mss-direction-conflict-replay-diagnosis-v1": {
+        "fileCount": 7,
+        "jsFileCount": 0,
+        "sizeBytes": 111936
+      },
+      "watch-narrative-eligible-candidate-shadow-comparison-v1": {
+        "fileCount": 13,
+        "jsFileCount": 0,
+        "sizeBytes": 793141
+      },
+      "watch-narrative-liquidity-policy-design-v1": {
+        "fileCount": 16,
+        "jsFileCount": 0,
+        "sizeBytes": 1292181
+      },
+      "watch-notification-presentation-v1.1": {
+        "fileCount": 5,
+        "jsFileCount": 0,
+        "sizeBytes": 5301
+      }
+    },
+    "top50": [
+      {
+        "path": ".audit-structural-swing-refactor-v1-after/formation-samples.json",
+        "sizeBytes": 35662707,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-mss-signal-coverage-refactor-v1/after-opportunity/formation-samples.json",
+        "sizeBytes": 34924840,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-opportunity-high-gate-v2/replay/formation-samples.json",
+        "sizeBytes": 34924840,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-opportunity-quality-narrative-refactor-v1/after-replay/formation-samples.json",
+        "sizeBytes": 34809075,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-opportunity-funnel-v1-btcusdt-dc-20260823/formation-samples.json",
+        "sizeBytes": 34624044,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-mss-signal-coverage-refactor-v1/before-opportunity/formation-samples.json",
+        "sizeBytes": 32331168,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-produced-frontier-extension-rule-v1-shadow/production-opportunity-replay/formation-samples.json",
+        "sizeBytes": 32331168,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-structural-swing-event-semantics-v1-after/formation-samples.json",
+        "sizeBytes": 32331168,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-produced-frontier-extension-rule-v1-shadow/shadow-opportunity-replay/formation-samples.json",
+        "sizeBytes": 27293978,
+        "ext": ".json"
+      },
+      {
+        "path": "liquidity-object-qualification-registry-semantics-audit-v1/watch-impact.json",
+        "sizeBytes": 11843158,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-5m-displacement-quality-feature-v1/displacement-feature-ledger.json",
+        "sizeBytes": 11405935,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-5m-structural-swing-refactor-v1/population-before-after.json",
+        "sizeBytes": 9932255,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-5m-structural-swing-event-semantics-v1/population-before-after.json",
+        "sizeBytes": 9922094,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-opportunity-quality-narrative-refactor-v1/after-replay/evaluation-ledger.json",
+        "sizeBytes": 9492005,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BTCUSDT_5m_20504_20685.json",
+        "sizeBytes": 8843565,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/ETHUSDT_5m_20502_20683.json",
+        "sizeBytes": 8513459,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BTCUSDT_5m_20504_20686.json",
+        "sizeBytes": 8415360,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BTCUSDT_5m_20502_20683.json",
+        "sizeBytes": 8415164,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BNBUSDT_5m_20502_20683.json",
+        "sizeBytes": 8227416,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-displacement-centric-watch-fvg-retracement-v1/watch-ledger.json",
+        "sizeBytes": 7268057,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-5m-structural-swing-refactor-v1/hr-regression.json",
+        "sizeBytes": 6989039,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-5m-structural-swing-event-semantics-v1/hr-regression.json",
+        "sizeBytes": 6986733,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-directional-run-displacement-shadow-v1/production-leg-shadow-alignment.json",
+        "sizeBytes": 4794282,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BTCUSDT_5m_20592_20684.json",
+        "sizeBytes": 4426348,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BTCUSDT_5m_20593_20684.json",
+        "sizeBytes": 4426327,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BTCUSDT_5m_20593_20685.json",
+        "sizeBytes": 4426099,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BTCUSDT_5m_20594_20685.json",
+        "sizeBytes": 4426080,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BTCUSDT_5m_20594_20686.json",
+        "sizeBytes": 4425600,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/ETHUSDT_5m_20594_20685.json",
+        "sizeBytes": 4388701,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BNBUSDT_5m_20594_20685.json",
+        "sizeBytes": 4252272,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BTCUSDT_5m_20592_20683.json",
+        "sizeBytes": 4232135,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-displacement-watch-lifecycle-v1/notification-lifecycle-ledger.json",
+        "sizeBytes": 4201771,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-opportunity-high-gate-v2/replay/evaluation-ledger.json",
+        "sizeBytes": 3937359,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-displacement-fvg-notification-human-formation-v1/human-review-records.json",
+        "sizeBytes": 3492565,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-funnel-btcusdt/funnel-result.json",
+        "sizeBytes": 3353411,
+        "ext": ".json"
+      },
+      {
+        "path": "swing-context-projection-v1/mtf-membership-projection.json",
+        "sizeBytes": 3281777,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-funnel-btcusdt-dc/funnel-result.json",
+        "sizeBytes": 3130978,
+        "ext": ".json"
+      },
+      {
+        "path": "swing-context-projection-v1/sweep-context-shadow.json",
+        "sizeBytes": 3040726,
+        "ext": ".json"
+      },
+      {
+        "path": "data-cache/BTCUSDT_5m_20626_20687.json",
+        "sizeBytes": 2966558,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-high-liquidity-narrative-population-v1/high-liquidity-narrative-ledger.json",
+        "sizeBytes": 2584276,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-opportunity-quality-narrative-refactor-v1/original-412-reclassification.json",
+        "sizeBytes": 2527688,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-opportunity-high-gate-v2/opportunity-high-gate-ledger.json",
+        "sizeBytes": 2264489,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-directional-run-displacement-shadow-v1/shadow-directional-runs.json",
+        "sizeBytes": 2129295,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-watch-rearm-v1/watch-pairs-ledger.json",
+        "sizeBytes": 2055660,
+        "ext": ".json"
+      },
+      {
+        "path": "swing-context-projection-v1/structural-role-projection.json",
+        "sizeBytes": 1983476,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-opportunity-quality-narrative-refactor-v1/after-replay/rejection-records.json",
+        "sizeBytes": 1875029,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-opportunity-quality-narrative-refactor-v1/after-replay/funnel-audit.json",
+        "sizeBytes": 1764746,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-mss-signal-coverage-refactor-v1/after-opportunity/rejection-records.json",
+        "sizeBytes": 1696321,
+        "ext": ".json"
+      },
+      {
+        "path": ".audit-opportunity-high-gate-v2/replay/rejection-records.json",
+        "sizeBytes": 1696321,
+        "ext": ".json"
+      },
+      {
+        "path": "multi-timeframe-swing-hierarchy-audit-v1/membership.json",
+        "sizeBytes": 1693671,
+        "ext": ".json"
+      }
+    ]
+  },
+  "after": {
+    "totalFiles": 278,
+    "jsFiles": 268,
+    "trackedFiles": 242,
+    "untrackedFiles": 36,
+    "projectSizeBytes": 2658003,
+    "projectSizeMB": 2.53,
+    "nodeModulesNote": "excluded (dependency, not deleted)"
+  },
+  "reduction": {
+    "totalFilesBefore": 1187,
+    "totalFilesAfter": 278,
+    "totalFileReduction": 909,
+    "jsFilesBefore": 375,
+    "jsFilesAfter": 268,
+    "jsFileReduction": 107,
+    "sizeBytesBefore": 598046854,
+    "sizeBytesAfter": 2658003,
+    "sizeMBBefore": 570.34,
+    "sizeMBAfter": 2.53,
+    "sizeReductionBytes": 595388851,
+    "sizeReductionMB": 567.81,
+    "sizeReductionPct": 99.6
+  },
+  "deletedSizeByCategory": {
+    "AUDIT_ONLY": {
+      "bytes": 444717343,
+      "mb": 424.12
+    },
+    "ARCHIVED": {
+      "bytes": 675305,
+      "mb": 0.64
+    },
+    "CACHE": {
+      "bytes": 104121080,
+      "mb": 99.3
+    },
+    "GENERATED_ARTIFACT": {
+      "bytes": 31875740,
+      "mb": 30.4
+    },
+    "OLD_OUTPUT": {
+      "bytes": 13071860,
+      "mb": 12.47
+    },
+    "RESEARCH_ONLY": {
+      "bytes": 927523,
+      "mb": 0.88
+    }
+  },
+  "deletedEntries": 96
+}

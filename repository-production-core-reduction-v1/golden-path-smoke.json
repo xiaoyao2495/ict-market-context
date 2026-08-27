@@ -1,0 +1,16 @@
+{
+  "GOLDEN_NOTIFICATION_SMOKE_PASSED": true,
+  "usedLiveRuntime": true,
+  "detail": {
+    "formatterOutputType": "string",
+    "formatterOutputLength": 446,
+    "containsSymbol": true,
+    "containsFvg": true,
+    "deliveryResult": {
+      "errcode": 0,
+      "errmsg": "ok"
+    },
+    "sendCalled": 1,
+    "deliveryErrcode": 0
+  }
+}

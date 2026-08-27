@@ -1,0 +1,16 @@
+[
+  {
+    "script": "test",
+    "command": "node test/run.js",
+    "target": "test/run.js",
+    "targetExists": true,
+    "broken": false
+  },
+  {
+    "script": "inspect",
+    "command": "node scripts/inspectLiquidity.js",
+    "target": "scripts/inspectLiquidity.js",
+    "targetExists": true,
+    "broken": false
+  }
+]

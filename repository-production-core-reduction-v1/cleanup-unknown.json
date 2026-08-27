@@ -1,0 +1,122 @@
+[
+  {
+    "path": "config/memoryHorizon.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/alertPrioritization.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/displacementMssDirectionLinkageFixV1Snapshot.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/inspectBias.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/inspectDraw.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/minimalSweepContextProductionIntegrationV1.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/minimalWatchProductionIntegrationV1.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/mssSignalCoverageRefactorV1Report.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/narrativeBoundaryPooled.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/narrativeLiquidityV1ProductionSimplification.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/opportunityQualityNarrativeRefactorV1Report.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/retainPooled.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/stopV2Pooled.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/sweepContextNotificationPresentationV1.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/swingContextProjectionV1.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/swingStateFinalizationV1.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/verifyLiveEngine.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/warmupParity.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/warmupStability.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/warmupStabilityRetain.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "scripts/watchNotificationPresentationV1.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "stats/mssDirection.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "stats/narrativeFormationA2.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  },
+  {
+    "path": "stats/narrativeFormationA4.js",
+    "reasonUnknown": "non-reachable source/test/tool file kept by UNKNOWN safety or keeper fs-reference",
+    "possibleConsumer": "none detected"
+  }
+]

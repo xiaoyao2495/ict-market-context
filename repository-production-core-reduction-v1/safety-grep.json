@@ -1,0 +1,56 @@
+{
+  "data-cache": [
+    "replay/historicalLoader.js",
+    "scripts/eqHistoricalMembershipEventStreamAuditV1.js",
+    "scripts/swingMultiDimensionalStateModelDesignV1.js",
+    "scripts/swingOutcomeReactionPopulationAuditV1.js",
+    "scripts/swingReactionLegStructuralAttributionAuditV1.js",
+    "scripts/swingSignificanceHumanReview.js"
+  ],
+  "outputs": [
+    "scripts/auditDeepSeek4hBias.js",
+    "test/deepseek4hBiasAudit.test.js"
+  ],
+  "archive": [],
+  ".audit": [
+    "scripts/reactionLegParameterizationAuditV1.js",
+    "scripts/swingMultiDimensionalStateModelDesignV1.js",
+    "scripts/swingOutcomeReactionPopulationAuditV1.js",
+    "scripts/swingReactionLegStructuralAttributionAuditV1.js",
+    "test/alertPrioritization.test.js",
+    "test/biasContextAudit.test.js",
+    "test/dailyBiasIntegration.test.js",
+    "test/drawLiquidityAudit.test.js",
+    "test/equalLiquidityAudit.test.js",
+    "test/externalSwingAudit.test.js",
+    "test/liquidityObjectShadowAudit.test.js",
+    "test/liquidityRecencyAudit.test.js",
+    "test/liquidityRelevanceAudit.test.js",
+    "test/livePrioritizationAudit.test.js",
+    "test/mssDirectionAudit.test.js",
+    "test/narrativeLabelAudit.test.js",
+    "test/pivotPopulationAudit.test.js",
+    "test/sweepCentricAudit.test.js",
+    "test/sweepIncrementalAudit.test.js"
+  ],
+  "audit/": [
+    "scripts/eqHistoricalMembershipEventStreamAuditV1.js",
+    "scripts/swingMultiDimensionalStateModelDesignV1.js",
+    "test/eqHistoricalMembershipEventStreamAuditV1.test.js",
+    "test/liquidityObjectQualificationRegistrySemanticsV1.test.js",
+    "test/liquiditySweepContextConsumptionV1.test.js",
+    "test/minimalSweepContextProductionIntegrationV1.test.js",
+    "test/mtfSwingRealTimeAvailabilityV1.test.js",
+    "test/multiTimeframeSwingHierarchyV1.test.js",
+    "test/narrativeLiquidityEvidenceShadowEvaluationV1.test.js",
+    "test/reactionBoundaryPolicyV1.test.js",
+    "test/shadowWatchConsumptionAdapterV1.test.js",
+    "test/swingContextProjectionV1.test.js",
+    "test/swingMultiDimensionalStateModelDesignV1.test.js",
+    "test/swingStateFinalizationV1.test.js",
+    "test/watchLiquidityEvidenceV1.test.js",
+    "test/watchNarrativeEligibleCandidateShadowComparisonV1.test.js",
+    "test/watchNarrativeLiquidityPolicyDesignV1.test.js",
+    "test/watchShadowConsumptionIntegrationV1.test.js"
+  ]
+}

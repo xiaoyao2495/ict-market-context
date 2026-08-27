@@ -1,0 +1,18 @@
+{
+  "PRODUCTION_DINGTALK_CALL_COUNT": 1,
+  "soleCallSite": "deliverWatchTouch -> dingTalk.sendText",
+  "deliverWatchTouchPresent": true,
+  "chain": [
+    "WATCH",
+    "Native FVG",
+    "FIRST_TOUCH",
+    "handleWatchTouches",
+    "retryWatchPending",
+    "deliverWatchTouch",
+    "buildFvgRetracementMessage",
+    "watchNotificationPresentationV1.build",
+    "sweepContextPresentationV1",
+    "dingTalk.sendText"
+  ],
+  "testDingTalkExcluded": true
+}
