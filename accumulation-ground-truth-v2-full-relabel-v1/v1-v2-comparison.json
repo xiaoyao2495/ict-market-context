@@ -1,0 +1,386 @@
+{
+  "schemaVersion": "ACCUMULATION_GT_V1_V2_COMPARISON_V1",
+  "exactAgreement": 11,
+  "adjacentDisagreements": 14,
+  "majorDisagreements": 35,
+  "transitionMatrix": {
+    "CLEAR_A": {
+      "CLEAR_A": 5,
+      "BORDERLINE_A": 5,
+      "NO_A": 22
+    },
+    "BORDERLINE_A": {
+      "CLEAR_A": 5,
+      "BORDERLINE_A": 4,
+      "NO_A": 3
+    },
+    "NO_A": {
+      "CLEAR_A": 13,
+      "BORDERLINE_A": 1,
+      "NO_A": 2
+    }
+  },
+  "cases": [
+    {
+      "originalCaseId": "case058",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "NO_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case044",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case051",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case007",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case060",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "BORDERLINE_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case059",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "BORDERLINE_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case006",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "BORDERLINE_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case049",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "BORDERLINE_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case041",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case053",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case014",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case043",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case015",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case054",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case013",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "BORDERLINE_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case045",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case022",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case002",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case033",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case024",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case026",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case055",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case008",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "NO_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case012",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case052",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case035",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "BORDERLINE_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case030",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case004",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case047",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case056",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case046",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case039",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "NO_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case020",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case029",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case050",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "BORDERLINE_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case031",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case042",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case034",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case003",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case021",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "BORDERLINE_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case048",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "BORDERLINE_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case037",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case057",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case025",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case032",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case023",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case027",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "NO_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case009",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case018",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case038",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "EXACT"
+    },
+    {
+      "originalCaseId": "case028",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case017",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case036",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case005",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "BORDERLINE_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case019",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case011",
+      "formationClassV1": "NO_A",
+      "formationClassV2": "CLEAR_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case001",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case010",
+      "formationClassV1": "BORDERLINE_A",
+      "formationClassV2": "NO_A",
+      "relation": "ADJACENT_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case016",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    },
+    {
+      "originalCaseId": "case040",
+      "formationClassV1": "CLEAR_A",
+      "formationClassV2": "NO_A",
+      "relation": "MAJOR_DISAGREEMENT"
+    }
+  ],
+  "interpretationGuard": "Historical comparison only. Ground Truth V1 is unstable and is not a gold standard; no accuracy, precision, recall, or F1 is claimed."
+}

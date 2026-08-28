@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "ACCUMULATION_GT_V2_SEMANTIC_DISTRIBUTION_V1",
+  "totalCases": 60,
+  "formationClassV2": {
+    "NO_A": 27,
+    "CLEAR_A": 23,
+    "BORDERLINE_A": 10
+  },
+  "confidenceV2": {
+    "HIGH": 46,
+    "MEDIUM": 14
+  },
+  "independentBalanceV2": {
+    "NO": 27,
+    "YES": 26,
+    "PARTIAL": 7
+  },
+  "twoSidedAuctionV2": {
+    "WEAK": 27,
+    "COHERENT": 23,
+    "PARTIAL": 10
+  },
+  "previousTrendSeparationV2": {
+    "NOT_SEPARATED": 27,
+    "CLEARLY_SEPARATED": 19,
+    "PARTIALLY_SEPARATED": 7,
+    "NO_CLEAR_PREVIOUS_TREND": 7
+  },
+  "oneSidedResidenceV2": {
+    "STRONG": 27,
+    "NONE": 21,
+    "MILD": 12
+  },
+  "valueMigrationV2": {
+    "PERSISTENT": 12,
+    "TEMPORARY": 31,
+    "NONE": 17
+  },
+  "excursionContextV2": {
+    "NO_CLEAR_EXCURSION": 28,
+    "REABSORBED_WITHIN_BALANCE": 23,
+    "PARTIAL_REABSORPTION": 8,
+    "FAILED_AND_BALANCE_BREAKS_DOWN": 1
+  },
+  "definitionEdgeCaseV2": {
+    "NO": 48,
+    "YES": 12
+  }
+}

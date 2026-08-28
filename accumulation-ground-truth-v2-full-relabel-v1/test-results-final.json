@@ -1,0 +1,53 @@
+{
+  "dedicated": {
+    "command": "node test/accumulationGroundTruthV2FullRelabelPhase2V1.test.js",
+    "exitCode": 0,
+    "passed": true,
+    "stdout": "PASS  normalization changes envelope only and preserves all response values and order\nPASS  pre-unblind validation exactly matches approved frozen facts\nPASS  unblind produces exactly 60 V2 rows with required provenance and no value rewrite\nPASS  semantic audit has zero contradictions and is not labeled independent validation\nPASS  V1 V2 historical comparison partitions all 60 cases\n\nAccumulation Ground Truth V2 Full Relabel Phase 2 V1: 5 passed, 0 failed\n",
+    "stderr": ""
+  },
+  "fullRegression": {
+    "command": "node test/run.js",
+    "exitCode": 0,
+    "passed": true,
+    "stdoutSha256": "535db8bff5ea35b9b1de8a86c56077a7cb12a0689f877ef3ee09ee19beb0e0c5",
+    "stdoutTail": [
+      "PASS  12 multiple sweep candidates preserved",
+      "PASS  13 primary semantic is recency heuristic",
+      "PASS  14 no causal-primary claim",
+      "PASS  15 Bullish + SSL = MATCH",
+      "PASS  16 Bearish + BSL = MATCH",
+      "PASS  17 Bullish + BSL = OPPOSITE",
+      "PASS  18 Bearish + SSL = OPPOSITE",
+      "PASS  19 B/C SAFE_NOW snapshot identical",
+      "PASS  20 policy-dependent causal evidence blocked",
+      "PASS  21 missing Swing identity remains UNRESOLVED",
+      "PASS  22 no nearest-Swing guessing",
+      "PASS  23 incremental = full",
+      "PASS  24 past snapshot immutable",
+      "PASS  25 deterministic candidate ordering",
+      "PASS  26 deterministic serialization",
+      "PASS  27 missing provenance rejected/flagged",
+      "PASS  28 production WATCH behavior unchanged",
+      "WATCH Shadow Consumption Integration V1 28/28",
+      "",
+      "================== weeklyLiquidity.test.js ==================",
+      "PASS  PWH = 周 high（BSL），PWL = 周 low（SSL），id 用周一日期",
+      "PASS  buildWeeklyLiquidity：null candle → []",
+      "PASS  evaluationTime = 08-17（周一）00:00:00.000 → 上一完整周 = 08-10 起",
+      "PASS  evaluationTime = 08-16（周日）23:59:59.999 → 上一完整周 = 08-03 起（本周未结束）",
+      "PASS  evaluationTime = 08-12（周三）正午 → 上一完整周 = 08-03 起（一周中间）",
+      "PASS  evaluationTime = 08-17（周一）正午 → 上一完整周 = 08-10 起（上周已完整结束）",
+      "PASS  回放：混入本周（未结束）K 线时被过滤，只用上一完整周",
+      "PASS  回放：evaluationTime = 周三，本周数据一律不可用",
+      "PASS  回放：全部数据都在未来 → 返回空数组",
+      "PASS  confirmedAt = 上一完整周 K 线 closeTime（周日 23:59:59.999）",
+      "----",
+      "weeklyLiquidity: 10 passed, 0 failed",
+      "",
+      "ALL TESTS PASSED",
+      ""
+    ],
+    "stderr": "[persistence] candles.jsonl 尾部 1 行残缺已丢弃并截断，重启后自动补齐\n"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "ACCUMULATION_GT_V2_DEFINITION_APPLICATION_VALIDATION_V1",
+  "frozenRule": {
+    "STABLE": "contradictions=0 AND edgeCaseRate<=0.10",
+    "MOSTLY_STABLE": "contradictions<=3 AND edgeCaseRate<=0.20",
+    "UNSTABLE": "otherwise"
+  },
+  "CORE_SEMANTIC_CONTRADICTIONS": 0,
+  "DEFINITION_EDGE_CASES": 12,
+  "DEFINITION_EDGE_CASE_RATE": 0.2,
+  "DEFINITION_APPLICATION_STATUS": "MOSTLY_STABLE",
+  "INTERNAL_APPLICATION_CONSISTENCY": "HIGH",
+  "INDEPENDENT_VALIDATION_PERFORMED": false,
+  "INTER_RATER_VALIDATION_PERFORMED": false,
+  "interpretationGuard": "The class and semantic fields were assigned by the same reviewer in the same formation judgement. Internal consistency is not independent validation, inter-rater reliability, or detector validity."
+}

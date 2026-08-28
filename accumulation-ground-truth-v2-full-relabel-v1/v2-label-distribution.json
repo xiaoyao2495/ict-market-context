@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "ACCUMULATION_GT_V2_LABEL_DISTRIBUTION_V1",
+  "totalCases": 60,
+  "CLEAR_A": 23,
+  "BORDERLINE_A": 10,
+  "NO_A": 27,
+  "UNSURE": 0,
+  "HIGH_CONFIDENCE": 46,
+  "MEDIUM_CONFIDENCE": 14,
+  "LOW_CONFIDENCE": 0
+}

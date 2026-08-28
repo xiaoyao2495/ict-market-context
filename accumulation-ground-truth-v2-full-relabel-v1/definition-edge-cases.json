@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "ACCUMULATION_GT_V2_DEFINITION_EDGE_CASES_V1",
+  "edgeCaseCount": 12,
+  "edgeCaseRate": 0.2,
+  "cases": [
+    {
+      "blindId": "A2-BLIND-005",
+      "originalCaseId": "case060",
+      "formationClassV2": "BORDERLINE_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "PARTIAL",
+      "twoSidedAuctionV2": "PARTIAL",
+      "whyV2": "formation 后半段开始出现上下交换和回到内部，但仍明显承接前序方向变化；真实 balance evidence 存在，不过独立性与双向连贯度只达到部分成立。"
+    },
+    {
+      "blindId": "A2-BLIND-006",
+      "originalCaseId": "case059",
+      "formationClassV2": "BORDERLINE_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "PARTIAL",
+      "twoSidedAuctionV2": "PARTIAL",
+      "whyV2": "formation 有从下侧回到上侧再回落的交换，但路径仍带明显方向迁移，核心 auction identity 不够持续；不是纯 pause，也不足以判 CLEAR。"
+    },
+    {
+      "blindId": "A2-BLIND-007",
+      "originalCaseId": "case006",
+      "formationClassV2": "BORDERLINE_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "YES",
+      "twoSidedAuctionV2": "PARTIAL",
+      "whyV2": "形成自身 range 较清楚，但 formation 内多数时间偏上侧，真正下侧参与有限；balance 成立而 two-sided auction 的覆盖与持续性偏弱。"
+    },
+    {
+      "blindId": "A2-BLIND-015",
+      "originalCaseId": "case013",
+      "formationClassV2": "BORDERLINE_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "PARTIAL",
+      "twoSidedAuctionV2": "PARTIAL",
+      "whyV2": "formation 从前序下行中逐渐建立局部 balance，后半段有明显回收和反向参与，但早期仍偏单侧，独立 auction 形成较晚。"
+    },
+    {
+      "blindId": "A2-BLIND-017",
+      "originalCaseId": "case022",
+      "formationClassV2": "CLEAR_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "YES",
+      "twoSidedAuctionV2": "COHERENT",
+      "whyV2": "formation 内上下区域均有深度访问并多次回到内部，虽然 wick/excursion 很大、路径不规则，但没有形成持续单向接受，balance identity 仍成立。"
+    },
+    {
+      "blindId": "A2-BLIND-026",
+      "originalCaseId": "case035",
+      "formationClassV2": "BORDERLINE_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "PARTIAL",
+      "twoSidedAuctionV2": "PARTIAL",
+      "whyV2": "formation 有上下交替与回收，但仍保留明显的下移倾向，多个局部 balance 的共同 identity 不够稳定；有真实 A evidence 但不够 CLEAR。"
+    },
+    {
+      "blindId": "A2-BLIND-035",
+      "originalCaseId": "case050",
+      "formationClassV2": "BORDERLINE_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "PARTIAL",
+      "twoSidedAuctionV2": "PARTIAL",
+      "whyV2": "formation 有明显上、下侧切换和回到中心，但前序的大幅 V 型回收与 formation 仍部分混合，独立 auction identity 尚不完全干净。"
+    },
+    {
+      "blindId": "A2-BLIND-040",
+      "originalCaseId": "case021",
+      "formationClassV2": "BORDERLINE_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "YES",
+      "twoSidedAuctionV2": "PARTIAL",
+      "whyV2": "formation 有自己的宽幅 balance，也能看到上下参与，但下半区驻留偏多且上侧重新参与较晚；auction coherence 有但不充分。"
+    },
+    {
+      "blindId": "A2-BLIND-041",
+      "originalCaseId": "case048",
+      "formationClassV2": "BORDERLINE_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "PARTIAL",
+      "twoSidedAuctionV2": "PARTIAL",
+      "whyV2": "formation 从前序大幅波动中逐渐收敛，后段出现上下交换，但 balance identity 与之前结构仍有混合，双向参与不够持续。"
+    },
+    {
+      "blindId": "A2-BLIND-046",
+      "originalCaseId": "case023",
+      "formationClassV2": "CLEAR_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "YES",
+      "twoSidedAuctionV2": "COHERENT",
+      "whyV2": "formation 内上下摆动与回收非常明显，虽 wick 很大、路径杂乱且后段略偏低，但两侧都持续参与，仍保持一个共享 balance。"
+    },
+    {
+      "blindId": "A2-BLIND-054",
+      "originalCaseId": "case005",
+      "formationClassV2": "BORDERLINE_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "PARTIAL",
+      "twoSidedAuctionV2": "PARTIAL",
+      "whyV2": "前序下降后 formation 开始出现内部来回和上下参与，但范围使用偏中下部，独立性与 two-sided coherence 仅部分成立。"
+    },
+    {
+      "blindId": "A2-BLIND-056",
+      "originalCaseId": "case011",
+      "formationClassV2": "CLEAR_A",
+      "confidenceV2": "MEDIUM",
+      "independentBalanceV2": "YES",
+      "twoSidedAuctionV2": "COHERENT",
+      "whyV2": "formation 内上下区域均被深度访问并反复回收，路径非常剧烈但双方持续参与；大 excursion 没有破坏共享 balance identity。"
+    }
+  ]
+}
