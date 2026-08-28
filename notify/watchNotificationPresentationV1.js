@@ -86,10 +86,20 @@ function eqMemberLines(primary, formatter) {
     var prices = displayed.map(function (member) {
         return formatPrice(member.price, formatter);
     }).join(' / ');
+    var memberTimes = displayed.map(function (member) {
+        var occurredAt = typeof member.occurredAt === 'number'
+            ? member.occurredAt : member.sourceOpenTime;
+        return typeof occurredAt === 'number' && isFinite(occurredAt)
+            ? formatBeijingTime(occurredAt) : '-';
+    });
+    var hasMemberTime = memberTimes.some(function (value) { return value !== '-'; });
+    var times = hasMemberTime ? memberTimes.join(' / ') : '信息暂缺';
     if (members.length > 6) prices += ' … 共 ' + members.length + ' 个';
+    if (members.length > 6 && hasMemberTime) times += ' … 共 ' + members.length + ' 个';
     return [
         'EQ 构成：' + members.length + ' 个' + noun,
-        '构成点位：' + prices
+        '构成点位：' + prices,
+        '对应时间（北京时间）：' + times
     ];
 }
 
