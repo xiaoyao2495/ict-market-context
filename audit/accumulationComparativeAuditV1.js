@@ -1,0 +1,43 @@
+'use strict';
+
+var groundTruthAudit=require('./accumulationGroundTruthV1');
+
+var LABELS=['CLEAR_A','BORDERLINE_A','NO_A'];
+var FEATURES=['durationBars','rangeWidthATR','directionalEfficiency','directionalDriftATR','upperTouchCount','lowerTouchCount','midCrossCount','rangeOccupancy','preRangeDirectionalMoveATR','preRangeSlope','preRangeContext','eqContribution','scoreWithEQ','scoreWithoutEQ','eqDependentConfirmation','touchTemporalCoverage','midCrossTemporalCoverage','firstHalfUpperTouches','secondHalfUpperTouches','firstHalfLowerTouches','secondHalfLowerTouches','firstHalfMidCrosses','secondHalfMidCrosses','longestOneSideResidenceBars','longestNoMidCrossBars','lowerOccupancyPct','midOccupancyPct','upperOccupancyPct','highEstablishedPct','lowEstablishedPct','rangeExpansionEvents','lateRangeExpansionPct','formationPositionShift','internalDisplacementCount','bullishInternalDisplacementCount','bearishInternalDisplacementCount','strongInternalDisplacementCount','largestInternalDisplacementATR'];
+
+function validateProposal(proposal,existing){
+    if(!proposal||proposal.schemaVersion!=='ACCUMULATION_HUMAN_LABEL_COMPLETION_V1')throw new Error('Unexpected proposal schema');
+    if(!Array.isArray(proposal.labels)||proposal.labels.length!==60)throw new Error('Expected 60 proposal labels');
+    var ids={},counts={CLEAR_A:0,BORDERLINE_A:0,NO_A:0},expected={};
+    for(var i=1;i<=60;i++)expected['case'+String(i).padStart(3,'0')]=true;
+    proposal.labels.forEach(function(l){if(ids[l.caseId])throw new Error('Duplicate '+l.caseId);ids[l.caseId]=true;if(!expected[l.caseId])throw new Error('Unexpected '+l.caseId);if(!Object.prototype.hasOwnProperty.call(counts,l.humanLabel))throw new Error('Invalid label '+l.humanLabel);counts[l.humanLabel]++;});
+    Object.keys(expected).forEach(function(id){if(!ids[id])throw new Error('Missing '+id);});
+    if(counts.CLEAR_A!==32||counts.BORDERLINE_A!==12||counts.NO_A!==16)throw new Error('Count mismatch '+JSON.stringify(counts));
+    var proposalMap={};proposal.labels.forEach(function(l){proposalMap[l.caseId]=l;});
+    (existing||[]).filter(function(x){return x.detectorLabel==='POSITIVE'&&x.humanLabel!=='UNREVIEWED';}).forEach(function(x){if(proposalMap[x.caseId].humanLabel!==x.humanLabel)throw new Error('Existing human label changed for '+x.caseId);});
+    return counts;
+}
+
+function finalizeGroundTruth(proposal,existing){
+    validateProposal(proposal,existing);var byId={};existing.forEach(function(x){byId[x.caseId]=x;});
+    return proposal.labels.slice().sort(function(a,b){return a.caseId.localeCompare(b.caseId);}).map(function(label){var old=byId[label.caseId];return Object.assign({},old,{humanLabel:label.humanLabel,labelSource:label.labelSource==='HUMAN_CONFIRMED_IN_CHAT'?'HUMAN_CONFIRMED_IN_CHAT':'USER_APPROVED_VISUAL_REVIEW',originalProposalSource:label.labelSource,groundTruthStatus:'APPROVED_V1',groundTruthFrozen:true,approvedProposalExportedAt:proposal.exportedAt,comment:label.comment||'',featureSnapshot:JSON.parse(JSON.stringify(old.featureSnapshot))});});
+}
+
+function dist(values){return groundTruthAudit.distribution(values);}
+function summarize(rows){var out={n:rows.length,features:{}};FEATURES.forEach(function(k){var vals=rows.map(function(r){return r.featureSnapshot[k];});var nums=vals.filter(Number.isFinite);if(nums.length===rows.length)out.features[k]={type:'NUMERIC',distribution:dist(nums)};else if(vals.every(function(v){return typeof v==='boolean';})){var yes=vals.filter(Boolean).length;out.features[k]={type:'BOOLEAN',count:yes,percentage:rows.length?yes/rows.length:0};}else{var counts={};vals.forEach(function(v){var key=String(v);counts[key]=(counts[key]||0)+1;});out.features[k]={type:'CATEGORICAL',counts:counts};}});var strong=rows.filter(function(r){return r.featureSnapshot.strongInternalDisplacementCount>0;}).length;var eq=rows.filter(function(r){return r.featureSnapshot.eqDependentConfirmation;}).length;out.strongInternalDisplacementPresent={count:strong,percentage:rows.length?strong/rows.length:0};out.eqDependentConfirmation={count:eq,percentage:rows.length?eq/rows.length:0};return out;}
+
+function iqrOverlap(a,b){return Math.max(a.p25,b.p25)<=Math.min(a.p75,b.p75);}
+function fullOverlap(a,b){return Math.max(a.min,b.min)<=Math.min(a.max,b.max);}
+function separationMatrix(groups){return FEATURES.map(function(feature){var c=groups.CLEAR_A.features[feature],b=groups.BORDERLINE_A.features[feature],n=groups.NO_A.features[feature];var overlap='HIGH',sep='WEAK';if(c.type==='NUMERIC'&&n.type==='NUMERIC'){if(!fullOverlap(c.distribution,n.distribution)){overlap='LOW';sep='STRONG';}else if(!iqrOverlap(c.distribution,n.distribution)){overlap='MODERATE';sep='MODERATE';}else if(c.distribution.median===n.distribution.median){overlap='HIGH';sep='NONE';}}else if(c.type==='BOOLEAN'&&n.type==='BOOLEAN'&&c.percentage===n.percentage){sep='NONE';}return{feature:feature,clearA:c,borderlineA:b,noA:n,overlapAssessment:overlap,descriptiveSeparation:sep,method:'Fixed distribution-overlap description; no cutoff search or classifier optimization.'};});}
+
+function diagnosticCoverage(rows){var counts={};rows.forEach(function(r){groundTruthAudit.diagnose(r.featureSnapshot).forEach(function(k){counts[k]=(counts[k]||0)+1;});});return counts;}
+
+function buildComparison(finalGt){var cohorts={};LABELS.forEach(function(l){cohorts[l]=finalGt.filter(function(x){return x.humanLabel===l;});});return{cohorts:cohorts,groupSummary:{CLEAR_A:summarize(cohorts.CLEAR_A),BORDERLINE_A:summarize(cohorts.BORDERLINE_A),NO_A:summarize(cohorts.NO_A)},separationMatrix:null,diagnosticCoverage:{CLEAR_A:diagnosticCoverage(cohorts.CLEAR_A),BORDERLINE_A:diagnosticCoverage(cohorts.BORDERLINE_A),NO_A:diagnosticCoverage(cohorts.NO_A)}};}
+
+function hypothesisEvaluation(comparison){var g=comparison.groupSummary;return{
+    H1_INTERNAL_DISPLACEMENT:{status:'MIXED',evidence:{CLEAR_A:g.CLEAR_A.strongInternalDisplacementPresent,BORDERLINE_A:g.BORDERLINE_A.strongInternalDisplacementPresent,NO_A:g.NO_A.strongInternalDisplacementPresent,distributions:{CLEAR_A:{count:g.CLEAR_A.features.internalDisplacementCount,strong:g.CLEAR_A.features.strongInternalDisplacementCount,largestATR:g.CLEAR_A.features.largestInternalDisplacementATR},BORDERLINE_A:{count:g.BORDERLINE_A.features.internalDisplacementCount,strong:g.BORDERLINE_A.features.strongInternalDisplacementCount,largestATR:g.BORDERLINE_A.features.largestInternalDisplacementATR},NO_A:{count:g.NO_A.features.internalDisplacementCount,strong:g.NO_A.features.strongInternalDisplacementCount,largestATR:g.NO_A.features.largestInternalDisplacementATR}}},limitations:'NO_A is somewhat higher, but strong internal displacement is common in all cohorts. Existing features cannot distinguish sustained directional delivery from a short internal expansion followed by re-entry into balance.',nextResearchPriority:'LOW'},
+    H2_TEMPORAL_TWO_SIDED_AUCTION:{status:'MIXED',evidence:{CLEAR_A:{touchTemporalCoverage:g.CLEAR_A.features.touchTemporalCoverage,midCrossTemporalCoverage:g.CLEAR_A.features.midCrossTemporalCoverage,longestOneSideResidenceBars:g.CLEAR_A.features.longestOneSideResidenceBars},BORDERLINE_A:{touchTemporalCoverage:g.BORDERLINE_A.features.touchTemporalCoverage,midCrossTemporalCoverage:g.BORDERLINE_A.features.midCrossTemporalCoverage,longestOneSideResidenceBars:g.BORDERLINE_A.features.longestOneSideResidenceBars},NO_A:{touchTemporalCoverage:g.NO_A.features.touchTemporalCoverage,midCrossTemporalCoverage:g.NO_A.features.midCrossTemporalCoverage,longestOneSideResidenceBars:g.NO_A.features.longestOneSideResidenceBars}},limitations:'Some descriptive shifts exist, but current temporal summaries overlap heavily and aggregate touch asymmetry diagnostics are also frequent in CLEAR_A. Existing features are insufficient to encode the human concept cleanly.',nextResearchPriority:'MEDIUM'},
+    H3_EQ_DEPENDENCY:{status:'MIXED',evidence:{CLEAR_A:g.CLEAR_A.eqDependentConfirmation,BORDERLINE_A:g.BORDERLINE_A.eqDependentConfirmation,NO_A:g.NO_A.eqDependentConfirmation,scoreWithoutEQ:{CLEAR_A:g.CLEAR_A.features.scoreWithoutEQ,BORDERLINE_A:g.BORDERLINE_A.features.scoreWithoutEQ,NO_A:g.NO_A.features.scoreWithoutEQ}},limitations:'NO_A has a higher dependency rate, but six CLEAR_A and two BORDERLINE_A cases also fall below the frozen threshold without EQ. Removing EQ would not selectively remove only NO_A.',nextResearchPriority:'HIGH'}
+};}
+
+module.exports={FEATURES:FEATURES,validateProposal:validateProposal,finalizeGroundTruth:finalizeGroundTruth,summarize:summarize,separationMatrix:separationMatrix,buildComparison:buildComparison,hypothesisEvaluation:hypothesisEvaluation};
