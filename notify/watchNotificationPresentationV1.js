@@ -195,22 +195,80 @@ function friendlyWatchState(state) {
     return translate(state);
 }
 
+/**
+ * Presentation-only classification of the existing coverage MSS payload.
+ * Signal existence is deliberately kept separate from the strength of the
+ * structural claim shown to a human. This function never mutates the payload.
+ */
+function classifyStructurePresentation(mss) {
+    if (!mss || mss.exists !== true) {
+        return { kind:'NONE', heading:'📐 结构突破信号', summaryLabel:null,
+            warning:null, highQualityStructuralMss:false };
+    }
+    var role = raw(mss.referenceRole);
+    var grade = raw(mss.mssGrade);
+    var direction = raw(mss.direction);
+    var bullish = direction === 'BULLISH';
+    var bearish = direction === 'BEARISH';
+    var directionZh = bullish ? '看多' : bearish ? '看空' : '';
+    var directionEn = bullish ? 'Bullish' : bearish ? 'Bearish' : '';
+    if (mss.protectedBreak === true || grade === 'PROTECTED' || role === 'ACTIVE_PROTECTED') {
+        return {
+            kind:'STRUCTURAL_MSS',
+            heading:'📐 市场结构转换（Structural MSS）',
+            summaryLabel:(directionEn ? directionEn + ' ' : '') + 'Structural MSS',
+            warning:null,
+            highQualityStructuralMss:true
+        };
+    }
+    if (grade === 'STRUCTURAL' || role === 'CONTROLLING' || role === 'CONTROLLING_SWING' || role === 'SUPERSEDED_PROTECTED') {
+        return {
+            kind:'STRUCTURAL_BREAK', heading:'📐 结构突破',
+            summaryLabel:(directionZh ? directionZh : '') + '结构突破',
+            warning:'⚠️ 尚未确认 Structural MSS', highQualityStructuralMss:false
+        };
+    }
+    if (role === 'INTERNAL') {
+        return {
+            kind:'INTERNAL_BREAK', heading:'📐 内部结构突破',
+            summaryLabel:'内部' + (directionZh || '') + '结构突破',
+            warning:'⚠️ 尚未确认 Structural MSS', highQualityStructuralMss:false
+        };
+    }
+    if (role === 'LOCAL' || grade === 'LOCAL') {
+        return {
+            kind:'LOCAL_BREAK', heading:'📐 局部结构突破',
+            summaryLabel:'局部' + (directionZh || '') + '结构突破',
+            warning:'⚠️ 尚未确认 Structural MSS', highQualityStructuralMss:false
+        };
+    }
+    return {
+        kind:'BREAK_SIGNAL', heading:'📐 结构突破信号',
+        summaryLabel:(directionZh || '') + '结构突破信号',
+        warning:'⚠️ 结构 provenance 不足，尚未确认 Structural MSS',
+        highQualityStructuralMss:false
+    };
+}
+
+function displacementSummaryLabel(displacement, info) {
+    return displacement && displacement.quality === 'WEAK' ? '弱' + info.displacement : info.displacement;
+}
+
 function buildSummary(watch, primary, bias, info) {
     var sentences = [];
     var hasLiquidity = !!primary;
     var hasDisplacement = !!(watch && watch.displacement);
-    var hasMss = !!(watch && watch.mss && watch.mss.exists);
-    if (hasLiquidity || hasDisplacement || hasMss) {
+    var structure = classifyStructurePresentation(watch && watch.mss);
+    var hasStructure = structure.kind !== 'NONE';
+    if (hasLiquidity || hasDisplacement || hasStructure) {
         var sentence = hasLiquidity ? info.liquidity + ' 被扫后' : '';
-        if (hasMss) {
-            var rawMssDirection = watch.mss.direction;
-            var mssLabel = rawMssDirection === 'BULLISH' ? 'Bullish MSS'
-                : rawMssDirection === 'BEARISH' ? 'Bearish MSS' : 'MSS';
-            sentence += (sentence ? '出现 ' : '') + mssLabel;
+        if (hasStructure) {
+            sentence += (sentence ? '出现' : '') + structure.summaryLabel;
         }
         if (hasDisplacement) {
-            sentence += hasLiquidity && !hasMss ? '出现' + info.displacement
-                : (sentence ? ' 与' : '出现') + info.displacement;
+            var displacementLabel = displacementSummaryLabel(watch.displacement, info);
+            sentence += hasLiquidity && !hasStructure ? '出现' + displacementLabel
+                : (sentence ? '与' : '出现') + displacementLabel;
         }
         if (watch && watch.nativeFvg) sentence += (sentence ? '，并' : '') + (biasConflict(bias) ? '回到' : '形成') + '原生 FVG';
         sentences.push(sentence + '。');
@@ -241,6 +299,7 @@ function build(watch, currentPrice, options) {
     var displacement = watch && watch.displacement;
     var mss = watch && watch.mss;
     var fvg = watch && watch.nativeFvg;
+    var structurePresentation = classifyStructurePresentation(mss);
     var bias = biasView(watch);
     var conflict = biasConflict(bias);
     var generatedAt = opts.notificationGeneratedAt !== undefined ? opts.notificationGeneratedAt : Date.now();
@@ -248,7 +307,8 @@ function build(watch, currentPrice, options) {
         '🔔 ' + keyword + ' · ' + (watch && watch.symbol || 'UNKNOWN') + ' · ' + info.title + (conflict ? ' ⚠️ 逆 4H Bias' : ''),
         '',
         '时间：' + formatBeijingTime(generatedAt),
-        '状态：' + friendlyWatchState(watch && watch.state)
+        '状态：' + friendlyWatchState(watch && watch.state),
+        '执行状态：等待人工确认（WAIT FOR MANUAL CONFIRMATION）'
     ];
 
     if (conflict) lines.push('', ...buildBiasLines(bias, info, true));
@@ -279,12 +339,13 @@ function build(watch, currentPrice, options) {
         }
     } else lines.push('未提供');
 
-    lines.push('', '📐 市场结构转换（MSS）');
+    lines.push('', structurePresentation.heading);
     if (mss && mss.exists) {
         lines.push('方向：' + translate(mss.direction));
         lines.push('结构参考位：' + formatPrice(mss.referencePrice, fmtPrice));
         lines.push('结构级别：' + translate(mss.referenceRole));
         lines.push('Protected Break：' + (mss.protectedBreak === true ? '是' : mss.protectedBreak === false ? '否' : '-'));
+        if (structurePresentation.warning) lines.push(structurePresentation.warning);
     } else lines.push('未提供');
 
     lines.push('', '🟦 原生 FVG');
@@ -299,7 +360,8 @@ function build(watch, currentPrice, options) {
 
     lines.push('', '📌 当前结构解读');
     buildSummary(watch, primary, bias, info).forEach(function (sentence) { lines.push(sentence); });
-    lines.push('', '仅用于市场结构监测，不构成自动交易或投资指令。');
+    lines.push('', '这是 WATCH 观察事件，不是入场确认。');
+    lines.push('仅用于市场结构监测，不构成自动交易或投资指令。');
     return lines.join('\n');
 }
 
@@ -316,6 +378,7 @@ module.exports = {
     candidateCount: candidateCount,
     biasView: biasView,
     directionInfo: directionInfo,
+    classifyStructurePresentation: classifyStructurePresentation,
     buildSummary: buildSummary,
     buildBiasLines: buildBiasLines,
     sweepContextLines: sweepContextPresentationV1.lines,
