@@ -101,12 +101,20 @@ function prepareBootstrapCandles(existing, fetched, maxBars) {
     var known = {};
     persisted.forEach(function (c) { known[c.openTime] = true; });
     var fresh = incoming.filter(function (c) { return !known[c.openTime]; });
-    var merged = persisted.concat(fresh);
+    // A day-bucket cache can return an older fetch end than the locally persisted
+    // tail. Fresh rows may therefore precede, not follow, persisted rows. Always
+    // restore chronological order before retention/continuity validation.
+    var combined = persisted.concat(fresh);
+    var merged = combined.slice().sort(function (a, b) {
+        return a.openTime - b.openTime;
+    });
+    var reordered = combined.some(function (c, index) { return c !== merged[index]; });
     var candles = retainLatestCandles(merged, maxBars);
     return {
         candles: candles,
         fresh: fresh,
         mergedBars: merged.length,
+        reordered: reordered,
         prunedBars: merged.length - candles.length
     };
 }
@@ -447,13 +455,15 @@ function createRunner(symbol) {
         var prepared = prepareBootstrapCandles(existing, candles5m, bootstrapRetentionBars);
         var all = prepared.candles;
         var prunedBars = prepared.prunedBars;
-        if (prepared.fresh.length > 0 || prunedBars > 0) {
+        if (prepared.fresh.length > 0 || prunedBars > 0 || prepared.reordered) {
             persistence.replaceCandles(candlesFile, all);
         }
         persistedCandles = all.slice();
         if (prunedBars > 0) {
             log(symbol + ' bootstrap 历史压缩: ' + prepared.mergedBars + ' -> ' + all.length +
                 ' 根（retention=' + bootstrapRetentionBars + '）');
+        } else if (prepared.reordered) {
+            log(symbol + ' bootstrap 历史顺序已自动修复（' + all.length + ' 根）');
         }
 
         // Fix 4（11L.4 P1）：初始化（restart 重放）前必须验证持久化 5m 历史本身连续——

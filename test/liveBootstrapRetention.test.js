@@ -37,11 +37,37 @@ test('restart merge deduplicates fetched overlap and caps the newest bootstrap t
     var prepared = live.prepareBootstrapCandles(existing, fetched, 8940);
     assert.strictEqual(prepared.fresh.length, 100);
     assert.strictEqual(prepared.mergedBars, 10100);
+    assert.strictEqual(prepared.reordered, false);
     assert.strictEqual(prepared.prunedBars, 1160);
     assert.strictEqual(prepared.candles.length, 8940);
     assert.strictEqual(prepared.candles[0].openTime, 1160);
     assert.strictEqual(prepared.candles[8939].openTime, 10099);
     assert.strictEqual(new Set(prepared.candles.map(function (c) { return c.openTime; })).size, 8940);
+});
+
+test('restart merge sorts older fetched gaps before a newer persisted tail', function () {
+    var existing = [];
+    var fetched = [];
+    for (var i = 300; i < 1000; i++) existing.push({ openTime: i, source: 'futures' });
+    for (var j = 0; j < 900; j++) fetched.push({ openTime: j, source: 'futures' });
+    var prepared = live.prepareBootstrapCandles(existing, fetched, 1000);
+    assert.strictEqual(prepared.fresh.length, 300);
+    assert.strictEqual(prepared.reordered, true);
+    assert.strictEqual(prepared.candles.length, 1000);
+    for (var k = 0; k < prepared.candles.length; k++) {
+        assert.strictEqual(prepared.candles[k].openTime, k);
+    }
+});
+
+test('restart detects and repairs an already out-of-order persisted file', function () {
+    var existing = [
+        { openTime: 2, source: 'futures' },
+        { openTime: 3, source: 'futures' },
+        { openTime: 1, source: 'futures' }
+    ];
+    var prepared = live.prepareBootstrapCandles(existing, [], 10);
+    assert.strictEqual(prepared.reordered, true);
+    assert.deepStrictEqual(prepared.candles.map(function (c) { return c.openTime; }), [1, 2, 3]);
 });
 
 test('replaceCandles atomically compacts an existing JSONL candle log', function () {
