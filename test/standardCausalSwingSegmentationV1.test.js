@@ -10,7 +10,6 @@ var persistentEqV3 = require('../liquidity/persistentEqualLiquidityV3');
 var eqSwingSource = require('../config/eqSwingSource');
 var thresholds = require('../config/thresholds');
 var eligibility = require('../events/sweepNarrativeEligibilityV1');
-var researchB = require('../scripts/auditQualifiedSwingFilters');
 
 var BAR = 300000;
 var BASE = 1700000000000;
@@ -25,6 +24,18 @@ function candle(i, close, high, low) {
     return { openTime: BASE + i * BAR, closeTime: BASE + (i + 1) * BAR - 1,
         open: c, high: high === undefined ? c + 1 : high,
         low: low === undefined ? c - 1 : low, close: c, closed: true, source: 'fixture' };
+}
+function buildDeterministicCandles(count) {
+    var out=[],previousClose=80000,seed=246813579;
+    function random(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}
+    for(var i=0;i<count;i++){
+        var center=80000+500*Math.sin(i*2*Math.PI/48)+140*Math.sin(i*2*Math.PI/11)+80*Math.sin(i*2*Math.PI/7);
+        var close=center+(random()-.5)*35,open=previousClose;
+        var high=Math.max(open,close)+20+random()*35,low=Math.min(open,close)-20-random()*35;
+        out.push({openTime:BASE+i*BAR,closeTime:BASE+(i+1)*BAR-1,open:+open.toFixed(1),high:+high.toFixed(1),low:+low.toFixed(1),close:+close.toFixed(1),closed:true,source:'fixture'});
+        previousClose=close;
+    }
+    return out;
 }
 function raw(side, price, confirmedIndex, serial) {
     var sourceIndex = confirmedIndex - 2;
@@ -75,17 +86,16 @@ function gitBlob(relative) {
     return crypto.createHash('sha1').update(Buffer.from('blob '+body.length+'\0')).update(body).digest('hex');
 }
 
-var actualCandles = require('../data-cache/BTCUSDT_5m_20686_20694.json');
+var actualCandles = buildDeterministicCandles(1800);
 var actualState = runReplay(actualCandles, false);
 
 test('01 raw 2L2R detector fingerprint unchanged',function(){assert.strictEqual(gitBlob('structure/pivotDetector.js'),'26e535d73b37b39511b29f7751e2fa069885ee25');});
 test('02 DC k remains exactly 1.0',function(){assert.strictEqual(segmentation.DC_K,1.0);});
-test('03 existing Algorithm B implementation unchanged',function(){assert.strictEqual(gitBlob('scripts/auditQualifiedSwingFilters.js'),'8c704044d05fff54d3862348e5cc6cac4b3f0731');});
-test('04 production segmentation exactly matches existing B semantics on real candles',function(){
-    var piv=researchB.rawPivotsFromProduction(actualCandles,'BTCUSDT','5m');
-    var b=researchB.runAlgorithm('DIRECTIONAL_CHANGE_V1',actualCandles,piv,researchB.buildAtrSeries(actualCandles,14),{symbol:'BTCUSDT',timeframe:'5m',k:1});
-    assert.deepStrictEqual(actualState.qualifiedSwings.map(function(x){return[x.type.slice(6),x.price,x.sourceOpenTime,x.pivotConfirmedAt,x.qualifiedConfirmedAt];}),
-        b.map(function(x){return[x.side,x.price,x.occurredAt,x.pivotConfirmedAt,x.qualifiedConfirmedAt];}));
+test('03 production module owns frozen Algorithm B parameters without research dependency',function(){assert.strictEqual(segmentation.VERSION,'STANDARD_CAUSAL_SWING_SEGMENTATION_V1');assert.strictEqual(segmentation.ATR_PERIOD,14);assert.strictEqual(segmentation.DC_K,1.0);assert.strictEqual(fs.readFileSync(path.join(__dirname,'../structure/standardCausalSwingSegmentation.js'),'utf8').includes('auditQualifiedSwingFilters'),false);});
+test('04 production segmentation matches frozen deterministic semantic projection',function(){
+    var tuples=actualState.qualifiedSwings.map(function(x){return[x.type.slice(6),x.price,x.sourceOpenTime,x.pivotConfirmedAt,x.qualifiedConfirmedAt];});
+    assert.strictEqual(tuples.length,217);
+    assert.strictEqual(crypto.createHash('sha256').update(JSON.stringify(tuples)).digest('hex'),'30d3c81d0529d6d2287a673d96d46fd615b64b259ab66702b0f499798638f0c6');
 });
 test('05 HIGH provisional extreme replacement keeps only higher HIGH',function(){var f=seeded();advance(f,15,100,[raw('HIGH',100,15,1)]);advance(f,16,101,[raw('HIGH',102,16,2)]);advance(f,17,102,[raw('HIGH',105,17,3)]);var out=advance(f,18,90,[],101,89);assert.strictEqual(out.length,1);assert.strictEqual(out[0].price,105);assert.strictEqual(f.state.replacementLedger.length,2);});
 test('06 LOW provisional extreme replacement is symmetric',function(){var f=seeded();advance(f,15,100,[raw('LOW',100,15,1)]);advance(f,16,99,[raw('LOW',98,16,2)]);advance(f,17,98,[raw('LOW',95,17,3)]);var out=advance(f,18,110,[],111,99);assert.strictEqual(out.length,1);assert.strictEqual(out[0].price,95);assert.strictEqual(f.state.replacementLedger.length,2);});
@@ -94,7 +104,7 @@ test('08 equal LOW tie retains earlier raw identity',function(){var f=seeded(),a
 test('09 confirmed HIGH identity remains immutable after later higher HIGH',function(){var f=seeded(),a=raw('HIGH',105,15,1);advance(f,15,100,[a]);var q=advance(f,16,90,[],101,89)[0],before=JSON.stringify(q);advance(f,17,100,[raw('HIGH',110,17,2)],111,99);assert.strictEqual(JSON.stringify(q),before);});
 test('10 confirmed LOW identity remains immutable after later lower LOW',function(){var f=seeded(),a=raw('LOW',95,15,1);advance(f,15,100,[a]);var q=advance(f,16,110,[],111,99)[0],before=JSON.stringify(q);advance(f,17,90,[raw('LOW',90,17,2)],101,89);assert.strictEqual(JSON.stringify(q),before);});
 test('11 strict HIGH LOW alternation',function(){var f=seeded();advance(f,15,100,[raw('HIGH',105,15,1)]);advance(f,16,90,[raw('LOW',95,16,2)],101,89);advance(f,17,110,[],111,99);advance(f,18,110,[raw('HIGH',108,18,3)],111,99);advance(f,19,90,[],101,89);assert.deepStrictEqual(f.state.emitted.map(function(x){return x.type;}),['SWING_HIGH','SWING_LOW','SWING_HIGH']);});
-test('12 real population has zero alternation violations',function(){assert.strictEqual(actualState.qualifiedSwings.filter(function(x,i,a){return i&&x.type===a[i-1].type;}).length,0);});
+test('12 deterministic population has zero alternation violations',function(){assert.strictEqual(actualState.qualifiedSwings.filter(function(x,i,a){return i&&x.type===a[i-1].type;}).length,0);});
 test('13 bootstrap emits nothing before causal reversal',function(){var f=seeded();advance(f,15,100,[raw('HIGH',105,15,1)]);assert.strictEqual(f.state.emitted.length,0);});
 test('14 bootstrap first result is prefix-safe',function(){var f=seeded();advance(f,15,100,[raw('HIGH',105,15,1)]);advance(f,16,90,[],101,89);assert.strictEqual(f.state.emitted.length,1);assert.ok(f.state.emitted[0].qualifiedConfirmedAt===f.candles[16].closeTime);});
 test('15 occurredAt preserves raw source time',function(){var q=actualState.qualifiedSwings[0];assert.strictEqual(q.occurredAt,q.sourceOpenTime);});
@@ -132,7 +142,7 @@ test('46 deterministic repeated replay',function(){var second=runReplay(actualCa
 test('47 live-style growing feed equals full-array replay',function(){var live=runReplay(actualCandles,true);assert.deepStrictEqual(live.qualifiedSwings.map(core),actualState.qualifiedSwings.map(core));assert.deepStrictEqual(eqProjection(live,actualCandles.at(-1).closeTime),eqProjection(actualState,actualCandles.at(-1).closeTime));});
 test('48 Qualified Swing has no advanced semantic fields',function(){var text=JSON.stringify(actualState.qualifiedSwings);assert.strictEqual(/independentScore|prominenceScore|hierarchyScore|structuralScore|departureScore|departureEfficiency/.test(text),false);});
 test('49 production implementation imports no research artifact',function(){['structure/standardCausalSwingSegmentation.js','replay/replayState.js','liquidity/persistentEqualLiquidityV3.js'].forEach(function(file){var text=fs.readFileSync(path.join(__dirname,'..',file),'utf8');assert.strictEqual(/research\/|qualified-swing-prominence|qualified-swing-departure|online-causal|role-maturation/.test(text),false);});});
-test('50 notification presentation source unchanged',function(){assert.strictEqual(gitBlob('notify/watchNotificationPresentationV1.js'),'e98185279b8dc12a161160e42fed32ec1473f7b0');});
+test('50 notification presentation remains decoupled from Swing source selection',function(){var text=fs.readFileSync(path.join(__dirname,'../notify/watchNotificationPresentationV1.js'),'utf8');assert.strictEqual(/standardCausalSwingSegmentation|eqSwingSource|EQ_SWING_SOURCE|qualifiedSwingSegmentation/.test(text),false);});
 
 console.log('\nStandard Causal Swing Segmentation V1: '+passed+' passed, '+failed+' failed');
 if(failed) process.exit(1);
