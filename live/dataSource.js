@@ -81,6 +81,16 @@ function fetchInitial(symbol, warmupDays) {
 }
 
 /**
+ * Maximum closed 5m candles needed to reproduce fetchInitial's bootstrap window:
+ * configured replay days plus historicalLoader's explicit 5m warmup.
+ */
+function initial5mRetentionBars(warmupDays) {
+    var days = Number(warmupDays);
+    if (!isFinite(days) || days < 0) days = 0;
+    return Math.ceil(days * 24 * 60 / 5) + historicalLoader.WARMUP_BARS['5m'];
+}
+
+/**
  * Fix 4（11L.2）：轮询最新已收盘 5m K（closeTime > lastCloseTime）。
  * 结构化返回以区分 NO_NEW_BAR（正常）/ NETWORK_ERROR（网络失败，不吞错）。
  * @returns {Promise<{ok: boolean, candles: Array, error?: string}>}
@@ -179,6 +189,7 @@ function makeFetcher(calendarCandles) {
 
 module.exports = {
     fetchInitial: fetchInitial,
+    initial5mRetentionBars: initial5mRetentionBars,
     pollNew5m: pollNew5m,
     backfill5m: backfill5m,
     fetchHtfIncrement: fetchHtfIncrement,

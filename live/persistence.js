@@ -33,6 +33,16 @@ function appendCandles(file, candles) {
     fs.appendFileSync(file, lines + '\n');
 }
 
+/** Replace the candle log atomically after bounded-retention compaction. */
+function replaceCandles(file, candles) {
+    ensureDir(path.dirname(file));
+    var rows = candles || [];
+    var body = rows.map(function (c) { return JSON.stringify(c); }).join('\n');
+    var tmp = file + '.tmp';
+    fs.writeFileSync(tmp, body.length > 0 ? body + '\n' : '');
+    fs.renameSync(tmp, file);
+}
+
 /**
  * 读取 candles.jsonl（逐行容错，Phase 11L.7 P1）。
  *
@@ -85,5 +95,6 @@ module.exports = {
     loadJson: loadJson,
     saveJson: saveJson,
     appendCandles: appendCandles,
+    replaceCandles: replaceCandles,
     loadCandles: loadCandles
 };

@@ -64,6 +64,10 @@ try {
 } catch (e) {}
 
 var BAR_MS = 300000; // 5m
+// Compact only after one extra loader-warmup block has accumulated. Bootstrap
+// still consumes exactly the retained window; the slack avoids rewriting the
+// complete JSONL file on every newly closed candle.
+var PERSISTENCE_COMPACTION_SLACK_BARS = 300;
 
 // ---------- 工具 ----------
 function fmt(ms) {
@@ -82,6 +86,29 @@ function yieldToEventLoop() {
     return new Promise(function (resolve) {
         setImmediate(resolve);
     });
+}
+
+function retainLatestCandles(candles, maxBars) {
+    var rows = candles || [];
+    var limit = Math.max(0, Math.floor(Number(maxBars) || 0));
+    if (limit === 0) return [];
+    return rows.length > limit ? rows.slice(rows.length - limit) : rows.slice();
+}
+
+function prepareBootstrapCandles(existing, fetched, maxBars) {
+    var persisted = existing || [];
+    var incoming = fetched || [];
+    var known = {};
+    persisted.forEach(function (c) { known[c.openTime] = true; });
+    var fresh = incoming.filter(function (c) { return !known[c.openTime]; });
+    var merged = persisted.concat(fresh);
+    var candles = retainLatestCandles(merged, maxBars);
+    return {
+        candles: candles,
+        fresh: fresh,
+        mergedBars: merged.length,
+        prunedBars: merged.length - candles.length
+    };
 }
 
 /**
@@ -304,6 +331,8 @@ function createRunner(symbol) {
     var watchPending = persistence.loadJson(watchOutboxFile, []);
     var priceStream = null;
     var priceDeliveryChain = Promise.resolve();
+    var bootstrapRetentionBars = dataSource.initial5mRetentionBars(CONFIG.warmupDays);
+    var persistedCandles = [];
 
     function loadPushed() {
         return persistence.loadJson(pushedFile, {});
@@ -412,12 +441,20 @@ function createRunner(symbol) {
         runnerData = { raw: data, structureCandles: structureCandles, calendarCandles: calendarCandles };
         var candles5m = (data['5m'] || []).slice();
         log(symbol + ' 初始历史 ' + candles5m.length + ' 根 5m（' + fmt(candles5m[0].closeTime) + ' → ' + fmt(candles5m[candles5m.length - 1].closeTime) + '）');
-        // 持久化历史（追加，幂等：跳过已存在的 openTime）
-        var known = {};
-        existing.forEach(function (c) { known[c.openTime] = true; });
-        var fresh = candles5m.filter(function (c) { return !known[c.openTime]; });
-        if (fresh.length > 0) persistence.appendCandles(candlesFile, fresh);
-        var all = existing.concat(fresh);
+        // 持久化历史（幂等：跳过已存在的 openTime），然后限制为与
+        // fetchInitial 完全相同的 30d + 5m loader warmup 窗口。旧安装积累的
+        // 更早 candles 不再让 restart bootstrap 随运行时间无限增长。
+        var prepared = prepareBootstrapCandles(existing, candles5m, bootstrapRetentionBars);
+        var all = prepared.candles;
+        var prunedBars = prepared.prunedBars;
+        if (prepared.fresh.length > 0 || prunedBars > 0) {
+            persistence.replaceCandles(candlesFile, all);
+        }
+        persistedCandles = all.slice();
+        if (prunedBars > 0) {
+            log(symbol + ' bootstrap 历史压缩: ' + prepared.mergedBars + ' -> ' + all.length +
+                ' 根（retention=' + bootstrapRetentionBars + '）');
+        }
 
         // Fix 4（11L.4 P1）：初始化（restart 重放）前必须验证持久化 5m 历史本身连续——
         // candles.jsonl 磁盘/旧版本/人工拷贝导致缺根时，不得用不连续历史重建状态
@@ -606,7 +643,14 @@ function createRunner(symbol) {
         return chain.then(function () {
             lastCloseTime = list[list.length - 1].closeTime;
             lastOpenTime = list[list.length - 1].openTime;
-            persistence.appendCandles(candlesFile, list);
+            persistedCandles = persistedCandles.concat(list);
+            if (persistedCandles.length > bootstrapRetentionBars + PERSISTENCE_COMPACTION_SLACK_BARS) {
+                persistedCandles = retainLatestCandles(persistedCandles, bootstrapRetentionBars);
+                persistence.replaceCandles(candlesFile, persistedCandles);
+                log(symbol + ' candles.jsonl 定期压缩至 ' + persistedCandles.length + ' 根');
+            } else {
+                persistence.appendCandles(candlesFile, list);
+            }
             persistence.saveJson(pushedFile, delivered);
             persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength(),
                 structureMode: structuralSwingMode(), eqProductionVersion: EQ_PRODUCTION_VERSION });
@@ -846,6 +890,8 @@ module.exports = {
     buildFvgRetracementMessage: buildFvgRetracementMessage,
     yieldToEventLoop: yieldToEventLoop,
     replayBootstrapBars: replayBootstrapBars,
+    retainLatestCandles: retainLatestCandles,
+    prepareBootstrapCandles: prepareBootstrapCandles,
     createRunner: createRunner,
     main: main
 };
