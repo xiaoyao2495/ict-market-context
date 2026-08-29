@@ -80,6 +80,14 @@ function sourceIndexOf(swing, context) {
 
 function confirmationIndexOf(swing, context) {
     var sourceIndex = sourceIndexOf(swing, context);
+    // Standard Causal Qualified Swings confirm on their later DC reversal
+    // candle rather than the raw pivot's 2R candle. This explicit provenance
+    // is an input-index adapter only; no Price/Formation/Lifecycle gate changes.
+    var qualifiedIndex = swing.metadata && typeof swing.metadata.qualifiedConfirmationIndex === 'number'
+        ? swing.metadata.qualifiedConfirmationIndex
+        : undefined;
+    if (qualifiedIndex !== undefined && context.candles[qualifiedIndex] &&
+        context.candles[qualifiedIndex].closeTime === swing.confirmedAt) return qualifiedIndex;
     var right = swing.metadata && typeof swing.metadata.right === 'number'
         ? swing.metadata.right
         : 2;

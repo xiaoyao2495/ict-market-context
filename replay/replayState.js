@@ -27,6 +27,7 @@ var swingLiquidity = require('../liquidity/swingLiquidity');
 var equalLiquidity = require('../liquidity/equalLiquidity');
 var persistentEqualLiquidityV3 = require('../liquidity/persistentEqualLiquidityV3');
 var eqProductionVersion = require('../config/eqProductionVersion');
+var eqSwingSource = require('../config/eqSwingSource');
 var liquidityLifecycle = require('../liquidity/liquidityLifecycle');
 var liquidityRegistry = require('../liquidity/liquidityRegistry');
 var sweepEventAdapter = require('../events/sweepEventAdapter');
@@ -35,6 +36,7 @@ var fvgLifecycle = require('../fvg/fvgLifecycle');
 var fvgRegistry = require('../fvg/fvgRegistry');
 var amdState = require('../amd/amdState');
 var structuralProvenance5m = require('../structure/structuralProvenance5m');
+var standardCausalSwingSegmentation = require('../structure/standardCausalSwingSegmentation');
 
 var RIGHT = 2;
 
@@ -45,11 +47,20 @@ function createReplayState(options) {
         timeframe: opts.timeframe || '5m',
         eqProductionVersion: opts.eqProductionVersion === undefined
             ? eqProductionVersion.get(opts.env) : eqProductionVersion.normalize(opts.eqProductionVersion),
+        eqSwingSource: opts.eqSwingSource === undefined
+            ? eqSwingSource.get(opts.env) : eqSwingSource.normalize(opts.eqSwingSource),
         index: 0,
 
         // ---- 持久 liquidity registry（增量加入，不重建） ----
         registry: liquidityRegistry.createRegistry(),
         swings: [],
+        qualifiedSwingSegmentation: standardCausalSwingSegmentation.createState({
+            symbol: opts.symbol || 'UNKNOWN', timeframe: opts.timeframe || '5m'
+        }),
+        qualifiedSwings: [],
+        qualifiedSwingById: {},
+        qualifiedHighPool: [],
+        qualifiedLowPool: [],
         structural5m: structuralProvenance5m.createState({
             symbol: opts.symbol || 'UNKNOWN', timeframe: opts.timeframe || '5m'
         }),
@@ -147,18 +158,53 @@ function incrementalLiquidity(state, candles, index, exchangeInfo, evaluationTim
         }
     });
 
-    // 3. equal liquidity（新 swing + registry 已有 swing 一起聚类，等价于全量每次重建全部）
+    // Advance the separate EQ-only Qualified Swing lifecycle. These objects do
+    // not enter the main liquidity registry and therefore cannot create raw
+    // Sweep/WATCH/AMD side effects.
+    (state.qualifiedSwings || []).forEach(function (swing) {
+        if (swing.confirmedAt >= evaluationTime || (swing.status !== 'ACTIVE' && swing.status !== 'TOUCHED')) return;
+        var event = liquidityLifecycle.evaluateLiquidity(swing, candles[index]);
+        if (!event) return;
+        swing.status = event.status;
+        swing.touchedAt = event.touchedAt;
+        swing.sweptAt = event.sweptAt;
+        swing.brokenAt = event.brokenAt;
+    });
+
+    standardCausalSwingSegmentation.initializeAtIndex(state.qualifiedSwingSegmentation, candles, index);
+    var qualifiedAdded = standardCausalSwingSegmentation.step(
+        state.qualifiedSwingSegmentation,
+        candles[index],
+        index,
+        addedSwings,
+        index > 0 ? candles[index - 1] : null
+    );
+    qualifiedAdded.forEach(function (swing) {
+        state.qualifiedSwings.push(swing);
+        state.qualifiedSwingById[swing.id] = swing;
+        (swing.type === 'SWING_HIGH' ? state.qualifiedHighPool : state.qualifiedLowPool).push(swing);
+    });
+
+    // 3. Equal Liquidity. V3 receives exactly one source: Standard Qualified
+    // Swing by default, or RAW_LEGACY for rollback. The pools are never mixed.
     var equal = [];
-    if (addedSwings.length > 0) {
-        if (state.eqProductionVersion === 'V3') {
-            persistentEqualLiquidityV3.processCandidates(state, addedSwings, {
+    if (state.eqProductionVersion === 'V3') {
+        var eqCandidates = state.eqSwingSource === eqSwingSource.STANDARD ? qualifiedAdded : addedSwings;
+        if (eqCandidates.length > 0) {
+            var standardPool = state.qualifiedSwings;
+            persistentEqualLiquidityV3.processCandidates(state, eqCandidates, {
                 symbol: state.symbol,
                 evaluationTime: evaluationTime,
                 tickSize: exchangeInfo.tickSize,
                 candles: candles,
-                index: index
+                index: index,
+                candidatePool: state.eqSwingSource === eqSwingSource.STANDARD ? standardPool : undefined,
+                getSwingById: state.eqSwingSource === eqSwingSource.STANDARD
+                    ? function (id) { return state.qualifiedSwingById[id] || null; }
+                    : undefined
             });
-        } else {
+        }
+    } else if (addedSwings.length > 0) {
             equal = equalLiquidity.detectEqualLiquidity(
                 addedSwings.concat(
                     state.registry.getByType(state.symbol, 'SWING_HIGH'),
@@ -174,7 +220,6 @@ function incrementalLiquidity(state, candles, index, exchangeInfo, evaluationTim
                     candles: candles
                 }
             );
-        }
     }
     equal.forEach(function (e) {
         state.registry.add(e);

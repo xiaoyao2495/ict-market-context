@@ -172,6 +172,12 @@ function projectMembersAsOf(cluster, evaluationTime) {
 
 function processCandidates(state, addedSwings, options) {
     var registry = state.registry;
+    // The input adapter may supply an EQ-only Qualified Swing pool. Falling
+    // back to the main registry preserves the explicit RAW_LEGACY rollback and
+    // existing direct unit fixtures. The two sources are never combined.
+    var candidatePool = options.candidatePool || registry.getByType(state.symbol, 'SWING_HIGH')
+        .concat(registry.getByType(state.symbol, 'SWING_LOW'));
+    var getSwingById = options.getSwingById || function (id) { return registry.getById(id); };
     var clusters = registry.getByType(state.symbol, 'EQH').concat(registry.getByType(state.symbol, 'EQL'))
         .filter(function (cluster) { return cluster.metadata && cluster.metadata.eqModelVersion === 'V3'; });
     var candle = options.candles[options.index];
@@ -183,7 +189,7 @@ function processCandidates(state, addedSwings, options) {
         var compatible = [];
         clusters.forEach(function (cluster) {
             if (cluster.type !== side || effectiveStatus(cluster, candle) !== 'ACTIVE') return;
-            var anchor = registry.getById(cluster.metadata.formationAnchorId);
+            var anchor = getSwingById(cluster.metadata.formationAnchorId);
             var features = anchor && classify(anchor, candidate, side, options);
             if (features && features.classification === 'VALID_EQ') compatible.push({ cluster: cluster, features: features });
         });
@@ -200,8 +206,8 @@ function processCandidates(state, addedSwings, options) {
             return;
         }
         if (owners[side + '|' + candidate.id]) return;
-        var prior = registry.getByType(state.symbol, candidate.type).filter(function (swing) {
-            return swing.id !== candidate.id && chronological(swing, candidate) < 0 &&
+        var prior = candidatePool.filter(function (swing) {
+            return swing.type === candidate.type && swing.id !== candidate.id && chronological(swing, candidate) < 0 &&
                 (swing.status === 'ACTIVE' || swing.status === 'TOUCHED') && !owners[side + '|' + swing.id];
         }).sort(chronological);
         for (var i = 0; i < prior.length; i++) {
