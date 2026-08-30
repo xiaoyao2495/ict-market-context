@@ -148,6 +148,22 @@ function directionInfo(direction) {
         : { side:'LONG', title:'做多机会观察', liquidity:'下方 SSL', displacement:'多头位移', move:'向上', mss:'Bullish MSS', watchIcon:'🟢' };
 }
 
+function narrativePresentation(watch, info) {
+    var type = watch && watch.observationType;
+    if (type === 'NEW') {
+        return { icon:'🔔', title:info.title, line:'Narrative：新观察（NEW）' };
+    }
+    if (type === 'CONTINUATION') {
+        return { icon:'🔄', title:info.side === 'SHORT' ? '做空观察更新' : '做多观察更新',
+            line:'Narrative：延续观察（CONTINUATION）' };
+    }
+    if (type === 'REACTIVATION') {
+        return { icon:'🔁', title:info.side === 'SHORT' ? '做空观察重新激活' : '做多观察重新激活',
+            line:'Narrative：重新激活（REACTIVATION）' };
+    }
+    return null;
+}
+
 function biasIsUnknown(bias) {
     return !bias || bias.direction === 'UNKNOWN' || bias.status === 'UNKNOWN' ||
         bias.status === 'BYPASSED' || bias.status === 'NOT_APPLICABLE';
@@ -302,14 +318,17 @@ function build(watch, currentPrice, options) {
     var structurePresentation = classifyStructurePresentation(mss);
     var bias = biasView(watch);
     var conflict = biasConflict(bias);
+    var narrative = narrativePresentation(watch, info);
     var generatedAt = opts.notificationGeneratedAt !== undefined ? opts.notificationGeneratedAt : Date.now();
     var lines = [
-        '🔔 ' + keyword + ' · ' + (watch && watch.symbol || 'UNKNOWN') + ' · ' + info.title + (conflict ? ' ⚠️ 逆 4H Bias' : ''),
+        (narrative ? narrative.icon : '🔔') + ' ' + keyword + ' · ' + (watch && watch.symbol || 'UNKNOWN') + ' · ' +
+            (narrative ? narrative.title : info.title) + (conflict ? ' ⚠️ 逆 4H Bias' : ''),
         '',
         '时间：' + formatBeijingTime(generatedAt),
         '状态：' + friendlyWatchState(watch && watch.state),
         '执行状态：等待人工确认（WAIT FOR MANUAL CONFIRMATION）'
     ];
+    if (narrative) lines.push(narrative.line);
 
     if (conflict) lines.push('', ...buildBiasLines(bias, info, true));
     lines.push('', '💧 流动性扫取');
@@ -378,6 +397,7 @@ module.exports = {
     candidateCount: candidateCount,
     biasView: biasView,
     directionInfo: directionInfo,
+    narrativePresentation: narrativePresentation,
     classifyStructurePresentation: classifyStructurePresentation,
     buildSummary: buildSummary,
     buildBiasLines: buildBiasLines,

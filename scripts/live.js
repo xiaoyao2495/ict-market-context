@@ -30,6 +30,7 @@ var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
 var thresholds = require('../config/thresholds');
 var displacementWatch = require('../stats/displacementWatch');
+var watchNarrativeLifecycleV1 = require('../stats/watchNarrativeLifecycleV1');
 var futuresPriceStream = require('../live/futuresPriceStream');
 var watchNotificationPresentationV1 = require('../notify/watchNotificationPresentationV1');
 var watchNotificationZhV1Flag = require('../config/watchNotificationZhV1');
@@ -336,6 +337,25 @@ function createRunner(symbol) {
         persistence.loadJson(watchFile, []),
         persistence.loadJson(watchDeliveredFile, {})
     );
+    // P4.1: Narrative ownership is derived from already-touched WATCHes. It is
+    // not a checkpoint and does not participate in WATCH/touch eligibility.
+    var narrativeReconstruction = watchNarrativeLifecycleV1.reconstructFromWatches(watchStore.getAll());
+    var narrativeState = narrativeReconstruction.state;
+    narrativeReconstruction.results.forEach(function (item) {
+        var persistedWatch = watchStore.get(item.watchId);
+        var canonicalMetadata = watchNarrativeLifecycleV1.metadataOf(item.result);
+        var persistedMetadata = persistedWatch && persistedWatch.observationId ? {
+            narrativeId:persistedWatch.narrativeId,
+            observationId:persistedWatch.observationId,
+            observationType:persistedWatch.observationType,
+            narrativeStateSnapshot:persistedWatch.narrativeStateSnapshot
+        } : null;
+        if (persistedMetadata && JSON.stringify(persistedMetadata) !== JSON.stringify(canonicalMetadata)) {
+            log(symbol + ' WATCH_NARRATIVE_V1_RECONSTRUCTION_MISMATCH watch=' + item.watchId +
+                '（reported and canonically reconstructed；delivery dedup unchanged）');
+        }
+        watchNarrativeLifecycleV1.attachMetadata(persistedWatch, item.result);
+    });
     var watchPending = persistence.loadJson(watchOutboxFile, []);
     var priceStream = null;
     var priceDeliveryChain = Promise.resolve();
@@ -350,6 +370,27 @@ function createRunner(symbol) {
         persistence.saveJson(watchFile, watchStore.getAll());
         persistence.saveJson(watchDeliveredFile, watchStore.getDelivered());
         persistence.saveJson(watchOutboxFile, watchPending);
+    }
+
+    /**
+     * P4.1 classification runs only after an existing WATCH store has emitted
+     * FIRST_TOUCH. It is fail-open for delivery: unresolved legacy provenance
+     * is logged but never suppresses or changes the touched WATCH population.
+     */
+    function classifyNarrativeTouches(touched) {
+        var rows = (touched || []).slice().sort(watchNarrativeLifecycleV1.compareTouchOrder);
+        rows.forEach(function (watch) {
+            var result = watchNarrativeLifecycleV1.observeFirstTouch(narrativeState, watch);
+            if (result.observation) {
+                watchNarrativeLifecycleV1.attachMetadata(watch, result);
+                return;
+            }
+            if (!result.duplicate) {
+                log(symbol + ' WATCH_NARRATIVE_V1_UNRESOLVED watch=' + (watch && watch.id || 'UNKNOWN') +
+                    ' reason=' + result.reason + '（classification only；FIRST_TOUCH delivery unchanged）');
+            }
+        });
+        return touched;
     }
 
     /**
@@ -501,7 +542,7 @@ function createRunner(symbol) {
         }, function (c) {
             // Bootstrap reconstructs lifecycle but never sends historical touches.
             engine.drainDisplacementWatchUpdates().forEach(function (w) { watchStore.upsert(w); });
-            watchStore.onCandle(c);
+            classifyNarrativeTouches(watchStore.onCandle(c));
         }, function (progress) {
             log(symbol + ' [BOOTSTRAP] ' + progress.completed + ' / ' + progress.total +
                 ' ' + progress.progressPct.toFixed(1) + '%' +
@@ -552,6 +593,7 @@ function createRunner(symbol) {
     }
 
     function handleWatchTouches(touched) {
+        classifyNarrativeTouches(touched);
         (touched || []).forEach(function (watch) {
             if (!watch.notificationKey || watchStore.getDelivered()[watch.notificationKey] || isWatchPending(watch.notificationKey)) return;
             watchPending.push({ notificationKey: watch.notificationKey, watchId: watch.id, attempts: 0 });
@@ -780,7 +822,8 @@ function createRunner(symbol) {
         initFromHistory: initFromHistory,
         tick: tick,
         startLoop: startLoop,
-        stopLoop: stopLoop
+        stopLoop: stopLoop,
+        getNarrativeProjection: function () { return watchNarrativeLifecycleV1.projection(narrativeState); }
     };
 }
 
