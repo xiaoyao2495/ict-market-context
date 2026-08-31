@@ -50,9 +50,9 @@ function defaultLookback(opts) {
  * Sweep ↔ Leg 时间关系（用 confirmedAt 与 leg 时间窗比较；index 缺失/不一致时回退 index 比较）
  * @returns {string} 'BEFORE_LEG' | 'INSIDE_LEG' | 'AFTER_LEG'
  */
-function classifySweepLegRelation(sweep, leg) {
-    var first = leg && leg.firstConfirmedAt;
-    var last = leg && leg.lastConfirmedAt;
+function classifySweepDisplacementRelation(sweep, displacement) {
+    var first = displacement && displacement.startAt;
+    var last = displacement && displacement.endAt;
     var t = sweep && sweep.confirmedAt;
     if (typeof t === 'number' && typeof first === 'number' && typeof last === 'number') {
         if (t < first) return 'BEFORE_LEG';
@@ -61,8 +61,8 @@ function classifySweepLegRelation(sweep, leg) {
     }
     // 回退：index 比较（5m 对齐）
     var s = sweep && sweep.candleIndex;
-    var st = leg && leg.startIndex;
-    var en = leg && (leg.endIndex !== undefined ? leg.endIndex : leg.lastIndex);
+    var st = displacement && displacement.startIndex;
+    var en = displacement && displacement.endIndex;
     if (typeof s !== 'number') return 'AFTER_LEG';
     if (typeof st === 'number' && s < st) return 'BEFORE_LEG';
     if (typeof en === 'number' && s <= en) return 'INSIDE_LEG';
@@ -73,7 +73,7 @@ function classifySweepLegRelation(sweep, leg) {
  * 构建单个候选摘要（sweep + leg → provenance 记录）
  * sourceType 忠实展示真实 liquidity 类型（SWING_LOW/EQL/...），缺失显示 UNKNOWN，不做人工过滤。
  */
-function buildCandidate(se, leg) {
+function buildCandidate(se, displacement) {
     var sourceType = (se.source && se.source.liquidityType) || se.liquidityType || 'UNKNOWN';
     var c = {
         id: se.id || null,
@@ -84,13 +84,13 @@ function buildCandidate(se, leg) {
         sourceId: se.liquidityId || null,
         confirmedAt: se.confirmedAt,
         candleIndex: se.candleIndex,
-        relation: classifySweepLegRelation(se, leg)
+        relation: classifySweepDisplacementRelation(se, displacement)
     };
     if (se.source && se.source.eqMemberProvenance) {
         c.eqMemberProvenance = JSON.parse(JSON.stringify(se.source.eqMemberProvenance));
     }
-    if (leg && typeof leg.startIndex === 'number' && typeof se.candleIndex === 'number') {
-        c.barsBeforeLegStart = leg.startIndex - se.candleIndex;
+    if (displacement && typeof displacement.startIndex === 'number' && typeof se.candleIndex === 'number') {
+        c.barsBeforeLegStart = displacement.startIndex - se.candleIndex;
     } else {
         c.barsBeforeLegStart = null;
     }
@@ -102,14 +102,14 @@ function buildCandidate(se, leg) {
  * 距离 = |leg.startIndex - sweep.candleIndex|（leg 前与 leg 内统一按绝对距离）。
  * @returns {Object|null} 候选摘要
  */
-function pickImmediate(leg, candidates) {
+function pickImmediate(displacement, candidates) {
     var best = null;
     var bestDist = Infinity;
     var bestConfirmed = -Infinity;
     candidates.forEach(function (se) {
         var dist = Infinity;
-        if (typeof leg.startIndex === 'number' && typeof se.candleIndex === 'number') {
-            dist = Math.abs(leg.startIndex - se.candleIndex);
+        if (typeof displacement.startIndex === 'number' && typeof se.candleIndex === 'number') {
+            dist = Math.abs(displacement.startIndex - se.candleIndex);
         }
         var confirmed = typeof se.confirmedAt === 'number' ? se.confirmedAt : -Infinity;
         if (dist < bestDist || (dist === bestDist && confirmed > bestConfirmed)) {
@@ -118,7 +118,7 @@ function pickImmediate(leg, candidates) {
             bestConfirmed = confirmed;
         }
     });
-    return best ? buildCandidate(best, leg) : null;
+    return best ? buildCandidate(best, displacement) : null;
 }
 
 /**
@@ -141,13 +141,13 @@ function associateSweeps(opts) {
     if (!opts || !opts.direction) {
         return null;
     }
-    var leg = opts.leg || {};
+    var displacement = opts.displacement || {};
     var availableAt = opts.availableAt;
     var wantSide = opts.direction === 'BULLISH' ? 'SSL' : 'BSL';
     var N = defaultLookback(opts);
-    var endIdx = leg.endIndex !== undefined ? leg.endIndex : leg.lastIndex;
-    var startBound = (typeof leg.startIndex === 'number' && typeof N === 'number')
-        ? leg.startIndex - N
+    var endIdx = displacement.endIndex;
+    var startBound = (typeof displacement.startIndex === 'number' && typeof N === 'number')
+        ? displacement.startIndex - N
         : -Infinity;
 
     var candidates = [];
@@ -157,6 +157,7 @@ function associateSweeps(opts) {
         if (typeof availableAt === 'number') {
             if (typeof se.confirmedAt !== 'number' || se.confirmedAt > availableAt) return;
         }
+        if (typeof displacement.endAt === 'number' && se.confirmedAt > displacement.endAt) return;
         // Narrative Liquidity V1 consumer gate. Raw Sweep events remain intact for
         // AMD/structure; only the requesting WATCH candidate projection excludes
         // structural primitives.
@@ -176,9 +177,9 @@ function associateSweeps(opts) {
     }
     candidates.sort(function (a, b) { return a.confirmedAt - b.confirmedAt; });
     return {
-        allCandidates: candidates.map(function (se) { return buildCandidate(se, leg); }),
+        allCandidates: candidates.map(function (se) { return buildCandidate(se, displacement); }),
         // 通知展示用：距离 leg.startIndex 最近的 sweep（不是 Narrative ranking，仅"近期获取流动性"）
-        immediateSweep: pickImmediate(leg, candidates)
+        immediateSweep: pickImmediate(displacement, candidates)
     };
 }
 
@@ -240,7 +241,7 @@ function formatSweepRelationLine(sweep) {
 
 module.exports = {
     associateSweeps: associateSweeps,
-    classifySweepLegRelation: classifySweepLegRelation,
+    classifySweepDisplacementRelation: classifySweepDisplacementRelation,
     fmtSweepTime: fmtSweepTime,
     formatSweepPriceLine: formatSweepPriceLine,
     formatSweepRelationLine: formatSweepRelationLine,

@@ -31,7 +31,7 @@ var WINDOWS = [
  * 对单个 retrace 找 first touch 并统计未来窗口
  * @param {Object} r retrace
  * @param {Array} candles
- * @param {Object} [ctx] { fvgToLegQuality }
+ * @param {Object} [ctx] { fvgToDeliveryQuality }
  * @returns {Object|null} { direction, alignment, biasAtWatch, fvgScore, anchorPrice, touchIndex, w30m/w1h/w4h }
  */
 function analyzeRetrace(r, candles, ctx) {
@@ -82,8 +82,7 @@ function analyzeRetrace(r, candles, ctx) {
         alignment: r.alignmentAtWatch || null,
         biasAtWatch: r.biasAtWatch || null,
         fvgScore: r.fvgScoreAtWatch !== undefined ? r.fvgScoreAtWatch : null,
-        // Phase 11D.5：DisplacementLeg quality（fvgId → legQuality 映射，无则 NO_LEG）
-        legQuality: (c2.fvgToLegQuality && r.fvgId) ? (c2.fvgToLegQuality[r.fvgId] || 'NO_LEG') : 'NO_LEG',
+        deliveryQuality: (c2.fvgToDeliveryQuality && r.fvgId) ? (c2.fvgToDeliveryQuality[r.fvgId] || 'NO_DISPLACEMENT') : 'NO_DISPLACEMENT',
         anchorPrice: anchorPrice,
         touchIndex: touchIdx,
         symbol: r.symbol,
@@ -139,7 +138,7 @@ function summarizeNarrativeDirection(results) {
     var groups = {};
     var byDirection = {};
     var bySymbol = {};
-    var byLegQuality = {}; // Phase 11D.5：DisplacementLeg quality 分组
+    var byDeliveryQuality = {};
     function accFor(container, key) {
         if (!container[key]) {
             var g = { n: 0, w30m: null, w1h: null, w4h: null };
@@ -155,7 +154,7 @@ function summarizeNarrativeDirection(results) {
         var g = accFor(groups, r.alignment || 'UNCONFIRMED');
         var gd = accFor(byDirection, r.direction);
         var gs = accFor(bySymbol, r.symbol);
-        var gl = accFor(byLegQuality, r.legQuality || 'NO_LEG');
+        var gl = accFor(byDeliveryQuality, r.deliveryQuality || 'NO_DISPLACEMENT');
         [g, gd, gs, gl].forEach(function (acc) {
             acc.n++;
             WINDOWS.forEach(function (w) {
@@ -192,7 +191,7 @@ function summarizeNarrativeDirection(results) {
             a.nearTargetCnt += s.hasNearTarget ? 1 : 0;
         });
     });
-    return { groups: groups, byDirection: byDirection, bySymbol: bySymbol, byLegQuality: byLegQuality };
+    return { groups: groups, byDirection: byDirection, bySymbol: bySymbol, byDeliveryQuality: byDeliveryQuality };
 }
 
 module.exports = {

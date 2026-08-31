@@ -75,7 +75,8 @@ function disp(id, direction, candleIndex, extra) {
         type: 'DISPLACEMENT',
         direction: direction,
         confirmedAt: 1000000 + candleIndex * BAR + BAR - 1,
-        candleIndex: candleIndex,
+        startIndex: candleIndex,
+        endIndex: candleIndex,
         price: 0,
         source: {},
         metadata: { mssEventId: null }

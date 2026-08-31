@@ -27,21 +27,23 @@ var liquidityProvenance = require('./liquidityProvenance');
 
 /**
  * 对单个 HIGH alert 跑 shadow 关联（排除普通 SWING）。
- * @param {Object} alert buildAlerts 输出（direction / legStartIndex / anchorIndex / availableAt）
+ * @param {Object} alert buildAlerts 输出（direction / formationStartIndex / anchorIndex / availableAt）
  * @param {Array} sweepEvents 全部 LIQUIDITY_SWEEP 事件
  * @param {Array} candles 5m candles
  * @param {Object} [opts] { maxLookbackBars }
  * @returns {Object|null} shadow liquidityContext（仅 SIGNIFICANT/OTHER 候选）
  */
 function shadowAssociate(alert, sweepEvents, candles, opts) {
-    var legStart = alert.legStartIndex !== undefined && alert.legStartIndex !== null ? alert.legStartIndex : alert.anchorIndex;
+    var formationStart = alert.formationStartIndex !== undefined && alert.formationStartIndex !== null ? alert.formationStartIndex : alert.anchorIndex;
     var availAt = alert.availableAt !== undefined && alert.availableAt !== null ? alert.availableAt : alert.anchorTime;
     return liquidityProvenance.associateSweeps({
         direction: alert.direction,
-        leg: {
-            startIndex: legStart,
+        displacement: {
+            startIndex: formationStart,
             endIndex: alert.anchorIndex,
-            lastIndex: alert.anchorIndex
+            startAt: candles[formationStart] && candles[formationStart].openTime,
+            endAt: candles[alert.anchorIndex] && candles[alert.anchorIndex].closeTime,
+            confirmedAt: availAt
         },
         availableAt: availAt,
         sweepEvents: sweepEvents,

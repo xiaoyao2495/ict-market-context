@@ -153,17 +153,16 @@ test('24 AMD still receives Swing Sweep with unchanged score/phase/transition', 
 
 function watchFor(sweeps) {
     var displacement = {
-        id: 'D1', direction: 'BULLISH', candleIndex: 3,
-        confirmedAt: candle(3, 103).closeTime
+        id: 'D1', type: 'DISPLACEMENT', symbol: 'X', timeframe: '5m', direction: 'BULLISH',
+        startIndex: 3, endIndex: 3, startAt: candle(3, 103).openTime,
+        endAt: candle(3, 103).closeTime, confirmedAt: candle(3, 103).closeTime,
+        startPrice: 100, endPrice: 103, sourceDetections: []
     };
     return displacementWatch.buildWatch({
         symbol: 'X',
-        leg: {ids: ['D1'], direction: 'BULLISH', startIndex: 3, lastIndex: 3,
-            firstConfirmedAt: displacement.confirmedAt, lastConfirmedAt: displacement.confirmedAt},
+        displacement: displacement,
         evaluationTime: displacement.confirmedAt,
         sweepEvents: sweeps,
-        displacements: [displacement],
-        mssEvents: [],
         candles: [candle(0, 100), candle(1, 100), candle(2, 100), candle(3, 103)]
     });
 }

@@ -39,11 +39,7 @@ function runAll(engine, candles) {
             return engine.onBar(c, idx).then(function (opp) { if (opp) opps.push(opp); });
         });
     });
-    return chain.then(function () {
-        var tail = engine.flushLeg();
-        if (tail) opps.push(tail);
-        return opps;
-    });
+    return chain.then(function () { return opps; });
 }
 
 dataSource.fetchInitial(SYMBOL, BOOTSTRAP_B_DAYS).then(function (data) {

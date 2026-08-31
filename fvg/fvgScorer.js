@@ -27,8 +27,8 @@ function scoreFvg(fvg, context, options) {
     var breakdown = {};
 
     // ---- displacement association (40) ----
-    var displacementScore = fvg.displacementEventId ? w.displacementAssociation : 0;
-    breakdown.displacement = displacementScore;
+    var displacementAssociationPoints = fvg.displacementEventId ? w.displacementAssociation : 0;
+    breakdown.displacement = displacementAssociationPoints;
 
     // ---- gap size / ATR (20) ----
     var gapScore = 0;
@@ -61,7 +61,7 @@ function scoreFvg(fvg, context, options) {
     breakdown.scenario = scenarioScore;
 
     var total = Math.max(0, Math.min(100,
-        displacementScore + gapScore + amdScore + scenarioScore
+        displacementAssociationPoints + gapScore + amdScore + scenarioScore
     ));
     var threshold = cfg.scorer.entryThreshold !== undefined ? cfg.scorer.entryThreshold : 60;
 

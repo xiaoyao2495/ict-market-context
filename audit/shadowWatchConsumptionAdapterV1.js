@@ -342,9 +342,9 @@ function mapCurrentWatchEvidence(watch) {
             sourceReactionLegAttributed: false
         } : null,
         displacementEvidence: {
-            ids: clone(watch.displacementIds || []),
+            canonicalDisplacementId: watch.canonicalDisplacementId || null,
             direction: watch.displacement && watch.displacement.direction,
-            confirmedAt: watch.displacement && watch.displacement.lastConfirmedAt,
+            confirmedAt: watch.displacement && watch.displacement.confirmedAt,
             productionTrigger: true,
             sourceSwingAttributed: false,
             sourceReactionLegAttributed: false

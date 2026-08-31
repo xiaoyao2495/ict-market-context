@@ -22,9 +22,9 @@ var thresholds = require('../config/thresholds');
  * 检测 Displacement
  * @param {Array} candles 已收盘 K 线（时间升序）
  * @param {Object} [options] { symbol, timeframe, thresholds }
- * @returns {Array} DISPLACEMENT Market Events
+ * @returns {Array} SINGLE_CANDLE raw Displacement detections
  */
-function detectDisplacement(candles, options) {
+function detectSingleCandleDisplacement(candles, options) {
     var opts = options || {};
     var cfg = (opts.thresholds || thresholds).events.displacement;
     var atrCfg = (opts.thresholds || thresholds).events.atr;
@@ -73,39 +73,25 @@ function detectDisplacement(candles, options) {
 
         if (expansionPass && directionalDeliveryPass) {
             results.push({
-                id: symbol + ':' + timeframe + ':DISPLACEMENT:' + direction + ':' + candle.openTime,
+                id: symbol + ':' + timeframe + ':RAW_DISPLACEMENT:SINGLE_CANDLE:' + direction + ':' + candle.openTime + ':' + candle.closeTime,
+                source: 'SINGLE_CANDLE_A',
                 symbol: symbol,
                 timeframe: timeframe,
-                type: 'DISPLACEMENT',
                 direction: direction,
-                occurredAt: candle.openTime,
+                formationType: 'SINGLE_CANDLE',
+                startIndex: index,
+                endIndex: index,
                 startAt: candle.openTime,
                 endAt: candle.closeTime,
                 confirmedAt: candle.closeTime,
-                candleIndex: index,
-                price: candle.close,
-                source: {
-                    candle: {
-                        open: candle.open,
-                        high: candle.high,
-                        low: candle.low,
-                        close: candle.close
-                    }
-                },
-                metadata: {
-                    body: round4(body),
-                    range: round4(range),
+                startPrice: candle.open,
+                endPrice: candle.close,
+                atr: round4(atrValue),
+                metrics: {
                     bodyRatio: round4(bodyRatio),
-                    atr: round4(atrValue),
                     rangeAtr: round4(rangeAtr),
                     bodyAtr: round4(bodyAtr),
-                    closeExtremeRatio: round4(closeExtremeRatio),
-                    rangeExpansionPass: rangeExpansionPass,
-                    bodyExpansionPass: bodyExpansionPass,
-                    bodyQualityPass: bodyQualityPass,
-                    closeProgressPass: closeProgressPass,
-                    expansionPass: expansionPass,
-                    directionalDeliveryPass: directionalDeliveryPass
+                    closeExtremeRatio: round4(closeExtremeRatio)
                 }
             });
         }
@@ -119,5 +105,5 @@ function round4(n) {
 }
 
 module.exports = {
-    detectDisplacement: detectDisplacement
+    detectSingleCandleDisplacement: detectSingleCandleDisplacement
 };

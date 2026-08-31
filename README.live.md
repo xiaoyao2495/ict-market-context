@@ -8,9 +8,9 @@
 ```
 Binance REST (5m closed)
    → live/dataSource.js（初始历史 + 轮询增量 + HTF 收盘维护）
-   → live/liveEngine.js（复用回测检测器：liquidity/MSS/DisplacementLeg/FVG/AMD + rebuildSnapshot）
-   → Opportunity tier（MSS × Leg × Near Draw，与 11D.7 同一规则）
-   → 去重（pushed.json，跨重启）
+   → live/liveEngine.js（A+C2 raw → Canonical Displacement；与 Replay 共享实现）
+   → Liquidity association → WATCH → native FVG FIRST_TOUCH
+   → 去重（canonical WATCH/FIRST_TOUCH identity，跨重启）
    → 钉钉推送（notify/dingTalk.js，加签）
 ```
 
@@ -164,16 +164,15 @@ Near Draw: 0.36% 距离（target 64513.2）
 通知: 2026-08-18 14:20 (UTC+8)（leg 锚 2026-08-18 14:05）
 ```
 
-（11L.4：`通知` = 系统首次能确认 leg 结束的时点（availableAt），`leg 锚` = 最后位移 K 收盘
-（anchorTime，仅描述 leg 本身）。11L.7：Near Draw 目标与距离为通知时点重新冻结的快照
-（非 leg anchor 时点）；历史 65% 是从通知时点之后、以通知时点快照目标统计的触达率。
+（11L.4：`通知` = 系统首次确认 canonical formation 的时点；`anchorTime` = immutable formation end。
+11L.7：Near Draw 目标与距离为通知时点重新冻结的快照；历史 65% 是从通知时点之后统计的触达率。
 2026-08-19：按用户要求移除"历史同级机会 1h 触达率约 80%"一行——消息只给当前机会事实，
 不附带统计背书。）
 
 ## 已知边界
 
-- leg 机会语义 = 共享 15min 时间窗 builder（`createWindowedLegBuilder`，Replay/Live 单一实现，
-  与 `buildOpportunities` 合并规则一致）；无 FVG 归属的 leg 不构成机会（与 Replay 身份一致）。
+- Displacement 语义 = A+C2 raw 同批重叠连通分量创建 immutable Canonical Displacement；
+  后续重叠证据只追加 provenance。WATCH 可先处于 `WATCH_NO_FVG`，FVG 不是 Displacement 门槛。
 - 快照（bias/draw）每 12 根重建一次（与回测 SNAPSHOT_INTERVAL 一致）。
 - 长期运行内存：candles 窗口随运行时间增长（每根 ~100B，1 年约 3MB/币）。
 - **重启恢复（当前实现）**：`candles.jsonl` 全量加载并重放（幂等，重启安全），

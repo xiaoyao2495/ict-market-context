@@ -285,8 +285,8 @@ function auditDrawLiquidity(ctx) {
     // delivery 方向（截至 t：最后一个 displacement 的方向）
     var lastDispDir = {};
     (ctx.displacementEvents || []).forEach(function (d) {
-        if (typeof d.candleIndex !== 'number') return;
-        lastDispDir[d.candleIndex] = d.direction;
+        if (typeof d.endIndex !== 'number') return;
+        lastDispDir[d.endIndex] = d.direction;
     });
 
     // 闭包注入 candlesCloseTimeAt（已由 isActiveAt 直接传 candles，无需全局缓存）

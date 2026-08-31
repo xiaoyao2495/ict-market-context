@@ -113,14 +113,12 @@ test('P0：displacement 关联用全局 candleIndex（tail 切片不破坏）', 
     // displacement 事件在全局 index=2（与 FVG 同根）
     var disp = {
         id: 'D1', symbol: 'BTCUSDT', timeframe: '5m', type: 'DISPLACEMENT',
-        direction: 'BULLISH', candleIndex: 2,
+        direction: 'BULLISH', startIndex: 2, endIndex: 2,
         confirmedAt: candles[2].closeTime, price: 111,
         source: {}, metadata: {}
     };
-    state.eventRegistry.add(disp);
-
     replayState.incrementalFvg(state, candles, candles[2], 2, candles[2].closeTime,
-        { tickSize: 0.1 }, state.eventRegistry.getByType('BTCUSDT', 'DISPLACEMENT'));
+        { tickSize: 0.1 }, [disp]);
 
     var f = state.fvgReg.getByDirection('BTCUSDT', 'BULLISH')[0];
     assert.strictEqual(f.displacementEventId, 'D1');
@@ -131,12 +129,11 @@ test('P0：不同根 displacement 不关联（>2 bars）', function () {
     var state = makeState(2);
     var disp = {
         id: 'D_EARLY', symbol: 'BTCUSDT', timeframe: '5m', type: 'DISPLACEMENT',
-        direction: 'BULLISH', candleIndex: -5, // 远在 2 bars 前
+        direction: 'BULLISH', startIndex: -5, endIndex: -5, // 远在 2 bars 前
         confirmedAt: candles[0].closeTime, price: 100, source: {}, metadata: {}
     };
-    state.eventRegistry.add(disp);
     replayState.incrementalFvg(state, candles, candles[2], 2, candles[2].closeTime,
-        { tickSize: 0.1 }, state.eventRegistry.getByType('BTCUSDT', 'DISPLACEMENT'));
+        { tickSize: 0.1 }, [disp]);
     var f = state.fvgReg.getByDirection('BTCUSDT', 'BULLISH')[0];
     assert.strictEqual(f.displacementEventId, null);
 });

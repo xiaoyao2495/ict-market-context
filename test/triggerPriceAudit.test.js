@@ -2,7 +2,7 @@
  * Phase 11L.7 — ICT Trigger Price Shadow Audit 测试
  *
  * 锁定语义：
- *   - OTE range = DisplacementLeg start→end（legHigh=max high / legLow=min low）
+ *   - OTE range = Canonical Displacement formation start→end
  *     BULLISH 回撤从高往低 / BEARISH 从低往高
  *   - FVG_TOUCH = 首次进入 FVG（BULLISH low<=zoneHigh）；FVG_CE = 中点
  *   - 触发扫描从 availableIndex+1 开始（无 information-availability leakage）
@@ -57,7 +57,7 @@ test('computeTriggerPrices: BULLISH OTE 从 legHigh 往下算', function () {
     var legByDispId = { 'D1': leg };
     var fvg = { id: 'F1', zoneLow: 102, zoneHigh: 106, direction: 'BULLISH', displacementEventId: 'D1' };
     var fvgById = { 'F1': fvg };
-    var item = { direction: 'BULLISH', dispId: 'D1', fvgIds: ['F1'], availableIndex: 4 };
+    var item = { direction: 'BULLISH', canonicalDisplacementId: 'D1', fvgIds: ['F1'], availableIndex: 4 };
     var p = tpa.computeTriggerPrices(item, fvgById, legByDispId, candles);
     assert.strictEqual(p.availPrice, 109);
     assert.strictEqual(p.legHigh, 110);
@@ -73,7 +73,7 @@ test('computeTriggerPrices: BEARISH OTE 从 legLow 往上算', function () {
     candles.push(mkCandle(1, 101, 101, 100, 101)); // availableAt
     var leg = { ids: ['D2'], startIndex: 0, endIndex: 0, direction: 'BEARISH' };
     var p = tpa.computeTriggerPrices(
-        { direction: 'BEARISH', dispId: 'D2', fvgIds: [], availableIndex: 1 },
+        { direction: 'BEARISH', canonicalDisplacementId: 'D2', fvgIds: [], availableIndex: 1 },
         {}, { 'D2': leg }, candles);
     assert.strictEqual(p.legHigh, 111);
     assert.strictEqual(p.legLow, 100);
@@ -98,7 +98,7 @@ test('simulateOne: 触发扫描必须从 availableIndex+1 开始（无 leakage�
     var candles = buildFixture();
     var leg = { ids: ['D1'], startIndex: 0, endIndex: 3, direction: 'BULLISH' };
     var fvg = { id: 'F1', zoneLow: 102, zoneHigh: 106, direction: 'BULLISH', displacementEventId: 'D1' };
-    var item = { direction: 'BULLISH', dispId: 'D1', fvgIds: ['F1'], availableIndex: 4, nearTarget: 116 };
+    var item = { direction: 'BULLISH', canonicalDisplacementId: 'D1', fvgIds: ['F1'], availableIndex: 4, nearTarget: 116 };
     var r = tpa.simulateOne(item, { 'F1': fvg }, { 'D1': leg }, candles);
     // availableIndex=4 → 扫描从 5 开始。index6 low104.2 触 FVG_TOUCH(106)；index7 才触 CE(104)
     var pm = r.perModel;
@@ -115,7 +115,7 @@ test('simulateOne: 触发扫描必须从 availableIndex+1 开始（无 leakage�
 
 test('simulateOne: availableIndex 越界（无可验证行情）→ 返回 null', function () {
     var candles = [mkCandle(0, 100, 102, 99, 101)];
-    var item = { direction: 'BULLISH', dispId: 'D1', fvgIds: [], availableIndex: 0, nearTarget: 110 };
+    var item = { direction: 'BULLISH', canonicalDisplacementId: 'D1', fvgIds: [], availableIndex: 0, nearTarget: 110 };
     var r = tpa.simulateOne(item, {}, {}, candles);
     assert.strictEqual(r, null, 'availableIndex+1 >= candles.length');
 });
@@ -131,7 +131,7 @@ test('simulateOne: 等待期限超过 HORIZON_BARS → NO_TRIGGER', function () 
         candles.push(mkCandle(i, 108, 109, 107, 108)); // 永不回撤到 103.8
     }
     var leg = { ids: ['D1'], startIndex: 0, endIndex: 0, direction: 'BULLISH' };
-    var item = { direction: 'BULLISH', dispId: 'D1', fvgIds: [], availableIndex: 1, nearTarget: 115 };
+    var item = { direction: 'BULLISH', canonicalDisplacementId: 'D1', fvgIds: [], availableIndex: 1, nearTarget: 115 };
     var r = tpa.simulateOne(item, {}, { 'D1': leg }, candles);
     assert.strictEqual(r.perModel.OTE_62.triggered, false);
     assert.strictEqual(r.perModel.OTE_62.triggerIndex, null);
@@ -143,7 +143,7 @@ test('assess: BASELINE effectiveCapture = NearHit1h（triggerRate=1）', functio
     candles.push(mkCandle(0, 100, 110, 100, 109)); // availableAt & trigger
     candles.push(mkCandle(1, 109, 116, 108, 115)); // 触 near 116
     candles.push(mkCandle(2, 115, 117, 114, 116));
-    var item = { direction: 'BULLISH', dispId: 'D1', fvgIds: [], availableIndex: 0, nearTarget: 116, tier: 'HIGH_QUALITY', hasLeg: true };
+    var item = { direction: 'BULLISH', canonicalDisplacementId: 'D1', fvgIds: [], availableIndex: 0, nearTarget: 116, tier: 'HIGH_QUALITY', hasDisplacement: true };
     var leg = { ids: ['D1'], startIndex: 0, endIndex: 0, direction: 'BULLISH' };
     var results = tpa.simulateAll([item], [], { 'D1': leg }, candles);
     assert.strictEqual(results.length, 1);
@@ -164,7 +164,7 @@ test('assess: NO_TRIGGER 但 near 命中 → noTriggerButNearHit 计入', functi
     var candles = [];
     candles.push(mkCandle(0, 100, 110, 100, 109));
     for (var i = 1; i < 10; i++) candles.push(mkCandle(i, 109, 116, 108, 115)); // 触 near 115 但不回撤
-    var item = { direction: 'BULLISH', dispId: 'D1', fvgIds: [], availableIndex: 0, nearTarget: 115, tier: 'HIGH_QUALITY', hasLeg: true };
+    var item = { direction: 'BULLISH', canonicalDisplacementId: 'D1', fvgIds: [], availableIndex: 0, nearTarget: 115, tier: 'HIGH_QUALITY', hasDisplacement: true };
     var leg = { ids: ['D1'], startIndex: 0, endIndex: 0, direction: 'BULLISH' };
     var r = tpa.simulateAll([item], [], { 'D1': leg }, candles);
     var a = tpa.assess(r, candles);
@@ -177,7 +177,7 @@ test('assess: MFE/MAE 以触发价为基准（post-trigger N+1 起算）', funct
     candles.push(mkCandle(0, 100, 100, 100, 100)); // availableAt & BASELINE trigger
     candles.push(mkCandle(1, 100, 106, 99, 105));  // post-trigger 从1起，MFE=6
     candles.push(mkCandle(2, 105, 108, 104, 107)); // MFE=8, MAE: high-max 108-100=8? 用低点 104→MAE=1
-    var item = { direction: 'BULLISH', dispId: 'D1', fvgIds: [], availableIndex: 0, nearTarget: null, tier: 'HIGH_QUALITY', hasLeg: true };
+    var item = { direction: 'BULLISH', canonicalDisplacementId: 'D1', fvgIds: [], availableIndex: 0, nearTarget: null, tier: 'HIGH_QUALITY', hasDisplacement: true };
     var leg = { ids: ['D1'], startIndex: 0, endIndex: 0, direction: 'BULLISH' };
     var r = tpa.simulateAll([item], [], { 'D1': leg }, candles);
     var a = tpa.assess(r, candles);
@@ -195,7 +195,7 @@ test('assess: 触发分布按等待根数累计（15m/30m/1h/4h）', function ()
     candles.push(mkCandle(1, 109, 109, 108, 108));
     candles.push(mkCandle(2, 108, 108, 103.5, 105));
     var leg = { ids: ['D1'], startIndex: 0, endIndex: 0, direction: 'BULLISH' };
-    var item = { direction: 'BULLISH', dispId: 'D1', fvgIds: [], availableIndex: 0, nearTarget: null, tier: 'HIGH_QUALITY', hasLeg: true };
+    var item = { direction: 'BULLISH', canonicalDisplacementId: 'D1', fvgIds: [], availableIndex: 0, nearTarget: null, tier: 'HIGH_QUALITY', hasDisplacement: true };
     var r = tpa.simulateAll([item], [], { 'D1': leg }, candles);
     assert.strictEqual(r[0].perModel.OTE_62.triggered, true);
     assert.strictEqual(r[0].perModel.OTE_62.waitBars, 2);

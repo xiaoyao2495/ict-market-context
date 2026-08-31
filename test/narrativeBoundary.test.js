@@ -844,42 +844,37 @@ test('11N：BEARISH 对称 + 未回踩事件返回 null', function () {
     assert.strictEqual(ev2, null, '价格从未触及 zone → 无事件');
 });
 
-/* ---------- Phase 11D.3：Opportunity / DisplacementLeg ---------- */
+/* ---------- Phase 11D.3：Opportunity / Canonical Displacement ---------- */
 
 var opportunity = require('../stats/opportunity');
 
-test('11D.3：同一 Displacement Leg 的多个 FVG 归为一个 Opportunity（连续同向合并）', function () {
-    // 2 个连续 BULLISH displacement（间隔 1 根 5m < 3 根窗口）+ 3 个 FVG 关联
+test('11D.3：同一 Canonical Displacement 的多个 FVG 归为一个 Opportunity', function () {
     var events = {
         DISPLACEMENT: [
-            { id: 'd1', direction: 'BULLISH', confirmedAt: 1000000, metadata: { mssEventId: 'm1' } },
-            { id: 'd2', direction: 'BULLISH', confirmedAt: 1300000, metadata: { mssEventId: null } } // 同 leg（15min 内）
-        ],
-        MSS: [{ id: 'm1', confirmedAt: 900000 }]
+            { id: 'd1', type: 'DISPLACEMENT', direction: 'BULLISH', confirmedAt: 1000000 }
+        ]
     };
     var fvgs = [
         { id: 'f1', direction: 'BULLISH', displacementEventId: 'd1', confirmedAt: 1100000 },
-        { id: 'f2', direction: 'BULLISH', displacementEventId: 'd2', confirmedAt: 1400000 },
-        { id: 'f3', direction: 'BULLISH', displacementEventId: 'd2', confirmedAt: 1500000 }
+        { id: 'f2', direction: 'BULLISH', displacementEventId: 'd1', confirmedAt: 1400000 },
+        { id: 'f3', direction: 'BULLISH', displacementEventId: 'd1', confirmedAt: 1500000 }
     ];
     var opps = opportunity.buildOpportunities('BTCUSDT', fvgs, events);
-    // d1+d2 连续同向 → 同一 leg → 同一 opportunity
     assert.strictEqual(opps.length, 1, '3 个 FVG 应归 1 个 opportunity');
     assert.strictEqual(opps[0].fvgIds.length, 3);
     assert.strictEqual(Object.prototype.hasOwnProperty.call(opps[0], 'mssId'), false);
-    assert.strictEqual(opps[0].nLegs, 1);
+    assert.strictEqual(opps[0].canonicalDisplacementId, 'd1');
     var s = opportunity.summarizeOpportunities(opps);
     assert.strictEqual(s.opportunities, 1);
     assert.strictEqual(s.totalFvgs, 3);
 });
 
-test('11D.3：间隔远的 displacement 不合并（不同 leg → 不同 opportunity）', function () {
+test('11D.3：不同 Canonical Displacement 不合并', function () {
     var events = {
         DISPLACEMENT: [
-            { id: 'd1', direction: 'BULLISH', confirmedAt: 1000000, metadata: {} },
-            { id: 'd2', direction: 'BULLISH', confirmedAt: 5000000, metadata: {} } // 40 分钟 > 15 分钟窗口
-        ],
-        MSS: []
+            { id: 'd1', type: 'DISPLACEMENT', direction: 'BULLISH', confirmedAt: 1000000 },
+            { id: 'd2', type: 'DISPLACEMENT', direction: 'BULLISH', confirmedAt: 5000000 }
+        ]
     };
     var fvgs = [
         { id: 'f1', direction: 'BULLISH', displacementEventId: 'd1', confirmedAt: 1100000 },
@@ -889,77 +884,43 @@ test('11D.3：间隔远的 displacement 不合并（不同 leg → 不同 opport
     assert.strictEqual(opps.length, 2, '间隔 40 分钟的两个 displacement 应各自成机会');
 });
 
-/* ---------- Phase 11D.5：DisplacementLeg ---------- */
-
-var displacementLeg = require('../stats/displacementLeg');
-
-test('11D.5：3 根连续同向 displacement 合并为 1 leg，价量维度与 quality 分级正确', function () {
-    // 3 根连续 BULLISH displacement（candleIndex 10/11/12），ATR 1
-    var disp = [
-        { id: 'd1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 1000000, metadata: { atr: 1, mssEventId: null } },
-        { id: 'd2', direction: 'BULLISH', candleIndex: 11, confirmedAt: 1300000, metadata: { atr: 1, mssEventId: null } },
-        { id: 'd3', direction: 'BULLISH', candleIndex: 12, confirmedAt: 1600000, metadata: { atr: 1, mssEventId: null } }
-    ];
-    // candles：连续大阳线（range 2.6 ATR，netMove 2.4 ATR）
-    var candles = [];
-    for (var i = 0; i < 30; i++) candles.push(m5(100, 101, 99, 100.5, i));
-    candles[10] = m5(100.5, 102.5, 100.4, 102.4, 10);
-    candles[11] = m5(102.4, 104.4, 102.3, 104.3, 11);
-    candles[12] = m5(104.3, 106.3, 104.2, 106.2, 12);
-    var legs = displacementLeg.buildDisplacementLegs(disp, []);
-    assert.strictEqual(legs.length, 1, '3 连续同向应合并为 1 leg');
-    assert.strictEqual(legs[0].startIndex, 10);
-    assert.strictEqual(legs[0].endIndex, 12);
-    assert.strictEqual(legs[0].bars, 3);
-    displacementLeg.enrichLegWithCandles(legs[0], candles);
-    // range = 106.3 - 100.4 = 5.9 → rangeAtr 5.9；netMove = |106.2 - 100.5| = 5.7 → 5.7
-    assert.ok(legs[0].rangeAtr > 5);
-    assert.ok(legs[0].netMoveAtr > 5);
-    assert.strictEqual(displacementLeg.classifyLegQuality(legs[0]), 'EXPLOSIVE');
-    // 4 根间隔 → 不合并
-    var disp2 = [
-        { id: 'e1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 1000000, metadata: { atr: 1 } },
-        { id: 'e2', direction: 'BULLISH', candleIndex: 20, confirmedAt: 2000000, metadata: { atr: 1 } }
-    ];
-    var legs2 = displacementLeg.buildDisplacementLegs(disp2, []);
-    assert.strictEqual(legs2.length, 2, '间隔 10 根不应合并');
-});
-
 /* ---------- Phase 11D.7：Opportunity Quality Tier ---------- */
 
 var opportunityQuality = require('../stats/opportunityQuality');
 
-test('11D.7：tier 只由 leg、near draw 与 conflict 分层', function () {
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'EXPLOSIVE', nearDrawAvailable: true }), 'HIGH_QUALITY');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'STRONG', nearDrawAvailable: true }), 'HIGH_QUALITY');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'NORMAL', nearDrawAvailable: true }), 'WATCH');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'WEAK', nearDrawAvailable: true }), 'LOW_QUALITY');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'EXPLOSIVE', nearDrawAvailable: false }), 'LOW_QUALITY');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'EXPLOSIVE', nearDrawAvailable: true, directionConflict: true }), 'LOW_QUALITY');
+test('11D.7：tier 只由 canonical delivery、near draw 与 conflict 分层', function () {
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ deliveryQuality: 'EXPLOSIVE', nearDrawAvailable: true }), 'HIGH_QUALITY');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ deliveryQuality: 'STRONG', nearDrawAvailable: true }), 'HIGH_QUALITY');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ deliveryQuality: 'NORMAL', nearDrawAvailable: true }), 'WATCH');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ deliveryQuality: 'WEAK', nearDrawAvailable: true }), 'LOW_QUALITY');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ deliveryQuality: 'EXPLOSIVE', nearDrawAvailable: false }), 'LOW_QUALITY');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ deliveryQuality: 'EXPLOSIVE', nearDrawAvailable: true, directionConflict: true }), 'LOW_QUALITY');
 });
 
-test('11D.7：buildTierIndex 挂档 —— leg endIndex 取 near target，tier 判定正确', function () {
+test('11D.7：buildTierIndex 挂档 —— canonical endIndex 取 near target，tier 判定正确', function () {
     var fvgs = [
         { id: 'f1', direction: 'BULLISH', displacementEventId: 'd1' },
         { id: 'f2', direction: 'BULLISH', displacementEventId: 'd2' }
     ];
     var opps = [
-        { id: 'm1', direction: 'BULLISH', fvgIds: ['f1'] },
-        { id: 'm2', direction: 'BULLISH', fvgIds: ['f2'] }
+        { id: 'm1', direction: 'BULLISH', canonicalDisplacementId: 'd1', fvgIds: ['f1'] },
+        { id: 'm2', direction: 'BULLISH', canonicalDisplacementId: 'd2', fvgIds: ['f2'] }
     ];
-    var legByDispId = {
-        d1: { quality: 'EXPLOSIVE', mssQuality: 'PROTECTED_SWING', endIndex: 10 },
-        d2: { quality: 'WEAK', mssQuality: 'INTERNAL', endIndex: 15 }
+    var candles = [];
+    for (var i = 0; i < 20; i++) candles.push(m5(100, 101, 99, 100.5, i));
+    var displacementById = {
+        d1: { id:'d1', type:'DISPLACEMENT', direction:'BULLISH', startIndex:10, endIndex:10, startPrice:99, endPrice:101, atr:1, confirmedAt:candles[10].closeTime },
+        d2: { id:'d2', type:'DISPLACEMENT', direction:'BULLISH', startIndex:15, endIndex:15, startPrice:100, endPrice:100.5, atr:10, confirmedAt:candles[15].closeTime }
     };
     var drawTrace = [];
     drawTrace[10] = { bslNear: 105, bslMacro: 110, sslNear: null, sslMacro: null };
     drawTrace[15] = { bslNear: null, bslMacro: null, sslNear: null, sslMacro: null };
-    var items = opportunityQuality.buildTierIndex(opps, fvgs, legByDispId, drawTrace);
+    var items = opportunityQuality.buildTierIndex(opps, fvgs, displacementById, drawTrace, candles);
     assert.strictEqual(items.length, 2);
     assert.strictEqual(items[0].tier, 'HIGH_QUALITY');
     assert.strictEqual(items[0].anchorIndex, 10);
     assert.strictEqual(items[0].nearTarget, 105, 'drawTrace[10].bslNear');
-    assert.strictEqual(items[1].tier, 'LOW_QUALITY', 'WEAK leg + 无 near draw');
+    assert.strictEqual(items[1].tier, 'LOW_QUALITY', 'WEAK delivery + 无 near draw');
     assert.strictEqual(items[1].nearTarget, null);
 });
 
@@ -975,11 +936,11 @@ test('11D.7：validateTiers —— 1h 方向 hit / nearHit 聚合正确（锚 = 
     for (var j = 0; j < 40; j++) candlesB.push(m5(100, 101, 99, 100.5, j));
     for (var m = 21; m <= 32; m++) candlesB[m] = m5(100.3, 100.5, 97.8, 98.0, m);
     var itemsA = [
-        { id: 'a', direction: 'BULLISH', tier: 'HIGH_QUALITY', anchorIndex: 10, nearTarget: 105, hasLeg: true },
-        { id: 'c', direction: 'BULLISH', tier: 'LOW_QUALITY', anchorIndex: null, nearTarget: null, hasLeg: false }
+        { id: 'a', direction: 'BULLISH', tier: 'HIGH_QUALITY', anchorIndex: 10, nearTarget: 105, hasDisplacement: true },
+        { id: 'c', direction: 'BULLISH', tier: 'LOW_QUALITY', anchorIndex: null, nearTarget: null, hasDisplacement: false }
     ];
     var itemsB = [
-        { id: 'b', direction: 'BULLISH', tier: 'WATCH', anchorIndex: 20, nearTarget: 102, hasLeg: true }
+        { id: 'b', direction: 'BULLISH', tier: 'WATCH', anchorIndex: 20, nearTarget: 102, hasDisplacement: true }
     ];
     var aggA = opportunityQuality.validateTiers(itemsA, candlesA, 12);
     assert.strictEqual(aggA.HIGH_QUALITY.n, 1);
@@ -1005,38 +966,34 @@ test('11D.8：buildAlerts —— 同一 Opportunity 只通知一次，时间升�
         { id: 'f3', direction: 'BEARISH', displacementEventId: 'd2', zoneLow: 101.0, zoneHigh: 101.5 }
     ];
     var opps = [
-        { id: 'm1', direction: 'BULLISH', fvgIds: ['f1', 'f2'], createdAt: 1000000, lastAt: 1400000 },
-        { id: 'm2', direction: 'BEARISH', fvgIds: ['f3'], createdAt: 2000000, lastAt: 2200000 }
+        { id: 'm1', direction: 'BULLISH', canonicalDisplacementId:'d1', fvgIds: ['f1', 'f2'], createdAt: 1000000, lastAt: 1400000 },
+        { id: 'm2', direction: 'BEARISH', canonicalDisplacementId:'d2', fvgIds: ['f3'], createdAt: 2000000, lastAt: 2200000 }
     ];
-    var legByDispId = {
-        d1: { quality: 'EXPLOSIVE', mssQuality: 'PROTECTED_SWING', endIndex: 20, direction: 'BULLISH', ids: ['d1'] },
-        d2: { quality: 'NORMAL', mssQuality: 'INTERNAL', endIndex: 30, direction: 'BEARISH', ids: ['d2'] }
+    var displacementById = {
+        d1: { id:'d1', type:'DISPLACEMENT', startIndex:15, endIndex:20, startAt:candles[15].openTime, endAt:candles[20].closeTime, confirmedAt:candles[20].closeTime, direction:'BULLISH', startPrice:99, endPrice:101, atr:0.5 },
+        d2: { id:'d2', type:'DISPLACEMENT', startIndex:25, endIndex:30, startAt:candles[25].openTime, endAt:candles[30].closeTime, confirmedAt:candles[30].closeTime, direction:'BEARISH', startPrice:101, endPrice:99, atr:0.5 }
     };
     var drawTrace = [];
     drawTrace[20] = { bslNear: 105, bslMacro: 110, sslNear: null, sslMacro: null };
     drawTrace[30] = { bslNear: null, bslMacro: null, sslNear: 96, sslMacro: 94 };
     var sweeps = [
-        { side: 'SSL', price: 99.8, candleIndex: 15, confirmedAt: 6000000 },  // 同向（BULLISH）leg 前窗口内
-        { side: 'BSL', price: 102, candleIndex: 25, confirmedAt: 7500000 }    // BEARISH
+        { side: 'SSL', price: 99.8, candleIndex: 14, confirmedAt: candles[14].closeTime },
+        { side: 'BSL', price: 102, candleIndex: 24, confirmedAt: candles[24].closeTime }
     ];
-    legByDispId.d1.rangeAtr = 2.6;
-    legByDispId.d1.netMoveAtr = 2.1;
-    legByDispId.d1.bodyEfficiency = 0.7;
-    var alerts = alertReplay.buildAlerts(opps, fvgs, legByDispId, drawTrace, sweeps, candles);
+    var alerts = alertReplay.buildAlerts(opps, fvgs, displacementById, drawTrace, sweeps, candles);
     assert.strictEqual(alerts.length, 2, '2 个 opportunity → 2 条通知（f1+f2 合并为 1）');
     assert.strictEqual(Object.prototype.hasOwnProperty.call(alerts[0], 'mssRefPrice'), false);
-    assert.strictEqual(alerts[0].legRangeAtr, 2.6);
-    assert.strictEqual(alerts[0].legBodyEff, 0.7);
+    assert.ok(alerts[0].formationRangeAtr >= 2.5);
     assert.strictEqual(alerts[0].anchorIndex, 20, '时间升序');
     assert.strictEqual(alerts[0].tier, 'HIGH_QUALITY');
     assert.strictEqual(alerts[0].fvgCount, 2, '同 leg 2 个 FVG 只算一条通知但记录数量');
     assert.ok(alerts[0].sweep && alerts[0].sweep.side === 'SSL', 'BULLISH 关联 SSL sweep');
-    assert.strictEqual(alerts[0].sweep.barsAgo, 5, '20-15=5');
+    assert.strictEqual(alerts[0].sweep.barsAgo, 6, '20-14=6');
     assert.strictEqual(alerts[0].nearDistPct !== null, true);
     assert.ok(Math.abs(alerts[0].nearDistPct - (105 - 100.5) / 100.5 * 100) < 1e-6);
     // BEARISH：BSL sweep（25）在锚 30 前 24 根窗口内（barsAgo=5）→ 非 null
     assert.ok(alerts[1].sweep && alerts[1].sweep.side === 'BSL', 'BEARISH 关联 BSL sweep');
-    assert.strictEqual(alerts[1].sweep.barsAgo, 5);
+    assert.strictEqual(alerts[1].sweep.barsAgo, 6);
 });
 
 test('11D.8：assessAlerts —— 30m/1h nearHit 与距离分桶', function () {
@@ -1079,12 +1036,12 @@ test('11D.9：DELIVERY_ALIGNED —— HTF 全同向 + deliveryHold + continuatio
     for (var k = 13; k <= 24; k++) candles[k] = m5(103.5, 106, 103.4, 105.5, k);
     var al = {
         direction: 'BULLISH', anchorIndex: 12, anchorPrice: 103.0,
-        nearTarget: 105, dispId: 'd1', legStartIndex: 8
+        nearTarget: 105, canonicalDisplacementId: 'd1', formationStartIndex: 8
     };
-    var legByDispId = { d1: { startIndex: 8, endIndex: 12, ids: ['d1'] } };
+    var displacementById = { d1: { id:'d1', type:'DISPLACEMENT', startIndex:8, endIndex:12 } };
     var biasTrace = []; biasTrace[12] = { direction: 'BULLISH', confidence: 60 };
     var htfTrendTrace = []; htfTrendTrace[12] = { h1Up: true, h4Up: true };
-    var r = deliveryAlignment.analyzeDeliveryAlignment(al, candles, legByDispId, biasTrace, htfTrendTrace);
+    var r = deliveryAlignment.analyzeDeliveryAlignment(al, candles, displacementById, biasTrace, htfTrendTrace);
     assert.ok(r, '应分析出结果');
     assert.strictEqual(r.deliveryClass, 'DELIVERY_ALIGNED');
     assert.strictEqual(r.dirHit1h, true, '窗口结束 close 105.5 > 锚 103');
@@ -1100,12 +1057,12 @@ test('11D.9：FALSE_DIRECTIONAL —— HTF 反向 → C 类（#6/#8/#9 模式）
     for (var k = 13; k <= 24; k++) candles[k] = m5(102, 102.5, 99.0, 99.5, k);
     var al = {
         direction: 'BULLISH', anchorIndex: 12, anchorPrice: 103.2,
-        nearTarget: null, dispId: 'd1', legStartIndex: 8
+        nearTarget: null, canonicalDisplacementId: 'd1', formationStartIndex: 8
     };
-    var legByDispId = { d1: { startIndex: 8, endIndex: 12, ids: ['d1'] } };
+    var displacementById = { d1: { id:'d1', type:'DISPLACEMENT', startIndex:8, endIndex:12 } };
     var biasTrace = []; biasTrace[12] = { direction: 'BEARISH', confidence: 55 };
     var htfTrendTrace = []; htfTrendTrace[12] = { h1Up: false, h4Up: false };
-    var r = deliveryAlignment.analyzeDeliveryAlignment(al, candles, legByDispId, biasTrace, htfTrendTrace);
+    var r = deliveryAlignment.analyzeDeliveryAlignment(al, candles, displacementById, biasTrace, htfTrendTrace);
     assert.strictEqual(r.deliveryClass, 'FALSE_DIRECTIONAL', 'HTF 全反向 → 假方向');
     assert.strictEqual(r.dirHit1h, false, '净跌');
     assert.strictEqual(r.deliveryHold, false, '回撤跌破 leg 起点');
@@ -1119,12 +1076,12 @@ test('11D.9：LOCAL_VALID —— HTF 同向但无 continuation → B 类（#10 �
     for (var k = 13; k <= 24; k++) candles[k] = m5(102.8, 104.2, 102.6, 103.0, k);
     var al = {
         direction: 'BULLISH', anchorIndex: 12, anchorPrice: 103.2,
-        nearTarget: 103.5, dispId: 'd1', legStartIndex: 8
+        nearTarget: 103.5, canonicalDisplacementId: 'd1', formationStartIndex: 8
     };
-    var legByDispId = { d1: { startIndex: 8, endIndex: 12, ids: ['d1'] } };
+    var displacementById = { d1: { id:'d1', type:'DISPLACEMENT', startIndex:8, endIndex:12 } };
     var biasTrace = []; biasTrace[12] = { direction: 'BULLISH', confidence: 60 };
     var htfTrendTrace = []; htfTrendTrace[12] = { h1Up: true, h4Up: true };
-    var r = deliveryAlignment.analyzeDeliveryAlignment(al, candles, legByDispId, biasTrace, htfTrendTrace);
+    var r = deliveryAlignment.analyzeDeliveryAlignment(al, candles, displacementById, biasTrace, htfTrendTrace);
     assert.strictEqual(r.deliveryClass, 'LOCAL_VALID', '同向但未创新高 → 局部有效');
     assert.strictEqual(r.continuation, false);
     // 汇总
@@ -1277,72 +1234,6 @@ test('11L.7（P1）：persistence —— 中间行损坏 fail-closed 抛错', fu
     }
     assert.strictEqual(threw, true, '中间行损坏必须抛错（不静默清空）');
     fs.rmSync(dir, { recursive: true, force: true });
-});
-
-/* ---------- Phase 11L.1：共享 Windowed Leg Builder ---------- */
-
-test('11L.1：createWindowedLegBuilder —— 15min 窗合并（与 buildOpportunities 语义一致）', function () {
-    var dl = require('../stats/displacementLeg');
-    var b = dl.createWindowedLegBuilder(900000); // 15min
-    // 同向、confirmedAt 差 10min → 合并（即使 candleIndex 不相邻）
-    var r1 = b.feed({ id: 'd1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 1000000, metadata: { atr: 1 } });
-    var r2 = b.feed({ id: 'd2', direction: 'BULLISH', candleIndex: 13, confirmedAt: 1600000, metadata: { atr: 1, mssEventId: 'm1' } });
-    assert.strictEqual(r1.closed, null);
-    assert.strictEqual(r2.merged, true, '10min 差 → 同 leg');
-    assert.strictEqual(r2.opened.ids.length, 2);
-    assert.strictEqual(r2.opened.lastIndex, 13);
-    assert.strictEqual(Object.prototype.hasOwnProperty.call(r2.opened, 'mssId'), false);
-    // 反方向 → 关旧开新
-    var r3 = b.feed({ id: 'd3', direction: 'BEARISH', candleIndex: 20, confirmedAt: 1900000, metadata: { atr: 1 } });
-    assert.ok(r3.closed && r3.closed.ids.length === 2, '反向 → 关闭 2 根的 leg');
-    assert.strictEqual(r3.opened.direction, 'BEARISH');
-    // 同向但 20min 差 → 关旧开新
-    var r4 = b.feed({ id: 'd4', direction: 'BEARISH', candleIndex: 30, confirmedAt: 3100000, metadata: { atr: 1 } });
-    assert.ok(r4.closed, '20min 差 → 新 leg');
-    assert.ok(r4.closed.ids.length === 1);
-    var tail = b.close();
-    assert.ok(tail && tail.ids.length === 1);
-});
-
-test('11L.1：createWindowedLegBuilder.closeExpired —— 按时间过期关闭（Live 常驻无数据结束）', function () {
-    var dl = require('../stats/displacementLeg');
-    var b = dl.createWindowedLegBuilder(900000); // 15min
-    b.feed({ id: 'd1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 10000000, metadata: { atr: 1 } });
-    // 差 10min < 15min → 不关闭
-    assert.strictEqual(b.closeExpired(10600000), null, '10min 未到期');
-    assert.ok(b.isOpen());
-    // 差 16min >= 15min → 关闭并返回 leg
-    var closed = b.closeExpired(11600000);
-    assert.ok(closed && closed.ids.length === 1, '16min 到期关闭');
-    assert.strictEqual(closed.lastIndex, 10);
-    assert.ok(!b.isOpen());
-    // 再次调用 → null（已关闭）
-    assert.strictEqual(b.closeExpired(13000000), null);
-    // 与 feed 合并语义互补：leg 内位移后不合并窗口边界
-    var b2 = dl.createWindowedLegBuilder(900000);
-    b2.feed({ id: 'x1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 10000000, metadata: { atr: 1 } });
-    b2.feed({ id: 'x2', direction: 'BULLISH', candleIndex: 11, confirmedAt: 10600000, metadata: { atr: 1 } }); // 合并，lastConfirmedAt=10:10
-    assert.strictEqual(b2.closeExpired(11400000), null, '10:10+8min < 15min 未到期');
-    var c2 = b2.closeExpired(12500000);
-    assert.ok(c2 && c2.ids.length === 2, '10:10 + 15min = 10:25 到期关闭（2 根合并 leg）');
-});
-
-test('11L.1：buildWindowedLegIndex —— 与 Live 引擎同一实现', function () {
-    var dl = require('../stats/displacementLeg');
-    var candles = [];
-    for (var i = 0; i < 30; i++) candles.push(m5(100, 101, 99, 100.5, i));
-    candles[10] = m5(100, 102.5, 99.9, 102.2, 10);
-    candles[11] = m5(102.2, 104.5, 102.1, 104.2, 11);
-    var disp = [
-        { id: 'd1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 1000000, metadata: { atr: 1 } },
-        { id: 'd2', direction: 'BULLISH', candleIndex: 11, confirmedAt: 1300000, metadata: { atr: 1 } }
-    ];
-    var idx = dl.buildWindowedLegIndex(disp, candles);
-    assert.ok(idx.d1 && idx.d2, '两个 disp 映射到同一 leg');
-    assert.strictEqual(idx.d1, idx.d2, '同一 leg 对象');
-    assert.ok(idx.d1.rangeAtr > 0, 'enrich 生效');
-    assert.ok(['STRONG', 'EXPLOSIVE', 'NORMAL'].indexOf(idx.d1.quality) !== -1);
-    assert.strictEqual(Object.prototype.hasOwnProperty.call(idx.d1, 'mssQuality'), false);
 });
 
 /* ---------- Phase 11L.2：Top 成交量 symbol ---------- */

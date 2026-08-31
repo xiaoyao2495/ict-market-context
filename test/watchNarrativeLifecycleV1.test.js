@@ -19,9 +19,8 @@ function watch(id, sweepId, direction, at, overrides) {
             id:sweepId, sourceId:'EQV3:SHARED', sourceTimeframe:'5m',
             side:bearish ? 'BSL' : 'SSL', occurredAt:at - 300, confirmedAt:at - 200
         } },
-        displacementLegId:'LEG:' + id,
-        displacementIds:['D:' + id],
-        displacement:{ direction:direction, quality:'NORMAL' },
+        canonicalDisplacementId:'D:' + id,
+        displacement:{ id:'D:' + id, type:'DISPLACEMENT', direction:direction, formationType:'SINGLE_CANDLE' },
         nativeFvg:{ id:'FVG:' + id, confirmedAt:at - 100, low:1, high:2 },
         mss:{ exists:false },
         dailyBias:{ bias:'UNKNOWN', alignment:'UNKNOWN', status:'BYPASSED' }
@@ -124,7 +123,7 @@ test('15 displacement and FVG are observation snapshots, not narrative identity'
     var run=observeAll([watch('W1','S1','BEARISH',1000), watch('W2','S1','BEARISH',2000)]);
     var obs=run.state.observationOrder.map(function(id){return run.state.observationsById[id];});
     assert.strictEqual(obs[0].narrativeId,obs[1].narrativeId);
-    assert.notStrictEqual(obs[0].displacementLegId,obs[1].displacementLegId);
+    assert.notStrictEqual(obs[0].canonicalDisplacementId,obs[1].canonicalDisplacementId);
     assert.notStrictEqual(obs[0].primaryNativeFvgId,obs[1].primaryNativeFvgId);
 });
 test('16 future-confirmed sweep cannot create narrative', function () {

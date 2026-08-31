@@ -33,16 +33,14 @@ ICT（Inner Circle Trader）市场结构驱动的**加密货币机会雷达**：
 
 检测层（回测与 Live 共用同一批检测器）
   liquidity：PDH/PDL、PWH/PWL、EQH/EQL、PMH/PML、session、cluster（incrementalLiquidity 增量 pivot）
-  events：2L/2R confirmed pivots → structuralProvenance5m（STRUCTURAL_BOS / STRUCTURAL_MSS /
-          STRUCTURAL_CONTINUATION）→ displacementDetector → eventRegistry
+  events：A SINGLE_CANDLE + C2 MULTI_CANDLE → Canonical Displacement store（与 Structure 独立）
   amd/amdState.js        Accumulation/Manipulation/Distribution/Invalidation 状态机
-  FVG（incrementalFvg，leg 归属）
+  FVG（incrementalFvg，canonical displacement 归属）
 
 机会质量层（11D 系列，纯诊断 + tier）
-  stats/displacementLeg.js   DisplacementLeg（candle→leg）；createWindowedLegBuilder = 15min 时间窗
-                             （同向 && confirmedAt 差 ≤15min 合并）；**Replay/Live 单一实现**
+  events/canonicalDisplacementStore.js  immutable core + append-only A/C2 provenance；**Replay/Live 单一实现**
   structure/structuralProvenance5m.js  5m protected-swing provenance + authoritative Structural MSS
-  stats/opportunityQuality.js classifyOpportunityTier：HIGH=MSS(PROTECTED/HTF)×Leg(STRONG/EXPLOSIVE)×NearDraw
+  stats/opportunityQuality.js classifyOpportunityTier：Canonical Delivery Quality × NearDraw
   stats/alertReplay.js       历史通知回放：availableAt 之后 N+1 统计 30m/1h Near Draw Hit + 距离分层
   stats/nearStaleness.js     checkNearConsumed（touch / close-cross mode，观察用）
 
@@ -85,7 +83,7 @@ Live 管线
 | 11T 系列 | Stop 语义审计（冻结）→ Narrative Boundary 严格化（11T.5S，657）→ 三币 180d Authoritative Run #1 | 661 |
 | 11E 系列 | 执行正确性：HTF Closure、Cancel/Confirmation Shadow、Directional Confirmation 正式化（11E.6，668） | 668 |
 | 11N | Narrative Direction Validation（dirHit 结构性弱 ~40%） | 670 |
-| 11D.2-10 | Near/Macro Draw、Opportunity/DisplacementLeg 父级、MSS Reference Quality、Tier（11D.7）、Alert Validation（11D.8，88% 起源）、Delivery Alignment（11D.9）、HTF Liquidity（11D.10，假设否证） | 683 |
+| 11D.2-10 | Near/Macro Draw、历史 Opportunity 父级、MSS Reference Quality、Tier、Alert Validation、Delivery Alignment、HTF Liquidity | 683 |
 | 11L | Live Opportunity Radar（实时提醒，Windows+钉钉） | 685 |
 | 11L.1 | Live/Replay 语义 parity（共享 windowed leg builder，HIGH 526→153 vs 153@30d） | 689 |
 | 11L.2 | Top10 成交量雷达 + Production Readiness Fix 8 项（HTF 引用/leg 过期/futures fail-closed/网络/代理/安全/warmup 30d） | 692 |
@@ -128,7 +126,7 @@ Git 历史（main）：`b1a33d9 → 45217d4(11L) → 6d30df2(11L.1) → fc759a7 
 4. **180d Authoritative Trade Expectancy**：正式 trades 样本不足（3 笔全 LOSS），不宣布 edge；样本<10 不解读
 5. **top10 模式**：fixed 验证通过后再启用（含每日 UTC 8:00 名单刷新）
 6. ~~**生产 leg.mssId 无方向匹配**~~ **已关闭（11L.9 审计，2026-08-19）**：575 HIGH 逐笔检查 leg.direction vs mss.direction → **MATCH 575 / OPPOSITE 0 / MISSING 0**。生产无方向挂载 bug；11L.8-S2 的 570 vs 575 差异来自 shadow 关联选择逻辑（associateRelatedMss 取"距 startIndex 最近"，生产取"首根 displacement 的同根第一个 MSS"，同根多 MSS 时可能不同）+ tail leg 处理，非生产 bug。审计模块 `stats/mssDirectionAudit.js` / `scripts/mssDirectionAudit.js`（6 tests）保留可复用
-7. **DisplacementLeg 只用 ATR 太粗**（11L.8 晚课程）：未来单独审计 **time efficiency / overlap / persistence / acceptance**，不和当前 Live 版本混在一起
+7. 旧 displacement delivery 聚合已由 A+C2 Canonical Displacement 生产切换取代。
 
 ## 9. 进行中方向（下一个会话从这里继续）
 
@@ -197,7 +195,7 @@ Live HIGH rules             ✅ 不动
 ```
 
 - **下一步**：Liquidity Taken 通知行推服务器上线（已 push cebf7e6..0a06e2f），真实 Live 样本继续积累
-- 挂账：leg.mssId 方向匹配（§8.6）、DisplacementLeg ATR-only 审计 time efficiency/overlap/persistence/acceptance（§8.7）
+- 旧 leg/MSS 挂账已随 Canonical Displacement 生产切换关闭。
 
 ### ✅ Phase 11L.10 结论（Liquidity Recency Audit，2026-08-19 已跑 90d）
 

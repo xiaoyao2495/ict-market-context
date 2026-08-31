@@ -17,7 +17,6 @@
  */
 var historicalLoader = require('../replay/historicalLoader');
 var replayEngine = require('../replay/replayEngine');
-var displacementLeg = require('../stats/displacementLeg');
 var opportunity = require('../stats/opportunity');
 var alertReplay = require('../stats/alertReplay');
 var alertPrioritization = require('../stats/alertPrioritization');
@@ -74,12 +73,12 @@ historicalLoader.loadAll(SYMBOL, startTime, endTime)
         }).then(function (result) {
             console.log('Replay 完成 (' + Math.round((Date.now() - t0) / 1000) + 's)');
             var candles = candles5m;
-            var legByDispId = displacementLeg.buildWindowedLegIndex(
-                result.displacementEvents || [], candles || []);
+            var displacementById = {};
+            (result.displacementEvents || []).forEach(function (d) { displacementById[d.id] = d; });
             var opps = opportunity.buildOpportunities(result.symbol, result.fvgs || [], {
                 DISPLACEMENT: result.displacementEvents || []
             });
-            var alerts = alertReplay.buildAlerts(opps, result.fvgs || [], legByDispId,
+            var alerts = alertReplay.buildAlerts(opps, result.fvgs || [], displacementById,
                 result.drawTrace || [], result.sweepEvents || [], candles || []);
             var highs = alerts.filter(function (a) { return a.tier === 'HIGH_QUALITY'; });
             var res = alertPrioritization.auditPrioritization(highs, candles);

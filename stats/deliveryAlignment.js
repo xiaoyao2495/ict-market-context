@@ -2,18 +2,17 @@
  * Phase 11D.9 — Delivery Alignment Audit
  *
  * 人工复核结论（#6/#8/#9 false-directional、#10 local-valid、#3/#5/#7 delivery-aligned）：
- *   Opportunity Quality（Leg×Near Draw → tier）≠ Direction Quality。
+ *   Opportunity Quality（Canonical Delivery × Near Draw）≠ Direction Quality。
  *   HIGH_QUALITY 实际是 HIGH_QUALITY_LOCAL_OPPORTUNITY，不是 HIGH_CONFIDENCE_DIRECTION。
  *
- * 本模块回答：当 strong DisplacementLeg → FVG → Near Draw 出现时，
+ * 本模块回答：当 strong Canonical Displacement → FVG → Near Draw 出现时，
  * 什么条件区分"主导 Delivery"（A 类）与"局部 impulse"（B/C 类）？
  *
  * 四个审计维度（用户指定优先级）：
  *   1. HTF narrative alignment —— 1h/4h 已收盘趋势方向 + bias 方向 vs 机会方向
  *   2. Sweep 层级 —— 信号前 liquidity sweep 的 timeframe（5m/15m/1h/4h+）
- *   3. leg 完成后回撤是否守住 leg 起点
- *      （deliveryHold：12 根内低点未破 leg 起点 low = 未回吐整个 leg）
- *   4. Continuation / Acceptance —— leg 后是否创 leg 新高且 close 保持（12 根）
+ *   3. formation 完成后回撤是否守住 formation 起点
+ *   4. Continuation / Acceptance —— formation 后是否创新高且 close 保持（12 根）
  *
  * 输出三分类（对齐人工 A/B/C）：
  *   DELIVERY_ALIGNED    ①HTF 同向 且 ③deliveryHold 且 ④continuation
@@ -24,15 +23,15 @@ var WINDOW_BARS = 12; // 1h
 
 /**
  * 对单个 alert 计算 alignment 维度 + 1h 方向表现。
- * @param {Object} al buildAlerts 输出（含 dispId/legStartIndex/nearTarget/anchorIndex/anchorPrice/direction）
+ * @param {Object} al buildAlerts 输出（含 canonicalDisplacementId/formationStartIndex/nearTarget/anchorIndex/anchorPrice/direction）
  * @param {Array} candles 5m candles
- * @param {Object} legByDispId dispId → leg（含 startIndex/endIndex/rangeAtr）
+ * @param {Object} displacementById canonical id → displacement
  * @param {Array} biasTrace 逐根 { direction, confidence }
  * @param {Array} htfTrendTrace 逐根 { h1Up, h4Up }
  * @returns {Object|null} { htfAlign: { bias, h1, h4, score }, sweepTf, sweepLevel,
  *                          deliveryHold, continuation, deliveryClass, dirHit1h, nearHit1h, mfe1h }
  */
-function analyzeDeliveryAlignment(al, candles, legByDispId, biasTrace, htfTrendTrace) {
+function analyzeDeliveryAlignment(al, candles, displacementById, biasTrace, htfTrendTrace) {
     var anchor = al.anchorIndex;
     if (anchor === null || anchor === undefined) return null;
     var bullish = al.direction === 'BULLISH';
@@ -57,10 +56,10 @@ function analyzeDeliveryAlignment(al, candles, legByDispId, biasTrace, htfTrendT
         sweepLevel = tfMin >= 60 ? 'HTF(1h+)' : (tfMin >= 15 ? 'MID(15m)' : '5M');
     }
 
-    // ---- 3. deliveryHold：leg 完成后 12 根内低点（BULLISH）守住 leg 起点 low ----
-    var leg = al.dispId ? (legByDispId[al.dispId] || null) : null;
+    // ---- 3. deliveryHold：formation 完成后守住 formation 起点 ----
+    var displacement = al.canonicalDisplacementId ? (displacementById[al.canonicalDisplacementId] || null) : null;
     var legStartLow = null;
-    var legStartIdx = al.legStartIndex;
+    var legStartIdx = al.formationStartIndex;
     if (legStartIdx !== null && legStartIdx !== undefined && candles[legStartIdx]) {
         legStartLow = candles[legStartIdx].low;
     }
@@ -75,7 +74,7 @@ function analyzeDeliveryAlignment(al, candles, legByDispId, biasTrace, htfTrendT
         if (c.high > maxHigh) maxHigh = c.high;
     }
     var legEndHigh = null;
-    var legEndIdx = leg ? leg.endIndex : null;
+    var legEndIdx = displacement ? displacement.endIndex : null;
     if (legEndIdx !== null && legEndIdx !== undefined && candles[legEndIdx]) {
         legEndHigh = candles[legEndIdx].high;
     }

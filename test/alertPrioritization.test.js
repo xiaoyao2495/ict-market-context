@@ -41,7 +41,7 @@ function mkAlert(id, ctx, extra) {
         id: id,
         tier: 'HIGH_QUALITY',
         direction: 'BULLISH',
-        legStartIndex: 10,
+        formationStartIndex: 10,
         anchorIndex: 14,
         availableIndex: 14,
         availableAt: 1000000 + 14 * BAR + BAR - 1,

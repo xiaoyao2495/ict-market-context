@@ -192,7 +192,7 @@ async function main() {
         },
         hashes: {
             displacementBehavior: hash(displacementBehaviors),
-            displacementIds: hash(displacements.map(function (event) { return event.id; })),
+            rawDisplacementIdsHash: hash(displacements.map(function (event) { return event.id; })),
             sweepEvents: hash(sweeps),
             fvgEvents: hash(fvgs),
             fvgBehavior: hash(fvgs.map(withoutMssLinkage)),

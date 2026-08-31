@@ -109,7 +109,7 @@ function sweepLevelOf(alert, candles, htfPool, data1d) {
 
 /**
  * 汇总：By Sweep Level 的 1h 方向表现。
- * @param {Array} rows [{ sweepLevel, deliveryClass, htfScore, htfCount, dirHit1h, nearHit1h, mfe1h, legQuality }]
+ * @param {Array} rows [{ sweepLevel, deliveryClass, htfScore, htfCount, dirHit1h, nearHit1h, mfe1h, deliveryQuality }]
  * @returns {Object} { byLevel: {...}, byLevelCombo: {...} }
  */
 function assessSweepLevels(rows) {
@@ -126,8 +126,8 @@ function assessSweepLevels(rows) {
         var lv = r.sweepLevel || 'NONE';
         var a = acc(byLevel, lv);
         a.n++; if (r.dirHit1h) a.dirHit++; if (r.nearHit1h) a.nearHit++; a.nearCnt++; a.mfeSum += r.mfe1h;
-        var legKey = (r.legQuality === 'STRONG' || r.legQuality === 'EXPLOSIVE') ? 'STRONG+' : 'NORMAL-';
-        var comboKey = lv + '|' + legKey;
+        var deliveryKey = (r.deliveryQuality === 'STRONG' || r.deliveryQuality === 'EXPLOSIVE') ? 'STRONG+' : 'NORMAL-';
+        var comboKey = lv + '|' + deliveryKey;
         var c = acc(byLevelCombo, comboKey);
         c.n++; if (r.dirHit1h) c.dirHit++;
     });

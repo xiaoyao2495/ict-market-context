@@ -36,16 +36,16 @@ function missingSweepWatch(symbol, firstCandle) {
         confirmedAt:firstCandle.closeTime - 1, relation:'BEFORE_LEG'
     };
     return {
-        id:'WATCH:' + symbol + ':BULLISH:LEG:VALID_DISPLACEMENT',
+        id:'WATCH:' + symbol + ':BULLISH:DISPLACEMENT:VALID_DISPLACEMENT',
         symbol:symbol, direction:'BULLISH', watchDirection:'WATCH_LONG',
         state:'WATCH_WAIT_FVG', createdAt:firstCandle.closeTime,
         updatedAt:firstCandle.closeTime,
-        notificationKey:'WATCH:' + symbol + ':BULLISH:LEG:VALID_DISPLACEMENT:NATIVE_FVG:VALID',
+        notificationKey:'WATCH:' + symbol + ':BULLISH:DISPLACEMENT:VALID_DISPLACEMENT:NATIVE_FVG:VALID:FIRST_TOUCH',
         liquidityTaken:{ matched:true, primary:primary, allCandidates:[primary] },
-        displacementLegId:'LEG:VALID_DISPLACEMENT',
-        displacementIds:['VALID_DISPLACEMENT'],
-        displacement:{ direction:'BULLISH', quality:'STRONG', startIndex:0, endIndex:0,
-            firstConfirmedAt:firstCandle.closeTime, lastConfirmedAt:firstCandle.closeTime },
+        canonicalDisplacementId:'VALID_DISPLACEMENT',
+        displacement:{ id:'VALID_DISPLACEMENT', type:'DISPLACEMENT', direction:'BULLISH', formationType:'SINGLE_CANDLE',
+            startIndex:0, endIndex:0, startAt:firstCandle.openTime, endAt:firstCandle.closeTime,
+            confirmedAt:firstCandle.closeTime },
         nativeFvg:{ id:'NATIVE_FVG:VALID', confirmedAt:firstCandle.closeTime,
             low:100, high:101, midpoint:100.5 },
         nativeFvgs:[], touchStatus:'UNTOUCHED',

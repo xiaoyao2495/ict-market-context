@@ -50,6 +50,7 @@ function sweep(over) {
 function leg(over) {
     return {
         startIndex: 10, endIndex: 12, lastIndex: 12,
+        startAt: 1300001, endAt: 1500001,
         firstConfirmedAt: 1300001, lastConfirmedAt: 1500001,
         direction: 'BULLISH', ids: ['d1']
     };
@@ -62,7 +63,7 @@ test('11L.8：返回结构 = { allCandidates, immediateSweep }（primarySweep �
         { id: 's1', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 6 }
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.ok(ctx);
     assert.ok(Array.isArray(ctx.allCandidates), 'allCandidates 是数组');
@@ -81,7 +82,7 @@ test('11L.8：BULLISH 只关联 SSL，忽略 BSL', function () {
         { id: 's2', side: 'BSL', price: 105, confirmedAt: 1210001, candleIndex: 4 }
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.ok(ctx);
     assert.strictEqual(ctx.immediateSweep.id, 's1', 'BSL 被过滤');
@@ -94,7 +95,7 @@ test('11L.8：BEARISH 只关联 BSL', function () {
         { id: 's2', side: 'BSL', price: 105, confirmedAt: 1210001, candleIndex: 4 }
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BEARISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BEARISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.strictEqual(ctx.immediateSweep.id, 's2');
 });
@@ -107,7 +108,7 @@ test('11L.8：sweep.confirmedAt > availableAt → 排除（无 future leakage）
         { id: 's2', side: 'SSL', price: 98, confirmedAt: 1200001, candleIndex: 4 }  // 合法
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.ok(ctx);
     assert.strictEqual(ctx.immediateSweep.id, 's2', '未来 sweep 被排除');
@@ -117,7 +118,7 @@ test('11L.8：sweep.confirmedAt > availableAt → 排除（无 future leakage）
 test('11L.8：confirmedAt 缺失（旧构造）→ fail-closed 拒绝，不猜测', function () {
     var sweeps = [{ id: 's1', side: 'SSL', price: 99, candleIndex: 3 }];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.strictEqual(ctx, null, '缺 confirmedAt 无法验证 leakage → NONE');
 });
@@ -129,7 +130,7 @@ test('11L.8：48 bars 内可关联（leg.startIndex - 48 边界恰好命中）',
         { id: 's1', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 10 - 48 } // start 10 - 48 = -38 → candleIndex -38
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps, maxLookbackBars: 48
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps, maxLookbackBars: 48
     });
     assert.ok(ctx, '恰好 48 bars 前 → 窗口内');
     assert.strictEqual(ctx.allCandidates.length, 1);
@@ -141,7 +142,7 @@ test('11L.8：49 bars 外不可关联（leg.startIndex - 49 越界）', function
         { id: 's1', side: 'SSL', price: 99, confirmedAt: 1200001, candleIndex: 10 - 49 } // -39 < -38 → 窗口外
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps, maxLookbackBars: 48
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps, maxLookbackBars: 48
     });
     assert.strictEqual(ctx, null, '49 bars 前 → 窗口外 → NONE');
 });
@@ -152,7 +153,7 @@ test('11L.8：默认 maxLookbackBars = 48（production 窗口）', function () {
         { id: 's2', side: 'SSL', price: 98, confirmedAt: 1100001, candleIndex: 10 - 49 }
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.ok(ctx);
     assert.strictEqual(ctx.allCandidates.length, 1, '默认窗口 48，49 bars 外被排除');
@@ -162,7 +163,7 @@ test('11L.8：默认 maxLookbackBars = 48（production 窗口）', function () {
 test('11L.8：sweep 在 leg.endIndex 之后 → 排除（必须与 leg 形成过程相关）', function () {
     var sweeps = [{ id: 's1', side: 'SSL', price: 99, confirmedAt: 1600001, candleIndex: 13 }]; // endIndex 12 之后
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.strictEqual(ctx, null);
 });
@@ -175,7 +176,7 @@ test('11L.8：immediateSweep = 距离 leg.startIndex 最近', function () {
         { id: 'near', side: 'SSL', price: 99, confirmedAt: 1250001, candleIndex: 8 }  // 距 start 10 有 2 → 最近
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.strictEqual(ctx.immediateSweep.id, 'near', '距离最近者胜');
     assert.strictEqual(ctx.allCandidates.length, 2, 'allCandidates 保留全部');
@@ -187,7 +188,7 @@ test('11L.8：距离相同 → 取 confirmedAt 更新的', function () {
         { id: 'new', side: 'SSL', price: 99, confirmedAt: 1250001, candleIndex: 12 }  // 距 |10-12|=2，新 → 胜
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.strictEqual(ctx.immediateSweep.id, 'new', '距离相同取 confirmedAt 更新');
 });
@@ -195,7 +196,7 @@ test('11L.8：距离相同 → 取 confirmedAt 更新的', function () {
 test('11L.8：INSIDE_LEG（Leg K1 → Sweep → Leg K2/K3）允许', function () {
     var sweeps = [{ id: 's1', side: 'SSL', price: 99, confirmedAt: 1400001, candleIndex: 11 }]; // leg 内
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     assert.ok(ctx);
     assert.strictEqual(ctx.immediateSweep.relation, 'INSIDE_LEG');
@@ -204,7 +205,7 @@ test('11L.8：INSIDE_LEG（Leg K1 → Sweep → Leg K2/K3）允许', function ()
 
 test('11L.8：无候选 → null（NONE，不猜测）', function () {
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: []
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: []
     });
     assert.strictEqual(ctx, null);
 });
@@ -217,7 +218,7 @@ test('11L.8：sourceType 原样展示（SWING_LOW/EQL 等）；缺失 → UNKNOW
         { id: 's2', side: 'SSL', price: 98, confirmedAt: 1100001, candleIndex: 5, source: {} }
     ];
     var ctx = lp.associateSweeps({
-        direction: 'BULLISH', leg: leg(), availableAt: 2000000, sweepEvents: sweeps
+        direction: 'BULLISH', displacement: leg(), availableAt: 2000000, sweepEvents: sweeps
     });
     // allCandidates 按 confirmedAt 升序：s2(1100001) 在前、s1(1200001) 在后
     assert.strictEqual(ctx.allCandidates[1].sourceType, 'SWING_LOW');
@@ -262,21 +263,20 @@ test('11L.8：buildAlerts —— alert.sweep + liquidityContext', function () {
         { id: 'f1', direction: 'BULLISH', displacementEventId: 'd1', zoneLow: 100.2, zoneHigh: 100.8 }
     ];
     var opps = [
-        { id: 'm1', direction: 'BULLISH', fvgIds: ['f1'], createdAt: 1000000, lastAt: 1400000 }
+        { id: 'm1', direction: 'BULLISH', canonicalDisplacementId: 'd1', fvgIds: ['f1'], createdAt: 1000000, lastAt: 1400000 }
     ];
     var legByDispId = {
         d1: {
-            quality: 'EXPLOSIVE', mssQuality: 'PROTECTED_SWING',
+            id: 'd1', type: 'DISPLACEMENT', atr: 0.5, startPrice: 99, endPrice: 101,
             startIndex: 15, endIndex: 20, lastIndex: 20,
-            firstConfirmedAt: candles[15].closeTime, lastConfirmedAt: candles[20].closeTime,
-            direction: 'BULLISH', ids: ['d1'], mssId: 'm1',
-            rangeAtr: 2.6, netMoveAtr: 2.1, bodyEfficiency: 0.7
+            startAt: candles[15].openTime, endAt: candles[20].closeTime,
+            confirmedAt: candles[20].closeTime, direction: 'BULLISH'
         }
     };
     var drawTrace = [];
     drawTrace[20] = { bslNear: 105, bslMacro: 110, sslNear: null, sslMacro: null };
     var sweeps = [
-        { id: 'sw1', side: 'SSL', price: 98.5, liquidityType: 'EQL', timeframe: '5m', confirmedAt: candles[15].closeTime - 1, candleIndex: 14, source: { liquidityType: 'EQL' } },
+        { id: 'sw1', side: 'SSL', price: 98.5, liquidityType: 'EQL', timeframe: '5m', confirmedAt: candles[14].closeTime, candleIndex: 14, source: { liquidityType: 'EQL' } },
         { id: 'sw2', side: 'SSL', price: 97, liquidityType: 'SWING_LOW', timeframe: '5m', confirmedAt: candles[12].closeTime - 1, candleIndex: 11, source: { liquidityType: 'SWING_LOW' } }
     ];
     var mssEvents = [{ id: 'm1', source: { referencePrice: 99.0, breakPct: 0.0012 }, confirmedAt: candles[15].closeTime - 1 }];
@@ -301,13 +301,13 @@ test('11L.8：buildAlerts —— 无 sweep → liquidityContext null，HIGH 仍�
     var candles = [];
     for (var i = 0; i < 60; i++) candles.push(m5(100, 101, 99, 100.5, i));
     var fvgs = [{ id: 'f1', direction: 'BULLISH', displacementEventId: 'd1', zoneLow: 100.2, zoneHigh: 100.8 }];
-    var opps = [{ id: 'm1', direction: 'BULLISH', fvgIds: ['f1'], createdAt: 1000000, lastAt: 1400000 }];
+    var opps = [{ id: 'm1', direction: 'BULLISH', canonicalDisplacementId: 'd1', fvgIds: ['f1'], createdAt: 1000000, lastAt: 1400000 }];
     var legByDispId = {
         d1: {
-            quality: 'EXPLOSIVE', mssQuality: 'PROTECTED_SWING',
+            id: 'd1', type: 'DISPLACEMENT', atr: 0.5, startPrice: 99, endPrice: 101,
             startIndex: 15, endIndex: 20, lastIndex: 20,
-            firstConfirmedAt: candles[15].closeTime, lastConfirmedAt: candles[20].closeTime,
-            direction: 'BULLISH', ids: ['d1'], rangeAtr: 2.6, netMoveAtr: 2.1, bodyEfficiency: 0.7
+            startAt: candles[15].openTime, endAt: candles[20].closeTime,
+            confirmedAt: candles[20].closeTime, direction: 'BULLISH'
         }
     };
     var drawTrace = [];

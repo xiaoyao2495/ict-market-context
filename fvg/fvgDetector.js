@@ -61,21 +61,21 @@ function associateDisplacement(displacements, direction, candleIndex, maxBars, f
         if (d.direction !== direction) {
             return false;
         }
-        if (d.candleIndex > candleIndex) {
+        if (d.endIndex > candleIndex) {
             return false; // displacement 必须在 FVG 之前或同 candle
         }
         if (fvgConfirmedAt !== undefined && d.confirmedAt > fvgConfirmedAt) {
             return false; // 防未来数据：displacement 必须已确认
         }
-        return candleIndex - d.candleIndex <= maxBars;
+        return candleIndex - d.endIndex <= maxBars;
     });
     if (candidates.length === 0) {
         return null;
     }
     // 同 candle 优先，其次最近
     candidates.sort(function (a, b) {
-        var da = candleIndex - a.candleIndex;
-        var db = candleIndex - b.candleIndex;
+        var da = candleIndex - a.endIndex;
+        var db = candleIndex - b.endIndex;
         if (da !== db) {
             return da - db;
         }
@@ -84,7 +84,7 @@ function associateDisplacement(displacements, direction, candleIndex, maxBars, f
     var best = candidates[0];
     return {
         event: best,
-        barsAway: candleIndex - best.candleIndex
+        barsAway: candleIndex - best.endIndex
     };
 }
 

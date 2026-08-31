@@ -56,24 +56,24 @@ function distBucketOf(pct) {
  * 构建通知列表（按真实时间顺序 = anchorIndex 升序）。
  * @param {Array} opportunities buildOpportunities 输出
  * @param {Array} fvgs 全部 FVG（含 displacementEventId / zoneLow / zoneHigh）
- * @param {Object} legByDispId dispId → { quality, endIndex, direction, rangeAtr, netMoveAtr, bodyEfficiency }
+ * @param {Object} displacementById canonical id → displacement
  * @param {Array} drawTrace 逐根 { bslNear, bslMacro, sslNear, sslMacro }
  * @param {Array} sweepEvents LIQUIDITY_SWEEP 事件（leg 前窗口内同向最近一个）
  * @param {Array} candles 5m candles（取时间/价格）
- * @returns {Array} alerts [{ id, tier, direction, legQuality, anchorIndex, anchorTime,
+ * @returns {Array} alerts [{ id, tier, direction, deliveryQuality, anchorIndex, anchorTime,
  *                           anchorPrice, nearTarget, nearDistPct, fvgCount, fvgIds,
- *                           legRangeAtr, legNetMoveAtr, legBodyEff,
+ *                           formationRangeAtr, formationNetMoveAtr, formationBodyEfficiency,
  *                           availableIndex, availableAt, closeReason,
  *                           notificationPrice, notificationNearTarget, notificationNearDistPct,
  *                           sweep: { price, side, barsAgo } | null }]
  */
-function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, candles) {
-    var items = opportunityQuality.buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles);
+function buildAlerts(opportunities, fvgs, displacementById, drawTrace, sweepEvents, candles) {
+    var items = opportunityQuality.buildTierIndex(opportunities, fvgs, displacementById, drawTrace, candles);
     var alerts = [];
     var fvgById = {};
     (fvgs || []).forEach(function (f) { fvgById[f.id] = f; });
     items.forEach(function (it) {
-        if (!it.hasLeg || it.anchorIndex === null || it.anchorIndex === undefined) return;
+        if (!it.hasDisplacement || it.anchorIndex === null || it.anchorIndex === undefined) return;
         var anchor = candles[it.anchorIndex];
         if (!anchor) return;
         // 11L.4：通知可用时点（availableIndex 优先；旧调用无该字段回退 anchorIndex）
@@ -95,19 +95,18 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
         var nearDistPct = it.nearTarget !== null && it.nearTarget !== undefined && anchorPrice > 0
             ? Math.abs(it.nearTarget - anchorPrice) / anchorPrice * 100
             : null;
-        // 人工核对辅助：leg 价量维度。
-        var legObj = it.dispId ? (legByDispId[it.dispId] || null) : null;
+        var displacement = it.displacement;
         // Phase 11L.8：Liquidity Provenance（Live/Replay 同一关联函数）。
         //   LONG → 只关联 SSL；SHORT → 只关联 BSL；sweep.confirmedAt <= availableAt（无 future leakage）；
         //   窗口 = leg.startIndex - maxLookbackBars → leg.endIndex（sweep 允许在 leg 内）。
         //   无法可靠关联 → null（通知显示 NONE，不猜测）。
         //   sweeps[] 记录窗口内全部候选（含 barsBeforeLegStart / relation）→ 诊断看真实分布定正式窗口。
         var prov = null;
-        if (legObj) {
+        if (displacement) {
             var availTime = availCandle ? availCandle.closeTime : anchor.closeTime;
             prov = liquidityProvenance.associateSweeps({
                 direction: it.direction,
-                leg: legObj,
+                displacement: displacement,
                 availableAt: availTime,
                 sweepEvents: sweepEvents,
                 maxLookbackBars: null // 使用 thresholds.events.sweepProvenance.maxLookbackBars（当前 48）
@@ -135,14 +134,14 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
             id: it.id,
             tier: it.tier,
             direction: it.direction,
-            legQuality: it.legQuality,
+            deliveryQuality: it.deliveryQuality,
             anchorIndex: it.anchorIndex,
             anchorTime: anchor.closeTime,
             anchorPrice: anchorPrice,
             // 11L.4：真实通知时点（系统首次能确认 leg 结束）
             availableIndex: availIdx,
             availableAt: availCandle ? availCandle.closeTime : (it.availableAt !== undefined ? it.availableAt : anchor.closeTime),
-            closeReason: it.closeReason || (legObj ? (legObj.closeReason || 'timeout') : 'timeout'),
+            closeReason: 'canonical-confirmation',
             // 11L.5（P0-2）：通知前 near 已被价格消费（Live 将 STALE_NEAR_SUPPRESSED）
             staleNear: staleNear,
             staleTouchIndex: staleTouchIndex,
@@ -158,11 +157,11 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
             sweep: sweep,
             // Phase 11L.8：Liquidity Provenance（allCandidates 全候选 + immediateSweep 通知展示）
             liquidityContext: prov,
-            dispId: it.dispId,
-            legStartIndex: legObj ? legObj.startIndex : null,
-            legRangeAtr: legObj ? legObj.rangeAtr : null,
-            legNetMoveAtr: legObj ? legObj.netMoveAtr : null,
-            legBodyEff: legObj ? legObj.bodyEfficiency : null
+            canonicalDisplacementId: displacement ? displacement.id : null,
+            formationStartIndex: displacement ? displacement.startIndex : null,
+            formationRangeAtr: it.formationRangeAtr,
+            formationNetMoveAtr: it.formationNetMoveAtr,
+            formationBodyEfficiency: it.formationBodyEfficiency
         });
     });
     alerts.sort(function (a, b) { return a.anchorIndex - b.anchorIndex; });

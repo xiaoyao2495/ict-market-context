@@ -62,7 +62,7 @@ test('11L.10：IMMEDIATE_REJECTION（sweep 后第一根 reclaim 且无 re-cross�
     candles[6] = m5(98.5, 100.2, 98.4, 99.5, 6);
     for (var j = 7; j < 12; j++) candles[j] = m5(99.5, 100.8, 99.1, 100.3, j);
     var alert = {
-        direction: 'BULLISH', legStartIndex: 12,
+        direction: 'BULLISH', formationStartIndex: 12,
         liquidityContext: { immediateSweep: { candleIndex: 5, sourcePrice: 99 } }
     };
     assert.strictEqual(lra.classifyPostSweepBehavior(alert, candles), 'IMMEDIATE_REJECTION');
@@ -74,7 +74,7 @@ test('11L.10：RE_CROSS（sweep 后价格又插回 sweep 价下方）', function
     candles[6] = m5(98.5, 100.2, 98.4, 99.5, 6);
     candles[9] = m5(100.0, 100.1, 98.5, 99.8, 9);
     var alert = {
-        direction: 'BULLISH', legStartIndex: 12,
+        direction: 'BULLISH', formationStartIndex: 12,
         liquidityContext: { immediateSweep: { candleIndex: 5, sourcePrice: 99 } }
     };
     assert.strictEqual(lra.classifyPostSweepBehavior(alert, candles), 'RE_CROSS');
@@ -83,7 +83,7 @@ test('11L.10：RE_CROSS（sweep 后价格又插回 sweep 价下方）', function
 test('11L.10：ADJACENT（sweep 紧邻/在 leg 内）', function () {
     var candles = mkCandles();
     var alert = {
-        direction: 'BULLISH', legStartIndex: 10,
+        direction: 'BULLISH', formationStartIndex: 10,
         liquidityContext: { immediateSweep: { candleIndex: 9, sourcePrice: 99 } } // s+1 = 10 >= legStart
     };
     assert.strictEqual(lra.classifyPostSweepBehavior(alert, candles), 'ADJACENT');
@@ -95,7 +95,7 @@ test('11L.10：DELAYED_RECLAIM（未立即 reclaim 但无 re-cross）', function
     candles[6] = m5(98.5, 100.2, 98.4, 99.2, 6);
     for (var j = 7; j < 12; j++) candles[j] = m5(99.7, 100.8, 99.6, 100.3, j);
     var alert = {
-        direction: 'BULLISH', legStartIndex: 12,
+        direction: 'BULLISH', formationStartIndex: 12,
         liquidityContext: { immediateSweep: { candleIndex: 5, sourcePrice: 99.6 } }
     };
     assert.strictEqual(lra.classifyPostSweepBehavior(alert, candles), 'DELAYED_RECLAIM');
@@ -107,7 +107,7 @@ test('11L.10：BEARISH 对称（BSL sweep @ p=101）', function () {
     candles[6] = m5(101.5, 102.0, 100.2, 100.5, 6);
     for (var j = 7; j < 12; j++) candles[j] = m5(100.4, 100.9, 99.8, 99.9, j);
     var alert = {
-        direction: 'BEARISH', legStartIndex: 12,
+        direction: 'BEARISH', formationStartIndex: 12,
         liquidityContext: { immediateSweep: { candleIndex: 5, sourcePrice: 101 } }
     };
     assert.strictEqual(lra.classifyPostSweepBehavior(alert, candles), 'IMMEDIATE_REJECTION');
@@ -118,9 +118,9 @@ test('11L.10：BEARISH 对称（BSL sweep @ p=101）', function () {
 
 test('11L.10：NO_SWEEP / UNKNOWN', function () {
     var candles = mkCandles();
-    var alertNo = { direction: 'BULLISH', legStartIndex: 12, liquidityContext: null };
+    var alertNo = { direction: 'BULLISH', formationStartIndex: 12, liquidityContext: null };
     assert.strictEqual(lra.classifyPostSweepBehavior(alertNo, candles), 'NO_SWEEP');
-    var alertBad = { direction: 'BULLISH', legStartIndex: 12, liquidityContext: { immediateSweep: {} } };
+    var alertBad = { direction: 'BULLISH', formationStartIndex: 12, liquidityContext: { immediateSweep: {} } };
     assert.strictEqual(lra.classifyPostSweepBehavior(alertBad, candles), 'UNKNOWN');
 });
 
@@ -132,19 +132,19 @@ test('11L.10：交叉表 + behavior 分布（只统计 HIGH）', function () {
     candles[21] = m5(100.5, 105.5, 100.4, 105.2, 21);
     var alerts = [
         // HIGH + SWING + IMMEDIATE_REJECTION（sweep idx 5, legStart 12, barsBeforeLegStart 7）
-        { id: 'a', tier: 'HIGH_QUALITY', direction: 'BULLISH', legStartIndex: 12,
+        { id: 'a', tier: 'HIGH_QUALITY', direction: 'BULLISH', formationStartIndex: 12,
           availableIndex: 19, anchorIndex: 19, notificationPrice: 100.5, notificationNearTarget: 105, nearTarget: 105,
           liquidityContext: { immediateSweep: { candleIndex: 5, sourcePrice: 99, sourceType: 'SWING_LOW', barsBeforeLegStart: 7 } } },
         // HIGH + SIGNIFICANT + IMMEDIATE_REJECTION（EQL）
-        { id: 'b', tier: 'HIGH_QUALITY', direction: 'BULLISH', legStartIndex: 12,
+        { id: 'b', tier: 'HIGH_QUALITY', direction: 'BULLISH', formationStartIndex: 12,
           availableIndex: 19, anchorIndex: 19, notificationPrice: 100.5, notificationNearTarget: 105, nearTarget: 105,
           liquidityContext: { immediateSweep: { candleIndex: 5, sourcePrice: 99, sourceType: 'EQL', barsBeforeLegStart: 2 } } },
         // HIGH + NONE
-        { id: 'c', tier: 'HIGH_QUALITY', direction: 'BULLISH', legStartIndex: 12,
+        { id: 'c', tier: 'HIGH_QUALITY', direction: 'BULLISH', formationStartIndex: 12,
           availableIndex: 19, anchorIndex: 19, notificationPrice: 100.5, notificationNearTarget: 105, nearTarget: 105,
           liquidityContext: null },
         // 非 HIGH 不应统计
-        { id: 'd', tier: 'WATCH', direction: 'BULLISH', legStartIndex: 12,
+        { id: 'd', tier: 'WATCH', direction: 'BULLISH', formationStartIndex: 12,
           availableIndex: 19, anchorIndex: 19, notificationPrice: 100.5, notificationNearTarget: 105, nearTarget: 105,
           liquidityContext: { immediateSweep: { candleIndex: 5, sourcePrice: 99, sourceType: 'SWING_LOW', barsBeforeLegStart: 2 } } }
     ];

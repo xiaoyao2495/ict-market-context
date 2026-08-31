@@ -25,7 +25,7 @@ function barMsOf(timeframe) {
 /**
  * 检测 Distribution
  * @param {Object} input
- *   { accumulation, manipulation, eventRegistry, draw, timeframe, evaluationTime, symbol }
+ *   { accumulation, manipulation, displacementStore, draw, timeframe, evaluationTime, symbol }
  * @param {Object} [options] { thresholds }
  * @returns {Object|null} 最佳 distribution
  */
@@ -41,10 +41,9 @@ function detectDistribution(input, options) {
     var timeframe = input.timeframe || '5m';
     var evaluationTime = input.evaluationTime;
     var barMs = barMsOf(timeframe);
-    var reg = input.eventRegistry;
     var direction = manip.direction; // 'BULLISH' | 'BEARISH'
 
-    var dispEvents = reg ? reg.getByType(symbol, 'DISPLACEMENT') : [];
+    var dispEvents = input.displacementStore ? input.displacementStore.getAsOf(evaluationTime, symbol) : [];
     var candidates = [];
 
     dispEvents.forEach(function (dispEv) {
@@ -85,7 +84,7 @@ function detectDistribution(input, options) {
  * bullish → displacement close > rangeHigh；bearish → close < rangeLow
  */
 function rangeEscape(acc, direction, dispEv) {
-    var close = dispEv.source.candle ? dispEv.source.candle.close : dispEv.price;
+    var close = dispEv.endPrice;
     if (direction === 'BULLISH') {
         return close > acc.rangeHigh;
     }

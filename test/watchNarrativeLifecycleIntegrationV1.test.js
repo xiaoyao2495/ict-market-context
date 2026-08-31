@@ -30,8 +30,8 @@ function toWatch(row, symbol) {
             occurredAt:row.sweepOccurredAt, confirmedAt:row.sweepConfirmedAt,
             relation:row.primarySweepTiming
         } },
-        displacementLegId:row.legId,
-        displacement:{ direction:row.legDirection, quality:row.legStrength, bars:row.legBars },
+        canonicalDisplacementId:row.legId,
+        displacement:{ id:row.legId, type:'DISPLACEMENT', direction:row.legDirection, quality:row.legStrength, bars:row.legBars },
         mss:{ exists:row.mssExists, referenceRole:row.mssReferenceRole, protectedBreak:row.mssProtectedBreak },
         nativeFvg:{ id:row.fvgId, confirmedAt:row.fvgFormedAt },
         touchStatus:'FIRST_TOUCH'
@@ -43,7 +43,7 @@ function counts(watches) {
     return {
         RAW_SWEEP_EVENT_COUNT:unique(function(w){return w.liquidityTaken.primary.id;}),
         LIQUIDITY_EVENT_COUNT:unique(function(w){return w.liquidityTaken.primary.sourceId;}),
-        DISPLACEMENT_LEG_COUNT:unique(function(w){return w.displacementLegId;}),
+        CANONICAL_DISPLACEMENT_COUNT:unique(function(w){return w.canonicalDisplacementId;}),
         MSS_EVENT_COUNT:watches.filter(function(w){return w.mss.exists;}).length,
         FVG_COUNT:unique(function(w){return w.nativeFvg.id;}),
         WATCH_COUNT:unique(function(w){return w.id;}),

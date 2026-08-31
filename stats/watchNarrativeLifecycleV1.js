@@ -133,8 +133,7 @@ function supersedeActive(state, activeId, at, observationId, byNarrativeId) {
 
 function compactDisplacement(watch) {
     return clone({
-        displacementLegId: watch && watch.displacementLegId || null,
-        displacementIds: watch && watch.displacementIds || [],
+        canonicalDisplacementId: watch && watch.canonicalDisplacementId || null,
         displacement: watch && watch.displacement || null
     });
 }
@@ -197,7 +196,7 @@ function observeFirstTouch(state, watch) {
         watchId: watch.id,
         notificationKey: watch.notificationKey,
         direction: watch.direction,
-        displacementLegId: watch.displacementLegId || null,
+        canonicalDisplacementId: watch.canonicalDisplacementId || null,
         primaryNativeFvgId: watch.nativeFvg.id,
         observedAt: watch.firstTouchAt,
         type: type,

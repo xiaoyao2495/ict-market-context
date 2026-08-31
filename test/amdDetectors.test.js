@@ -1,7 +1,7 @@
-var assert=require('assert');var dist=require('../amd/distributionDetector');var Registry=require('../events/eventRegistry');var passed=0,failed=0,BAR=300000;
+var assert=require('assert');var dist=require('../amd/distributionDetector');var passed=0,failed=0,BAR=300000;
 function test(n,f){try{f();passed++;console.log('PASS  '+n);}catch(e){failed++;console.log('FAIL  '+n+' -> '+e.message);}}
-function input(direction,disps,now){var r=Registry.createEventRegistry();disps.forEach(function(d){r.add(d);});return{symbol:'X',timeframe:'5m',evaluationTime:now,accumulation:{rangeHigh:110,rangeLow:90},manipulation:{direction:direction,confirmedAt:1000},eventRegistry:r,draw:null};}
-function d(id,dir,t,close){return{id:id,symbol:'X',type:'DISPLACEMENT',direction:dir,confirmedAt:t,price:close,source:{candle:{close:close}}};}
+function input(direction,disps,now){return{symbol:'X',timeframe:'5m',evaluationTime:now,accumulation:{rangeHigh:110,rangeLow:90},manipulation:{direction:direction,confirmedAt:1000},displacementStore:{getAsOf:function(t,symbol){return disps.filter(function(d){return d.confirmedAt<=t&&(!symbol||d.symbol===symbol);});}},draw:null};}
+function d(id,dir,t,close){return{id:id,symbol:'X',type:'DISPLACEMENT',direction:dir,confirmedAt:t,endPrice:close};}
 test('matching price-only displacement confirms distribution',function(){var r=dist.detectDistribution(input('BULLISH',[d('d','BULLISH',1000+BAR,112)],1000+BAR));assert.equal(r.state,'DISTRIBUTION_CONFIRMED');assert.equal(r.displacementEvent.id,'d');});
 test('opposite displacement cannot confirm',function(){assert.equal(dist.detectDistribution(input('BULLISH',[d('d','BEARISH',1000+BAR,80)],1000+BAR)),null);});
 test('future displacement cannot confirm',function(){assert.equal(dist.detectDistribution(input('BULLISH',[d('d','BULLISH',9999999,112)],5000)),null);});

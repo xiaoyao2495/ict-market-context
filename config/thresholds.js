@@ -251,7 +251,14 @@ module.exports = {
             bodyRatioThreshold: 0.6,
             rangeAtrThreshold: 1.2,
             bodyAtrThreshold: 0.8,
-            closeExtremeThreshold: 0.75
+            closeExtremeThreshold: 0.75,
+            multiCandle: {
+                atrPeriod: 14,
+                nVariants: [2, 3, 4, 5],
+                normalizedMoveThreshold: 1.0,
+                directionalEfficiencyThreshold: 0.70,
+                normalizedSpeedThreshold: 0.30
+            }
         },
         /**
          * Phase 11L.8 — Sweep Provenance 关联（Liquidity Taken 通知行）

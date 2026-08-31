@@ -37,6 +37,7 @@ var fvgRegistry = require('../fvg/fvgRegistry');
 var amdState = require('../amd/amdState');
 var structuralProvenance5m = require('../structure/structuralProvenance5m');
 var standardCausalSwingSegmentation = require('../structure/standardCausalSwingSegmentation');
+var canonicalDisplacementStore = require('../events/canonicalDisplacementStore');
 
 var RIGHT = 2;
 
@@ -67,7 +68,7 @@ function createReplayState(options) {
 
         // ---- 事件（持久，id 去重） ----
         eventRegistry: null, // 由调用方注入 events/eventRegistry
-        seenDispIds: {},
+        displacementStore: canonicalDisplacementStore.createCanonicalDisplacementStore(),
 
         // ---- 持久状态机 ----
         amd: amdState.createAmdState(),
@@ -235,9 +236,9 @@ function incrementalLiquidity(state, candles, index, exchangeInfo, evaluationTim
 /**
  * 每根 K 增量事件：
  * 1. lifecycle × 新 K → SWEPT → sweep 事件
- * 2. Displacement 只取新 K（candleIndex === index）的事件，id 去重
+ * 2. A/C2 raw detections canonicalize into the sole production Displacement store
  */
-function incrementalEvents(state, candle, index, evaluationTime, dispEventsAll) {
+function incrementalEvents(state, candle, index, evaluationTime, rawDisplacements) {
     var newSweeps = [];
     var registry = state.registry;
 
@@ -267,20 +268,8 @@ function incrementalEvents(state, candle, index, evaluationTime, dispEventsAll) 
         }
     }
 
-    // 2. Displacement：只取新 K 产生的（id 去重）
-    var newDisps = [];
-    var dispList = dispEventsAll || [];
-    for (var d = 0; d < dispList.length; d++) {
-        var de = dispList[d];
-        if (de.candleIndex === index && !state.seenDispIds[de.id]) {
-            state.seenDispIds[de.id] = true;
-            if (state.eventRegistry.add(de)) {
-                newDisps.push(de);
-            }
-        }
-    }
-
-    return { sweeps: newSweeps, displacements: newDisps };
+    var canonical = state.displacementStore.process(rawDisplacements || [], evaluationTime);
+    return { sweeps: newSweeps, displacements: canonical.created, displacementEvidenceUpdated: canonical.updated };
 }
 
 /**

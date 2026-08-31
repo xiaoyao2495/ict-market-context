@@ -10,7 +10,7 @@
  *     displacementDetector / amdState / rebuildSnapshot）
  *   - 内部维护全局 index 对齐的 candles 窗口（window.length === index+1，
  *     与回测 candles.slice(0, index+1) 语义完全一致）
- *   - leg 合并语义与 buildDisplacementLegs 一致（连续同向、相邻 index、最多 3 根）
+ *   - A/C2 raw detections merge only through canonical overlap semantics
  *   - tier 判定复用 classifyOpportunityTier（同一阈值）
  *   - near target 取 snapshot.draw 的 near（与 drawTrace 同源）
  *
@@ -19,9 +19,9 @@
 var replayState = require('../replay/replayState');
 var eventRegistry = require('../events/eventRegistry');
 var displacementDetector = require('../events/displacementDetector');
+var multiCandleDisplacementDetector = require('../events/multiCandleDisplacementDetector');
 var amdState = require('../amd/amdState');
 var replayEngine = require('../replay/replayEngine');
-var displacementLeg = require('../stats/displacementLeg');
 var opportunityQuality = require('../stats/opportunityQuality');
 var nearStaleness = require('../stats/nearStaleness');
 var liquidityProvenance = require('../stats/liquidityProvenance');
@@ -34,8 +34,6 @@ var sweepContextFlag = require('../config/sweepContextV1');
 var runtimeSwingContextV1 = require('../stats/runtimeSwingContextV1');
 var dailyBiasAlignment = require('../bias/dailyBiasAlignment');
 var thresholds = require('../config/thresholds');
-
-var LEG_MAX_BARS = 3;
 
 function attachWatchLiquidityEvidenceV1(candidate, context) {
     var ctx = context || {};
@@ -123,37 +121,30 @@ function createLiveEngine(data, options) {
         thresholds: cfg
     };
 
-    // 共享增量 Leg builder（Phase 11L.1：15min 时间窗 = buildOpportunities 语义，Replay/Live 单一实现）
-    var legBuilder = displacementLeg.createWindowedLegBuilder();
-
     /**
-     * Displacement-Centric Watch V1: the leg/displacement is the trigger. Only
+     * Displacement-Centric Watch V1: canonical displacement is the trigger. Only
      * after it exists do we look backward for matching sweep provenance.
      * Native FVG is calculated from each displacement's own K1/K2/K3 candles;
      * state.fvgReg is deliberately not passed to the builder.
      */
-    function emitDisplacementWatch(leg, evaluationTime) {
-        if (!leg || !leg.ids || !leg.ids.length) return null;
-        leg.endIndex = leg.lastIndex;
-        displacementLeg.enrichLegWithCandles(leg, window);
-        displacementLeg.classifyLegQuality(leg);
+    function emitDisplacementWatch(displacement, evaluationTime) {
+        if (!displacement || !displacement.id) return null;
         var dailyBias;
         try {
             dailyBias = dailyBiasProvider
-                ? dailyBiasProvider(leg.direction, evaluationTime, { displacementLegId: 'LEG:' + leg.ids[0] })
+                ? dailyBiasProvider(displacement.direction, evaluationTime, { canonicalDisplacementId: displacement.id })
                 : dailyBiasAlignment.unknownDailyBias();
         } catch (e) {
             dailyBias = dailyBiasAlignment.unknownDailyBias();
         }
         var candidate = displacementWatch.buildWatch({
             symbol: symbol,
-            leg: leg,
+            displacement: displacement,
             evaluationTime: evaluationTime,
             sweepEvents: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),
-            displacements: state.eventRegistry.getByType(symbol, 'DISPLACEMENT'),
             candles: window,
             dailyBias: dailyBias,
-            existing: watchById['WATCH:' + symbol + ':' + leg.direction + ':LEG:' + leg.ids[0]] || null
+            existing: watchById['WATCH:' + symbol + ':' + displacement.direction + ':DISPLACEMENT:' + displacement.id] || null
         });
         if (!candidate) return null;
         if (watchLiquidityEvidenceV1Enabled || sweepContextV1Enabled) {
@@ -204,7 +195,8 @@ function createLiveEngine(data, options) {
 
         return snapshotPromise.then(function () {
             // ---- 3. 增量 ATR ----
-            prevAtr = replayEngine._updateAtrIncremental(atrSeries, window, i, prevAtr, 14);
+            prevAtr = replayEngine._updateAtrIncremental(atrSeries, window, i, prevAtr,
+                cfg.events.displacement.multiCandle.atrPeriod);
 
             // ---- 4. Generic structural lifecycle + price-only Displacement ----
             var structuralStep = structuralProvenance5m.step(
@@ -213,10 +205,13 @@ function createLiveEngine(data, options) {
             structuralStep.events.forEach(function (event) {
                 state.eventRegistry.add(event);
             });
-            var newDispRaw = displacementDetector.detectDisplacement([candle], {
+            var newDispRaw = displacementDetector.detectSingleCandleDisplacement([candle], {
                 symbol: symbol, timeframe: '5m', baseIndex: i,
                 atrSeries: atrSeries, thresholds: cfg
             });
+            newDispRaw = newDispRaw.concat(multiCandleDisplacementDetector.detectAt(window, i, {
+                symbol: symbol, timeframe: '5m', atrSeries: atrSeries, thresholds: cfg
+            }));
             var newEvents = replayState.incrementalEvents(state, candle, i, evaluationTime, newDispRaw);
 
             // ---- 5. 持久 AMD ----
@@ -232,10 +227,11 @@ function createLiveEngine(data, options) {
             }, { thresholds: cfg });
 
             // ---- 6. 增量 FVG（全局 candles） ----
-            var allDisp = state.eventRegistry.getByType(symbol, 'DISPLACEMENT');
+            var allDisp = state.displacementStore.getEndingFrom(
+                Math.max(0, i - cfg.fvg.maxDisplacementBars), i, evaluationTime, symbol);
             replayState.incrementalFvg(state, window, candle, i, evaluationTime, data.exchangeInfo, allDisp);
 
-            // ---- 6.5 逐根 drawTrace（评估用 leg 完成那根的 near，与回测 drawTrace[anchor] 对齐） ----
+            // ---- 6.5 逐根 drawTrace（canonical formation end 的 near） ----
             if (!state.drawTrace) state.drawTrace = [];
             if (snapshot && snapshot.draw) {
                 state.drawTrace[i] = {
@@ -248,67 +244,38 @@ function createLiveEngine(data, options) {
                 state.drawTrace[i] = { bslNear: null, bslMacro: null, sslNear: null, sslMacro: null };
             }
 
-            // ---- 7. Leg 检测 + 机会评估（共享 builder：与 Replay 单一实现） ----
-            // anchor = leg.lastIndex 的蜡烛（leg 真正完成那根），不是当前新 displacement 根
-            // 11L.4：availableIndex = 当前推进根 index（= 系统首次能确认 leg 结束的时点）
+            // ---- 7. Canonical Displacement → WATCH / downstream opportunity ----
             var opp = null;
             (newEvents.displacements || []).forEach(function (d) {
-                var r = legBuilder.feed(d);
-                if (r.closed) {
-                    emitDisplacementWatch(r.closed, evaluationTime);
-                    var anchorCandle = window[r.closed.lastIndex];
-                    if (anchorCandle) {
-                        opp = evaluateOpportunity(r.closed, r.closed.lastIndex, anchorCandle, i) || opp;
-                    }
-                }
+                emitDisplacementWatch(d, evaluationTime);
+                opp = evaluateOpportunity(d, i) || opp;
             });
-            // Fix 2（11L.2）：每根收盘检查 leg 是否已过期（过去 15min 无同向 displacement）
-            // 避免 LATE notification / 永不评估（Live 常驻无"数据结束"）
-            var expired = legBuilder.closeExpired(evaluationTime);
-            if (expired) {
-                emitDisplacementWatch(expired, evaluationTime);
-                var anchorCandle2 = window[expired.lastIndex];
-                if (anchorCandle2) {
-                    opp = evaluateOpportunity(expired, expired.lastIndex, anchorCandle2, i) || opp;
-                }
-            }
-            // Re-evaluate the current open leg every closed candle. This is what lets K3
-            // confirm a native FVG one bar after its owning displacement K2 without any
-            // future-state backfill. No new displacement is required for that upgrade.
-            if (legBuilder.getOpen()) emitDisplacementWatch(legBuilder.getOpen(), evaluationTime);
+            // A canonical ending on the previous candle may gain its native K3 FVG now.
+            state.displacementStore.getEndingAt(i - 1, evaluationTime, symbol).forEach(function (d) {
+                if (d.endIndex === i - 1) emitDisplacementWatch(d, evaluationTime);
+            });
             return opp;
         });
     }
 
-    /**
-     * 评估已完成的 leg → 返回机会（含 tier）。去重/投递由调用方负责（Fix 3，11L.3）。
-     * @param {number} [availableIndex] 11L.4：系统首次能确认 leg 结束的根 index
-     *   （feed/closeExpired 关闭时 = 当前推进根 i；flushLeg 无上下文时回退 anchorIndex）
-     */
-    function evaluateOpportunity(leg, anchorIndex, anchorCandle, availableIndex) {
-        var oppId = 'LEG:' + leg.ids[0];
-        // 机会身份与 Replay 的 buildOpportunities 一致：只有 FVG 归属到 leg 才构成机会
-        // （buildOpportunities 遍历 fvgs → fvg.displacementEventId → leg → opp；无 FVG 的 leg 不成机会）
-        var legFvgs = state.fvgReg.getAll(symbol).filter(function (f) {
-            return f.displacementEventId && leg.ids.indexOf(f.displacementEventId) !== -1;
+    /** Canonical Displacement downstream opportunity (legacy notification path is not used). */
+    function evaluateOpportunity(displacement, availableIndex) {
+        var oppId = 'DISPLACEMENT:' + displacement.id;
+        var formationFvgs = state.fvgReg.getAll(symbol).filter(function (f) {
+            return f.displacementEventId === displacement.id;
         });
-        if (legFvgs.length === 0) return null;
-
-        // leg 价量维度（用全局窗口补全；enrich 期望 endIndex 字段）
-        leg.endIndex = leg.lastIndex;
-        if (leg.startIndex >= 0 && leg.lastIndex < window.length && window[leg.lastIndex]) {
-            displacementLeg.enrichLegWithCandles(leg, window);
-        }
-        var legQuality = displacementLeg.classifyLegQuality(leg);
-
-        // near draw（drawTrace[anchorIndex] 的 near target，与回测 drawTrace[anchor] 同源；snapshot 兜底）
+        if (formationFvgs.length === 0) return null;
+        var anchorIndex = displacement.endIndex;
+        var anchorCandle = window[anchorIndex];
+        if (!anchorCandle) return null;
+        var delivery = opportunityQuality.describeCanonicalDelivery(displacement, window);
         var nearTarget = null;
         var dt = state.drawTrace && state.drawTrace[anchorIndex] ? state.drawTrace[anchorIndex] : null;
         if (dt) {
-            nearTarget = leg.direction === 'BULLISH' ? dt.bslNear : dt.sslNear;
+            nearTarget = displacement.direction === 'BULLISH' ? dt.bslNear : dt.sslNear;
         }
         if (nearTarget === null && snapshot && snapshot.draw) {
-            nearTarget = leg.direction === 'BULLISH'
+            nearTarget = displacement.direction === 'BULLISH'
                 ? (snapshot.draw.bsl && snapshot.draw.bsl.near ? snapshot.draw.bsl.near.targetPrice : null)
                 : (snapshot.draw.ssl && snapshot.draw.ssl.near ? snapshot.draw.ssl.near.targetPrice : null);
         }
@@ -318,28 +285,16 @@ function createLiveEngine(data, options) {
             : null;
 
         var tier = opportunityQuality.classifyOpportunityTier({
-            legQuality: legQuality,
+            deliveryQuality: delivery.quality,
             nearDrawAvailable: nearTarget !== null && nearTarget !== undefined,
             directionConflict: false
         });
-
-        // 11L.4：通知可用时点（系统首次能确认 leg 结束）——
-        //   availableIndex 优先（调用方当前根）；builder timeout 场景由调用方传入；
-        //   flushLeg（无上下文）回退 leg.availableIndex / anchorIndex
-        var availIdx = availableIndex !== undefined && availableIndex !== null
-            ? availableIndex
-            : (leg.availableIndex !== undefined && leg.availableIndex !== null ? leg.availableIndex : anchorIndex);
+        var availIdx = availableIndex !== undefined && availableIndex !== null ? availableIndex : anchorIndex;
         var availCandle = window[availIdx];
-
-        // Phase 11L.7：Notification Snapshot 收口 —— 通知内容（价格/Near Draw/距离）必须在
-        // availableAt 时重新冻结（anchor→available 的 15min 内 liquidity 可能已被触及/扫掉/更近）。
-        //   notificationPrice        = availableIndex 处 close
-        //   notificationNearTarget   = drawTrace[availableIndex] 的 near（回退 anchor 冻结值）
-        //   notificationNearDistPct  = |notificationNearTarget - notificationPrice| / notificationPrice
         var dtAvail = state.drawTrace && state.drawTrace[availIdx] ? state.drawTrace[availIdx] : null;
         var notifNear = null;
         if (dtAvail) {
-            notifNear = leg.direction === 'BULLISH' ? dtAvail.bslNear : dtAvail.sslNear;
+            notifNear = displacement.direction === 'BULLISH' ? dtAvail.bslNear : dtAvail.sslNear;
         }
         if (notifNear === null || notifNear === undefined) {
             notifNear = nearTarget;
@@ -349,29 +304,26 @@ function createLiveEngine(data, options) {
             ? Math.abs(notifNear - notifPrice) / notifPrice * 100
             : null;
 
-        // FVG 结构证据数（leg 关联的 FVG）
-        var fvgCount = state.fvgReg.getAll(symbol).filter(function (f) {
-            return f.displacementEventId && leg.ids.indexOf(f.displacementEventId) !== -1;
-        }).length;
         var opp = {
             id: oppId,
             tier: tier,
-            direction: leg.direction,
-            legQuality: legQuality,
-            legRangeAtr: leg.rangeAtr,
+            direction: displacement.direction,
+            deliveryQuality: delivery.quality,
+            formationRangeAtr: delivery.rangeAtr,
+            canonicalDisplacementId: displacement.id,
             anchorIndex: anchorIndex,
             anchorTime: anchorCandle.closeTime,
             anchorPrice: anchorPrice,
             availableIndex: availIdx,
-            availableAt: availCandle ? availCandle.closeTime : (leg.availableAt !== undefined ? leg.availableAt : anchorCandle.closeTime),
-            closeReason: leg.closeReason || 'timeout',
+            availableAt: availCandle ? availCandle.closeTime : displacement.confirmedAt,
+            closeReason: 'canonical-confirmation',
             nearTarget: nearTarget,
             nearDistPct: nearDistPct,
             // Phase 11L.7：通知时点快照（消息显示 / post-alert 统计基准）
             notificationPrice: notifPrice,
             notificationNearTarget: notifNear,
             notificationNearDistPct: notifDist,
-            fvgCount: fvgCount,
+            fvgCount: formationFvgs.length,
             nearConsumed: false
         };
 
@@ -380,7 +332,7 @@ function createLiveEngine(data, options) {
         // 触及 ≠ 失效（近端流动性被测试恰是机会生效标志）→ 用户决策【放弃 suppress】。
         // 仅标记 nearConsumed 供日志观察，不拦截任何 HIGH。
         if (tier === 'HIGH_QUALITY' && nearTarget !== null && nearTarget !== undefined && availIdx > anchorIndex) {
-            var cons = nearStaleness.checkNearConsumed(nearTarget, leg.direction, window, anchorIndex + 1, availIdx);
+            var cons = nearStaleness.checkNearConsumed(nearTarget, displacement.direction, window, anchorIndex + 1, availIdx);
             opp.nearConsumed = cons.consumed;
         }
 
@@ -389,8 +341,8 @@ function createLiveEngine(data, options) {
         var availTime2 = availCandle ? availCandle.closeTime : (opp.availableAt !== undefined ? opp.availableAt : anchorCandle.closeTime);
         var sweepEventsAll = state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP');
         var prov = liquidityProvenance.associateSweeps({
-            direction: leg.direction,
-            leg: leg,
+            direction: displacement.direction,
+            displacement: displacement,
             availableAt: availTime2,
             sweepEvents: sweepEventsAll,
             maxLookbackBars: null // 使用 thresholds.events.sweepProvenance.maxLookbackBars（当前 48）
@@ -429,13 +381,6 @@ function createLiveEngine(data, options) {
         getDisplacementWatches: function () {
             return Object.keys(watchById).map(function (id) { return watchById[id]; });
         },
-        flushLeg: function () {
-            var closed = legBuilder.close();
-            if (!closed) return null;
-            var anchorCandle = window[closed.lastIndex];
-            if (!anchorCandle) return null;
-            return evaluateOpportunity(closed, closed.lastIndex, anchorCandle);
-        },
         symbol: symbol
     };
     engine.eqProductionVersion = state.eqProductionVersion;
@@ -445,6 +390,5 @@ function createLiveEngine(data, options) {
 module.exports = {
     attachWatchLiquidityEvidenceV1: attachWatchLiquidityEvidenceV1,
     createLiveEngine: createLiveEngine,
-    attachDailyBias: attachDailyBias,
-    LEG_MAX_BARS: LEG_MAX_BARS
+    attachDailyBias: attachDailyBias
 };

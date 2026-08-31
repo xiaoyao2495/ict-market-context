@@ -72,7 +72,7 @@ function formationRecord(e) {
         mssToDisplacementBars: e.mssToDisplacementBars,
         FVG: { present: e.fvgCount > 0, count: e.fvgCount, ids: e.fvgIds },
         nearDraw: { present: e.nearTarget !== null && e.nearTarget !== undefined, target: e.nearTarget },
-        legQuality: e.legQuality,
+        deliveryQuality: e.deliveryQuality,
         liquidityTaken: e.liquidityTaken,
         liquidityType: e.liquidityType,
         DailyBias: {

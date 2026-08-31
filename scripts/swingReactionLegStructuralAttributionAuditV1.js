@@ -97,7 +97,7 @@ function buildProductionEvents(candles, swings, atrs) {
         Array.prototype.push.apply(mss, step.mss);
         Array.prototype.push.apply(structural, step.events);
     });
-    var displacements = displacementDetector.detectDisplacement(candles, mss, { symbol: SYMBOL, timeframe: TIMEFRAME, baseIndex: 0, atrSeries: atrs, thresholds: thresholds });
+    var displacements = displacementDetector.detectSingleCandleDisplacement(candles, { symbol: SYMBOL, timeframe: TIMEFRAME, baseIndex: 0, atrSeries: atrs, thresholds: thresholds }).map(function (d) { return Object.assign({ candleIndex: d.endIndex }, d); });
     mss.sort(function (a, b) { return a.candleIndex - b.candleIndex || a.id.localeCompare(b.id); });
     displacements.sort(function (a, b) { return a.candleIndex - b.candleIndex || a.id.localeCompare(b.id); });
     return { mss: mss, structural: structural, displacements: displacements };

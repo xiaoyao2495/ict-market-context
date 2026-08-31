@@ -1,7 +1,7 @@
 /**
  * Phase 11D.7 — Opportunity Quality Tier
  *
- * Opportunity Quality = Delivery Quality（DisplacementLeg）
+ * Opportunity Quality = Canonical Delivery Quality
  *                       + Reachable Draw Quality（Near Draw）
  *
  * 规则分层（不用神秘总分，每档可解释）：
@@ -11,28 +11,48 @@
  *   WATCH        : Leg = NORMAL && Near Draw 存在
  *   LOW_QUALITY  : WEAK leg / 无 Near Draw / direction conflict
  *
- * 锁死语义：机会身份 = Sweep → DisplacementLeg；FVG 只是 delivery leg 的
- * 结构证据（去重单位是 leg 不是 FVG）；Near Draw 是目标。
- * 1h validation 锚在 leg 完成时刻（大样本），不是稀有 FVG retrace。
+ * 锁死语义：机会身份 = Canonical Displacement；FVG 是 formation 的结构证据；
+ * Near Draw 是目标。1h validation 锚在 canonical formation 完成时刻。
  */
 var DEFAULT_WINDOW_BARS = 12; // 1h = 12 根 5m
 
+function describeCanonicalDelivery(displacement, candles) {
+    var start = candles && candles[displacement.startIndex];
+    var end = candles && candles[displacement.endIndex];
+    var atr = displacement.atr;
+    if (!start || !end || !atr || atr <= 0) return { quality:'WEAK', rangeAtr:null, netMoveAtr:null, bodyEfficiency:null };
+    var high = -Infinity, low = Infinity, totalBody = 0, totalRange = 0;
+    for (var i = displacement.startIndex; i <= displacement.endIndex; i++) {
+        var c = candles[i];
+        if (!c) continue;
+        high = Math.max(high, c.high); low = Math.min(low, c.low);
+        totalBody += Math.abs(c.close - c.open); totalRange += c.high - c.low;
+    }
+    var rangeAtr = (high - low) / atr;
+    var netMoveAtr = Math.abs(displacement.endPrice - displacement.startPrice) / atr;
+    var bodyEfficiency = totalRange > 0 ? totalBody / totalRange : 0;
+    var quality = rangeAtr >= 2.5 && netMoveAtr >= 2 && bodyEfficiency >= 0.6 ? 'EXPLOSIVE'
+        : rangeAtr >= 1.8 && netMoveAtr >= 1.2 ? 'STRONG'
+        : rangeAtr >= 1 ? 'NORMAL' : 'WEAK';
+    return { quality:quality, rangeAtr:rangeAtr, netMoveAtr:netMoveAtr, bodyEfficiency:bodyEfficiency };
+}
+
 /**
- * @param {Object} opts { legQuality, nearDrawAvailable, directionConflict }
+ * @param {Object} opts { deliveryQuality, nearDrawAvailable, directionConflict }
  * @returns {string} 'HIGH_QUALITY' | 'WATCH' | 'LOW_QUALITY'
  */
 function classifyOpportunityTier(opts) {
-    var leg = opts.legQuality || 'WEAK';
+    var delivery = opts.deliveryQuality || 'WEAK';
     var nearOk = opts.nearDrawAvailable !== false;
     var conflict = !!opts.directionConflict;
     if (conflict || !nearOk) {
         return 'LOW_QUALITY';
     }
-    var strongLeg = leg === 'STRONG' || leg === 'EXPLOSIVE';
-    if (strongLeg) {
+    var strongDelivery = delivery === 'STRONG' || delivery === 'EXPLOSIVE';
+    if (strongDelivery) {
         return 'HIGH_QUALITY';
     }
-    if (leg === 'NORMAL') {
+    if (delivery === 'NORMAL') {
         return 'WATCH';
     }
     return 'LOW_QUALITY';
@@ -42,99 +62,34 @@ function classifyOpportunityTier(opts) {
  * 为每个 opportunity 挂 tier / leg 维度 / 锚点 / near target。
  * @param {Array} opportunities buildOpportunities 输出 [{ id, direction, fvgIds, ... }]
  * @param {Array} fvgs 全部 FVG（含 displacementEventId）
- * @param {Object} legByDispId dispId → { quality, endIndex, direction }
+ * @param {Object} displacementById canonical id → displacement
  * @param {Array} drawTrace 逐根 { bslNear, bslMacro, sslNear, sslMacro }
  * @param {Array} [candles] 5m candles（Phase 11L.7：notificationPrice 需 availableIndex 处 close）
- * @returns {Array} items [{ id, direction, tier, legQuality, anchorIndex, nearTarget, hasLeg,
+ * @returns {Array} items [{ id, direction, tier, deliveryQuality, anchorIndex, nearTarget, hasDisplacement,
  *                          notificationPrice, notificationNearTarget, notificationNearDistPct }]
  */
-function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles) {
-    var fvgByDisp = {};
-    (fvgs || []).forEach(function (f) {
-        if (f.displacementEventId) {
-            fvgByDisp[f.id] = f;
-        }
-    });
+function buildTierIndex(opportunities, fvgs, displacementById, drawTrace, candles) {
     return (opportunities || []).map(function (o) {
-        var dispIds = [];
-        (o.fvgIds || []).forEach(function (fid) {
-            var f = fvgByDisp[fid];
-            if (f && f.displacementEventId && dispIds.indexOf(f.displacementEventId) === -1) {
-                dispIds.push(f.displacementEventId);
-            }
-        });
-        if (dispIds.length === 0) {
-            // 无 displacement 链（孤立 FVG）：无 delivery 结构 → LOW，且无锚点不参与 1h validation
-            return {
-                id: o.id, direction: o.direction, tier: 'LOW_QUALITY',
-                legQuality: 'WEAK',
-                anchorIndex: null, nearTarget: null, hasLeg: false,
-                fvgIds: o.fvgIds || []
-            };
-        }
-        // 取最后完成的 leg（endIndex 最大 = 机会当前状态）
-        var best = null;
-        dispIds.forEach(function (did) {
-            var leg = legByDispId[did];
-            if (leg && (!best || leg.endIndex > best.endIndex)) {
-                best = leg;
-            }
-        });
-        if (!best) {
-            return {
-                id: o.id, direction: o.direction, tier: 'LOW_QUALITY',
-                legQuality: 'WEAK',
-                anchorIndex: null, nearTarget: null, hasLeg: false,
-                fvgIds: o.fvgIds || []
-            };
-        }
-        var dt = drawTrace && drawTrace[best.endIndex] ? drawTrace[best.endIndex] : null;
-        var nearTarget = null;
-        if (dt) {
-            nearTarget = o.direction === 'BULLISH' ? dt.bslNear : dt.sslNear;
-        }
-        var nearOk = nearTarget !== null && nearTarget !== undefined;
-        var tier = classifyOpportunityTier({
-            legQuality: best.quality,
-            nearDrawAvailable: nearOk,
-            // directionConflict：OPPOSITE 不产生机会（gate 已过滤），冲突维度在 retrace 层挂账
-            directionConflict: false
-        });
-        // Phase 11L.7：Notification Snapshot 收口 —— 通知内容必须在 availableAt 时重新冻结。
-        //   anchor 的 nearTarget 只描述 leg 本身；通知时点（availableIndex）的 draw 可能已变化
-        //   （该 15min 内 liquidity 可能已被触及/扫掉/更近）。因此：
-        //     notificationNearTarget = drawTrace[availableIndex] 的 near（回退 anchor 的 nearTarget）
-        //     notificationPrice      = availableIndex 处 close
-        //     notificationNearDistPct = |notificationNearTarget - notificationPrice| / notificationPrice
-        var availIdx = best.availableIndex !== undefined && best.availableIndex !== null
-            ? best.availableIndex
-            : best.endIndex;
-        var dtAvail = drawTrace && drawTrace[availIdx] ? drawTrace[availIdx] : null;
-        var notifNear = null;
-        if (dtAvail) {
-            notifNear = o.direction === 'BULLISH' ? dtAvail.bslNear : dtAvail.sslNear;
-        }
-        if (notifNear === null || notifNear === undefined) {
-            notifNear = nearTarget; // 回退：通知时点 draw 不可用 → 用 anchor 冻结值（保守）
-        }
+        var displacement = o.displacement || displacementById && displacementById[o.canonicalDisplacementId];
+        if (!displacement) return { id:o.id, direction:o.direction, tier:'LOW_QUALITY',
+            deliveryQuality:'WEAK', anchorIndex:null, nearTarget:null, hasDisplacement:false, fvgIds:o.fvgIds || [] };
+        var delivery = describeCanonicalDelivery(displacement, candles);
+        var dt = drawTrace && drawTrace[displacement.endIndex];
+        var nearTarget = dt ? (o.direction === 'BULLISH' ? dt.bslNear : dt.sslNear) : null;
+        var tier = classifyOpportunityTier({ deliveryQuality:delivery.quality,
+            nearDrawAvailable:nearTarget !== null && nearTarget !== undefined, directionConflict:false });
+        var availIdx = displacement.endIndex;
         var notifPrice = candles && candles[availIdx] ? candles[availIdx].close : null;
-        var notifDist = notifNear !== null && notifNear !== undefined && notifPrice !== null && notifPrice > 0
-            ? Math.abs(notifNear - notifPrice) / notifPrice * 100
-            : null;
+        var notifDist = nearTarget !== null && nearTarget !== undefined && notifPrice > 0
+            ? Math.abs(nearTarget - notifPrice) / notifPrice * 100 : null;
         return {
-            id: o.id, direction: o.direction, tier: tier,
-            legQuality: best.quality,
-            anchorIndex: best.endIndex, nearTarget: nearTarget, hasLeg: true,
-            fvgIds: o.fvgIds || [],
-            // 11L.4：通知可用时点（leg 关闭确认时间）。leg.availableIndex 缺失（旧构造）时回退
-            // anchorIndex 保持兼容；authoritative 路径（buildWindowedLegIndex）必有该字段。
-            availableIndex: availIdx,
-            // Phase 11L.7：通知时点快照（Notification Snapshot）
-            notificationPrice: notifPrice,
-            notificationNearTarget: notifNear,
-            notificationNearDistPct: notifDist,
-            // 暴露 best leg 引用（Alert Replay 人工核对：rangeAtr/bodyEff 等）
-            dispId: best.ids && best.ids.length > 0 ? best.ids[0] : null
+            id:o.id, direction:o.direction, tier:tier, deliveryQuality:delivery.quality,
+            anchorIndex:displacement.endIndex, nearTarget:nearTarget, hasDisplacement:true,
+            fvgIds:o.fvgIds || [], availableIndex:availIdx, availableAt:displacement.confirmedAt,
+            notificationPrice:notifPrice, notificationNearTarget:nearTarget,
+            notificationNearDistPct:notifDist, canonicalDisplacementId:displacement.id,
+            displacement:displacement, formationRangeAtr:delivery.rangeAtr,
+            formationNetMoveAtr:delivery.netMoveAtr, formationBodyEfficiency:delivery.bodyEfficiency
         };
     });
 }
@@ -158,7 +113,7 @@ function validateTiers(items, candles, windowBars) {
         return agg[k];
     }
     (items || []).forEach(function (it) {
-        if (!it.hasLeg || it.anchorIndex === null || it.anchorIndex === undefined) return;
+        if (!it.hasDisplacement || it.anchorIndex === null || it.anchorIndex === undefined) return;
         // 11L.4：通知可用时点（availableIndex 优先；旧调用无该字段时回退 anchorIndex）
         var availIdx = it.availableIndex !== undefined && it.availableIndex !== null ? it.availableIndex : it.anchorIndex;
         var start = availIdx + 1; // 通知后最早 N+1 才允许观察（无 information-availability leakage）
@@ -201,6 +156,7 @@ function validateTiers(items, candles, windowBars) {
 }
 
 module.exports = {
+    describeCanonicalDelivery: describeCanonicalDelivery,
     classifyOpportunityTier: classifyOpportunityTier,
     buildTierIndex: buildTierIndex,
     validateTiers: validateTiers,

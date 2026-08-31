@@ -175,7 +175,7 @@ function buildProductionEvents(candles, swings, atrs) {
     swings.forEach(function (s) { (byConfirmed[s.confirmedAt] || (byConfirmed[s.confirmedAt] = [])).push(s); });
     var state = structuralProvenance5m.createState({ symbol: SYMBOL, timeframe: TIMEFRAME }), mss = [], structural = [];
     candles.forEach(function (c, i) { var step = structuralProvenance5m.step(state, c, i, byConfirmed[c.closeTime] || []); Array.prototype.push.apply(mss, step.mss); Array.prototype.push.apply(structural, step.events); });
-    var displacements = displacementDetector.detectDisplacement(candles, mss, { symbol: SYMBOL, timeframe: TIMEFRAME, baseIndex: 0, atrSeries: atrs, thresholds: thresholds });
+    var displacements = displacementDetector.detectSingleCandleDisplacement(candles, { symbol: SYMBOL, timeframe: TIMEFRAME, baseIndex: 0, atrSeries: atrs, thresholds: thresholds }).map(function (d) { return Object.assign({ candleIndex: d.endIndex }, d); });
     return { mss: mss, structural: structural, displacements: displacements, finalStructuralState: state };
 }
 

@@ -39,7 +39,8 @@ test('nested future evidence fails closed', function () {
 test('current watch mapping exposes non-causal provenance gap', function () {
     var out = adapter.mapCurrentWatchEvidence({ id:'W',direction:'BULLISH',updatedAt:200,
         liquidityTaken:{primary:{id:'E',sourceId:'S',sourceType:'SWING_LOW',side:'SSL',confirmedAt:150,relation:'BEFORE_LEG'}},
-        mss:{exists:true,id:'M',direction:'BULLISH',confirmedAt:190},displacement:{direction:'BULLISH',lastConfirmedAt:200},displacementIds:['D'] });
+        mss:{exists:true,id:'M',direction:'BULLISH',confirmedAt:190},canonicalDisplacementId:'D',
+        displacement:{id:'D',type:'DISPLACEMENT',direction:'BULLISH',confirmedAt:200} });
     assert.strictEqual(out.directionConsistent, true);
     assert.strictEqual(out.mssEvidence.sourceSwingAttributed, false);
     assert.strictEqual(out.displacementEvidence.productionTrigger, true);

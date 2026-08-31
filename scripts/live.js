@@ -39,6 +39,7 @@ var eqProductionVersionConfig = require('../config/eqProductionVersion');
 
 var CONFIG = require('../config/live.json');
 var EQ_PRODUCTION_VERSION = eqProductionVersionConfig.get();
+var DISPLACEMENT_PRODUCTION_MODE = 'CANONICAL_A_C2_V1';
 
 // Phase 11L.15：B 口径 Live Shadow Prioritization 开关（thresholds.notify.prioritization.enabled）。
 //   true  → 钉钉只推 PRIORITY_HIGH（HIGH + 48 窗口内 Significant Liquidity），STANDARD_HIGH 只落日志
@@ -239,7 +240,7 @@ function buildMessage(opp, symbol) {
         lines.push('Liquidity Context: NONE');
     }
     lines.push(
-        (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? 'Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : 'Leg: ' + opp.legQuality),
+        (opp.formationRangeAtr !== null && opp.formationRangeAtr !== undefined ? 'Delivery: ' + opp.deliveryQuality + ' (' + opp.formationRangeAtr.toFixed(1) + ' ATR)' : 'Delivery: ' + opp.deliveryQuality),
         notifTarget !== null ? 'Near Draw: ' + notifDist.toFixed(2) + '% 距离（target ' + fmtPrice(notifTarget) + '）' : 'Near Draw: -',
         '通知: ' + fmt(notified) + '（leg 锚 ' + fmt(opp.anchorTime) + '）'
     );
@@ -461,6 +462,11 @@ function createRunner(symbol) {
         // A cursor from any prior structural implementation must not be resumed.
         var cursor = persistence.loadJson(stateFile, null);
         var mode = structuralSwingMode();
+        if (cursor && cursor.displacementMode !== DISPLACEMENT_PRODUCTION_MODE) {
+            throw new Error('DISPLACEMENT_MODE_CHANGED: ' + symbol + ' cursor.displacementMode=' +
+                (cursor.displacementMode || 'LEGACY') + ' 当前=' + DISPLACEMENT_PRODUCTION_MODE +
+                '——请清理该 symbol 的 .live-state 后重启重新 bootstrap');
+        }
         if (cursor && cursor.structureMode && cursor.structureMode !== mode) {
             throw new Error('STRUCTURE_MODE_CHANGED: ' + symbol + ' cursor.structureMode=' +
                 cursor.structureMode + ' 当前=' + mode + '——请清理 .live-state 后重启重新 bootstrap，' +
@@ -545,7 +551,8 @@ function createRunner(symbol) {
             persistence.saveJson(pushedFile, delivered);
             saveWatchState();
             persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: all.length,
-                structureMode: mode, eqProductionVersion: EQ_PRODUCTION_VERSION });
+                structureMode: mode, eqProductionVersion: EQ_PRODUCTION_VERSION,
+                displacementMode: DISPLACEMENT_PRODUCTION_MODE });
             log(symbol + ' 状态就绪，已推进 ' + all.length + ' 根，去重集合 ' + Object.keys(delivered).length + ' 个已投递机会');
         });
     }
@@ -691,7 +698,8 @@ function createRunner(symbol) {
             }
             persistence.saveJson(pushedFile, delivered);
             persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength(),
-                structureMode: structuralSwingMode(), eqProductionVersion: EQ_PRODUCTION_VERSION });
+                structureMode: structuralSwingMode(), eqProductionVersion: EQ_PRODUCTION_VERSION,
+                displacementMode: DISPLACEMENT_PRODUCTION_MODE });
         });
     }
 

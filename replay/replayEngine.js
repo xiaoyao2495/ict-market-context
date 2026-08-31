@@ -24,6 +24,7 @@ var replayState = require('./replayState');
 var amdState = require('../amd/amdState');
 var eventRegistry = require('../events/eventRegistry');
 var displacementDetector = require('../events/displacementDetector');
+var multiCandleDisplacementDetector = require('../events/multiCandleDisplacementDetector');
 var atrIndicator = require('../indicators/atr');
 var structuralProvenance5m = require('../structure/structuralProvenance5m');
 var dailyLiquidity = require('../liquidity/dailyLiquidity');
@@ -111,7 +112,7 @@ function rebuildSnapshot(state, candles, index, evaluationTime, data) {
             draw: draw, structures: structures, location: location,
             events: {
                 sweeps: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),
-                displacements: state.eventRegistry.getByType(symbol, 'DISPLACEMENT')
+                displacements: state.displacementStore.getAsOf(evaluationTime, symbol)
             }
         }, { thresholds: cfg });
 
@@ -188,7 +189,7 @@ function runReplay(data, options) {
     var w;
     if (!fullWarmup) {
         for (w = 0; w < startIndex; w++) {
-            prevAtr = updateAtrIncremental(atrSeries, candles, w, prevAtr, 14);
+            prevAtr = updateAtrIncremental(atrSeries, candles, w, prevAtr, cfg.events.displacement.multiCandle.atrPeriod);
         }
     }
     state.atrSeries = atrSeries; // 供 incrementalFvg 的全局 ATR 使用
@@ -266,7 +267,7 @@ function runReplay(data, options) {
 
         return snapshotPromise.then(function () {
             // ---- 3. 增量 ATR（O(1) Wilder 更新） ----
-            prevAtr = updateAtrIncremental(atrSeries, candles, i, prevAtr, 14);
+            prevAtr = updateAtrIncremental(atrSeries, candles, i, prevAtr, cfg.events.displacement.multiCandle.atrPeriod);
 
             // ---- 4. Generic structural lifecycle + price-only Displacement ----
             var structuralStep = structuralProvenance5m.step(
@@ -275,13 +276,16 @@ function runReplay(data, options) {
             structuralStep.events.forEach(function (event) {
                 state.eventRegistry.add(event);
             });
-            var newDispRaw = displacementDetector.detectDisplacement([candle], {
+            var newDispRaw = displacementDetector.detectSingleCandleDisplacement([candle], {
                 symbol: symbol,
                 timeframe: '5m',
                 baseIndex: i,
                 atrSeries: atrSeries,
                 thresholds: cfg
             });
+            newDispRaw = newDispRaw.concat(multiCandleDisplacementDetector.detectAt(candles, i, {
+                symbol: symbol, timeframe: '5m', atrSeries: atrSeries, thresholds: cfg
+            }));
             var newEvents = replayState.incrementalEvents(state, candle, i, evaluationTime, newDispRaw);
 
             // ---- 5. 持久 AMD ----
@@ -299,7 +303,8 @@ function runReplay(data, options) {
             }, { thresholds: cfg });
 
             // ---- 6. 增量 FVG（显式传完整 candles，时间语义清晰） ----
-            replayState.incrementalFvg(state, candles, candle, i, evaluationTime, data.exchangeInfo, allDisplacements(state));
+            replayState.incrementalFvg(state, candles, candle, i, evaluationTime, data.exchangeInfo,
+                allDisplacements(state, i, evaluationTime, cfg.fvg.maxDisplacementBars));
 
             // ---- 7. Scenario（每根计算：bias/draw 用快照缓存，AMD 用当前持久状态） ----
             // 关键：AMD manipulation 是 5m 瞬态，scenario 必须每根反映，不能等 12 根快照。
@@ -809,9 +814,9 @@ function runReplay(data, options) {
             confirmationStats: state.confirmationStats || { pending: 0, confirmed: 0, rejectedRr: 0, cancelled: 0, expired: 0, dropped: 0 },
             // Phase 11E.7：gate 语义 shadow 聚合
             gateShadow: state.gateShadow || { touchButCloseOutside: 0, closeInside: 0, candTotal: 0, lt40: 0, ge40lt60: 0, ge60: 0, noDisp: 0 },
-            // Phase 11D.3：Opportunity/DisplacementLeg 数据源
+            // Opportunity/Canonical Displacement 数据源
             fvgs: state.fvgReg.getAll(symbol),
-            displacementEvents: state.eventRegistry.getByType(symbol, 'DISPLACEMENT'),
+            displacementEvents: state.displacementStore.getAll(symbol),
             // Phase 11D.8：liquidity sweep 事件（Alert Replay 的 Sweep 字段）
             sweepEvents: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),
             swings: state.swings,
@@ -837,8 +842,9 @@ function runReplay(data, options) {
 /**
  * 全部已确认 displacement（供 FVG 关联）
  */
-function allDisplacements(state) {
-    return state.eventRegistry.getByType(state.symbol, 'DISPLACEMENT');
+function allDisplacements(state, index, evaluationTime, maxBars) {
+    return state.displacementStore.getEndingFrom(Math.max(0, index - maxBars), index,
+        evaluationTime, state.symbol);
 }
 
 /**

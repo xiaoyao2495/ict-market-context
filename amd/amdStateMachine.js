@@ -118,7 +118,7 @@ function runAmd(input, options) {
     var dist = distributionDetector.detectDistribution({
         accumulation: acc,
         manipulation: manip,
-        eventRegistry: input.eventRegistry,
+        displacementStore: input.displacementStore,
         draw: input.draw,
         timeframe: timeframe,
         evaluationTime: evaluationTime,

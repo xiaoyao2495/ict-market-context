@@ -13,8 +13,8 @@ function source(type, side, index) {
     return {id:'S:'+type+':'+index, side:side, candleIndex:index, confirmedAt:(index+1)*BAR-1,
         liquidityId:'L:'+type+':'+index, price:100, timeframe:'5m', source:{liquidityType:type}};
 }
-function leg(direction) { return {ids:['D'],direction:direction,startIndex:10,lastIndex:10,endIndex:10,firstConfirmedAt:11*BAR-1,lastConfirmedAt:11*BAR-1}; }
-function project(direction, rows) { return provenance.associateSweeps({direction:direction,leg:leg(direction),availableAt:11*BAR-1,sweepEvents:rows,excludeStructuralPrimitives:true}); }
+function displacement(direction) { return {id:'D',type:'DISPLACEMENT',direction:direction,startIndex:10,endIndex:10,startAt:10*BAR,endAt:11*BAR-1,confirmedAt:11*BAR-1}; }
+function project(direction, rows) { return provenance.associateSweeps({direction:direction,displacement:displacement(direction),availableAt:11*BAR-1,sweepEvents:rows,excludeStructuralPrimitives:true}); }
 
 ['EQH','EQL','PDH','PDL','PWH','PWL','PMH','PML'].forEach(function (type) {
     test(type + ' is frozen Narrative Liquidity V1', function () { assert.equal(classifier.isNarrativeLiquiditySourceV1(type), true); });

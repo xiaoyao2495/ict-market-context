@@ -256,7 +256,7 @@ test('Non-interference audit 会捕获同数量下的 tier/通知对象偷换', 
 test('DingTalk 报告包含 Daily Bias 区块', function () {
     var message = liveScript.buildMessage({
         direction: 'BULLISH', tier: 'HIGH_QUALITY', notifyPriority: 'PRIORITY_HIGH',
-        mssQuality: 'PROTECTED_SWING', legQuality: 'STRONG', legRangeAtr: 2,
+        deliveryQuality: 'STRONG', formationRangeAtr: 2,
         availableAt: 2000, anchorTime: 1000, nearTarget: null, nearDistPct: null,
         notificationNearTarget: null, liquidityContext: null,
         dailyBias: {

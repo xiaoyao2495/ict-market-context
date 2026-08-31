@@ -48,6 +48,7 @@ function chopCandles(n) {
 
 function makeContext(candles, events, opts) {
     var o = opts || {};
+    var displacements = (events || []).filter(function (event) { return event.type === 'DISPLACEMENT'; });
     return {
         symbol: 'BTCUSDT',
         timeframe: '5m',
@@ -58,6 +59,9 @@ function makeContext(candles, events, opts) {
             : candles[candles.length - 1].closeTime + BAR,
         liquidityRegistry: o.registry || liquidityRegistry.createRegistry(),
         eventRegistry: o.eventRegistry || makeEventRegistry(events || []),
+        displacementStore: o.displacementStore || { getAsOf: function (evaluationTime, symbol) {
+            return displacements.filter(function (event) { return event.confirmedAt <= evaluationTime && event.symbol === symbol; });
+        } },
         draw: o.draw || null,
         bias: o.bias || null
     };
@@ -89,8 +93,8 @@ function mss(id, direction, confirmedAt, candleIndex) {
 function disp(id, direction, confirmedAt, close, candleIndex) {
     return {
         id: id, symbol: 'BTCUSDT', timeframe: '5m', type: 'DISPLACEMENT', direction: direction,
-        confirmedAt: confirmedAt, candleIndex: candleIndex, price: close,
-        source: { candle: { close: close } }, metadata: {}
+        confirmedAt: confirmedAt, startIndex: candleIndex, endIndex: candleIndex,
+        startPrice: close, endPrice: close, price: close
     };
 }
 

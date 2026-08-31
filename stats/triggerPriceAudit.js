@@ -11,8 +11,8 @@
  *   AVAILABLE  availableAt 立即通知（现行为 / BASELINE，即 11D.8 的 81%）
  *   FVG_TOUCH 首次进入 FVG（BULLISH low<=zoneHigh / BEARISH high>=zoneLow）
  *   FVG_CE    FVG 50% = (zoneLow+zoneHigh)/2
- *   OTE_62    displacement leg 回撤 62%（retrace 深度，自 leg 摆动高低算）
- *   OTE_70_5  displacement leg 回撤 70.5%
+ *   OTE_62    canonical formation 回撤 62%
+ *   OTE_70_5  canonical formation 回撤 70.5%
  *
  * 无 leakage 硬规则（Phase 11L.4 教训）：
  *   - 触发扫描一律从 availableIndex + 1 开始（系统在 availableAt 才知道 opp 成立）
@@ -24,7 +24,7 @@
  *   availableAt close（= notificationPrice），与 alertReplay 统计口径一致。
  *
  * OTE range 定义（锁死，不引入新 swing）：
- *   直接用 DisplacementLeg start→end：legHigh = max(high)，legLow = min(low)
+ *   直接用 Canonical Displacement start→end 的 formation high/low。
  *   BULLISH 回撤从高往低：OTE(x) = legHigh - x*(legHigh-legLow)；触发 low <= OTE(x)
  *   BEARISH 回撤从低往高：OTE(x) = legLow  + x*(legHigh-legLow)；触发 high >= OTE(x)
  *
@@ -37,7 +37,6 @@
  *   Effective Capture   Trigger Rate × NearHit1h（提醒系统实用价值）
  */
 var opportunityQuality = require('./opportunityQuality');
-var displacementLeg = require('./displacementLeg');
 
 // 等待期限（根数）：4h = 48 根 5m。超过则 NO_TRIGGER。
 var HORIZON_BARS = 48;
@@ -58,29 +57,29 @@ var OTE_DEPTH = {
 
 /**
  * 计算一个 opportunity 的 5 种触发价格。
- * @param {Object} item buildTierIndex 输出的 HIGH item（direction / fvgIds / dispId / availableIndex）
+ * @param {Object} item buildTierIndex 输出的 HIGH item（direction / fvgIds / canonicalDisplacementId / availableIndex）
  * @param {Object} fvgById id → FVG（zoneLow/zoneHigh/direction/displacementEventId）
- * @param {Object} legByDispId dispId → leg（startIndex/endIndex/direction）
+ * @param {Object} displacementById canonical id → displacement
  * @param {Array} candles 5m candles
  * @returns {Object} { availPrice, fvg: {zoneLow, zoneHigh}, fvgCe, ote: {OTE_62, OTE_70_5} , legHigh, legLow }
  *  字段缺失时对应值为 null（该模型对这笔不可用，计入不可评估）
  */
-function computeTriggerPrices(item, fvgById, legByDispId, candles) {
-    var leg = item.dispId ? (legByDispId[item.dispId] || null) : null;
+function computeTriggerPrices(item, fvgById, displacementById, candles) {
+    var displacement = item.canonicalDisplacementId ? (displacementById[item.canonicalDisplacementId] || null) : null;
     var bullish = item.direction === 'BULLISH';
     // availPrice = availableAt 对应 K 收盘（BASELINE 通知价）
     var availPrice = null;
     if (item.availableIndex !== null && item.availableIndex !== undefined && candles[item.availableIndex]) {
         availPrice = candles[item.availableIndex].close;
     }
-    // FVG：取 opportunity 内属于该 leg 的首个 FVG；否则取 fvgIds[0]
+    // FVG：取 opportunity 内属于该 canonical displacement 的首个 FVG。
     var fvg = null;
     (item.fvgIds || []).forEach(function (fid) {
         if (fvg) return;
         var f = fvgById ? fvgById[fid] : null;
         if (!f) return;
-        // 优先 leg 自己的 FVG（displacementEventId 匹配 leg 首位移）
-        if (leg && f.displacementEventId === leg.ids[0]) { fvg = f; return; }
+        // 优先 canonical displacement 自己的 FVG。
+        if (displacement && f.displacementEventId === displacement.id) { fvg = f; return; }
         if (!fvg) fvg = f;
     });
     if (!fvg) {
@@ -91,14 +90,14 @@ function computeTriggerPrices(item, fvgById, legByDispId, candles) {
     if (fvgZone) {
         fvgCe = (fvgZone.zoneLow + fvgZone.zoneHigh) / 2;
     }
-    // OTE：leg start→end 摆动高低
+    // OTE：immutable formation start→end 摆动高低
     var legHigh = null;
     var legLow = null;
-    if (leg && leg.startIndex !== null && leg.endIndex !== null &&
-        leg.startIndex !== undefined && leg.endIndex !== undefined) {
+    if (displacement && displacement.startIndex !== null && displacement.endIndex !== null &&
+        displacement.startIndex !== undefined && displacement.endIndex !== undefined) {
         var h = -Infinity;
         var l = Infinity;
-        for (var i = leg.startIndex; i <= leg.endIndex; i++) {
+        for (var i = displacement.startIndex; i <= displacement.endIndex; i++) {
             var c = candles[i];
             if (!c) continue;
             if (c.high > h) h = c.high;
@@ -141,14 +140,14 @@ function candleTriggers(c, bullish, trigger) {
  *                     perModel: { KEY: { triggered, triggerIndex, triggerPrice, waitBars } } }
  *   不可评估（availableIndex 为 null 或越界）→ 返回 null
  */
-function simulateOne(item, fvgById, legByDispId, candles) {
+function simulateOne(item, fvgById, displacementById, candles) {
     if (item.availableIndex === null || item.availableIndex === undefined) return null;
     var availIdx = item.availableIndex;
     if (availIdx + 1 >= candles.length) return null; // 无 post-trigger 行情可验证
     var start = availIdx + 1;
     var lastJ = Math.min(start + HORIZON_BARS - 1, candles.length - 1);
     var bullish = item.direction === 'BULLISH';
-    var prices = computeTriggerPrices(item, fvgById, legByDispId, candles);
+    var prices = computeTriggerPrices(item, fvgById, displacementById, candles);
     var levels = {
         AVAILABLE: prices.availPrice,
         FVG_TOUCH: prices.fvgZone ? (bullish ? prices.fvgZone.zoneHigh : prices.fvgZone.zoneLow) : null,
@@ -206,18 +205,18 @@ function simulateOne(item, fvgById, legByDispId, candles) {
  * 对整个 HIGH 母样本批量模拟。
  * @param {Array} items buildTierIndex 输出（本函数内部已过滤 HIGH_QUALITY）
  * @param {Array} fvgs 全部 FVG
- * @param {Object} legByDispId buildWindowedLegIndex 输出
+ * @param {Object} displacementById canonical displacement index
  * @param {Array} candles 5m candles
  * @returns {Array} 每笔 simulateOne 结果（跳过 null）
  */
-function simulateAll(items, fvgs, legByDispId, candles) {
+function simulateAll(items, fvgs, displacementById, candles) {
     var fvgById = {};
     (fvgs || []).forEach(function (f) { fvgById[f.id] = f; });
     var out = [];
     (items || []).forEach(function (it) {
         if (it.tier !== 'HIGH_QUALITY') return; // 母样本 = HIGH only
-        if (!it.hasLeg) return;
-        var r = simulateOne(it, fvgById, legByDispId, candles);
+        if (!it.hasDisplacement) return;
+        var r = simulateOne(it, fvgById, displacementById, candles);
         if (r) out.push(r);
     });
     return out;

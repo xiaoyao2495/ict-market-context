@@ -6,9 +6,9 @@
  *   sweep provenance -> WATCH. Liquidity never opens a pending pre-displacement
  *   watch, and structure/bias never gate watch existence.
  *
- * Native FVG ownership is local to a displacement candle (K2): K1/K2/K3 are
- * read directly from the closed 5m candle stream. The global FVG registry is
- * not an input to this module.
+ * Native FVG ownership is local to each K2 inside the immutable canonical
+ * formation window. K1/K2/K3 are read directly from the closed 5m candle
+ * stream. The global FVG registry is not an input to this module.
  */
 'use strict';
 var liquidityProvenance = require('./liquidityProvenance');
@@ -38,16 +38,13 @@ function normalizeNarrativeLiquidityV1Watch(watch) {
     normalized.liquidityTaken.allCandidates = candidates.map(function (candidate) { return JSON.parse(JSON.stringify(candidate)); });
     normalized.liquidityTaken.primary = JSON.parse(JSON.stringify(pickNarrativePrimary(normalized, normalized.liquidityTaken.allCandidates)));
     normalized.liquidityTaken.matched = true;
-    // The additive envelope is derived from liquidityTaken. A persisted legacy
-    // envelope may still point at the removed Swing primary, so discard it and
-    // let the live engine rebuild it from the normalized WATCH when applicable.
+    // The additive envelope is derived from liquidityTaken. Rebuild it from the
+    // normalized WATCH so it cannot retain an ineligible Swing primary.
     delete normalized.liquidityEvidenceV1;
     return normalized;
 }
 
-function nativeFvgForDisplacement(displacement, candles) {
-    if (!displacement || typeof displacement.candleIndex !== 'number') return null;
-    var k2i = displacement.candleIndex;
+function nativeFvgAt(displacement, candles, k2i) {
     var k1 = candles && candles[k2i - 1];
     var k2 = candles && candles[k2i];
     var k3 = candles && candles[k2i + 1];
@@ -61,7 +58,7 @@ function nativeFvgForDisplacement(displacement, candles) {
         return null;
     }
     return {
-        id: 'NATIVE_FVG:' + displacement.id,
+        id: 'NATIVE_FVG:' + displacement.id + ':' + k2.openTime,
         displacementEventId: displacement.id,
         direction: displacement.direction,
         low: low,
@@ -74,13 +71,28 @@ function nativeFvgForDisplacement(displacement, candles) {
     };
 }
 
+function nativeFvgsForDisplacement(displacement, candles, evaluationTime) {
+    if (!displacement || typeof displacement.startIndex !== 'number' || typeof displacement.endIndex !== 'number') return [];
+    var out = [];
+    for (var i = displacement.startIndex; i <= displacement.endIndex; i++) {
+        var fvg = nativeFvgAt(displacement, candles, i);
+        if (fvg && (evaluationTime === undefined || fvg.confirmedAt <= evaluationTime)) out.push(fvg);
+    }
+    out.sort(function (a, b) { return a.confirmedAt - b.confirmedAt || a.id.localeCompare(b.id); });
+    return out;
+}
+
+function nativeFvgForDisplacement(displacement, candles, evaluationTime) {
+    return nativeFvgsForDisplacement(displacement, candles, evaluationTime)[0] || null;
+}
+
 function buildWatch(opts) {
-    var leg = opts && opts.leg;
-    if (!leg || !leg.ids || !leg.ids.length) return null;
+    var displacement = opts && opts.displacement;
+    if (!displacement || !displacement.id || displacement.type !== 'DISPLACEMENT') return null;
     var evaluationTime = opts.evaluationTime;
     var association = liquidityProvenance.associateSweeps({
-        direction: leg.direction,
-        leg: leg,
+        direction: displacement.direction,
+        displacement: displacement,
         availableAt: evaluationTime,
         sweepEvents: opts.sweepEvents || [],
         maxLookbackBars: null,
@@ -90,35 +102,28 @@ function buildWatch(opts) {
     });
     if (!association || !association.allCandidates || association.allCandidates.length === 0) return null;
 
-    var dispById = {};
-    (opts.displacements || []).forEach(function (d) { dispById[d.id] = d; });
-    var nativeFvgs = [];
-    leg.ids.forEach(function (id) {
-        var f = nativeFvgForDisplacement(dispById[id], opts.candles || []);
-        if (f && f.confirmedAt <= evaluationTime) nativeFvgs.push(f);
-    });
-    nativeFvgs.sort(function (a, b) { return a.confirmedAt - b.confirmedAt || (a.id < b.id ? -1 : 1); });
+    var nativeFvgs = nativeFvgsForDisplacement(displacement, opts.candles || [], evaluationTime);
     var primary = nativeFvgs[0] || null;
-    var firstDisp = dispById[leg.ids[0]];
     var existing = opts.existing || null;
     var createdAt = existing ? existing.createdAt : evaluationTime;
-    var id = 'WATCH:' + (opts.symbol || 'UNKNOWN') + ':' + leg.direction + ':LEG:' + leg.ids[0];
+    var id = 'WATCH:' + (opts.symbol || 'UNKNOWN') + ':' + displacement.direction + ':DISPLACEMENT:' + displacement.id;
     return {
         id: id,
         symbol: opts.symbol || 'UNKNOWN',
-        direction: leg.direction,
-        watchDirection: leg.direction === 'BULLISH' ? 'WATCH_LONG' : 'WATCH_SHORT',
-        displacementLegId: 'LEG:' + leg.ids[0],
-        displacementIds: leg.ids.slice(),
+        direction: displacement.direction,
+        watchDirection: displacement.direction === 'BULLISH' ? 'WATCH_LONG' : 'WATCH_SHORT',
+        canonicalDisplacementId: displacement.id,
         displacement: {
-            firstId: leg.ids[0],
-            direction: leg.direction,
-            startIndex: leg.startIndex,
-            endIndex: leg.lastIndex,
-            firstConfirmedAt: firstDisp ? firstDisp.confirmedAt : leg.firstConfirmedAt,
-            lastConfirmedAt: leg.lastConfirmedAt,
-            quality: leg.quality || null,
-            rangeAtr: leg.rangeAtr !== undefined ? leg.rangeAtr : null
+            id: displacement.id,
+            direction: displacement.direction,
+            formationType: displacement.formationType,
+            startIndex: displacement.startIndex,
+            endIndex: displacement.endIndex,
+            startAt: displacement.startAt,
+            endAt: displacement.endAt,
+            confirmedAt: displacement.confirmedAt,
+            quality: 'QUALIFIED',
+            sourceDetections: displacement.sourceDetections
         },
         liquidityTaken: {
             matched: true,
@@ -127,12 +132,12 @@ function buildWatch(opts) {
         },
         nativeFvg: primary,
         nativeFvgs: nativeFvgs,
-        primaryFvgPolicy: 'EARLIEST_CONFIRMED_NATIVE_FVG_IN_LEG',
+        primaryFvgPolicy: 'EARLIEST_CONFIRMED_NATIVE_FVG_IN_CANONICAL_FORMATION',
         state: primary ? 'WATCH_WAIT_FVG' : 'WATCH_NO_FVG',
         noFvgReason: primary ? null : 'NO_NATIVE_FVG',
         createdAt: createdAt,
         updatedAt: evaluationTime,
-        notificationKey: primary ? id + ':' + primary.id : null,
+        notificationKey: primary ? id + ':' + primary.id + ':FIRST_TOUCH' : null,
         firstTouchAt: existing && existing.firstTouchAt || null,
         firstTouchPrice: existing && existing.firstTouchPrice || null,
         notifiedAt: existing && existing.notifiedAt || null,
@@ -145,7 +150,7 @@ function buildWatch(opts) {
 
 function watchFingerprint(w) {
     return JSON.stringify({
-        displacementIds: w.displacementIds,
+        canonicalDisplacementId: w.canonicalDisplacementId,
         liquidityIds: (w.liquidityTaken.allCandidates || []).map(function (c) { return c.id; }),
         nativeFvgIds: (w.nativeFvgs || []).map(function (f) { return f.id; }),
         biasEvaluationTime: w.dailyBias && w.dailyBias.evaluationTime
@@ -156,6 +161,7 @@ function createWatchStore(initialWatches, deliveredKeys) {
     var byId = {};
     var delivered = deliveredKeys || {};
     (initialWatches || []).forEach(function (w) {
+        if (!w || !w.canonicalDisplacementId) return;
         var normalized = normalizeNarrativeLiquidityV1Watch(w);
         if (normalized && normalized.id) byId[normalized.id] = normalized;
     });
@@ -164,9 +170,8 @@ function createWatchStore(initialWatches, deliveredKeys) {
         if (!incoming || !incoming.id) return null;
         var old = byId[incoming.id];
         if (old && (old.state === 'NOTIFIED' || old.state === 'FVG_TOUCHED' || old.state === 'INVALIDATED' || old.state === 'EXPIRED')) {
-            // Formation freezes at terminal transition. A later closed candle may
-            // extend the engine's leg, but it must not backfill liquidity/bias
-            // facts into an already touched/notified watch.
+            // Formation freezes at terminal transition. Later evidence must not
+            // backfill liquidity/bias facts into an already touched/notified watch.
             return old;
         }
         byId[incoming.id] = incoming;
@@ -244,6 +249,7 @@ function createWatchStore(initialWatches, deliveredKeys) {
 
 module.exports = {
     nativeFvgForDisplacement: nativeFvgForDisplacement,
+    nativeFvgsForDisplacement: nativeFvgsForDisplacement,
     buildWatch: buildWatch,
     watchFingerprint: watchFingerprint,
     createWatchStore: createWatchStore,

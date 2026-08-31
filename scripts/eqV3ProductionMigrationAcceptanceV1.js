@@ -38,7 +38,6 @@ async function run(version,candles){
         engine.drainDisplacementWatchUpdates().forEach(function(w){watches[w.id]=w;});
         if((i+1)%1000===0) console.log('['+version+'] '+(i+1)+' / '+candles.length+' elapsed='+((Date.now()-started)/1000).toFixed(1)+'s');
     }
-    await engine.flushLeg();
     engine.drainDisplacementWatchUpdates().forEach(function(w){watches[w.id]=w;});
     var state=engine.getState(),start=candles[WARMUP].openTime;
     var eq=state.registry.getAll('BTCUSDT').filter(function(x){return(x.type==='EQH'||x.type==='EQL')&&x.confirmedAt>=start;});

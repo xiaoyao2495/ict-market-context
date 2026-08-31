@@ -53,7 +53,7 @@ function sourceGroupOf(sourceType) {
 
 /**
  * Post-sweep behavior 分类（启发式第一版，先看分布）。
- * @param {Object} alert buildAlerts 输出（liquidityContext.immediateSweep / direction / legStartIndex）
+ * @param {Object} alert buildAlerts 输出（liquidityContext.immediateSweep / direction / formationStartIndex）
  * @param {Array} candles 5m candles
  * @returns {string} IMMEDIATE_REJECTION | RE_CROSS | ADJACENT | DELAYED_RECLAIM | NO_SWEEP | UNKNOWN
  */
@@ -63,7 +63,7 @@ function classifyPostSweepBehavior(alert, candles) {
     if (!sw) return 'NO_SWEEP';
     var s = sw.candleIndex;
     var p = sw.sourcePrice;
-    var legStart = alert && alert.legStartIndex;
+    var legStart = alert && alert.formationStartIndex;
     if (typeof s !== 'number' || typeof p !== 'number' || typeof legStart !== 'number') return 'UNKNOWN';
     var bullish = alert.direction === 'BULLISH';
     // sweep 在 leg 内或紧邻 leg 前一根 → 无中间观察窗口
