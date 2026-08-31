@@ -1,36 +1,31 @@
 /**
  * Phase 11D.7 — Opportunity Quality Tier
  *
- * Opportunity Quality = MSS existence + Delivery Quality（DisplacementLeg）
+ * Opportunity Quality = Delivery Quality（DisplacementLeg）
  *                       + Reachable Draw Quality（Near Draw）
  *
  * 规则分层（不用神秘总分，每档可解释）：
- *   HIGH_QUALITY : MSS exists && Leg = STRONG / EXPLOSIVE
+ *   HIGH_QUALITY : Leg = STRONG / EXPLOSIVE
  *                  && Near Draw 存在（可达）
  *                  && 无 direction conflict
- *   WATCH        : MSS exists && Leg = NORMAL && Near Draw 存在
- *   LOW_QUALITY  : NO_MSS / WEAK leg / 无 Near Draw / direction conflict
+ *   WATCH        : Leg = NORMAL && Near Draw 存在
+ *   LOW_QUALITY  : WEAK leg / 无 Near Draw / direction conflict
  *
- * Structural Provenance（mssQuality/referenceRole/protectedBreak）只作 enrichment；
- * protected/important swing 不是 HIGH prerequisite。
- *
- * 锁死语义：机会身份 = Sweep → MSS → DisplacementLeg；FVG 只是 delivery leg 的
+ * 锁死语义：机会身份 = Sweep → DisplacementLeg；FVG 只是 delivery leg 的
  * 结构证据（去重单位是 leg 不是 FVG）；Near Draw 是目标。
  * 1h validation 锚在 leg 完成时刻（大样本），不是稀有 FVG retrace。
  */
 var DEFAULT_WINDOW_BARS = 12; // 1h = 12 根 5m
 
 /**
- * @param {Object} opts { mssExists, mssQuality(enrichment), legQuality, nearDrawAvailable, directionConflict }
+ * @param {Object} opts { legQuality, nearDrawAvailable, directionConflict }
  * @returns {string} 'HIGH_QUALITY' | 'WATCH' | 'LOW_QUALITY'
  */
 function classifyOpportunityTier(opts) {
-    var mss = opts.mssQuality || 'NO_MSS';
     var leg = opts.legQuality || 'WEAK';
     var nearOk = opts.nearDrawAvailable !== false;
     var conflict = !!opts.directionConflict;
-    var mssExists = opts.mssExists !== undefined ? !!opts.mssExists : mss !== 'NO_MSS';
-    if (conflict || !nearOk || !mssExists) {
+    if (conflict || !nearOk) {
         return 'LOW_QUALITY';
     }
     var strongLeg = leg === 'STRONG' || leg === 'EXPLOSIVE';
@@ -47,10 +42,10 @@ function classifyOpportunityTier(opts) {
  * 为每个 opportunity 挂 tier / leg 维度 / 锚点 / near target。
  * @param {Array} opportunities buildOpportunities 输出 [{ id, direction, fvgIds, ... }]
  * @param {Array} fvgs 全部 FVG（含 displacementEventId）
- * @param {Object} legByDispId dispId → { quality, mssQuality, endIndex, direction }
+ * @param {Object} legByDispId dispId → { quality, endIndex, direction }
  * @param {Array} drawTrace 逐根 { bslNear, bslMacro, sslNear, sslMacro }
  * @param {Array} [candles] 5m candles（Phase 11L.7：notificationPrice 需 availableIndex 处 close）
- * @returns {Array} items [{ id, direction, tier, mssQuality, legQuality, anchorIndex, nearTarget, hasLeg,
+ * @returns {Array} items [{ id, direction, tier, legQuality, anchorIndex, nearTarget, hasLeg,
  *                          notificationPrice, notificationNearTarget, notificationNearDistPct }]
  */
 function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles) {
@@ -69,10 +64,10 @@ function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles) {
             }
         });
         if (dispIds.length === 0) {
-            // 无 displacement 链（孤立 FVG）：无 delivery/mss 结构 → LOW，且无锚点不参与 1h validation
+            // 无 displacement 链（孤立 FVG）：无 delivery 结构 → LOW，且无锚点不参与 1h validation
             return {
                 id: o.id, direction: o.direction, tier: 'LOW_QUALITY',
-                mssQuality: 'NO_MSS', legQuality: 'WEAK',
+                legQuality: 'WEAK',
                 anchorIndex: null, nearTarget: null, hasLeg: false,
                 fvgIds: o.fvgIds || []
             };
@@ -88,7 +83,7 @@ function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles) {
         if (!best) {
             return {
                 id: o.id, direction: o.direction, tier: 'LOW_QUALITY',
-                mssQuality: 'NO_MSS', legQuality: 'WEAK',
+                legQuality: 'WEAK',
                 anchorIndex: null, nearTarget: null, hasLeg: false,
                 fvgIds: o.fvgIds || []
             };
@@ -100,7 +95,6 @@ function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles) {
         }
         var nearOk = nearTarget !== null && nearTarget !== undefined;
         var tier = classifyOpportunityTier({
-            mssQuality: best.mssQuality,
             legQuality: best.quality,
             nearDrawAvailable: nearOk,
             // directionConflict：OPPOSITE 不产生机会（gate 已过滤），冲突维度在 retrace 层挂账
@@ -129,7 +123,7 @@ function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles) {
             : null;
         return {
             id: o.id, direction: o.direction, tier: tier,
-            mssQuality: best.mssQuality, legQuality: best.quality,
+            legQuality: best.quality,
             anchorIndex: best.endIndex, nearTarget: nearTarget, hasLeg: true,
             fvgIds: o.fvgIds || [],
             // 11L.4：通知可用时点（leg 关闭确认时间）。leg.availableIndex 缺失（旧构造）时回退
@@ -139,7 +133,7 @@ function buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles) {
             notificationPrice: notifPrice,
             notificationNearTarget: notifNear,
             notificationNearDistPct: notifDist,
-            // 暴露 best leg 引用（Alert Replay 人工核对：rangeAtr/bodyEff/MSS reference 等）
+            // 暴露 best leg 引用（Alert Replay 人工核对：rangeAtr/bodyEff 等）
             dispId: best.ids && best.ids.length > 0 ? best.ids[0] : null
         };
     });

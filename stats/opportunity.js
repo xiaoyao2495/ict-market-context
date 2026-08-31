@@ -2,7 +2,7 @@
  * Phase 11D.3 — Opportunity / DisplacementLeg（ICT 父级）
  *
  * ICT 自然父级链：
- *   Sweep → MSS → Displacement Leg → FVG1 / FVG2 / FVG3
+ *   Sweep → Displacement Leg → FVG1 / FVG2 / FVG3
  *
  * 同一 Displacement Leg（连续同向 displacement，时间窗口内合并）产生的多个 FVG
  * 只算一个 Opportunity —— 连续 5 根上涨留下 3 个 FVG，不应是 3 个互相独立的
@@ -15,8 +15,8 @@ var LEG_MERGE_MS = 3 * 300000; // 相邻同向 displacement 合并窗口（3 根
 /**
  * @param {string} symbol
  * @param {Array} fvgs      FVG 数组（getAll(symbol)）
- * @param {Object} events   { DISPLACEMENT: [...], MSS: [...] }（getByType）
- * @returns {Array} opportunities [{ id, direction, mssId, legIds, fvgIds, createdAt, lastAt, nLegs }]
+ * @param {Object} events   { DISPLACEMENT: [...] }（getByType）
+ * @returns {Array} opportunities [{ id, direction, legIds, fvgIds, createdAt, lastAt, nLegs }]
  */
 function buildOpportunities(symbol, fvgs, events) {
     var displacements = (events && events.DISPLACEMENT || []).slice()
@@ -30,16 +30,12 @@ function buildOpportunities(symbol, fvgs, events) {
             (d.confirmedAt - last.lastConfirmedAt) <= LEG_MERGE_MS) {
             last.ids.push(d.id);
             last.lastConfirmedAt = d.confirmedAt;
-            if (!last.mssId && d.metadata && d.metadata.mssEventId) {
-                last.mssId = d.metadata.mssEventId;
-            }
         } else {
             legs.push({
                 ids: [d.id],
                 direction: d.direction,
                 firstConfirmedAt: d.confirmedAt,
-                lastConfirmedAt: d.confirmedAt,
-                mssId: d.metadata && d.metadata.mssEventId ? d.metadata.mssEventId : null
+                lastConfirmedAt: d.confirmedAt
             });
         }
     });
@@ -56,7 +52,6 @@ function buildOpportunities(symbol, fvgs, events) {
             var o = {
                 id: key,
                 direction: null,
-                mssId: null,
                 legIds: [],
                 fvgIds: [],
                 createdAt: Infinity,
@@ -72,10 +67,9 @@ function buildOpportunities(symbol, fvgs, events) {
         var leg = f.displacementEventId ? legByDispId[f.displacementEventId] : null;
         var o;
         if (leg) {
-            var key = leg.mssId || ('LEG:' + leg.ids[0]);
+            var key = 'LEG:' + leg.ids[0];
             o = oppFor(key);
             o.direction = leg.direction;
-            o.mssId = leg.mssId;
             if (o.legIds.indexOf(leg.ids[0]) === -1) {
                 o.legIds = o.legIds.concat(leg.ids);
                 o.nLegs++;
@@ -97,22 +91,19 @@ function buildOpportunities(symbol, fvgs, events) {
 
 /**
  * 机会统计（报告用）
- * @returns {Object} { opportunities, totalFvgs, multiFvgOpps, mssLinkedOpps, avgFvgPerOpp }
+ * @returns {Object} { opportunities, totalFvgs, multiFvgOpps, avgFvgPerOpp }
  */
 function summarizeOpportunities(opps) {
     var totalFvgs = 0;
     var multiFvgOpps = 0;
-    var mssLinked = 0;
     opps.forEach(function (o) {
         totalFvgs += o.fvgIds.length;
         if (o.fvgIds.length > 1) multiFvgOpps++;
-        if (o.mssId) mssLinked++;
     });
     return {
         opportunities: opps.length,
         totalFvgs: totalFvgs,
         multiFvgOpps: multiFvgOpps,
-        mssLinkedOpps: mssLinked,
         avgFvgPerOpp: opps.length > 0 ? totalFvgs / opps.length : 0
     };
 }

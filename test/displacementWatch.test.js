@@ -25,11 +25,11 @@ test('matching liquidity creates WATCH without MSS and without native FVG', func
         structuralState: { structuralState: 'UNKNOWN', activeProtected: {} }, dailyBias: { bias: 'OPPOSITE' } });
     assert.ok(w);
     assert.strictEqual(w.state, 'WATCH_NO_FVG');
-    assert.strictEqual(w.mss.exists, false);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(w, 'mss'), false);
     assert.strictEqual(w.dailyBias.bias, 'OPPOSITE');
 });
 
-test('WATCH MSS enrichment preserves exact leg.mssId lookup', function () {
+test('legacy-shaped structure data cannot enrich WATCH', function () {
     var d = disp('BULLISH', 2), l = leg(d);
     l.mssId = 'M-EXACT';
     var w = dw.buildWatch({ symbol: 'X', leg: l, evaluationTime: d.confirmedAt,
@@ -40,9 +40,8 @@ test('WATCH MSS enrichment preserves exact leg.mssId lookup', function () {
         ],
         candles: [c(0, 99, 100, 98, 99), c(1, 99, 101, 98, 100), c(2, 100, 108, 99, 107)] });
     assert.ok(w);
-    assert.strictEqual(w.mss.exists, true);
-    assert.strictEqual(w.mss.id, 'M-EXACT');
-    assert.strictEqual(w.mss.referencePrice, 99);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(w, 'mss'), false);
+    assert.strictEqual(JSON.stringify(w).indexOf('M-EXACT'), -1);
 });
 
 test('opposite liquidity cannot create watch', function () {

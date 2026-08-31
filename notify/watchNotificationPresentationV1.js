@@ -13,8 +13,6 @@ var ENUM_ZH = {
     MATCH: '方向一致', OPPOSITE: '方向相反', UNKNOWN: '未知',
     BYPASSED: '未参与判断', NOT_APPLICABLE: '不适用', VALID: '有效',
     EXPLOSIVE: '强势爆发', STRONG: '强', NORMAL: '常规', WEAK: '弱',
-    LOCAL: '局部结构', INTERNAL: '内部结构', CONTROLLING: '控制结构',
-    ACTIVE_PROTECTED: '活跃受保护结构', SUPERSEDED_PROTECTED: '已取代受保护结构',
     FIRST_TOUCH: '首次触及', UNTOUCHED: '尚未触及', PARTIAL: '部分回补',
     FULL: '完全回补', INVALIDATED: '已失效',
     BEFORE_LEG: '位移形成前', INSIDE_LEG: '位移过程中', AFTER_LEG: '位移形成后',
@@ -144,8 +142,8 @@ function biasView(watch) {
 
 function directionInfo(direction) {
     return direction === 'BEARISH'
-        ? { side:'SHORT', title:'做空机会观察', liquidity:'上方 BSL', displacement:'空头位移', move:'向下', mss:'Bearish MSS', watchIcon:'🔴' }
-        : { side:'LONG', title:'做多机会观察', liquidity:'下方 SSL', displacement:'多头位移', move:'向上', mss:'Bullish MSS', watchIcon:'🟢' };
+        ? { side:'SHORT', title:'做空机会观察', liquidity:'上方 BSL', displacement:'空头位移', move:'向下', watchIcon:'🔴' }
+        : { side:'LONG', title:'做多机会观察', liquidity:'下方 SSL', displacement:'多头位移', move:'向上', watchIcon:'🟢' };
 }
 
 function narrativePresentation(watch, info) {
@@ -211,61 +209,6 @@ function friendlyWatchState(state) {
     return translate(state);
 }
 
-/**
- * Presentation-only classification of the existing coverage MSS payload.
- * Signal existence is deliberately kept separate from the strength of the
- * structural claim shown to a human. This function never mutates the payload.
- */
-function classifyStructurePresentation(mss) {
-    if (!mss || mss.exists !== true) {
-        return { kind:'NONE', heading:'📐 结构突破信号', summaryLabel:null,
-            warning:null, highQualityStructuralMss:false };
-    }
-    var role = raw(mss.referenceRole);
-    var grade = raw(mss.mssGrade);
-    var direction = raw(mss.direction);
-    var bullish = direction === 'BULLISH';
-    var bearish = direction === 'BEARISH';
-    var directionZh = bullish ? '看多' : bearish ? '看空' : '';
-    var directionEn = bullish ? 'Bullish' : bearish ? 'Bearish' : '';
-    if (mss.protectedBreak === true || grade === 'PROTECTED' || role === 'ACTIVE_PROTECTED') {
-        return {
-            kind:'STRUCTURAL_MSS',
-            heading:'📐 市场结构转换（Structural MSS）',
-            summaryLabel:(directionEn ? directionEn + ' ' : '') + 'Structural MSS',
-            warning:null,
-            highQualityStructuralMss:true
-        };
-    }
-    if (grade === 'STRUCTURAL' || role === 'CONTROLLING' || role === 'CONTROLLING_SWING' || role === 'SUPERSEDED_PROTECTED') {
-        return {
-            kind:'STRUCTURAL_BREAK', heading:'📐 结构突破',
-            summaryLabel:(directionZh ? directionZh : '') + '结构突破',
-            warning:'⚠️ 尚未确认 Structural MSS', highQualityStructuralMss:false
-        };
-    }
-    if (role === 'INTERNAL') {
-        return {
-            kind:'INTERNAL_BREAK', heading:'📐 内部结构突破',
-            summaryLabel:'内部' + (directionZh || '') + '结构突破',
-            warning:'⚠️ 尚未确认 Structural MSS', highQualityStructuralMss:false
-        };
-    }
-    if (role === 'LOCAL' || grade === 'LOCAL') {
-        return {
-            kind:'LOCAL_BREAK', heading:'📐 局部结构突破',
-            summaryLabel:'局部' + (directionZh || '') + '结构突破',
-            warning:'⚠️ 尚未确认 Structural MSS', highQualityStructuralMss:false
-        };
-    }
-    return {
-        kind:'BREAK_SIGNAL', heading:'📐 结构突破信号',
-        summaryLabel:(directionZh || '') + '结构突破信号',
-        warning:'⚠️ 结构 provenance 不足，尚未确认 Structural MSS',
-        highQualityStructuralMss:false
-    };
-}
-
 function displacementSummaryLabel(displacement, info) {
     return displacement && displacement.quality === 'WEAK' ? '弱' + info.displacement : info.displacement;
 }
@@ -274,22 +217,17 @@ function buildSummary(watch, primary, bias, info) {
     var sentences = [];
     var hasLiquidity = !!primary;
     var hasDisplacement = !!(watch && watch.displacement);
-    var structure = classifyStructurePresentation(watch && watch.mss);
-    var hasStructure = structure.kind !== 'NONE';
-    if (hasLiquidity || hasDisplacement || hasStructure) {
+    if (hasLiquidity || hasDisplacement) {
         var sentence = hasLiquidity ? info.liquidity + ' 被扫后' : '';
-        if (hasStructure) {
-            sentence += (sentence ? '出现' : '') + structure.summaryLabel;
-        }
         if (hasDisplacement) {
             var displacementLabel = displacementSummaryLabel(watch.displacement, info);
-            sentence += hasLiquidity && !hasStructure ? '出现' + displacementLabel
+            sentence += hasLiquidity ? '出现' + displacementLabel
                 : (sentence ? '与' : '出现') + displacementLabel;
         }
         if (watch && watch.nativeFvg) sentence += (sentence ? '，并' : '') + (biasConflict(bias) ? '回到' : '形成') + '原生 FVG';
         sentences.push(sentence + '。');
     } else {
-        sentences.push('当前 WATCH 的结构证据未完整提供。');
+        sentences.push('当前 WATCH 的价格交付证据未完整提供。');
     }
     if (!biasIsUnknown(bias) && bias.alignment === 'MATCH') {
         sentences.push('当前 4H Daily Bias 与本次 ' + info.side + ' WATCH 方向一致。');
@@ -298,7 +236,7 @@ function buildSummary(watch, primary, bias, info) {
         sentences.push('但当前有效的 4H Daily Bias 为' + (bias.direction === 'BULLISH' ? '看多' : '看空') + '，本次 ' + info.side + ' WATCH 属于反 HTF 方向观察，不是当前优先 Narrative。');
         sentences.push('继续观察价格对 FVG 的接受情况及 ' + (info.side === 'SHORT' ? 'bearish' : 'bullish') + ' delivery 是否延续。');
     } else {
-        sentences.push('继续观察 FVG 回踩、价格接受与后续结构延续。');
+        sentences.push('继续观察 FVG 回踩、价格接受与后续 delivery 延续。');
     }
     return sentences;
 }
@@ -313,9 +251,7 @@ function build(watch, currentPrice, options) {
     var side = liquiditySide(primary, evidence);
     var count = candidateCount(watch);
     var displacement = watch && watch.displacement;
-    var mss = watch && watch.mss;
     var fvg = watch && watch.nativeFvg;
-    var structurePresentation = classifyStructurePresentation(mss);
     var bias = biasView(watch);
     var conflict = biasConflict(bias);
     var narrative = narrativePresentation(watch, info);
@@ -358,15 +294,6 @@ function build(watch, currentPrice, options) {
         }
     } else lines.push('未提供');
 
-    lines.push('', structurePresentation.heading);
-    if (mss && mss.exists) {
-        lines.push('方向：' + translate(mss.direction));
-        lines.push('结构参考位：' + formatPrice(mss.referencePrice, fmtPrice));
-        lines.push('结构级别：' + translate(mss.referenceRole));
-        lines.push('Protected Break：' + (mss.protectedBreak === true ? '是' : mss.protectedBreak === false ? '否' : '-'));
-        if (structurePresentation.warning) lines.push(structurePresentation.warning);
-    } else lines.push('未提供');
-
     lines.push('', '🟦 原生 FVG');
     if (fvg) {
         lines.push('区间：' + formatPrice(fvg.low, fmtPrice) + ' – ' + formatPrice(fvg.high, fmtPrice));
@@ -377,10 +304,10 @@ function build(watch, currentPrice, options) {
 
     if (!conflict) lines.push('', ...buildBiasLines(bias, info, false));
 
-    lines.push('', '📌 当前结构解读');
+    lines.push('', '📌 当前观察解读');
     buildSummary(watch, primary, bias, info).forEach(function (sentence) { lines.push(sentence); });
     lines.push('', '这是 WATCH 观察事件，不是入场确认。');
-    lines.push('仅用于市场结构监测，不构成自动交易或投资指令。');
+    lines.push('仅用于市场价格行为监测，不构成自动交易或投资指令。');
     return lines.join('\n');
 }
 
@@ -398,7 +325,6 @@ module.exports = {
     biasView: biasView,
     directionInfo: directionInfo,
     narrativePresentation: narrativePresentation,
-    classifyStructurePresentation: classifyStructurePresentation,
     buildSummary: buildSummary,
     buildBiasLines: buildBiasLines,
     sweepContextLines: sweepContextPresentationV1.lines,

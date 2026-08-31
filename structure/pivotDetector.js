@@ -11,7 +11,7 @@
  * 它的语义是 LOCAL_PIVOT（LOCAL_PIVOT_HIGH / LOCAL_PIVOT_LOW），**不承诺**：
  *   - 它是不是重要 Swing（结构性意义需要后续 qualification，见 Phase 12.2）
  *   - 它是不是 Liquidity Object（是否注册 liquidity 需要 Liquidity Qualification，见 Phase 12.4）
- *   - 它能不能作为 MSS reference（MSS 消费方应改吃 STRUCTURAL_SWING，见 Phase 12.3）
+ *   - 它不产生市场结构信号。
  * 后续改变 Swing/Liquidity qualification 时，本 detector 不应被牵连修改。
  * 历史兼容：当前消费方（swingLiquidity 包装等）仍把输出当 swing 使用，仅注释正名，逻辑零改动。
  */

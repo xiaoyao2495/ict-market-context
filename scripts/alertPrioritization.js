@@ -75,14 +75,12 @@ historicalLoader.loadAll(SYMBOL, startTime, endTime)
             console.log('Replay 完成 (' + Math.round((Date.now() - t0) / 1000) + 's)');
             var candles = candles5m;
             var legByDispId = displacementLeg.buildWindowedLegIndex(
-                result.displacementEvents || [], candles || [],
-                result.mssEvents || [], result.swings || []);
+                result.displacementEvents || [], candles || []);
             var opps = opportunity.buildOpportunities(result.symbol, result.fvgs || [], {
-                DISPLACEMENT: result.displacementEvents || [],
-                MSS: result.mssEvents || []
+                DISPLACEMENT: result.displacementEvents || []
             });
             var alerts = alertReplay.buildAlerts(opps, result.fvgs || [], legByDispId,
-                result.drawTrace || [], result.sweepEvents || [], candles || [], result.mssEvents || []);
+                result.drawTrace || [], result.sweepEvents || [], candles || []);
             var highs = alerts.filter(function (a) { return a.tier === 'HIGH_QUALITY'; });
             var res = alertPrioritization.auditPrioritization(highs, candles);
 

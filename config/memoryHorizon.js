@@ -16,8 +16,6 @@
  *   - 但 AMD 的【输入】依赖长期 registry：collectEqualLiquidity 全量过滤（EQH 加分）
  *     与 sweep 事件流（来自长期 swing/calendar liquidity）→ AMD 输出经市场结构传导，
  *     归类 EXPECTED_LONG_MEMORY（非状态泄漏），但使 AMD 的独立收敛性无法验证
- *   - MSS consumedRefs 永久累积：语义正确（swing 被突破后不可再作 reference），
- *     但使 MSS 序列依赖 warmup 内突破历史 → EXPECTED_LONG_MEMORY
  *   - FVG displacement 关联 time-bounded（≤2 bars）→ MUST_CONVERGE
  *   - ATR14 Wilder 递减记忆，warmup 后收敛 → MUST_CONVERGE
  */
@@ -34,16 +32,12 @@ module.exports = {
         horizon: 'long (registry persistent)',
         classification: 'EXPECTED_LONG_MEMORY' // EQH 成员来自长期 swing
     },
-    mssConsumedRefs: {
-        horizon: 'unbounded (permanent per swing, semantically correct)',
-        classification: 'EXPECTED_LONG_MEMORY' // swing 突破不可逆
-    },
     displacement: {
-        horizon: 'few bars (score on current candle + same-bar MSS)',
+        horizon: 'current closed candle price facts',
         classification: 'MUST_CONVERGE'
     },
     amd: {
-        horizon: 'bounded: acc 36 + manip wait 12 + mss 12 + disp 6 + timeout (~70 bars)',
+        horizon: 'bounded: accumulation + manipulation + displacement timeout',
         classification: 'MUST_CONVERGE (state machine), ' +
             'but inputs (EQH bonus / sweep events) depend on long-term registry ' +
             '→ practical convergence via EXPECTED_LONG_MEMORY path'

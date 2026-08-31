@@ -5,7 +5,7 @@
  * PDH / 1H protected high / 4H swing high"对后续 delivery 的意义不同。
  *
  * 目标：回答唯一问题——"扫的是什么级别的流动性"能否解释为什么有些
- * 强 MSS + 强 displacement 形成持续 Delivery，而有些只是局部 impulse。
+ * 强 displacement 可能形成持续 Delivery，也可能只是局部 impulse。
  *
  * 实现（全部只读，不碰交易层 / HIGH 定义 / 参数）：
  *   1. 1H/4H confirmed pivots（11E.0 封板：confirmedAt = 右确认 K closeTime）
@@ -14,7 +14,6 @@
  *      BULLISH = 下方流动性被穿过（min low <= price）且 anchor 已收回（price < anchor）
  *      BEARISH = 上方流动性被穿过且 anchor 已收回
  *      取被扫到的最高层级：4H_SWING > PDH_PDL > 1H_SWING > 5M_INTERNAL > NONE
- *   3. 记录 sweep→MSS 距离（sweep price vs MSS reference price）
  *
  * 输出标签（后续正式化的方向，本轮只出数据）：
  *   Direction Confidence：ALIGNED / UNCONFIRMED / COUNTERTREND（初步）
@@ -55,7 +54,7 @@ function buildHtfLiquidity(data1h, data4h) {
  * @param {Array} candles 5m candles
  * @param {Array} htfPool buildHtfLiquidity 输出
  * @param {Array} [data1d] 1d candles（PDH/PDL）
- * @returns {Object} { level, price, distPct, distToMssRefPct }
+ * @returns {Object} { level, price, distPct }
  */
 function sweepLevelOf(alert, candles, htfPool, data1d) {
     var anchorIdx = alert.anchorIndex;
@@ -105,18 +104,12 @@ function sweepLevelOf(alert, candles, htfPool, data1d) {
     if (!best) {
         best = { level: 'NONE', price: null, distPct: null };
     }
-    // sweep→MSS 距离（sweep price vs MSS reference price）
-    var distToMssRefPct = null;
-    if (best.price !== null && alert.mssRefPrice !== null && alert.mssRefPrice !== undefined && anchorPrice > 0) {
-        distToMssRefPct = Math.abs(best.price - alert.mssRefPrice) / anchorPrice * 100;
-    }
-    best.distToMssRefPct = distToMssRefPct;
     return best;
 }
 
 /**
  * 汇总：By Sweep Level 的 1h 方向表现。
- * @param {Array} rows [{ sweepLevel, deliveryClass, htfScore, htfCount, dirHit1h, nearHit1h, mfe1h, mssQuality, legQuality }]
+ * @param {Array} rows [{ sweepLevel, deliveryClass, htfScore, htfCount, dirHit1h, nearHit1h, mfe1h, legQuality }]
  * @returns {Object} { byLevel: {...}, byLevelCombo: {...} }
  */
 function assessSweepLevels(rows) {
@@ -133,10 +126,8 @@ function assessSweepLevels(rows) {
         var lv = r.sweepLevel || 'NONE';
         var a = acc(byLevel, lv);
         a.n++; if (r.dirHit1h) a.dirHit++; if (r.nearHit1h) a.nearHit++; a.nearCnt++; a.mfeSum += r.mfe1h;
-        // 假设验证：Sweep Level × (PROTECTED|STRONG/EXPLOSIVE)
-        var mssKey = (r.mssQuality === 'PROTECTED_SWING' || r.mssQuality === 'HTF_RELEVANT') ? 'PROTECTED+' : 'INTERNAL-';
         var legKey = (r.legQuality === 'STRONG' || r.legQuality === 'EXPLOSIVE') ? 'STRONG+' : 'NORMAL-';
-        var comboKey = lv + '|' + mssKey + '|' + legKey;
+        var comboKey = lv + '|' + legKey;
         var c = acc(byLevelCombo, comboKey);
         c.n++; if (r.dirHit1h) c.dirHit++;
     });

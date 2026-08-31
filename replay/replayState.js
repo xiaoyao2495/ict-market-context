@@ -8,7 +8,7 @@
  *   - 每根 K：增量推进【状态型】组件
  *       AMD（amd/amdState.js 持久状态机）
  *       Liquidity registry（新 swing/equal 去重加入，旧 status 保留）
- *       Sweep / MSS / Displacement 事件（只取新 K 产生的）
+ *       Sweep / Displacement 事件（只取新 K 产生的）
  *       FVG（新 K 形成 + 已有 FVG 逐根 lifecycle）
  *       Entry Gate（previousState 持久）
  *       Pending Trade（逐根增量模拟 + cancelCheck）
@@ -67,7 +67,6 @@ function createReplayState(options) {
 
         // ---- 事件（持久，id 去重） ----
         eventRegistry: null, // 由调用方注入 events/eventRegistry
-        seenMssIds: {},
         seenDispIds: {},
 
         // ---- 持久状态机 ----
@@ -102,7 +101,7 @@ function createReplayState(options) {
 
 /**
  * 每根 K 增量更新 liquidity：新 pivot → 新 swing → 新 equal（去重加入持久 registry）
- * 返回本根新产生的 swing 列表（供 mss 参考）
+ * 返回本根新产生的 swing 列表。
  *
  * 注意（Phase 11S.1）：曾尝试 O(1) 增量 pivot 优化，但 equal 检测池的行为语义
  * （EQH members 引用 registry 活动对象 vs 每根全新对象）会改变长窗口回放结果，
@@ -110,7 +109,7 @@ function createReplayState(options) {
  */
 /**
  * 每根 K 增量更新 liquidity：新 pivot → 新 swing → 新 equal（去重加入持久 registry）
- * 返回本根新产生的 swing 列表（供 mss 参考）
+ * 返回本根新产生的 swing 列表。
  *
  * Phase 11D.4（性能）：增量 pivot —— 原实现每根 slice(0, index+1) + detectPivots 全量 = O(n²)
  * （180d 单币 ~30 分钟的主热点）。新实现利用 pivot 语义：pivot 极值 K 在 index = K + RIGHT
@@ -236,9 +235,9 @@ function incrementalLiquidity(state, candles, index, exchangeInfo, evaluationTim
 /**
  * 每根 K 增量事件：
  * 1. lifecycle × 新 K → SWEPT → sweep 事件
- * 2. detectMss / detectDisplacement 全量但只取新 K（candleIndex === index）的事件，id 去重
+ * 2. Displacement 只取新 K（candleIndex === index）的事件，id 去重
  */
-function incrementalEvents(state, candle, index, evaluationTime, mssEventsAll, dispEventsAll) {
+function incrementalEvents(state, candle, index, evaluationTime, dispEventsAll) {
     var newSweeps = [];
     var registry = state.registry;
 
@@ -268,20 +267,7 @@ function incrementalEvents(state, candle, index, evaluationTime, mssEventsAll, d
         }
     }
 
-    // 2. MSS：只取新 K 产生的（id 去重）
-    var newMss = [];
-    var mssList = mssEventsAll || [];
-    for (var m = 0; m < mssList.length; m++) {
-        var me = mssList[m];
-        if (me.candleIndex === index && !state.seenMssIds[me.id]) {
-            state.seenMssIds[me.id] = true;
-            if (state.eventRegistry.add(me)) {
-                newMss.push(me);
-            }
-        }
-    }
-
-    // 3. Displacement：只取新 K 产生的（id 去重）
+    // 2. Displacement：只取新 K 产生的（id 去重）
     var newDisps = [];
     var dispList = dispEventsAll || [];
     for (var d = 0; d < dispList.length; d++) {
@@ -294,7 +280,7 @@ function incrementalEvents(state, candle, index, evaluationTime, mssEventsAll, d
         }
     }
 
-    return { sweeps: newSweeps, mss: newMss, displacements: newDisps };
+    return { sweeps: newSweeps, displacements: newDisps };
 }
 
 /**

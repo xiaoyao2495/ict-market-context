@@ -113,12 +113,12 @@ test('13 Bias snapshots remain prefix-stable', function () {
     assert.strictEqual(observations[0].biasSnapshot.bias,'UNKNOWN');
     assert.strictEqual(observations[1].biasSnapshot.bias,'BEARISH');
 });
-test('14 structure snapshots NONE-LOCAL-INTERNAL do not change narrative identity', function () {
+test('14 legacy structure payloads do not enter observations or change narrative identity', function () {
     var a=watch('W1','S1','BEARISH',1000), b=watch('W2','S1','BEARISH',2000), c=watch('W3','S1','BEARISH',3000);
     b.mss={exists:true,referenceRole:'LOCAL'}; c.mss={exists:true,referenceRole:'INTERNAL'};
     var run=observeAll([a,b,c]), obs=run.state.observationOrder.map(function(id){return run.state.observationsById[id];});
     assert.strictEqual(new Set(obs.map(function(o){return o.narrativeId;})).size,1);
-    assert.deepStrictEqual(obs.map(function(o){return o.structureSnapshot.mss.referenceRole || 'NONE';}),['NONE','LOCAL','INTERNAL']);
+    assert.ok(obs.every(function(o){return Object.prototype.hasOwnProperty.call(o,'structureSnapshot')===false;}));
 });
 test('15 displacement and FVG are observation snapshots, not narrative identity', function () {
     var run=observeAll([watch('W1','S1','BEARISH',1000), watch('W2','S1','BEARISH',2000)]);

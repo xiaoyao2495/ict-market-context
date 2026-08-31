@@ -7,7 +7,7 @@
  *
  * 与回测 11D.8 的一致性保证：
  *   - 复用同一批检测器（incrementalLiquidity / incrementalEvents / incrementalFvg /
- *     mssDetector / displacementDetector / amdState / rebuildSnapshot）
+ *     displacementDetector / amdState / rebuildSnapshot）
  *   - 内部维护全局 index 对齐的 candles 窗口（window.length === index+1，
  *     与回测 candles.slice(0, index+1) 语义完全一致）
  *   - leg 合并语义与 buildDisplacementLegs 一致（连续同向、相邻 index、最多 3 根）
@@ -151,9 +151,7 @@ function createLiveEngine(data, options) {
             evaluationTime: evaluationTime,
             sweepEvents: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),
             displacements: state.eventRegistry.getByType(symbol, 'DISPLACEMENT'),
-            mssEvents: state.eventRegistry.getByType(symbol, 'MSS'),
             candles: window,
-            structuralState: state.structural5m,
             dailyBias: dailyBias,
             existing: watchById['WATCH:' + symbol + ':' + leg.direction + ':LEG:' + leg.ids[0]] || null
         });
@@ -208,19 +206,18 @@ function createLiveEngine(data, options) {
             // ---- 3. 增量 ATR ----
             prevAtr = replayEngine._updateAtrIncremental(atrSeries, window, i, prevAtr, 14);
 
-            // ---- 4. Incremental structural provenance + events ----
+            // ---- 4. Generic structural lifecycle + price-only Displacement ----
             var structuralStep = structuralProvenance5m.step(
                 state.structural5m, candle, i, newConfirmedSwings
             );
             structuralStep.events.forEach(function (event) {
                 state.eventRegistry.add(event);
             });
-            var newMssRaw = structuralStep.mss;
-            var newDispRaw = displacementDetector.detectDisplacement([candle], newMssRaw, {
+            var newDispRaw = displacementDetector.detectDisplacement([candle], {
                 symbol: symbol, timeframe: '5m', baseIndex: i,
                 atrSeries: atrSeries, thresholds: cfg
             });
-            var newEvents = replayState.incrementalEvents(state, candle, i, evaluationTime, newMssRaw, newDispRaw);
+            var newEvents = replayState.incrementalEvents(state, candle, i, evaluationTime, newDispRaw);
 
             // ---- 5. 持久 AMD ----
             amdState.updateAmdState(state.amd, {
@@ -231,7 +228,6 @@ function createLiveEngine(data, options) {
                 registry: state.registry,
                 draw: snapshot ? snapshot.draw : null,
                 newSweeps: newEvents.sweeps,
-                newMss: newEvents.mss,
                 newDisplacements: newEvents.displacements
             }, { thresholds: cfg });
 
@@ -290,7 +286,7 @@ function createLiveEngine(data, options) {
      *   （feed/closeExpired 关闭时 = 当前推进根 i；flushLeg 无上下文时回退 anchorIndex）
      */
     function evaluateOpportunity(leg, anchorIndex, anchorCandle, availableIndex) {
-        var oppId = leg.mssId || ('LEG:' + leg.ids[0]);
+        var oppId = 'LEG:' + leg.ids[0];
         // 机会身份与 Replay 的 buildOpportunities 一致：只有 FVG 归属到 leg 才构成机会
         // （buildOpportunities 遍历 fvgs → fvg.displacementEventId → leg → opp；无 FVG 的 leg 不成机会）
         var legFvgs = state.fvgReg.getAll(symbol).filter(function (f) {
@@ -304,20 +300,6 @@ function createLiveEngine(data, options) {
             displacementLeg.enrichLegWithCandles(leg, window);
         }
         var legQuality = displacementLeg.classifyLegQuality(leg);
-
-        // MSS quality is enrichment from time-local structural provenance;
-        // age/latest-swing/reference-role cannot suppress MSS or HIGH eligibility.
-        var mssQuality = 'NO_MSS';
-        if (leg.mssId) {
-            var mssEvent = null;
-            state.eventRegistry.getByType(symbol, 'MSS').some(function (m) {
-                if (m.id === leg.mssId) { mssEvent = m; return true; }
-                return false;
-            });
-            if (mssEvent) {
-                mssQuality = structuralProvenance5m.qualityForMss(mssEvent);
-            }
-        }
 
         // near draw（drawTrace[anchorIndex] 的 near target，与回测 drawTrace[anchor] 同源；snapshot 兜底）
         var nearTarget = null;
@@ -336,8 +318,6 @@ function createLiveEngine(data, options) {
             : null;
 
         var tier = opportunityQuality.classifyOpportunityTier({
-            mssQuality: mssQuality,
-            mssExists: !!mssEvent,
             legQuality: legQuality,
             nearDrawAvailable: nearTarget !== null && nearTarget !== undefined,
             directionConflict: false
@@ -377,19 +357,8 @@ function createLiveEngine(data, options) {
             id: oppId,
             tier: tier,
             direction: leg.direction,
-            mssQuality: mssQuality,
             legQuality: legQuality,
             legRangeAtr: leg.rangeAtr,
-            // Authoritative Structural MSS provenance fields (diagnostic only).
-            mssId: leg.mssId || null,
-            mssReferenceSwingId: mssEvent && mssEvent.source ? (mssEvent.source.referenceSwingId || null) : null,
-            mssReferenceRole: mssEvent ? mssEvent.referenceStructuralRole : null,
-            protectedBreak: !!(mssEvent && mssEvent.protectedBreak),
-            mssGrade: mssEvent ? mssEvent.mssGrade : null,
-            structuralStateBefore: mssEvent ? mssEvent.structuralStateBefore : null,
-            structuralStateAfter: mssEvent ? mssEvent.structuralStateAfter : null,
-            provenanceAvailable: !!(mssEvent && mssEvent.provenanceAvailable),
-            provenanceId: mssEvent ? (mssEvent.provenanceId || null) : null,
             anchorIndex: anchorIndex,
             anchorTime: anchorCandle.closeTime,
             anchorPrice: anchorPrice,
@@ -415,7 +384,7 @@ function createLiveEngine(data, options) {
             opp.nearConsumed = cons.consumed;
         }
 
-        // Phase 11L.8：Liquidity Provenance + MSS↔Leg relation（Live/Replay 同一关联函数）。
+        // Phase 11L.8：Liquidity Provenance（Live/Replay 同一关联函数）。
         //   通知行 "Liquidity Taken:" 的数据源；sweep.confirmedAt <= availableAt（无 future leakage）。
         var availTime2 = availCandle ? availCandle.closeTime : (opp.availableAt !== undefined ? opp.availableAt : anchorCandle.closeTime);
         var sweepEventsAll = state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP');
@@ -427,13 +396,6 @@ function createLiveEngine(data, options) {
             maxLookbackBars: null // 使用 thresholds.events.sweepProvenance.maxLookbackBars（当前 48）
         });
         opp.liquidityContext = prov;
-        opp.mssRelation = liquidityProvenance.classifyMssLegRelation(leg, mssEvent);
-        var narrativeRaid = prov && prov.immediateSweep ? prov.immediateSweep : null;
-        opp.raidToMssBars = narrativeRaid && mssEvent &&
-            typeof narrativeRaid.candleIndex === 'number' && typeof mssEvent.candleIndex === 'number'
-            ? mssEvent.candleIndex - narrativeRaid.candleIndex : null;
-        opp.mssToDisplacementBars = mssEvent && typeof mssEvent.candleIndex === 'number'
-            ? leg.startIndex - mssEvent.candleIndex : null;
 
         // Phase 11L.15 — Alert Prioritization（B 口径，用户选定；A 口径数据失败已关闭）：
         //   HIGH + 48 窗口内存在任一 Significant Liquidity（EQL/EQH/PDL/PDH/Session）

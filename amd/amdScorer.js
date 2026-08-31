@@ -30,7 +30,7 @@ function scoreAmd(amdResult, options) {
 
     var accScore = amdResult.accumulation ? amdResult.accumulation.score : 0;
     var manipScore = amdResult.manipulation ? amdResult.manipulation.score : 0;
-    var distScore = amdResult.distribution ? amdResult.distribution.score : 0;
+    var distScore = amdResult.distribution ? 100 : 0;
 
     var score = Math.round(
         accScore * weights.accumulation +

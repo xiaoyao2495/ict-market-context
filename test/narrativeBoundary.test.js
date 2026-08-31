@@ -67,9 +67,9 @@ test('boundaryFromAmd：空 AMD → 全 false/null', function () {
 });
 
 test('boundaryFromAmd：distribution displacementEvent 优先', function () {
-    var amd = { distribution: { displacementEvent: { id: 'd1' }, mssEvent: { id: 'm1' } } };
+    var amd = { distribution: { displacementEvent: { id: 'd1' } } };
     assert.strictEqual(nb.boundaryFromAmd(amd).distributionEventId, 'd1');
-    assert.strictEqual(nb.boundaryFromAmd({ distribution: { mssEvent: { id: 'm1' } } }).distributionEventId, 'm1');
+    assert.strictEqual(nb.boundaryFromAmd({ distribution: {} }).distributionEventId, null);
 });
 
 /* ---------- classify ---------- */
@@ -308,7 +308,7 @@ test('amdState：enabled=true（默认）→ DISTRIBUTION reset 冻结 TradeCont
     st.direction = 'BULLISH';
     st.accumulation = { rangeLow: 98, rangeHigh: 100, confirmedAt: 800 };
     st.manipulation = { sweepEvent: { price: 99, id: 's1', confirmedAt: 900 }, confirmedAt: 900 };
-    st.distribution = { mssEvent: { id: 'm1' }, displacementEvent: { id: 'd1' }, confirmedAt: 950 };
+    st.distribution = { displacementEvent: { id: 'd1' }, confirmedAt: 950 };
     st.confirmedAt = 950;
     st.phase = 'DISTRIBUTION';
     amdState.updateAmdState(st, { candleIndex: 100 }, { thresholds: thresholds });
@@ -318,7 +318,7 @@ test('amdState：enabled=true（默认）→ DISTRIBUTION reset 冻结 TradeCont
     assert.strictEqual(st.lastNarrative.direction, 'BULLISH');
     assert.strictEqual(st.lastNarrative.accumulation.rangeLow, 98);
     assert.strictEqual(st.lastNarrative.manipulation.sweepPrice, 99);
-    assert.strictEqual(st.lastNarrative.distribution.mssEventId, 'm1');
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(st.lastNarrative.distribution, 'mssEventId'), false);
     assert.strictEqual(st.lastNarrative.distribution.displacementEventId, 'd1');
     assert.strictEqual(st.lastNarrative.source, 'AMD_NARRATIVE');
     assert.strictEqual(st.lastNarrative.expiresAt, 100 + thresholds.amd.lastNarrative.maxAgeBars); // candleIndex + maxAge
@@ -863,10 +863,10 @@ test('11D.3：同一 Displacement Leg 的多个 FVG 归为一个 Opportunity（�
         { id: 'f3', direction: 'BULLISH', displacementEventId: 'd2', confirmedAt: 1500000 }
     ];
     var opps = opportunity.buildOpportunities('BTCUSDT', fvgs, events);
-    // d1+d2 连续同向 → 同一 leg → 同一 opportunity（m1）
+    // d1+d2 连续同向 → 同一 leg → 同一 opportunity
     assert.strictEqual(opps.length, 1, '3 个 FVG 应归 1 个 opportunity');
     assert.strictEqual(opps[0].fvgIds.length, 3);
-    assert.strictEqual(opps[0].mssId, 'm1');
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(opps[0], 'mssId'), false);
     assert.strictEqual(opps[0].nLegs, 1);
     var s = opportunity.summarizeOpportunities(opps);
     assert.strictEqual(s.opportunities, 1);
@@ -929,26 +929,13 @@ test('11D.5：3 根连续同向 displacement 合并为 1 leg，价量维度与 q
 
 var opportunityQuality = require('../stats/opportunityQuality');
 
-test('11D.7：tier 规则分层 —— HIGH/WATCH/LOW 边界锁定', function () {
-    // HIGH：MSS exists + STRONG/EXPLOSIVE leg + near draw；structural role 只作 enrichment
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'PROTECTED_SWING', legQuality: 'EXPLOSIVE', nearDrawAvailable: true }), 'HIGH_QUALITY');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'HTF_RELEVANT', legQuality: 'STRONG', nearDrawAvailable: true }), 'HIGH_QUALITY');
-    // WATCH：MSS exists + NORMAL leg
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'PROTECTED_SWING', legQuality: 'NORMAL', nearDrawAvailable: true }), 'WATCH');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'INTERNAL', legQuality: 'STRONG', nearDrawAvailable: true }), 'HIGH_QUALITY');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'INTERNAL', legQuality: 'NORMAL', nearDrawAvailable: true }), 'WATCH');
-    // LOW：NO_MSS / WEAK leg / 无 near / conflict；MICRO 仍表示 MSS exists
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'MICRO_INTERNAL', legQuality: 'EXPLOSIVE', nearDrawAvailable: true }), 'HIGH_QUALITY');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'PROTECTED_SWING', legQuality: 'WEAK', nearDrawAvailable: true }), 'LOW_QUALITY');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'PROTECTED_SWING', legQuality: 'EXPLOSIVE', nearDrawAvailable: false }), 'LOW_QUALITY');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'PROTECTED_SWING', legQuality: 'EXPLOSIVE', nearDrawAvailable: true, directionConflict: true }), 'LOW_QUALITY');
-    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ mssQuality: 'NO_MSS', legQuality: 'NORMAL', nearDrawAvailable: true }), 'LOW_QUALITY');
-    ['LOCAL', 'INTERNAL', 'CONTROLLING', 'ACTIVE_PROTECTED', 'SUPERSEDED_PROTECTED'].forEach(function (role) {
-        assert.strictEqual(opportunityQuality.classifyOpportunityTier({
-            mssQuality: role === 'ACTIVE_PROTECTED' ? 'PROTECTED_SWING' : 'INTERNAL',
-            mssExists: true, referenceRole: role, legQuality: 'STRONG', nearDrawAvailable: true
-        }), 'HIGH_QUALITY', role + ' 不得成为 HIGH hard gate');
-    });
+test('11D.7：tier 只由 leg、near draw 与 conflict 分层', function () {
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'EXPLOSIVE', nearDrawAvailable: true }), 'HIGH_QUALITY');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'STRONG', nearDrawAvailable: true }), 'HIGH_QUALITY');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'NORMAL', nearDrawAvailable: true }), 'WATCH');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'WEAK', nearDrawAvailable: true }), 'LOW_QUALITY');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'EXPLOSIVE', nearDrawAvailable: false }), 'LOW_QUALITY');
+    assert.strictEqual(opportunityQuality.classifyOpportunityTier({ legQuality: 'EXPLOSIVE', nearDrawAvailable: true, directionConflict: true }), 'LOW_QUALITY');
 });
 
 test('11D.7：buildTierIndex 挂档 —— leg endIndex 取 near target，tier 判定正确', function () {
@@ -1032,21 +1019,12 @@ test('11D.8：buildAlerts —— 同一 Opportunity 只通知一次，时间升�
         { side: 'SSL', price: 99.8, candleIndex: 15, confirmedAt: 6000000 },  // 同向（BULLISH）leg 前窗口内
         { side: 'BSL', price: 102, candleIndex: 25, confirmedAt: 7500000 }    // BEARISH
     ];
-    // MSS 事件（人工核对字段：referencePrice / breakPct）
-    var mssEvents = [
-        { id: 'm1', source: { referencePrice: 99.0, breakPct: 0.0012 } },
-        { id: 'm2', source: { referencePrice: 101.8, breakPct: 0.0006 } }
-    ];
-    // leg 需带 mssId 才能关联 MSS 事件（buildAlerts 取 mssRefPrice 用）
-    legByDispId.d1.mssId = 'm1';
-    legByDispId.d2.mssId = 'm2';
     legByDispId.d1.rangeAtr = 2.6;
     legByDispId.d1.netMoveAtr = 2.1;
     legByDispId.d1.bodyEfficiency = 0.7;
-    var alerts = alertReplay.buildAlerts(opps, fvgs, legByDispId, drawTrace, sweeps, candles, mssEvents);
+    var alerts = alertReplay.buildAlerts(opps, fvgs, legByDispId, drawTrace, sweeps, candles);
     assert.strictEqual(alerts.length, 2, '2 个 opportunity → 2 条通知（f1+f2 合并为 1）');
-    assert.strictEqual(alerts[0].mssRefPrice, 99.0, 'MSS reference 价格');
-    assert.strictEqual(alerts[0].mssBreakPct, 0.0012);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(alerts[0], 'mssRefPrice'), false);
     assert.strictEqual(alerts[0].legRangeAtr, 2.6);
     assert.strictEqual(alerts[0].legBodyEff, 0.7);
     assert.strictEqual(alerts[0].anchorIndex, 20, '时间升序');
@@ -1201,12 +1179,12 @@ test('11D.10：sweepLevelOf —— BULLISH 扫 1H low → 1H_SWING；未扫 → 
     var pool = htfLiquidityContext.buildHtfLiquidity(h1, []);
     var al = {
         direction: 'BULLISH', anchorIndex: 80, anchorTime: candles[80].closeTime,
-        anchorPrice: 101.0, sweep: { price: 99.5, side: 'SSL' }, mssRefPrice: 98.5
+        anchorPrice: 101.0, sweep: { price: 99.5, side: 'SSL' }
     };
     var sw = htfLiquidityContext.sweepLevelOf(al, candles, pool, []);
     assert.strictEqual(sw.level, '1H_SWING', '窗口内穿过已确认的 1h pivot low 93');
     assert.ok(sw.distPct > 0);
-    assert.ok(sw.distToMssRefPct > 0, 'sweep→MSS 距离');
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(sw, 'distToMssRefPct'), false);
 
     // 未扫 HTF：1h 在 200 附近（anchor 101 下方最近的 HTF low 193 未被穿，窗口 low 最低 99）
     var candles2 = [];
@@ -1215,7 +1193,7 @@ test('11D.10：sweepLevelOf —— BULLISH 扫 1H low → 1H_SWING；未扫 → 
     var pool2 = htfLiquidityContext.buildHtfLiquidity(htfCandlesWave(60, 200), []); // pivot low 193 在 200 附近
     var al2 = {
         direction: 'BULLISH', anchorIndex: 80, anchorTime: candles2[80].closeTime,
-        anchorPrice: 101.0, sweep: { price: 99.2, side: 'SSL' }, mssRefPrice: null
+        anchorPrice: 101.0, sweep: { price: 99.2, side: 'SSL' }
     };
     var sw2 = htfLiquidityContext.sweepLevelOf(al2, candles2, pool2, []);
     assert.strictEqual(sw2.level, '5M_INTERNAL', '无 HTF 命中 → 5m sweep');
@@ -1313,7 +1291,7 @@ test('11L.1：createWindowedLegBuilder —— 15min 窗合并（与 buildOpportu
     assert.strictEqual(r2.merged, true, '10min 差 → 同 leg');
     assert.strictEqual(r2.opened.ids.length, 2);
     assert.strictEqual(r2.opened.lastIndex, 13);
-    assert.strictEqual(r2.opened.mssId, 'm1');
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(r2.opened, 'mssId'), false);
     // 反方向 → 关旧开新
     var r3 = b.feed({ id: 'd3', direction: 'BEARISH', candleIndex: 20, confirmedAt: 1900000, metadata: { atr: 1 } });
     assert.ok(r3.closed && r3.closed.ids.length === 2, '反向 → 关闭 2 根的 leg');
@@ -1349,7 +1327,7 @@ test('11L.1：createWindowedLegBuilder.closeExpired —— 按时间过期关闭
     assert.ok(c2 && c2.ids.length === 2, '10:10 + 15min = 10:25 到期关闭（2 根合并 leg）');
 });
 
-test('11L.1：buildWindowedLegIndex —— 与 Live 引擎同一实现（含 quality/mssQuality）', function () {
+test('11L.1：buildWindowedLegIndex —— 与 Live 引擎同一实现', function () {
     var dl = require('../stats/displacementLeg');
     var candles = [];
     for (var i = 0; i < 30; i++) candles.push(m5(100, 101, 99, 100.5, i));
@@ -1359,12 +1337,12 @@ test('11L.1：buildWindowedLegIndex —— 与 Live 引擎同一实现（含 qua
         { id: 'd1', direction: 'BULLISH', candleIndex: 10, confirmedAt: 1000000, metadata: { atr: 1 } },
         { id: 'd2', direction: 'BULLISH', candleIndex: 11, confirmedAt: 1300000, metadata: { atr: 1 } }
     ];
-    var idx = dl.buildWindowedLegIndex(disp, candles, [], []);
+    var idx = dl.buildWindowedLegIndex(disp, candles);
     assert.ok(idx.d1 && idx.d2, '两个 disp 映射到同一 leg');
     assert.strictEqual(idx.d1, idx.d2, '同一 leg 对象');
     assert.ok(idx.d1.rangeAtr > 0, 'enrich 生效');
     assert.ok(['STRONG', 'EXPLOSIVE', 'NORMAL'].indexOf(idx.d1.quality) !== -1);
-    assert.strictEqual(idx.d1.mssQuality, 'NO_MSS');
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(idx.d1, 'mssQuality'), false);
 });
 
 /* ---------- Phase 11L.2：Top 成交量 symbol ---------- */

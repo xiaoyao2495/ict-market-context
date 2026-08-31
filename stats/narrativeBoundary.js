@@ -48,10 +48,7 @@ function boundaryFromAmd(amd) {
         accumulationRangeHigh: acc ? acc.rangeHigh : null,
         amdState: a.state || a.phase || null,
         amdDirection: a.direction || a.lastDirection || null,
-        distributionEventId: dist
-            ? (dist.displacementEvent ? dist.displacementEvent.id
-                : dist.mssEvent ? dist.mssEvent.id : null)
-            : null
+        distributionEventId: dist && dist.displacementEvent ? dist.displacementEvent.id : null
     };
 }
 

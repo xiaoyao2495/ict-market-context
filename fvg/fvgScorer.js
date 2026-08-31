@@ -5,7 +5,6 @@
  *
  *   Displacement association   40  有匹配 displacement（direction 匹配 + bars <= max）
  *   Gap size / ATR             20  gapAtr 越大分越高（相对 ATR 的缺口更有意义）
- *   Same-chain MSS             15  displacement 同 candle 关联 MSS
  *   AMD direction alignment    15  FVG 方向与 AMD 方向一致
  *   Scenario direction match   10  FVG 方向与 scenario 方向一致
  *
@@ -43,14 +42,6 @@ function scoreFvg(fvg, context, options) {
     }
     breakdown.gap = gapScore;
 
-    // ---- same-chain MSS (15) ----
-    var mssId =
-        fvg.metadata && fvg.metadata.displacementMetadata
-            ? fvg.metadata.displacementMetadata.mssEventId
-            : null;
-    var mssScore = mssId ? w.sameChainMss : 0;
-    breakdown.mss = mssScore;
-
     // ---- AMD direction alignment (15) ----
     var amdScore = 0;
     if (context && context.amdDirection) {
@@ -70,7 +61,7 @@ function scoreFvg(fvg, context, options) {
     breakdown.scenario = scenarioScore;
 
     var total = Math.max(0, Math.min(100,
-        displacementScore + gapScore + mssScore + amdScore + scenarioScore
+        displacementScore + gapScore + amdScore + scenarioScore
     ));
     var threshold = cfg.scorer.entryThreshold !== undefined ? cfg.scorer.entryThreshold : 60;
 

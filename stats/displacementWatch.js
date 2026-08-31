@@ -4,7 +4,7 @@
  * Trigger semantics are intentionally one-way:
  *   valid production Displacement -> look backward for matching production
  *   sweep provenance -> WATCH. Liquidity never opens a pending pre-displacement
- *   watch, and MSS/structure/bias never gate watch existence.
+ *   watch, and structure/bias never gate watch existence.
  *
  * Native FVG ownership is local to a displacement candle (K2): K1/K2/K3 are
  * read directly from the closed 5m candle stream. The global FVG registry is
@@ -74,39 +74,6 @@ function nativeFvgForDisplacement(displacement, candles) {
     };
 }
 
-function findMss(leg, mssEvents) {
-    if (!leg || !leg.mssId) return null;
-    var found = null;
-    (mssEvents || []).some(function (m) {
-        if (m.id === leg.mssId) { found = m; return true; }
-        return false;
-    });
-    return found;
-}
-
-function compactMss(m) {
-    return m ? {
-        exists: true,
-        id: m.id,
-        direction: m.direction,
-        confirmedAt: m.confirmedAt,
-        referencePrice: m.referenceLevel !== undefined ? m.referenceLevel : m.price,
-        referenceRole: m.referenceStructuralRole || m.referenceRole || null,
-        protectedBreak: !!m.protectedBreak,
-        mssGrade: m.mssGrade || null
-    } : {
-        exists: false, id: null, direction: null, confirmedAt: null,
-        referencePrice: null, referenceRole: null, protectedBreak: false, mssGrade: null
-    };
-}
-
-function compactProtected(s) {
-    return s ? {
-        id: s.id, side: s.side, price: s.price, role: s.role, status: s.status,
-        confirmedAt: s.confirmedAt, protectedConfirmedAt: s.protectedConfirmedAt
-    } : null;
-}
-
 function buildWatch(opts) {
     var leg = opts && opts.leg;
     if (!leg || !leg.ids || !leg.ids.length) return null;
@@ -132,8 +99,6 @@ function buildWatch(opts) {
     });
     nativeFvgs.sort(function (a, b) { return a.confirmedAt - b.confirmedAt || (a.id < b.id ? -1 : 1); });
     var primary = nativeFvgs[0] || null;
-    var mss = findMss(leg, opts.mssEvents || []);
-    var structural = opts.structuralState || {};
     var firstDisp = dispById[leg.ids[0]];
     var existing = opts.existing || null;
     var createdAt = existing ? existing.createdAt : evaluationTime;
@@ -173,12 +138,6 @@ function buildWatch(opts) {
         notifiedAt: existing && existing.notifiedAt || null,
         invalidatedAt: existing && existing.invalidatedAt || null,
         invalidationReason: existing && existing.invalidationReason || null,
-        mss: compactMss(mss),
-        structuralProvenance: {
-            structuralState: structural.structuralState || 'UNKNOWN',
-            latestProtectedHigh: compactProtected(structural.activeProtected && structural.activeProtected.HIGH),
-            latestProtectedLow: compactProtected(structural.activeProtected && structural.activeProtected.LOW)
-        },
         dailyBias: opts.dailyBias || null,
         formationOnly: true
     };
@@ -189,8 +148,6 @@ function watchFingerprint(w) {
         displacementIds: w.displacementIds,
         liquidityIds: (w.liquidityTaken.allCandidates || []).map(function (c) { return c.id; }),
         nativeFvgIds: (w.nativeFvgs || []).map(function (f) { return f.id; }),
-        mssId: w.mss && w.mss.id,
-        structuralState: w.structuralProvenance && w.structuralProvenance.structuralState,
         biasEvaluationTime: w.dailyBias && w.dailyBias.evaluationTime
     });
 }
@@ -208,7 +165,7 @@ function createWatchStore(initialWatches, deliveredKeys) {
         var old = byId[incoming.id];
         if (old && (old.state === 'NOTIFIED' || old.state === 'FVG_TOUCHED' || old.state === 'INVALIDATED' || old.state === 'EXPIRED')) {
             // Formation freezes at terminal transition. A later closed candle may
-            // extend the engine's leg, but it must not backfill liquidity/MSS/bias
+            // extend the engine's leg, but it must not backfill liquidity/bias
             // facts into an already touched/notified watch.
             return old;
         }

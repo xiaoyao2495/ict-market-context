@@ -176,7 +176,6 @@ function fmtPrice(p) {
 }
 function buildMessage(opp, symbol) {
     var dir = opp.direction === 'BULLISH' ? 'LONG (BULLISH)' : 'SHORT (BEARISH)';
-    var mss = opp.mssQuality === 'NO_MSS' ? 'no MSS chain' : opp.mssQuality.replace('_SWING', '');
     var keyword = CONFIG.dingtalk.keyword || '检测';
     // 11L.4：时间 = 真正通知时点（availableAt = 系统首次能确认 leg 结束），
     // 不是 leg 最后位移 K 的 anchorTime（那是 leg 本身的研究锚点）
@@ -240,12 +239,7 @@ function buildMessage(opp, symbol) {
         lines.push('Liquidity Context: NONE');
     }
     lines.push(
-        'MSS: ' + mss + (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? ' · Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : ' · Leg: ' + opp.legQuality),
-        'MSS Structure: role ' + (opp.mssReferenceRole || 'UNKNOWN') +
-            ' · grade ' + (opp.mssGrade || 'UNKNOWN') +
-            ' · protectedBreak ' + (opp.protectedBreak === true ? 'YES' : 'NO') +
-            ' · state ' + (opp.structuralStateBefore || 'UNKNOWN') + '→' + (opp.structuralStateAfter || 'UNKNOWN') +
-            ' · provenance ' + (opp.provenanceAvailable === true ? 'YES' : 'NO'),
+        (opp.legRangeAtr !== null && opp.legRangeAtr !== undefined ? 'Leg: ' + opp.legQuality + ' (' + opp.legRangeAtr.toFixed(1) + ' ATR)' : 'Leg: ' + opp.legQuality),
         notifTarget !== null ? 'Near Draw: ' + notifDist.toFixed(2) + '% 距离（target ' + fmtPrice(notifTarget) + '）' : 'Near Draw: -',
         '通知: ' + fmt(notified) + '（leg 锚 ' + fmt(opp.anchorTime) + '）'
     );
@@ -257,7 +251,6 @@ function buildLegacyFvgRetracementMessage(watch, currentPrice) {
     var dir = watch.direction === 'BULLISH' ? 'LONG' : 'SHORT';
     var liq = watch.liquidityTaken && watch.liquidityTaken.primary;
     var f = watch.nativeFvg;
-    var m = watch.mss || { exists: false };
     var bias = watch.dailyBias || { bias: 'UNKNOWN', confidence: null, alignment: 'UNKNOWN', status: 'UNKNOWN' };
     return [
         keyword + ' · ' + watch.symbol + ' ' + dir + ' WATCH TRIGGERED',
@@ -275,10 +268,6 @@ function buildLegacyFvgRetracementMessage(watch, currentPrice) {
         'midpoint: ' + fmtPrice(f.midpoint),
         'current price: ' + fmtPrice(currentPrice),
         'touch: FIRST_TOUCH',
-        '',
-        'MSS:',
-        m.exists ? (m.direction + ' · reference ' + fmtPrice(m.referencePrice) +
-            ' · role ' + (m.referenceRole || 'UNKNOWN') + ' · protectedBreak ' + (m.protectedBreak ? 'YES' : 'NO')) : 'NONE',
         '',
         '4H Daily Bias:',
         (bias.bias || 'UNKNOWN') + ' / ' + (bias.confidence || '-') +
@@ -306,7 +295,7 @@ function buildFvgRetracementMessage(watch, currentPrice, options) {
 }
 
 // ---------- 每个 symbol 的运行时 ----------
-// Structural Provenance V1 is the sole production 5m MSS source.
+// Generic Structural Provenance V1 supports Swing context only.
 // Persist the mode name so a pre-refactor cursor fails closed and is rebuilt.
 function structuralSwingMode() {
     return 'STRUCTURAL_PROVENANCE_2L2R_V1';
@@ -437,10 +426,7 @@ function createRunner(symbol) {
                         significant: alertPrioritization.isSignificant(c.sourceType)
                     };
                 }),
-                // Structure mode + authoritative Structural MSS provenance.
-                structureMode: structuralSwingMode(),
-                mssEventId: opp.mssId || null,
-                referenceSwingId: opp.mssReferenceSwingId || null
+                structureMode: structuralSwingMode()
             };
             rec.dailyBias = opp.dailyBias || null;
             fs.appendFileSync(shadowFile, JSON.stringify(rec) + '\n');
@@ -832,7 +818,7 @@ function main() {
     persistence.ensureDir(CONFIG.dataDir);
     log('=== Live Opportunity Radar 启动 ===');
     log('STRUCTURAL_SWING_MODE=' + structuralSwingMode() +
-        '（MSS reference source：confirmed 2L/2R pivots + Structural Provenance）');
+        '（Swing context source：confirmed 2L/2R pivots + Structural Provenance）');
     log('EQ_PRODUCTION_VERSION=' + EQ_PRODUCTION_VERSION +
         (EQ_PRODUCTION_VERSION === 'V3' ? '（Persistent Cluster V3）' : '（V2 emergency rollback）'));
     log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED

@@ -1,12 +1,11 @@
 /**
  * Displacement Detector —— 价格是否以明显不平衡方式重新定价
  *
- * 评分制（score >= minScore → DISPLACEMENT）：
- *   Body Ratio >= 0.60                        +1
- *   Range >= ATR × 1.20                       +1
- *   Body >= ATR × 0.80                        +1
- *   Close near directional extreme >= 0.75    +1
- *   Same candle MSS（结构破坏）                +1
+ * Price-only boolean contract:
+ *   expansionPass = Range >= ATR × 1.20 AND Body >= ATR × 0.80
+ *   directionalDeliveryPass = Body Ratio >= 0.60
+ *                             AND Close near directional extreme >= 0.75
+ *   DISPLACEMENT = expansionPass AND directionalDeliveryPass
  *
  * 方向：
  *   close > open → BULLISH
@@ -22,26 +21,16 @@ var thresholds = require('../config/thresholds');
 /**
  * 检测 Displacement
  * @param {Array} candles 已收盘 K 线（时间升序）
- * @param {Array} [mssEvents] 同批 MSS 事件（用于 same-candle break bonus）
  * @param {Object} [options] { symbol, timeframe, thresholds }
  * @returns {Array} DISPLACEMENT Market Events
  */
-function detectDisplacement(candles, mssEvents, options) {
+function detectDisplacement(candles, options) {
     var opts = options || {};
     var cfg = (opts.thresholds || thresholds).events.displacement;
     var atrCfg = (opts.thresholds || thresholds).events.atr;
     var symbol = opts.symbol || 'UNKNOWN';
     var timeframe = opts.timeframe || '5m';
     var baseIndex = opts.baseIndex || 0;
-
-    // same-candle MSS 索引：candleIndex（全局）-> [mss events]
-    var mssByIndex = {};
-    (mssEvents || []).forEach(function (m) {
-        if (!mssByIndex[m.candleIndex]) {
-            mssByIndex[m.candleIndex] = [];
-        }
-        mssByIndex[m.candleIndex].push(m);
-    });
 
     var results = [];
 
@@ -75,36 +64,14 @@ function detectDisplacement(candles, mssEvents, options) {
                 ? (candle.close - candle.low) / range
                 : (candle.high - candle.close) / range;
 
-        var score = 0;
-        if (bodyRatio >= cfg.bodyRatioThreshold) {
-            score++;
-        }
-        if (rangeAtr >= cfg.rangeAtrThreshold) {
-            score++;
-        }
-        if (bodyAtr >= cfg.bodyAtrThreshold) {
-            score++;
-        }
-        if (closeExtremeRatio >= cfg.closeExtremeThreshold) {
-            score++;
-        }
-        var sameBarMss = mssByIndex[index] || [];
-        // Detection score intentionally preserves the existing "any same-bar MSS"
-        // semantic. Direction filtering applies only to provenance linkage.
-        var sameMss = sameBarMss.length > 0;
-        var linkedMss = null;
-        sameBarMss.some(function (mss) {
-            if (mss.direction === direction) {
-                linkedMss = mss;
-                return true;
-            }
-            return false;
-        });
-        if (sameMss) {
-            score++;
-        }
+        var rangeExpansionPass = rangeAtr >= cfg.rangeAtrThreshold;
+        var bodyExpansionPass = bodyAtr >= cfg.bodyAtrThreshold;
+        var bodyQualityPass = bodyRatio >= cfg.bodyRatioThreshold;
+        var closeProgressPass = closeExtremeRatio >= cfg.closeExtremeThreshold;
+        var expansionPass = rangeExpansionPass && bodyExpansionPass;
+        var directionalDeliveryPass = bodyQualityPass && closeProgressPass;
 
-        if (score >= cfg.minScore) {
+        if (expansionPass && directionalDeliveryPass) {
             results.push({
                 id: symbol + ':' + timeframe + ':DISPLACEMENT:' + direction + ':' + candle.openTime,
                 symbol: symbol,
@@ -112,6 +79,8 @@ function detectDisplacement(candles, mssEvents, options) {
                 type: 'DISPLACEMENT',
                 direction: direction,
                 occurredAt: candle.openTime,
+                startAt: candle.openTime,
+                endAt: candle.closeTime,
                 confirmedAt: candle.closeTime,
                 candleIndex: index,
                 price: candle.close,
@@ -131,9 +100,12 @@ function detectDisplacement(candles, mssEvents, options) {
                     rangeAtr: round4(rangeAtr),
                     bodyAtr: round4(bodyAtr),
                     closeExtremeRatio: round4(closeExtremeRatio),
-                    score: score,
-                    maxScore: cfg.maxScore,
-                    mssEventId: linkedMss ? linkedMss.id : null
+                    rangeExpansionPass: rangeExpansionPass,
+                    bodyExpansionPass: bodyExpansionPass,
+                    bodyQualityPass: bodyQualityPass,
+                    closeProgressPass: closeProgressPass,
+                    expansionPass: expansionPass,
+                    directionalDeliveryPass: directionalDeliveryPass
                 }
             });
         }

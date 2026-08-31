@@ -1,18 +1,12 @@
 /**
- * Distribution Detector —— 消费 MSS / Displacement（Phase 7.1 产物）
+ * Distribution Detector —— 消费 price-only Displacement
  *
  * Bullish AMD Distribution：
- *   Bullish MSS → Bullish Displacement（顺序严格）
+ *   manipulation 后首次 Bullish Displacement
  * Bearish 对称。
  *
  * 顺序 + 窗口：
- *   manipulation.confirmedAt < mss.confirmedAt（<= 12 bars）
- *   mss.confirmedAt <= displacement.confirmedAt（<= 6 bars；same candle 允许 equal）
- *
- * Score（100）：
- *   matchingMSS 30 + matchingDisplacement 35 + sameDeliveryChain 15
- *   + rangeEscape 10 + targetLiquidity 10
- * score >= 60 → DISTRIBUTION_CONFIRMED
+ *   manipulation.confirmedAt <= displacement.confirmedAt（<= 6 bars）
  *
  * range escape：bullish → displacement close > accumulation.rangeHigh；bearish 对称
  * target liquidity：bullish → draw 存在 ACTIVE BSL 候选；bearish → ACTIVE SSL
@@ -50,58 +44,22 @@ function detectDistribution(input, options) {
     var reg = input.eventRegistry;
     var direction = manip.direction; // 'BULLISH' | 'BEARISH'
 
-    var mssEvents = reg ? reg.getByType(symbol, 'MSS') : [];
-    // Compatibility for isolated callers/tests that provide the pre-V1 event
-    // contract. Production emits MSS signals, so this fallback is not a second
-    // production detection path.
-    if (reg && mssEvents.length === 0) mssEvents = reg.getByType(symbol, 'STRUCTURAL_MSS');
     var dispEvents = reg ? reg.getByType(symbol, 'DISPLACEMENT') : [];
     var candidates = [];
 
-    mssEvents.forEach(function (mssEv) {
-        if (mssEv.confirmedAt > evaluationTime) return;
-        if (mssEv.direction !== direction) return; // 方向匹配
-        if (mssEv.confirmedAt <= manip.confirmedAt) return; // 必须在 manipulation 之后
-        var mssBars = Math.floor((mssEv.confirmedAt - manip.confirmedAt) / barMs);
-        if (mssBars > cfg.mssMaxBars) return;
-
-        dispEvents.forEach(function (dispEv) {
-            if (dispEv.confirmedAt > evaluationTime) return;
-            if (dispEv.direction !== direction) return;
-            if (dispEv.confirmedAt < mssEv.confirmedAt) return; // 顺序
-            var dispBars = Math.floor((dispEv.confirmedAt - mssEv.confirmedAt) / barMs);
-            if (dispBars > cfg.displacementMaxBars) return;
-
-            // 同一条链：disp 紧跟 mss（same candle 允许 equal）
-            var sameChain = dispBars <= 1;
-
-            var escape = rangeEscape(acc, direction, dispEv);
-            var targetAvailable = targetLiquidityExists(input.draw, direction);
-
-            var w = cfg.scoreWeights;
-            var score = w.matchingMss + w.matchingDisplacement;
-            if (sameChain) score += w.sameDeliveryChain;
-            if (escape) score += w.rangeEscape;
-            if (targetAvailable) score += w.targetLiquidity;
-            score = Math.round(score);
-
-            candidates.push({
-                direction: direction,
-                score: score,
-                mssEvent: mssEv,
-                displacementEvent: dispEv,
-                rangeEscaped: escape,
-                targetAvailable: targetAvailable,
-                confirmedAt: dispEv.confirmedAt,
-                state: score >= cfg.confirmThreshold ? 'DISTRIBUTION_CONFIRMED' : 'DISTRIBUTION_CANDIDATE',
-                breakdown: {
-                    matchingMss: w.matchingMss,
-                    matchingDisplacement: w.matchingDisplacement,
-                    sameDeliveryChain: sameChain ? w.sameDeliveryChain : 0,
-                    rangeEscape: escape ? w.rangeEscape : 0,
-                    targetLiquidity: targetAvailable ? w.targetLiquidity : 0
-                }
-            });
+    dispEvents.forEach(function (dispEv) {
+        if (dispEv.confirmedAt > evaluationTime) return;
+        if (dispEv.direction !== direction) return;
+        if (dispEv.confirmedAt < manip.confirmedAt) return;
+        var dispBars = Math.floor((dispEv.confirmedAt - manip.confirmedAt) / barMs);
+        if (dispBars > cfg.displacementMaxBars) return;
+        candidates.push({
+            direction: direction,
+            displacementEvent: dispEv,
+            rangeEscaped: rangeEscape(acc, direction, dispEv),
+            targetAvailable: targetLiquidityExists(input.draw, direction),
+            confirmedAt: dispEv.confirmedAt,
+            state: 'DISTRIBUTION_CONFIRMED'
         });
     });
 
@@ -109,16 +67,14 @@ function detectDistribution(input, options) {
         return null;
     }
 
-    // 最佳：score 高 → confirmedAt 近 → mssEvent.id 字典序
+    // 首个确认的方向匹配 Displacement 是 causal distribution 触发。
     candidates.sort(function (a, b) {
-        if (a.score !== b.score) return b.score - a.score;
-        if (a.confirmedAt !== b.confirmedAt) return b.confirmedAt - a.confirmedAt;
-        return a.mssEvent.id < b.mssEvent.id ? -1 : 1;
+        if (a.confirmedAt !== b.confirmedAt) return a.confirmedAt - b.confirmedAt;
+        return a.displacementEvent.id < b.displacementEvent.id ? -1 : 1;
     });
 
     var best = candidates[0];
     best.reasons = [
-        (direction === 'BULLISH' ? 'Bullish' : 'Bearish') + ' MSS',
         (direction === 'BULLISH' ? 'Bullish' : 'Bearish') + ' displacement',
         best.rangeEscaped ? 'Range escaped' : 'No range escape'
     ];

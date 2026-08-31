@@ -11,7 +11,6 @@
  *   - NONE：无可靠关联返回 null（不猜测）
  *   - sourceType 忠实展示；缺失 → UNKNOWN
  *   - formatSweepPriceLine / formatSweepRelationLine（BEFORE_LEG · 12 bars / INSIDE_LEG · 1 bar）
- *   - classifyMssLegRelation 四态
  *   - buildAlerts 集成：alert.sweep 兼容 + liquidityContext + mssRelation；NONE 时 HIGH 正常
  */
 var assert = require('assert');
@@ -225,18 +224,6 @@ test('11L.8：sourceType 原样展示（SWING_LOW/EQL 等）；缺失 → UNKNOW
     assert.strictEqual(ctx.allCandidates[0].sourceType, 'UNKNOWN', '缺失不猜测，不美化');
 });
 
-/* ---------- classifyMssLegRelation ---------- */
-
-test('11L.8：classifyMssLegRelation 四态', function () {
-    var l = leg();
-    assert.strictEqual(lp.classifyMssLegRelation(l, null), 'NONE');
-    assert.strictEqual(lp.classifyMssLegRelation(l, { confirmedAt: 1200001 }), 'BEFORE_LEG');
-    assert.strictEqual(lp.classifyMssLegRelation(l, { confirmedAt: 1400001 }), 'INSIDE_LEG');
-    assert.strictEqual(lp.classifyMssLegRelation(l, { confirmedAt: 1600001 }), 'AFTER_LEG');
-    assert.strictEqual(lp.classifyMssLegRelation({ startIndex: 10, endIndex: 12 }, { candleIndex: 8 }), 'BEFORE_LEG');
-    assert.strictEqual(lp.classifyMssLegRelation({ startIndex: 10, endIndex: 12 }, { candleIndex: 11 }), 'INSIDE_LEG');
-});
-
 /* ---------- 通知行格式化 ---------- */
 
 test('11L.8：formatSweepPriceLine / formatSweepRelationLine（新措辞格式）', function () {
@@ -268,7 +255,7 @@ test('11L.8：价格行含 sweep 时间（UTC+8 MM-DD HH:MM，用户示例 "08-1
 
 /* ---------- buildAlerts 集成 ---------- */
 
-test('11L.8：buildAlerts —— alert.sweep 兼容 + liquidityContext 三字段 + mssRelation', function () {
+test('11L.8：buildAlerts —— alert.sweep + liquidityContext', function () {
     var candles = [];
     for (var i = 0; i < 60; i++) candles.push(m5(100, 101, 99, 100.5, i));
     var fvgs = [
@@ -307,8 +294,7 @@ test('11L.8：buildAlerts —— alert.sweep 兼容 + liquidityContext 三字段
     assert.strictEqual(al.liquidityContext.primarySweep, undefined, 'primarySweep 已移除');
     assert.strictEqual(al.liquidityContext.allCandidates.length, 2, '全候选保留');
     assert.strictEqual(al.liquidityContext.immediateSweep.barsBeforeLegStart, 1, '15 - 14 = 1');
-    // mssRelation
-    assert.strictEqual(al.mssRelation, 'BEFORE_LEG');
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(al, 'mssRelation'), false);
 });
 
 test('11L.8：buildAlerts —— 无 sweep → liquidityContext null，HIGH 仍正常产生（NONE 不降级）', function () {
@@ -331,7 +317,7 @@ test('11L.8：buildAlerts —— 无 sweep → liquidityContext null，HIGH 仍�
     assert.strictEqual(alerts[0].liquidityContext, null);
     assert.strictEqual(alerts[0].sweep, null);
     assert.strictEqual(alerts[0].tier, 'HIGH_QUALITY', 'NONE 不影响 tier');
-    assert.strictEqual(alerts[0].mssRelation, 'NONE');
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(alerts[0], 'mssRelation'), false);
 });
 
 // ---------- 结果 ----------

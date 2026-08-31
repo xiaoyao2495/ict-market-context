@@ -1,0 +1,39 @@
+{
+  "task": "5M_MSS_LEGACY_DISPLACEMENT_SCORE_DIRECT_DECOUPLING_V1",
+  "fixtures": {
+    "source": "Binance USD-M Futures",
+    "symbols": ["BTCUSDT", "ZECUSDT"],
+    "barsPerSymbol": 9289,
+    "closedCandlesOnly": true
+  },
+  "bySymbol": {
+    "BTCUSDT": {
+      "before": {"displacement":2517,"watch":414,"firstTouch":253,"fvgTotal":2276,"fvgAssociated":1750,"amdDistributionTransitions":758,"biasCompleteChains":1103,"entryPassed":1750,"liquiditySweeps":1191,"eqCount":250},
+      "after": {"displacement":1139,"watch":222,"firstTouch":154,"fvgTotal":2276,"fvgAssociated":1015,"amdDistributionTransitions":417,"biasCompleteChains":808,"entryPassed":1015,"liquiditySweeps":1191,"eqCount":250}
+    },
+    "ZECUSDT": {
+      "before": {"displacement":2042,"watch":436,"firstTouch":253,"fvgTotal":1719,"fvgAssociated":1305,"amdDistributionTransitions":742,"biasCompleteChains":1228,"entryPassed":1305,"liquiditySweeps":1404,"eqCount":267},
+      "after": {"displacement":901,"watch":243,"firstTouch":166,"fvgTotal":1719,"fvgAssociated":758,"amdDistributionTransitions":398,"biasCompleteChains":867,"entryPassed":758,"liquiditySweeps":1404,"eqCount":267}
+    }
+  },
+  "totals": {
+    "displacement": {"before":4559,"after":2040,"delta":-2519},
+    "watch": {"before":850,"after":465,"delta":-385},
+    "firstTouch": {"before":506,"after":320,"delta":-186},
+    "fvgGeometry": {"before":3995,"after":3995,"delta":0},
+    "fvgAssociated": {"before":3055,"after":1773,"delta":-1282},
+    "amdDistributionTransitions": {"before":1500,"after":815,"delta":-685},
+    "biasCompleteChains": {"before":2331,"after":1675,"delta":-656},
+    "entryPassed": {"before":3055,"after":1773,"delta":-1282},
+    "liquiditySweeps": {"before":2595,"after":2595,"delta":0},
+    "eqCount": {"before":517,"after":517,"delta":0}
+  },
+  "classification": {
+    "EXPECTED_REMOVAL_EFFECT": ["displacement","watch","firstTouch","fvgAssociated","amdDistributionTransitions","biasCompleteChains","entryPassed"],
+    "UNEXPECTED_UNRELATED_EFFECT": [],
+    "unexpectedUnrelatedEffectCount": 0
+  },
+  "causality": {"futureLeakViolations":0,"prefixMutations":0},
+  "outcomeDataUsed": false,
+  "parameterOptimizationPerformed": false
+}

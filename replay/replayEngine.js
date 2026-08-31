@@ -7,7 +7,7 @@
  *   每根 K（决策循环）：
  *     1. 增量 liquidity（新 swing/equal 去重加入持久 registry）
  *     2. 慢变量快照刷新（每 snapshotInterval=12 根）：calendar/cluster/draw/bias/scenario
- *     3. 增量事件：sweep（lifecycle×新K）+ mss/displacement（增量检测，持久 consumed/atrSeries）
+ *     3. 增量事件：sweep（lifecycle×新K）+ displacement（增量检测，持久 atrSeries）
  *     4. 持久 AMD（amd/amdState.js 增量状态机）
  *     5. 增量 FVG（新 K 形成 + 已有 FVG 逐根 lifecycle）
  *     6. Entry Gate（previousState 持久 → INVALIDATED 真正可达）
@@ -111,7 +111,6 @@ function rebuildSnapshot(state, candles, index, evaluationTime, data) {
             draw: draw, structures: structures, location: location,
             events: {
                 sweeps: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),
-                mss: state.eventRegistry.getByType(symbol, 'STRUCTURAL_MSS'),
                 displacements: state.eventRegistry.getByType(symbol, 'DISPLACEMENT')
             }
         }, { thresholds: cfg });
@@ -269,26 +268,21 @@ function runReplay(data, options) {
             // ---- 3. 增量 ATR（O(1) Wilder 更新） ----
             prevAtr = updateAtrIncremental(atrSeries, candles, i, prevAtr, 14);
 
-            // ---- 4. Incremental structural provenance + events ----
-            // Only confirmed 2L/2R pivots feed this state. Every closed-candle
-            // close-through may emit MSS; protected lifecycle remains a separate
-            // STRUCTURAL_MSS context event.
+            // ---- 4. Generic structural lifecycle + price-only Displacement ----
             var structuralStep = structuralProvenance5m.step(
                 state.structural5m, candle, i, newConfirmedSwings
             );
             structuralStep.events.forEach(function (event) {
                 state.eventRegistry.add(event);
             });
-            var newMssRaw = structuralStep.mss;
-            // displacement：只检测新 K，增量 ATR 序列
-            var newDispRaw = displacementDetector.detectDisplacement([candle], newMssRaw, {
+            var newDispRaw = displacementDetector.detectDisplacement([candle], {
                 symbol: symbol,
                 timeframe: '5m',
                 baseIndex: i,
                 atrSeries: atrSeries,
                 thresholds: cfg
             });
-            var newEvents = replayState.incrementalEvents(state, candle, i, evaluationTime, newMssRaw, newDispRaw);
+            var newEvents = replayState.incrementalEvents(state, candle, i, evaluationTime, newDispRaw);
 
             // ---- 5. 持久 AMD ----
             amdState.updateAmdState(state.amd, {
@@ -301,7 +295,6 @@ function runReplay(data, options) {
                 registry: state.registry,
                 draw: snapshot ? snapshot.draw : null,
                 newSweeps: newEvents.sweeps,
-                newMss: newEvents.mss,
                 newDisplacements: newEvents.displacements
             }, { thresholds: cfg });
 
@@ -744,11 +737,8 @@ function runReplay(data, options) {
                     amdAccumulation: state.amd.accumulation,
                     amdManipulationEventId: state.amd.manipulation && state.amd.manipulation.sweepEvent
                         ? state.amd.manipulation.sweepEvent.id : null,
-                    amdDistributionEventId: state.amd.distribution
-                        ? (state.amd.distribution.displacementEvent
-                            ? state.amd.distribution.displacementEvent.id
-                            : state.amd.distribution.mssEvent ? state.amd.distribution.mssEvent.id : null)
-                        : null,
+                    amdDistributionEventId: state.amd.distribution && state.amd.distribution.displacementEvent
+                        ? state.amd.distribution.displacementEvent.id : null,
                     activeLiquidityCount: state.registry.getActive(state.symbol).length,
                     eventCount: state.eventRegistry.size(),
                     // ---- Phase 11D：Narrative Diagnostics 字段 ----
@@ -756,12 +746,7 @@ function runReplay(data, options) {
                     drawPrimaryBsl: snapshot && snapshot.draw && snapshot.draw.bsl && snapshot.draw.bsl.primary
                         ? snapshot.draw.bsl.primary.targetPrice : null,
                     drawPrimarySsl: snapshot && snapshot.draw && snapshot.draw.ssl && snapshot.draw.ssl.primary
-                        ? snapshot.draw.ssl.primary.targetPrice : null,
-                    // ---- Phase 11R.2：consumedRefs 生命周期诊断（无界污染检查） ----
-                    consumedRefsCount: Object.keys(state.consumedMssRefs || {}).length,
-                    consumedRefsOldestAgeBars: oldestConsumedAgeBars(state.consumedMssRefs, evaluationTime),
-                    consumedRefsOlderThan1d: consumedOlderThan(state.consumedMssRefs, evaluationTime, 1 * 24 * 3600 * 1000),
-                    consumedRefsOlderThan7d: consumedOlderThan(state.consumedMssRefs, evaluationTime, 7 * 24 * 3600 * 1000)
+                        ? snapshot.draw.ssl.primary.targetPrice : null
                 };
                 steps.push(step);
                 replayState.recordTransitions(state, {
@@ -827,9 +812,6 @@ function runReplay(data, options) {
             // Phase 11D.3：Opportunity/DisplacementLeg 数据源
             fvgs: state.fvgReg.getAll(symbol),
             displacementEvents: state.eventRegistry.getByType(symbol, 'DISPLACEMENT'),
-            // Short-term MSS signal coverage. STRUCTURAL_MSS remains available
-            // separately in eventRegistry as protected-lifecycle context.
-            mssEvents: state.eventRegistry.getByType(symbol, 'MSS'),
             // Phase 11D.8：liquidity sweep 事件（Alert Replay 的 Sweep 字段）
             sweepEvents: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),
             swings: state.swings,
@@ -857,38 +839,6 @@ function runReplay(data, options) {
  */
 function allDisplacements(state) {
     return state.eventRegistry.getByType(state.symbol, 'DISPLACEMENT');
-}
-
-/**
- * Phase 11R.2：consumedRefs 生命周期诊断
- * consumedMssRefs = { swingId: consumedAtTimestamp }
- */
-function oldestConsumedAgeBars(consumed, evaluationTime) {
-    var barMs = 300000;
-    var oldest = null;
-    Object.keys(consumed || {}).forEach(function (id) {
-        var t = consumed[id];
-        if (typeof t === 'number') {
-            if (oldest === null || t < oldest) {
-                oldest = t;
-            }
-        }
-    });
-    if (oldest === null) {
-        return null;
-    }
-    return Math.floor((evaluationTime - oldest) / barMs);
-}
-
-function consumedOlderThan(consumed, evaluationTime, windowMs) {
-    var count = 0;
-    Object.keys(consumed || {}).forEach(function (id) {
-        var t = consumed[id];
-        if (typeof t === 'number' && evaluationTime - t > windowMs) {
-            count++;
-        }
-    });
-    return count;
 }
 
 /**

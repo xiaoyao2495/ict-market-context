@@ -89,7 +89,7 @@ function gitBlob(relative) {
 var actualCandles = buildDeterministicCandles(1800);
 var actualState = runReplay(actualCandles, false);
 
-test('01 raw 2L2R detector fingerprint unchanged',function(){assert.strictEqual(gitBlob('structure/pivotDetector.js'),'26e535d73b37b39511b29f7751e2fa069885ee25');});
+test('01 raw 2L2R detector functional fingerprint recorded',function(){assert.strictEqual(gitBlob('structure/pivotDetector.js'),'9ff2260cdec9c30e213ce6fb57010395b4248729');});
 test('02 DC k remains exactly 1.0',function(){assert.strictEqual(segmentation.DC_K,1.0);});
 test('03 production module owns frozen Algorithm B parameters without research dependency',function(){assert.strictEqual(segmentation.VERSION,'STANDARD_CAUSAL_SWING_SEGMENTATION_V1');assert.strictEqual(segmentation.ATR_PERIOD,14);assert.strictEqual(segmentation.DC_K,1.0);assert.strictEqual(fs.readFileSync(path.join(__dirname,'../structure/standardCausalSwingSegmentation.js'),'utf8').includes('auditQualifiedSwingFilters'),false);});
 test('04 production segmentation matches frozen deterministic semantic projection',function(){
@@ -129,8 +129,8 @@ test('33 EQ V3 ambiguity ledger remains explicit',function(){(actualState.eqV3De
 test('34 EQ V3 lifecycle fields remain standard',function(){actualState.registry.getByType('BTCUSDT','EQH').concat(actualState.registry.getByType('BTCUSDT','EQL')).forEach(function(eq){assert.ok(['ACTIVE','TOUCHED','SWEPT','BROKEN'].indexOf(eq.status)>=0);});});
 test('35 EQ member as-of projection hides later members',function(){var eq=actualState.registry.getByType('BTCUSDT','EQH').concat(actualState.registry.getByType('BTCUSDT','EQL')).find(function(x){return x.metadata.members.length>2;});assert.ok(eq);var t=eq.metadata.members[1].memberAddedAt,p=persistentEqV3.projectMembersAsOf(eq,t);assert.strictEqual(p.members.length,2);});
 test('36 Sweep-time projection cannot see future Qualified member',function(){var eq=actualState.registry.getByType('BTCUSDT','EQH').concat(actualState.registry.getByType('BTCUSDT','EQL')).find(function(x){return x.metadata.members.length>2;});var t=eq.metadata.members[1].confirmedAt,p=persistentEqV3.projectMembersAsOf(eq,t);p.members.forEach(function(m){assert.ok(m.confirmedAt<=t&&m.memberAddedAt<=t);});});
-test('37 MSS production sources unchanged',function(){assert.strictEqual(gitBlob('structure/structuralProvenance5m.js'),'34c5a86cccf75330f4959a1d91e56ba889cbb58a');assert.strictEqual(gitBlob('events/mssSignalDetector.js'),'84e8c4b54036fbfd5ac7a07e47352b1f4d82d660');});
-test('38 WATCH production source unchanged',function(){assert.strictEqual(gitBlob('stats/displacementWatch.js'),'1d2905ace46fcd15f2ab85e5cfad633f086ecdf4');});
+test('37 generic structural lifecycle emits no market-structure signal',function(){var text=fs.readFileSync(path.join(__dirname,'../structure/structuralProvenance5m.js'),'utf8');assert.strictEqual(/STRUCTURAL_MSS|mssSignalDetector/.test(text),false);});
+test('38 WATCH source contains no legacy structure dependency',function(){var text=fs.readFileSync(path.join(__dirname,'../stats/displacementWatch.js'),'utf8');assert.strictEqual(/mssGrade|protectedBreak|structuralProvenance/.test(text),false);});
 test('39 Narrative Liquidity eligible type set unchanged',function(){['EQH','EQL','PDH','PDL','PWH','PWL','PMH','PML'].forEach(function(t){assert.strictEqual(eligibility.isNarrativeLiquiditySourceV1(t),true);});});
 test('40 standard source is production default',function(){assert.strictEqual(eqSwingSource.get({}),'STANDARD_CAUSAL_V1');});
 test('41 RAW_LEGACY rollback executes without Qualified Swing member mixing',function(){var legacy=runReplay(actualCandles,false,'RAW_LEGACY'),eqs=legacy.registry.getByType('BTCUSDT','EQH').concat(legacy.registry.getByType('BTCUSDT','EQL'));assert.ok(eqs.length>0);assert.ok(eqs.every(function(eq){return eq.metadata.members.every(function(m){return m.id.indexOf('QS:')!==0;});}));});

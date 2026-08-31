@@ -29,10 +29,6 @@
  *   （曾有过 primarySweep 兼容字段，已删除 —— 它不是 Narrative ranking；
  *     将来若研究出真正的 Narrative Liquidity ranking，再正式增加 narrativeSweep）
  *
- * MSS ↔ Leg relation（诊断字段，不改 tier / mssQuality）：
- *   BEFORE_LEG / INSIDE_LEG / AFTER_LEG / NONE
- *   —— Displacement 描述"价格怎么移动"，MSS 描述"这次移动对结构造成什么结果"，
- *      不强制它们按流水线先后出现；先诊断分布再决定是否需要改判定。
  */
 var thresholds = require('../config/thresholds');
 var narrativeLiquidityV1 = require('../events/sweepNarrativeEligibilityV1');
@@ -68,33 +64,6 @@ function classifySweepLegRelation(sweep, leg) {
     var st = leg && leg.startIndex;
     var en = leg && (leg.endIndex !== undefined ? leg.endIndex : leg.lastIndex);
     if (typeof s !== 'number') return 'AFTER_LEG';
-    if (typeof st === 'number' && s < st) return 'BEFORE_LEG';
-    if (typeof en === 'number' && s <= en) return 'INSIDE_LEG';
-    return 'AFTER_LEG';
-}
-
-/**
- * MSS ↔ Leg relation 诊断（不改 tier / mssQuality）
- * @param {Object} leg leg（含 startIndex/endIndex/firstConfirmedAt/lastConfirmedAt）
- * @param {Object} [mssEvent] MSS 事件；null/缺失 → 'NONE'
- * @returns {string} 'BEFORE_LEG' | 'INSIDE_LEG' | 'AFTER_LEG' | 'NONE'
- */
-function classifyMssLegRelation(leg, mssEvent) {
-    if (!mssEvent) {
-        return 'NONE';
-    }
-    var first = leg && leg.firstConfirmedAt;
-    var last = leg && leg.lastConfirmedAt;
-    var t = mssEvent.confirmedAt;
-    if (typeof t === 'number' && typeof first === 'number' && typeof last === 'number') {
-        if (t < first) return 'BEFORE_LEG';
-        if (t <= last) return 'INSIDE_LEG';
-        return 'AFTER_LEG';
-    }
-    var s = mssEvent.candleIndex;
-    var st = leg && leg.startIndex;
-    var en = leg && (leg.endIndex !== undefined ? leg.endIndex : leg.lastIndex);
-    if (typeof s !== 'number') return 'NONE';
     if (typeof st === 'number' && s < st) return 'BEFORE_LEG';
     if (typeof en === 'number' && s <= en) return 'INSIDE_LEG';
     return 'AFTER_LEG';
@@ -272,7 +241,6 @@ function formatSweepRelationLine(sweep) {
 module.exports = {
     associateSweeps: associateSweeps,
     classifySweepLegRelation: classifySweepLegRelation,
-    classifyMssLegRelation: classifyMssLegRelation,
     fmtSweepTime: fmtSweepTime,
     formatSweepPriceLine: formatSweepPriceLine,
     formatSweepRelationLine: formatSweepRelationLine,

@@ -9,7 +9,7 @@
  *   draw,             // drawEngine 输出
  *   structures,       // { '1d': classifyStructure, '4h': ..., '1h': ... }
  *   location,         // classifyLocation 输出 { zone, ratio, intensity }
- *   events: { sweeps, mss, displacements }
+ *   events: { sweeps, displacements }
  * }
  *
  * 流水线：

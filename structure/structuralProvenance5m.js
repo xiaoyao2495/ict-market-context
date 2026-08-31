@@ -6,7 +6,6 @@
  * never promotes or demotes a structural swing.
  */
 'use strict';
-var mssSignalDetector = require('../events/mssSignalDetector');
 function createState(options) {
     var o = options || {};
     return {
@@ -21,8 +20,6 @@ function createState(options) {
         retiredProduced: [],
         events: [],
         eventIds: {},
-        mssSignals: [],
-        mssSignalConsumedRefs: {},
         penetrations: [],
         penetrationIds: {}
     };
@@ -160,43 +157,6 @@ function promoteProtected(state, control, direction, parent, candle) {
     return control;
 }
 
-function makeBreakEvent(state, type, direction, reference, control, candle, index, before) {
-    var facts = bodyFacts(candle, direction, reference.price);
-    var after = type === 'STRUCTURAL_MSS' ? direction : state.structuralState;
-    return {
-        id: state.symbol + ':' + state.timeframe + ':' + type + ':' + direction + ':' + reference.id + ':' + candle.openTime,
-        symbol: state.symbol,
-        timeframe: state.timeframe,
-        type: type,
-        direction: direction,
-        occurredAt: candle.openTime,
-        confirmedAt: candle.closeTime,
-        candleIndex: index,
-        price: reference.price,
-        referenceLevel: reference.price,
-        referenceRole: reference.role,
-        structuralStateBefore: before,
-        structuralStateAfter: after,
-        stateChanged: type === 'STRUCTURAL_MSS',
-        source: {
-            referenceSwingId: reference.sourceSwingId,
-            structuralSwingId: reference.id,
-            referencePrice: reference.price,
-            controllingSwingId: control ? control.sourceSwingId : null,
-            breakDistance: facts.breakDistance,
-            breakPct: facts.breakPct,
-            candle: { open: candle.open, high: candle.high, low: candle.low, close: candle.close }
-        },
-        metadata: {
-            structuralEventType: type,
-            referenceRole: reference.role,
-            bodyRatio: round4(facts.bodyRatio),
-            closeStrength: round4(facts.closeStrength),
-            protectedConfirmedAt: reference.protectedConfirmedAt
-        }
-    };
-}
-
 function makeBosEvent(state, type, direction, parent, control, candle, index, before) {
     var facts = bodyFacts(candle, direction, parent.price);
     return {
@@ -297,25 +257,17 @@ function updateProducedFrontiers(state, added) {
     });
 }
 
-function processProtectedBreak(state, side, candle, index, emitted) {
+function processProtectedInvalidation(state, side, candle) {
     var ref = state.activeProtected[side];
     if (!ref || ref.status !== 'ACTIVE_PROTECTED' || ref.protectedConfirmedAt > candle.closeTime) return false;
-    var direction = side === 'LOW' ? 'BEARISH' : 'BULLISH';
-    var closedThrough = direction === 'BULLISH' ? candle.close > ref.price : candle.close < ref.price;
+    var closedThrough = side === 'HIGH' ? candle.close > ref.price : candle.close < ref.price;
     if (!closedThrough) return false;
-    var before = state.structuralState;
-    // ACTIVE_PROTECTED is, by lifecycle construction, the protected side of
-    // the current state. Its first closed-candle close-through is therefore
-    // always the opposite state transition: confirm MSS immediately. A new
-    // controlling swing/provenance is established later by the independent
-    // produced-frontier -> BOS/continuation path.
-    var event = makeBreakEvent(state, 'STRUCTURAL_MSS', direction, ref, null, candle, index, before);
     transition(ref, 'BROKEN', 'BROKEN', candle.closeTime, 'CLOSE_THROUGH_ACTIVE_PROTECTED');
     ref.brokenAt = candle.openTime;
     ref.brokenConfirmedAt = candle.closeTime;
-    state.structuralState = direction;
-    // Produced frontiers are directional causal children. Once an MSS
-    // changes state, candidates produced by the superseded state retire.
+    // A broken protected boundary invalidates the generic lifecycle. It emits
+    // no market-structure signal and makes no replacement directional claim.
+    state.structuralState = 'UNKNOWN';
     ['HIGH', 'LOW'].forEach(function (retiredSide) {
         var pending = state.pendingProduced[retiredSide];
         if (!pending) return;
@@ -333,21 +285,14 @@ function processProtectedBreak(state, side, candle, index, emitted) {
     state.pendingProduced.LOW = null;
     state.frontier.HIGH = null;
     state.frontier.LOW = null;
-    event.structuralStateAfter = state.structuralState;
-    addEvent(state, event);
-    emitted.push(event);
-    state.pendingProduced[direction === 'BULLISH' ? 'HIGH' : 'LOW'] = {
-        parentPrice: ref.price, breakCandleOpenTime: candle.openTime, eventId: event.id
-    };
-    state.frontier[direction === 'BULLISH' ? 'HIGH' : 'LOW'] = null;
+    state.activeProtected.HIGH = null;
+    state.activeProtected.LOW = null;
     return true;
 }
 
 function processBos(state, direction, candle, index, emitted) {
-    // Once structure has a direction, an opposite state transition is only
-    // authoritative when an ACTIVE_PROTECTED swing is closed through.  A
-    // local/frontier close in the opposite direction cannot silently flip
-    // state and manufacture another same-direction MSS later.
+    // An opposite local/frontier close cannot silently flip an established
+    // direction. A broken protected boundary first resets the lifecycle.
     if (state.structuralState !== 'UNKNOWN' && state.structuralState !== direction) return false;
     var side = direction === 'BULLISH' ? 'HIGH' : 'LOW';
     var parent = state.frontier[side];
@@ -388,27 +333,14 @@ function markInternalCandidates(state, candle) {
 }
 
 function step(state, candle, index, newConfirmedSwings) {
-    if (!candle || candle.closed === false) return { events: [], mss: [], structuralMss: [], bos: [], continuations: [], penetrations: [] };
+    if (!candle || candle.closed === false) return { events: [], bos: [], continuations: [], penetrations: [] };
     var emitted = [];
     var added = addConfirmedPivots(state, newConfirmedSwings, candle.closeTime);
     updateProducedFrontiers(state, added);
-    // Signal coverage is evaluated from every confirmed 2L/2R swing before
-    // structural lifecycle mutation. Provenance enriches the signal but cannot
-    // suppress its existence.
-    var signalMss = mssSignalDetector.detect({
-        candle: candle, candleIndex: index, swings: state.swings.map(function (s) {
-            return {
-                id: s.sourceSwingId, symbol: s.symbol, timeframe: s.timeframe,
-                type: 'SWING_' + s.side, price: s.price, sourceOpenTime: s.occurredAt,
-                confirmedAt: s.confirmedAt
-            };
-        }),
-        structuralState: state, consumedRefs: state.mssSignalConsumedRefs
-    });
     registerWickPenetrations(state, candle, index, emitted);
 
-    var brokeLow = processProtectedBreak(state, 'LOW', candle, index, emitted);
-    var brokeHigh = processProtectedBreak(state, 'HIGH', candle, index, emitted);
+    var brokeLow = processProtectedInvalidation(state, 'LOW', candle);
+    var brokeHigh = processProtectedInvalidation(state, 'HIGH', candle);
     if (!brokeLow && !brokeHigh) {
         var preferred = candle.close >= candle.open ? 'BULLISH' : 'BEARISH';
         if (!processBos(state, preferred, candle, index, emitted)) {
@@ -416,32 +348,18 @@ function step(state, candle, index, newConfirmedSwings) {
         }
     }
     markInternalCandidates(state, candle);
-    mssSignalDetector.linkStructuralContext(signalMss, emitted);
-    Array.prototype.push.apply(state.mssSignals, signalMss);
 
     return {
         events: emitted,
-        mss: signalMss,
-        structuralMss: emitted.filter(function (e) { return e.type === 'STRUCTURAL_MSS'; }),
         bos: emitted.filter(function (e) { return e.type === 'STRUCTURAL_BOS'; }),
         continuations: emitted.filter(function (e) { return e.type === 'STRUCTURAL_CONTINUATION'; }),
         penetrations: emitted.filter(function (e) { return e.type === 'STRUCTURAL_PENETRATION'; })
     };
 }
 
-function qualityForMss(event) {
-    if (!event || (event.type !== 'MSS' && event.type !== 'STRUCTURAL_MSS')) return 'NO_MSS';
-    var protectedBreak = event.protectedBreak === true ||
-        (event.metadata && event.metadata.protectedBreak === true) ||
-        event.referenceRole === 'ACTIVE_PROTECTED' ||
-        (event.metadata && event.metadata.referenceRole === 'ACTIVE_PROTECTED');
-    return protectedBreak ? 'PROTECTED_SWING' : 'INTERNAL';
-}
-
 function round4(n) { return Math.round(n * 10000) / 10000; }
 
 module.exports = {
     createState: createState,
-    step: step,
-    qualityForMss: qualityForMss
+    step: step
 };

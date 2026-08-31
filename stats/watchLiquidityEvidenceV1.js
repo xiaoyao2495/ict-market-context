@@ -218,7 +218,7 @@ function build(watch, options) {
         },
         bias: biasAlignment(opts.dailyBias || watch.dailyBias),
         blockedCausalEvidence: {
-            reactionPolicyDependent:true, reactionLegProductionAllowed:false, attributedMssProductionAllowed:false,
+            reactionPolicyDependent:true, reactionLegProductionAllowed:false, attributedStructureProductionAllowed:false,
             sameDeliveryDisplacementProductionAllowed:false, followThroughProductionAllowed:false
         },
         provenance: {

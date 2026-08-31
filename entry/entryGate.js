@@ -280,7 +280,7 @@ function invalidationReason(input, cfg, fvgs) {
 
 /**
  * primary FVG 选择：
- * 1. 与 active distribution chain 匹配（displacement 有 mssEventId / displacement 与 amd 同向）
+ * 1. 与 active distribution direction 匹配
  * 2. score 高
  * 3. confirmedAt 最近（更新的优先——老 FVG 价格早已离开，不应压过新 FVG）
  * 4. 距离当前价格近
@@ -315,9 +315,6 @@ function selectPrimaryFvg(candidates, amd, currentPrice) {
 
 function chainMatchScore(f, amd) {
     var score = 0;
-    if (f.metadata && f.metadata.displacementMetadata && f.metadata.displacementMetadata.mssEventId) {
-        score += 2; // displacement 关联 MSS（同一 delivery chain）
-    }
     if (amd && amd.direction === f.direction && amd.state === 'DISTRIBUTION_CONFIRMED') {
         score += 1;
     }

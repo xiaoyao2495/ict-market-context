@@ -6,21 +6,18 @@
  *
  * 每个 leg 记录：
  *   direction / startIndex / endIndex / rangeAtr / netMoveAtr / bodyEfficiency /
- *   closeExtreme / mssReferenceId / mssQuality / fvgCount / fvgTotalWidthAtr / didBreakMssReference
+ *   closeExtreme / fvgCount / fvgTotalWidthAtr
  *
  * Leg Quality（诊断分级，不过滤机会）：
  *   WEAK / NORMAL / STRONG / EXPLOSIVE（基于 rangeAtr + netMoveAtr + bodyEfficiency）
  */
-var structuralProvenance5m = require('../structure/structuralProvenance5m');
-
 var MAX_LEG_BARS = 3; // 1~3 根连续同向
 
 /**
- * @param {Array} displacements displacement 事件（含 candleIndex / direction / metadata.atr / metadata.mssEventId）
- * @param {Array} swings registry swings（classifyMssReference 用）
+ * @param {Array} displacements displacement 事件（含 candleIndex / direction / metadata.atr）
  * @returns {Array} legs
  */
-function buildDisplacementLegs(displacements, swings) {
+function buildDisplacementLegs(displacements) {
     var sorted = (displacements || []).slice().sort(function (a, b) {
         return a.candleIndex - b.candleIndex;
     });
@@ -35,13 +32,10 @@ function buildDisplacementLegs(displacements, swings) {
             cur.lastIndex = d.candleIndex;
             cur.count++;
             cur.lastConfirmedAt = d.confirmedAt;
-            if (!cur.mssId && d.metadata && d.metadata.mssEventId) {
-                cur.mssId = d.metadata.mssEventId;
-            }
             return;
         }
         if (cur) {
-            legs.push(finalizeLeg(cur, swings));
+            legs.push(finalizeLeg(cur));
         }
         cur = {
             ids: [d.id],
@@ -51,17 +45,16 @@ function buildDisplacementLegs(displacements, swings) {
             firstConfirmedAt: d.confirmedAt,
             lastConfirmedAt: d.confirmedAt,
             count: 1,
-            mssId: d.metadata && d.metadata.mssEventId ? d.metadata.mssEventId : null,
             atr: d.metadata ? d.metadata.atr : null
         };
     });
     if (cur) {
-        legs.push(finalizeLeg(cur, swings));
+        legs.push(finalizeLeg(cur));
     }
     return legs;
 }
 
-function finalizeLeg(leg, swings) {
+function finalizeLeg(leg) {
     // 维度默认（candles 由调用方补充 rangeAtr 等——本函数只算可从 events 得的）
     var out = {
         id: 'LEG:' + leg.ids[0],
@@ -70,7 +63,6 @@ function finalizeLeg(leg, swings) {
         endIndex: leg.lastIndex,
         bars: leg.count,
         ids: leg.ids,
-        mssId: leg.mssId || null,
         firstConfirmedAt: leg.firstConfirmedAt,
         lastConfirmedAt: leg.lastConfirmedAt,
         atr: leg.atr !== null && leg.atr !== undefined ? leg.atr : null,
@@ -78,27 +70,10 @@ function finalizeLeg(leg, swings) {
         netMoveAtr: null,
         bodyEfficiency: null,
         closeExtreme: null,
-        didBreakMssReference: null,
         quality: 'WEAK',
         fvgCount: 0,
         fvgTotalWidthAtr: null
     };
-    // MSS reference quality
-    if (leg.mssId) {
-        var mssEvent = null;
-        // mssEvent 由调用方注入（leg.mssEvent）
-        if (leg.mssEvent) {
-            mssEvent = leg.mssEvent;
-        }
-        if (mssEvent) {
-            out.mssQuality = structuralProvenance5m.qualityForMss(mssEvent);
-            out.didBreakMssReference = true;
-        } else {
-            out.mssQuality = 'NO_MSS';
-        }
-    } else {
-        out.mssQuality = 'NO_MSS';
-    }
     return out;
 }
 
@@ -197,7 +172,6 @@ function createLegBuilder(mergeMs) {
             open.lastConfirmedAt = d.confirmedAt;
             open.count++;
             if (d.metadata && d.metadata.atr !== undefined) open.atr = d.metadata.atr;
-            if (!open.mssId && d.metadata && d.metadata.mssEventId) open.mssId = d.metadata.mssEventId;
             return { closed: null, opened: open, merged: true };
         }
         if (open) {
@@ -216,7 +190,6 @@ function createLegBuilder(mergeMs) {
             firstConfirmedAt: d.confirmedAt,
             lastConfirmedAt: d.confirmedAt,
             count: 1,
-            mssId: d.metadata && d.metadata.mssEventId ? d.metadata.mssEventId : null,
             atr: d.metadata && d.metadata.atr !== undefined ? d.metadata.atr : null
         };
         return { closed: closed, opened: open, merged: false };
@@ -277,7 +250,6 @@ function createWindowedLegBuilder(mergeMs) {
             open.lastConfirmedAt = d.confirmedAt;
             open.count++;
             if (d.metadata && d.metadata.atr !== undefined) open.atr = d.metadata.atr;
-            if (!open.mssId && d.metadata && d.metadata.mssEventId) open.mssId = d.metadata.mssEventId;
             return { closed: null, opened: open, merged: true };
         }
         if (open) {
@@ -296,7 +268,6 @@ function createWindowedLegBuilder(mergeMs) {
             firstConfirmedAt: d.confirmedAt,
             lastConfirmedAt: d.confirmedAt,
             count: 1,
-            mssId: d.metadata && d.metadata.mssEventId ? d.metadata.mssEventId : null,
             atr: d.metadata && d.metadata.atr !== undefined ? d.metadata.atr : null
         };
         return { closed: closed, opened: open, merged: false };
@@ -349,10 +320,10 @@ function indexOfCloseTime(candles, closeTime) {
 /**
  * Phase 11L.1 — 共享 leg 索引（Replay 报告层与 Live 共用的 authoritative 构建）
  * displacementEvents（按 confirmedAt 排序）→ windowed legs → legByDispId
- * （含 enrich 价量维度 + legQuality + mssQuality 重算，与 live 评估完全一致）
+ * （含 enrich 价量维度 + legQuality，与 live 评估完全一致）
  * @returns {Object} dispId → leg
  */
-function buildWindowedLegIndex(displacements, candles, mssEvents, swings, mergeMs) {
+function buildWindowedLegIndex(displacements, candles, mergeMs) {
     var MS = mergeMs || 900000;
     var sorted = (displacements || []).slice().sort(function (a, b) { return a.confirmedAt - b.confirmedAt; });
     var builder = createWindowedLegBuilder(mergeMs);
@@ -367,18 +338,11 @@ function buildWindowedLegIndex(displacements, candles, mssEvents, swings, mergeM
         tail.availableIndex = indexOfCloseTime(candles, tail.availableAt);
         legs.push(tail);
     }
-    var mssById = {};
-    (mssEvents || []).forEach(function (m) { mssById[m.id] = m; });
     var idx = {};
     legs.forEach(function (l) {
         l.endIndex = l.lastIndex; // enrichLegWithCandles 期望 endIndex
         enrichLegWithCandles(l, candles || []);
         classifyLegQuality(l);
-        if (l.mssId && mssById[l.mssId]) {
-            l.mssQuality = structuralProvenance5m.qualityForMss(mssById[l.mssId]);
-        } else {
-            l.mssQuality = 'NO_MSS';
-        }
         (l.ids || []).forEach(function (id) { idx[id] = l; });
     });
     return idx;

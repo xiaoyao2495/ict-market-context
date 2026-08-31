@@ -56,25 +56,22 @@ function distBucketOf(pct) {
  * 构建通知列表（按真实时间顺序 = anchorIndex 升序）。
  * @param {Array} opportunities buildOpportunities 输出
  * @param {Array} fvgs 全部 FVG（含 displacementEventId / zoneLow / zoneHigh）
- * @param {Object} legByDispId dispId → { quality, mssQuality, endIndex, direction, rangeAtr, netMoveAtr, bodyEfficiency, mssId }
+ * @param {Object} legByDispId dispId → { quality, endIndex, direction, rangeAtr, netMoveAtr, bodyEfficiency }
  * @param {Array} drawTrace 逐根 { bslNear, bslMacro, sslNear, sslMacro }
  * @param {Array} sweepEvents LIQUIDITY_SWEEP 事件（leg 前窗口内同向最近一个）
  * @param {Array} candles 5m candles（取时间/价格）
- * @param {Array} [mssEvents] MSS 事件（人工核对：referencePrice / breakPct）
- * @returns {Array} alerts [{ id, tier, direction, mssQuality, legQuality, anchorIndex, anchorTime,
+ * @returns {Array} alerts [{ id, tier, direction, legQuality, anchorIndex, anchorTime,
  *                           anchorPrice, nearTarget, nearDistPct, fvgCount, fvgIds,
- *                           legRangeAtr, legNetMoveAtr, legBodyEff, mssRefPrice, mssBreakPct,
+ *                           legRangeAtr, legNetMoveAtr, legBodyEff,
  *                           availableIndex, availableAt, closeReason,
  *                           notificationPrice, notificationNearTarget, notificationNearDistPct,
  *                           sweep: { price, side, barsAgo } | null }]
  */
-function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, candles, mssEvents) {
+function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, candles) {
     var items = opportunityQuality.buildTierIndex(opportunities, fvgs, legByDispId, drawTrace, candles);
     var alerts = [];
     var fvgById = {};
-    var mssById = {};
     (fvgs || []).forEach(function (f) { fvgById[f.id] = f; });
-    (mssEvents || []).forEach(function (m) { mssById[m.id] = m; });
     items.forEach(function (it) {
         if (!it.hasLeg || it.anchorIndex === null || it.anchorIndex === undefined) return;
         var anchor = candles[it.anchorIndex];
@@ -98,16 +95,14 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
         var nearDistPct = it.nearTarget !== null && it.nearTarget !== undefined && anchorPrice > 0
             ? Math.abs(it.nearTarget - anchorPrice) / anchorPrice * 100
             : null;
-        // 人工核对辅助：leg 价量维度 + MSS reference（breakPct / referencePrice）
+        // 人工核对辅助：leg 价量维度。
         var legObj = it.dispId ? (legByDispId[it.dispId] || null) : null;
-        var mssEvent = legObj && legObj.mssId ? (mssById[legObj.mssId] || null) : null;
         // Phase 11L.8：Liquidity Provenance（Live/Replay 同一关联函数）。
         //   LONG → 只关联 SSL；SHORT → 只关联 BSL；sweep.confirmedAt <= availableAt（无 future leakage）；
         //   窗口 = leg.startIndex - maxLookbackBars → leg.endIndex（sweep 允许在 leg 内）。
         //   无法可靠关联 → null（通知显示 NONE，不猜测）。
         //   sweeps[] 记录窗口内全部候选（含 barsBeforeLegStart / relation）→ 诊断看真实分布定正式窗口。
         var prov = null;
-        var mssRelation = 'NONE';
         if (legObj) {
             var availTime = availCandle ? availCandle.closeTime : anchor.closeTime;
             prov = liquidityProvenance.associateSweeps({
@@ -117,7 +112,6 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
                 sweepEvents: sweepEvents,
                 maxLookbackBars: null // 使用 thresholds.events.sweepProvenance.maxLookbackBars（当前 48）
             });
-            mssRelation = liquidityProvenance.classifyMssLegRelation(legObj, legObj.mssId ? (mssById[legObj.mssId] || null) : null);
         }
         // 兼容字段（旧调用/旧测试）：alert.sweep 摘要（新结构见 liquidityContext）
         var sweep = null;
@@ -141,7 +135,6 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
             id: it.id,
             tier: it.tier,
             direction: it.direction,
-            mssQuality: it.mssQuality,
             legQuality: it.legQuality,
             anchorIndex: it.anchorIndex,
             anchorTime: anchor.closeTime,
@@ -165,15 +158,11 @@ function buildAlerts(opportunities, fvgs, legByDispId, drawTrace, sweepEvents, c
             sweep: sweep,
             // Phase 11L.8：Liquidity Provenance（allCandidates 全候选 + immediateSweep 通知展示）
             liquidityContext: prov,
-            // Phase 11L.8：MSS ↔ Leg relation 诊断字段（不改 tier / mssQuality）
-            mssRelation: mssRelation,
             dispId: it.dispId,
             legStartIndex: legObj ? legObj.startIndex : null,
             legRangeAtr: legObj ? legObj.rangeAtr : null,
             legNetMoveAtr: legObj ? legObj.netMoveAtr : null,
-            legBodyEff: legObj ? legObj.bodyEfficiency : null,
-            mssRefPrice: mssEvent && mssEvent.source ? mssEvent.source.referencePrice : null,
-            mssBreakPct: mssEvent && mssEvent.source ? mssEvent.source.breakPct : null
+            legBodyEff: legObj ? legObj.bodyEfficiency : null
         });
     });
     alerts.sort(function (a, b) { return a.anchorIndex - b.anchorIndex; });

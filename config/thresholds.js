@@ -188,17 +188,15 @@ module.exports = {
 
         /**
          * Delivery Bias（Phase 6.2）
-         * 事件链：Sweep → MSS → Displacement（方向必须匹配、顺序严格、窗口内）
-         *   sweepPoints 8 / mssPoints 7 / displacementPoints 10 → 完整链 ±25
-         * 窗口：Sweep→MSS <= sweepToMssBars；MSS→Displacement <= mssToDisplacementBars
+         * 事件链：Sweep → Displacement（方向必须匹配、顺序严格、窗口内）
+         *   sweepPoints 8 / displacementPoints 10 → 完整链 ±18
+         * 窗口：Sweep→Displacement <= 18 bars（沿用旧两段窗口总长度）
          * freshness：0-6 bars ×1.0 / 7-12 ×0.75 / 13-24 ×0.5 / >24 ×0.25
          */
         delivery: {
             sweepPoints: 8,
-            mssPoints: 7,
             displacementPoints: 10,
-            sweepToMssBars: 12,
-            mssToDisplacementBars: 6,
+            sweepToDisplacementBars: 18,
             // Phase 11R.2：Delivery 查询从【数学上被 freshness 压低】升级为【结构上有限记忆】。
             // 事件先裁切到 evaluationTime - maxLookbackBars 再构造 chain（覆盖完整链 18 bars + freshness 24 bars）。
             maxLookbackBars: 48,
@@ -242,25 +240,18 @@ module.exports = {
 
     /**
      * Market Event Layer（Phase 7.1）
-     * 统一事件：LIQUIDITY_SWEEP / MSS / DISPLACEMENT
+     * 统一事件：LIQUIDITY_SWEEP / DISPLACEMENT
      * 所有事件 confirmedAt = 触发 candle.closeTime（禁止用 openTime）
      */
     events: {
         atr: {
             period: 14
         },
-        mss: {
-            minBodyRatio: 0.5,
-            minBreakPct: 0.0001,
-            requireDirectionalBody: true
-        },
         displacement: {
             bodyRatioThreshold: 0.6,
             rangeAtrThreshold: 1.2,
             bodyAtrThreshold: 0.8,
-            closeExtremeThreshold: 0.75,
-            minScore: 3,
-            maxScore: 5
+            closeExtremeThreshold: 0.75
         },
         /**
          * Phase 11L.8 — Sweep Provenance 关联（Liquidity Taken 通知行）
@@ -271,14 +262,6 @@ module.exports = {
          */
         sweepProvenance: {
             maxLookbackBars: 48
-        },
-        /**
-         * Phase 11L.8 第二刀 — MSS↔Leg Shadow Association Audit（旁路，不改生产 HIGH）。
-         * beforeLookbackBars：shadow 只允许 related MSS 位于 leg.startIndex 前 1~6 根（最多 30 分钟），
-         * 找"同一段 delivery 的结构事件"，不把几小时前的 MSS 硬挂过来。仅审计参数。
-         */
-        mssShadow: {
-            beforeLookbackBars: 6
         },
         /**
          * Phase 11L.13 — Liquidity Incremental Value Audit（旁路，不改生产）。
@@ -367,16 +350,7 @@ module.exports = {
             confirmThreshold: 60
         },
         distribution: {
-            mssMaxBars: 12,
-            displacementMaxBars: 6,
-            scoreWeights: {
-                matchingMss: 30,
-                matchingDisplacement: 35,
-                sameDeliveryChain: 15,
-                rangeEscape: 10,
-                targetLiquidity: 10
-            },
-            confirmThreshold: 60
+            displacementMaxBars: 6
         },
         score: {
             accumulation: 0.3,
@@ -470,7 +444,6 @@ module.exports = {
             weights: {
                 displacementAssociation: 40,
                 gapSize: 20,
-                sameChainMss: 15,
                 amdAlignment: 15,
                 scenarioMatch: 10
             },

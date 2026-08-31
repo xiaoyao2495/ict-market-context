@@ -138,7 +138,7 @@ async function primaryIntegrationTest() {
         assert.ok(message.indexOf('检测') >= 0, 'DingTalk keyword');
         assert.ok(message.indexOf('WAIT FOR MANUAL CONFIRMATION') >= 0, 'manual confirmation');
         assert.ok(message.indexOf('这是 WATCH 观察事件，不是入场确认。') >= 0, 'WATCH-not-entry disclaimer');
-        ['💧 流动性扫取','⚡ 多头位移','📐 局部结构突破','🟦 原生 FVG','🧭 4H Daily Bias'].forEach(function (section) {
+        ['💧 流动性扫取','⚡ 多头位移','🟦 原生 FVG','🧭 4H Daily Bias'].forEach(function (section) {
             assert.ok(message.indexOf(section) >= 0, 'missing notification section ' + section);
         });
         assert.strictEqual(/Narrative：|CONTINUATION|REACTIVATION/.test(message), false,

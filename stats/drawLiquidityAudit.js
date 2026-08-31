@@ -46,7 +46,7 @@ function typeGroup(type) {
 /**
  * 候选标准化：统一 registry liquidity 与 DC swing 为同一结构。
  * registry 对象字段：id/type/side/price/confirmedAt/status/touchedAt/sweptAt/...
- * DC swing（packageForMss）：type=SWING_HIGH/LOW、source=dc、metadata.index
+ * DC swing：type=SWING_HIGH/LOW、source=dc、metadata.index
  */
 function normalizeCandidates(liquidityObjects, dcSwings, candles) {
     var idxByClose = {};

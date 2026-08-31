@@ -1,7 +1,7 @@
 /**
  * Structure Bias —— HTF swing structure 加权合成
  *
- * 第一版只消费已确认的 swing structure（不混入 MSS）。
+ * 第一版只消费已确认的 swing structure。
  *
  * 每周期结构分：
  *   BULLISH    → +maxWeight（如 4H = +20）

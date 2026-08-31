@@ -50,7 +50,7 @@ function replaceCandles(file, candles) {
  *   - 尾部残缺（最后一行非空但 JSON 解析失败，通常是掉电时写一半）→ 丢弃该行并记录
  *     truncatedLines（appendCandles 下次会重写该根；不把整段持久历史当空数据）
  *   - 中间行损坏（非末尾行 JSON 解析失败）→ 抛错 fail-closed（历史中间缺根不可静默丢弃，
- *     必须显式处理，防止带着 gap 继续算 Pivot/ATR/MSS/FVG）
+ *     必须显式处理，防止带着 gap 继续算 Pivot/ATR/Displacement/FVG）
  *
  * @returns {Object} { candles: Array, truncatedLines: Number }
  * @throws {Error} 中间行损坏

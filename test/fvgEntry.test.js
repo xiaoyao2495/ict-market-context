@@ -434,12 +434,12 @@ test('registry：add/dedupe/getActive/getByDirection/getByStatus/getBefore', fun
 
 /* ================= FVG Scorer ================= */
 
-test('scorer：满分（displacement + gap + MSS + AMD + scenario）= 100', function () {
-    var f = makeFvg(); // 有 D1, gapAtr 2.0, mss M1
+test('scorer：price displacement + gap + AMD + scenario = 85', function () {
+    var f = makeFvg();
     var s = fvgScorer.scoreFvg(f, { amdDirection: 'BULLISH', scenarioDirection: 'BULLISH' }, {});
-    assert.strictEqual(s.total, 100);
+    assert.strictEqual(s.total, 85);
     assert.deepStrictEqual(s.breakdown, {
-        displacement: 40, gap: 20, mss: 15, amd: 15, scenario: 10
+        displacement: 40, gap: 20, amd: 15, scenario: 10
     });
     assert.strictEqual(s.passed, true);
 });

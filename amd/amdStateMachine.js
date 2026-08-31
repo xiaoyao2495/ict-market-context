@@ -11,8 +11,7 @@
  *
  * INVALIDATED 条件（第一版）：
  *   A. accumulation 确认后，evaluationTime 超过 manipulationTimeoutBars 仍无 manipulation
- *   B. manipulation 后出现 opposite structural acceptance（相反方向 MSS 先出现）
- *   C. manipulation 后超过 distributionTimeoutBars 无 matching MSS/displacement
+ *   B. manipulation 后超过 distributionTimeoutBars 无 matching displacement
  *   D. accumulation range 被 opposite side 明确 breakout（未 reclaim）
  *
  * AMD 是 LTF price action 事实；Bias Alignment 是上下文评价（不修改这里）。
@@ -115,14 +114,6 @@ function runAmd(input, options) {
     out.state = 'MANIPULATION_CONFIRMED';
     out.confirmedAt = manip.confirmedAt;
 
-    // B: manipulation 后、matching MSS 之前出现 opposite MSS → INVALIDATED
-    if (oppositeMssBeforeDistribution(manip, input.eventRegistry, evaluationTime)) {
-        out.state = 'INVALIDATED';
-        out.invalidatedAt = evaluationTime;
-        out.invalidationReason = 'opposite structural acceptance after manipulation';
-        return out;
-    }
-
     // ---- 3. Distribution ----
     var dist = distributionDetector.detectDistribution({
         accumulation: acc,
@@ -135,11 +126,11 @@ function runAmd(input, options) {
     }, opts);
 
     if (!dist || dist.state !== 'DISTRIBUTION_CONFIRMED') {
-        // C: manipulation 后超时无 matching MSS/displacement
+        // manipulation 后超时无 matching displacement
         if (evaluationTime - manip.confirmedAt > cfg.invalidate.distributionTimeoutBars * barMs) {
             out.state = 'INVALIDATED';
             out.invalidatedAt = evaluationTime;
-            out.invalidationReason = 'no matching MSS/displacement within ' + cfg.invalidate.distributionTimeoutBars + ' bars of manipulation';
+            out.invalidationReason = 'no matching displacement within ' + cfg.invalidate.distributionTimeoutBars + ' bars of manipulation';
         }
         return out;
     }
@@ -170,37 +161,6 @@ function rangeOppositeBreakout(acc, candles, evaluationTime, timeframe) {
         }
     }
     return false;
-}
-
-/**
- * B: manipulation 后出现 opposite direction MSS（在 matching MSS 之前）
- */
-function oppositeMssBeforeDistribution(manip, reg, evaluationTime) {
-    if (!reg) {
-        return false;
-    }
-    var opposite = manip.direction === 'BULLISH' ? 'BEARISH' : 'BULLISH';
-    var mss = reg.getByType(manip.symbol, 'MSS');
-    if (mss.length === 0) mss = reg.getByType(manip.symbol, 'STRUCTURAL_MSS');
-    var found = null;
-    mss.forEach(function (m) {
-        if (m.confirmedAt > evaluationTime) return;
-        if (m.direction === manip.direction) {
-            if (!found || m.confirmedAt < found.confirmedAt) found = m;
-        }
-    });
-    // 存在 matching MSS（后续会消费）→ opposite 不构成 invalidation
-    var matchingExists = found !== null && found.confirmedAt > manip.confirmedAt;
-    var oppositeFound = false;
-    mss.forEach(function (m) {
-        if (m.confirmedAt > evaluationTime) return;
-        if (m.direction === opposite && m.confirmedAt > manip.confirmedAt) {
-            if (!matchingExists || m.confirmedAt < found.confirmedAt) {
-                oppositeFound = true;
-            }
-        }
-    });
-    return oppositeFound;
 }
 
 module.exports = {

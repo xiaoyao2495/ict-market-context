@@ -131,13 +131,6 @@ function supersedeActive(state, activeId, at, observationId, byNarrativeId) {
     active.supersededByNarrativeId = byNarrativeId;
 }
 
-function compactStructure(watch) {
-    return clone({
-        mss: watch && watch.mss || null,
-        structuralProvenance: watch && watch.structuralProvenance || null
-    });
-}
-
 function compactDisplacement(watch) {
     return clone({
         displacementLegId: watch && watch.displacementLegId || null,
@@ -210,7 +203,6 @@ function observeFirstTouch(state, watch) {
         type: type,
         narrativeState: ACTIVE,
         biasSnapshot: clone(watch.dailyBias || null),
-        structureSnapshot: compactStructure(watch),
         displacementSnapshot: compactDisplacement(watch),
         fvgSnapshot: clone(watch.nativeFvg)
     };

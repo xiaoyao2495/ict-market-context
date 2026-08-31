@@ -31,8 +31,8 @@ var WINDOWS = [
  * 对单个 retrace 找 first touch 并统计未来窗口
  * @param {Object} r retrace
  * @param {Array} candles
- * @param {Object} [ctx] { fvgToMssQuality }  // Phase 11D.4：MSS quality 映射（fvgId → quality）
- * @returns {Object|null} { direction, alignment, biasAtWatch, fvgScore, anchorPrice, touchIndex, mssQuality, w30m/w1h/w4h }
+ * @param {Object} [ctx] { fvgToLegQuality }
+ * @returns {Object|null} { direction, alignment, biasAtWatch, fvgScore, anchorPrice, touchIndex, w30m/w1h/w4h }
  */
 function analyzeRetrace(r, candles, ctx) {
     if (!r || !r.zoneLow || r.zoneHigh === undefined || r.zoneHigh === null) {
@@ -82,8 +82,6 @@ function analyzeRetrace(r, candles, ctx) {
         alignment: r.alignmentAtWatch || null,
         biasAtWatch: r.biasAtWatch || null,
         fvgScore: r.fvgScoreAtWatch !== undefined ? r.fvgScoreAtWatch : null,
-        // Phase 11D.4：MSS quality（fvgId → quality 映射，无则 NO_MSS）
-        mssQuality: (c2.fvgToMssQuality && r.fvgId) ? (c2.fvgToMssQuality[r.fvgId] || 'NO_MSS') : 'NO_MSS',
         // Phase 11D.5：DisplacementLeg quality（fvgId → legQuality 映射，无则 NO_LEG）
         legQuality: (c2.fvgToLegQuality && r.fvgId) ? (c2.fvgToLegQuality[r.fvgId] || 'NO_LEG') : 'NO_LEG',
         anchorPrice: anchorPrice,
@@ -141,9 +139,7 @@ function summarizeNarrativeDirection(results) {
     var groups = {};
     var byDirection = {};
     var bySymbol = {};
-    var byMssQuality = {}; // Phase 11D.4：MSS quality 分组
     var byLegQuality = {}; // Phase 11D.5：DisplacementLeg quality 分组
-    var byMssLegCombo = {}; // Phase 11D.5：MSS × Leg 二维组合
     function accFor(container, key) {
         if (!container[key]) {
             var g = { n: 0, w30m: null, w1h: null, w4h: null };
@@ -159,11 +155,8 @@ function summarizeNarrativeDirection(results) {
         var g = accFor(groups, r.alignment || 'UNCONFIRMED');
         var gd = accFor(byDirection, r.direction);
         var gs = accFor(bySymbol, r.symbol);
-        var gm = accFor(byMssQuality, r.mssQuality || 'NO_MSS');
         var gl = accFor(byLegQuality, r.legQuality || 'NO_LEG');
-        var comboKey = (r.mssQuality || 'NO_MSS') + '|' + (r.legQuality || 'NO_LEG');
-        var gc = accFor(byMssLegCombo, comboKey);
-        [g, gd, gs, gm, gl, gc].forEach(function (acc) {
+        [g, gd, gs, gl].forEach(function (acc) {
             acc.n++;
             WINDOWS.forEach(function (w) {
                 var s = r['w' + w.key];
@@ -199,7 +192,7 @@ function summarizeNarrativeDirection(results) {
             a.nearTargetCnt += s.hasNearTarget ? 1 : 0;
         });
     });
-    return { groups: groups, byDirection: byDirection, bySymbol: bySymbol, byMssQuality: byMssQuality, byLegQuality: byLegQuality, byMssLegCombo: byMssLegCombo };
+    return { groups: groups, byDirection: byDirection, bySymbol: bySymbol, byLegQuality: byLegQuality };
 }
 
 module.exports = {

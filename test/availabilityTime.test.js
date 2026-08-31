@@ -105,7 +105,7 @@ test('buildWindowedLegIndex: tail close 的 availableIndex 按 closeTime 反查�
     for (var i = 0; i < 30; i++) candles.push(m5(100, 101, 99, 100.5, i));
     var t0 = 1700000000000; // index 0 openTime
     var displacements = [disp('d1', 'BULLISH', 5, t0 + 5 * 300000 + 299999)]; // index 5 closeTime
-    var idx = displacementLeg.buildWindowedLegIndex(displacements, candles, [], []);
+    var idx = displacementLeg.buildWindowedLegIndex(displacements, candles);
     var leg = idx['d1'];
     assert.ok(leg);
     // leg 唯一 → tail close；availableAt = lastConfirmedAt + 900000 = index(5).closeTime + 900000 = index(8).closeTime
@@ -118,7 +118,7 @@ test('buildWindowedLegIndex: 数据不足（tail 超界）→ availableIndex = n
     for (var i = 0; i < 6; i++) candles.push(m5(100, 101, 99, 100.5, i)); // 只有 0-5
     var t0 = 1700000000000;
     var displacements = [disp('d1', 'BULLISH', 5, t0 + 5 * 300000 + 299999)];
-    var idx = displacementLeg.buildWindowedLegIndex(displacements, candles, [], []);
+    var idx = displacementLeg.buildWindowedLegIndex(displacements, candles);
     assert.strictEqual(idx['d1'].availableIndex, null, 'lastConfirmedAt+15min 超出数据 → 无通知点');
 });
 

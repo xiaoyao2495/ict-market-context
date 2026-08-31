@@ -2,16 +2,16 @@
  * Phase 11D.9 — Delivery Alignment Audit
  *
  * 人工复核结论（#6/#8/#9 false-directional、#10 local-valid、#3/#5/#7 delivery-aligned）：
- *   Opportunity Quality（MSS×Leg×Near Draw → tier）≠ Direction Quality。
+ *   Opportunity Quality（Leg×Near Draw → tier）≠ Direction Quality。
  *   HIGH_QUALITY 实际是 HIGH_QUALITY_LOCAL_OPPORTUNITY，不是 HIGH_CONFIDENCE_DIRECTION。
  *
- * 本模块回答：当 5m MSS → strong DisplacementLeg → FVG → Near Draw 出现时，
+ * 本模块回答：当 strong DisplacementLeg → FVG → Near Draw 出现时，
  * 什么条件区分"主导 Delivery"（A 类）与"局部 impulse"（B/C 类）？
  *
  * 四个审计维度（用户指定优先级）：
  *   1. HTF narrative alignment —— 1h/4h 已收盘趋势方向 + bias 方向 vs 机会方向
  *   2. Sweep 层级 —— 信号前 liquidity sweep 的 timeframe（5m/15m/1h/4h+）
- *   3. MSS 是否改变 dealing range delivery —— leg 完成后回撤是否守住 leg 起点
+ *   3. leg 完成后回撤是否守住 leg 起点
  *      （deliveryHold：12 根内低点未破 leg 起点 low = 未回吐整个 leg）
  *   4. Continuation / Acceptance —— leg 后是否创 leg 新高且 close 保持（12 根）
  *

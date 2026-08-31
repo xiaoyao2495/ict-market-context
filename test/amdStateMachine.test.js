@@ -158,15 +158,15 @@ test('distribution timeout → INVALIDATED（C）', function () {
     var accTime = candles[23].closeTime;
     var sweepTime = accTime + 2 * BAR;
     var events = [sweep('s1', 'SSL', 95, sweepTime, 26, 'PDL')];
-    // 有 manipulation 但无 MSS/displacement，时间超过 timeout
+    // 有 manipulation 但无 displacement，时间超过 timeout
     var r = amdStateMachine.runAmd(makeContext(candles, events, {
         evaluationTime: sweepTime + 20 * BAR
     }), {});
     assert.strictEqual(r.state, 'INVALIDATED');
-    assert.ok(r.invalidationReason.indexOf('MSS/displacement') !== -1);
+    assert.ok(r.invalidationReason.indexOf('matching displacement') !== -1);
 });
 
-test('opposite structural acceptance → INVALIDATED（B）', function () {
+test('opposite legacy structure event has no AMD effect', function () {
     var candles = chopCandles(24);
     var accTime = candles[23].closeTime;
     var events = [
@@ -176,8 +176,8 @@ test('opposite structural acceptance → INVALIDATED（B）', function () {
     var r = amdStateMachine.runAmd(makeContext(candles, events, {
         evaluationTime: accTime + 6 * BAR
     }), {});
-    assert.strictEqual(r.state, 'INVALIDATED');
-    assert.ok(r.invalidationReason.indexOf('opposite') !== -1);
+    assert.strictEqual(r.state, 'MANIPULATION_CONFIRMED');
+    assert.strictEqual(r.invalidationReason, null);
 });
 
 /* ---------- deterministic ---------- */
@@ -218,7 +218,7 @@ test('amdScorer：30/30/40 加权', function () {
         manipulation: { score: 90 },
         distribution: { score: 85 }
     }, {});
-    assert.strictEqual(r.score, Math.round(80 * 0.3 + 90 * 0.3 + 85 * 0.4)); // 24+27+34=85
+    assert.strictEqual(r.score, Math.round(80 * 0.3 + 90 * 0.3 + 100 * 0.4));
     assert.strictEqual(r.complete, true);
 });
 

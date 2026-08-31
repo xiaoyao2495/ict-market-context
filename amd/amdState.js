@@ -4,7 +4,7 @@
  * 真正的增量状态机，替代 Replay 中"每次从头重算快照"的 AMD：
  *
  *   SEARCHING → ACCUMULATION（冻结 range）→ MANIPULATION → DISTRIBUTION
- *   + INVALIDATED（超时 / opposite MSS / range breakout）
+ *   + INVALIDATED（超时 / range breakout）
  *
  * 关键语义（与快照版 runAmd 的区别）：
  * - accumulation 一旦确认即【冻结】（range/atr/confirmedAt 不再变）
@@ -112,7 +112,6 @@ function retainLastNarrative(state, candleIndex, cfg) {
             confirmedAt: state.manipulation.confirmedAt
         } : null,
         distribution: state.distribution ? {
-            mssEventId: state.distribution.mssEvent ? state.distribution.mssEvent.id : null,
             displacementEventId: state.distribution.displacementEvent ? state.distribution.displacementEvent.id : null,
             confirmedAt: state.distribution.confirmedAt
         } : null,
@@ -132,7 +131,7 @@ function retainLastNarrative(state, candleIndex, cfg) {
  * @param {number} candleIndex 当前 K 的全局 index（lastNarrative.confirmedIndex 用）
  * @param {boolean} retain 是否冻结本轮 narrative 为 TradeContextSnapshot
  *   Phase 11T.5R：仅 DISTRIBUTION（narrative 完成）retain；
- *   INVALIDATED（narrative 已失败，如 opposite MSS）不 retain —— 失败的 narrative
+ *   INVALIDATED（narrative 已失败）不 retain —— 失败的 narrative
  *   不得成为未来 Trade Stop 的有效 invalidation boundary
  */
 function resetToSearching(state, cfg, candleIndex, retain) {
@@ -154,7 +153,7 @@ function resetToSearching(state, cfg, candleIndex, retain) {
  * @param {Object} state amdState（原地更新，返回新 state）
  * @param {Object} input {
  *   candle, candleIndex, candles（截至当前，升序）, evaluationTime,
- *   newSweeps, newMss, newDisplacements（本根新确认的事件）, registry, draw,
+ *   newSweeps, newDisplacements（本根新确认的事件）, registry, draw,
  *   confirmGap（accumulation 检测前移量，默认 6）
  * }
  * @param {Object} [options] { thresholds }
@@ -296,11 +295,6 @@ function updateAmdState(state, input, options) {
             }
         }
 
-        // opposite MSS（条件 B）：manipulation 前出现反向 MSS → INVALIDATED
-        var oppositeMss = (input.newMss || []).filter(function (m) {
-            // 尚未有 manipulation 方向，无法判 opposite；这里忽略（快照版才需要）
-            return false;
-        });
         return state;
     }
 
@@ -309,29 +303,11 @@ function updateAmdState(state, input, options) {
         var manip = state.manipulation;
         var barMs2 = barMsOf(timeframe);
         var barsSinceManip = Math.floor((evaluationTime - manip.confirmedAt) / barMs2);
-        if (barsSinceManip > distCfg.mssMaxBars) {
+        if (barsSinceManip > distCfg.displacementMaxBars) {
             setPhase(state, PHASE_INVALIDATED);
             state.invalidatedAt = candle.closeTime;
             state.invalidationReason = 'DISTRIBUTION_TIMEOUT';
             return state;
-        }
-
-        var matchingMss = null;
-        var mssList = input.newMss || [];
-        for (var mi = 0; mi < mssList.length; mi++) {
-            var m = mssList[mi];
-            if (m.direction !== state.direction) {
-                // opposite MSS → INVALIDATED（条件 B）
-                setPhase(state, PHASE_INVALIDATED);
-                state.invalidatedAt = candle.closeTime;
-                state.invalidationReason = 'OPPOSITE_MSS';
-                return state;
-            }
-            if (m.confirmedAt > manip.confirmedAt) {
-                if (!matchingMss || m.confirmedAt < matchingMss.confirmedAt) {
-                    matchingMss = m;
-                }
-            }
         }
 
         var matchingDisp = null;
@@ -341,12 +317,8 @@ function updateAmdState(state, input, options) {
             if (d.direction !== state.direction) {
                 continue;
             }
-            if (matchingMss && d.confirmedAt < matchingMss.confirmedAt) {
-                continue; // displacement 必须在 matching MSS 之后
-            }
-            var dispBarsAfter = Math.floor(
-                (d.confirmedAt - (matchingMss ? matchingMss.confirmedAt : manip.confirmedAt)) / barMs2
-            );
+            if (d.confirmedAt < manip.confirmedAt) continue;
+            var dispBarsAfter = Math.floor((d.confirmedAt - manip.confirmedAt) / barMs2);
             if (dispBarsAfter > distCfg.displacementMaxBars) {
                 continue;
             }
@@ -355,40 +327,18 @@ function updateAmdState(state, input, options) {
             }
         }
 
-        // distribution 评分：matching MSS 30 + matching displacement 35 = 65 >= 60 → confirmed
-        if (matchingMss) {
-            var score2 = distCfg.scoreWeights.matchingMss;
-            if (matchingDisp) {
-                score2 += distCfg.scoreWeights.matchingDisplacement;
-                // same-chain bonus（displacement 关联 MSS）
-                if (
-                    matchingDisp.metadata &&
-                    matchingDisp.metadata.mssEventId === matchingMss.id
-                ) {
-                    score2 += distCfg.scoreWeights.sameDeliveryChain;
-                }
-            }
-            // range escape
-            if (
-                (state.direction === 'BULLISH' && candle.close > state.accumulation.rangeHigh) ||
-                (state.direction === 'BEARISH' && candle.close < state.accumulation.rangeLow)
-            ) {
-                score2 += distCfg.scoreWeights.rangeEscape;
-            }
-            if (score2 >= distCfg.confirmThreshold) {
-                setPhase(state, PHASE_DISTRIBUTION);
-                state.distribution = {
-                    direction: state.direction,
-                    score: score2,
-                    mssEvent: matchingMss,
-                    displacementEvent: matchingDisp,
-                    rangeEscaped: score2 >= distCfg.scoreWeights.matchingMss + distCfg.scoreWeights.matchingDisplacement,
-                    confirmedAt: matchingDisp ? matchingDisp.confirmedAt : matchingMss.confirmedAt,
-                    state: 'DISTRIBUTION_CONFIRMED'
-                };
-                state.confirmedAt = state.distribution.confirmedAt;
-                return state;
-            }
+        if (matchingDisp) {
+            setPhase(state, PHASE_DISTRIBUTION);
+            state.distribution = {
+                direction: state.direction,
+                displacementEvent: matchingDisp,
+                rangeEscaped: (state.direction === 'BULLISH' && candle.close > state.accumulation.rangeHigh) ||
+                    (state.direction === 'BEARISH' && candle.close < state.accumulation.rangeLow),
+                confirmedAt: matchingDisp.confirmedAt,
+                state: 'DISTRIBUTION_CONFIRMED'
+            };
+            state.confirmedAt = state.distribution.confirmedAt;
+            return state;
         }
         return state;
     }

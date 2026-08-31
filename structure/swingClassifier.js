@@ -10,7 +10,7 @@
  *   其他组合（HH+LL / LH+HL）→ CONFLICTED
  *   数据不足（少于 2 个 high 或 2 个 low）→ NEUTRAL
  *
- * 第一版只消费已确认的 swing，不混入 MSS / displacement。
+ * 第一版只消费已确认的 swing，不混入 displacement。
  */
 var STRUCTURE_BULLISH = 'BULLISH';
 var STRUCTURE_BEARISH = 'BEARISH';
