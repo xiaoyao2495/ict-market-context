@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "LIQUIDITY_TAKEN_CAUSALITY_AUDIT_V1",
+  "auditPopulation": "DETERMINISTIC_SEMANTIC_FIXTURES_ONLY",
+  "TAKEN_EVENT_COUNT": 8,
+  "TAKEN_WITH_EXISTING_SWEEP_COUNT": 4,
+  "TAKEN_WITHOUT_EXISTING_SWEEP_COUNT": 4,
+  "DUPLICATE_TAKEN_EVENT_COUNT": 0,
+  "RETROACTIVE_TAKEN_COUNT": 0,
+  "SAME_BAR_LIQUIDITY_BACKFILL_COUNT": 0,
+  "EQ_TAKEN_PRICE_MUTATIONS": 0,
+  "FUTURE_DATA_USED": false,
+  "closedCandleRequired": true,
+  "liquidityAvailabilityRule": "liquidity.confirmedAt <= interactionCandle.openTime",
+  "eligiblePreBarStates": ["ACTIVE", "TOUCHED"],
+  "strictOperators": { "BSL": ">", "SSL": "<" },
+  "exactTouchCountsAsTaken": false,
+  "multipleTakenSameCandleObserved": 3,
+  "samePriceDistinctIdentityObserved": 2
+}

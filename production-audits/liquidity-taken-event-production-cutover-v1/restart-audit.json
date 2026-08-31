@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "LIQUIDITY_TAKEN_RESTART_AUDIT_V1",
+  "mechanism": "deterministic persisted-candle replay plus unified Event Registry deduplication",
+  "RESTART_CHECK_COUNT": 1,
+  "RESTART_IDENTITY_MUTATIONS": 0,
+  "comparedFields": ["id", "liquidityId", "source.liquidityType", "side", "price", "occurredAt", "confirmedAt", "source.interactionExtreme"],
+  "separatePersistenceSubsystemAdded": false
+}

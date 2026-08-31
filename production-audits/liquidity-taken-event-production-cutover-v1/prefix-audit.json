@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "LIQUIDITY_TAKEN_PREFIX_AUDIT_V1",
+  "PREFIX_CHECK_COUNT": 1,
+  "PREFIX_MUTATIONS": 0,
+  "method": "compare prefix-only replay with events confirmed by T from the same prefix plus a future suffix",
+  "comparedFields": ["id", "liquidityId", "source.liquidityType", "side", "price", "occurredAt", "confirmedAt", "source.interactionExtreme"]
+}

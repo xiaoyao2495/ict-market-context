@@ -1,0 +1,10 @@
+{
+  "command": "node test/run.js",
+  "TEST_FILES": 119,
+  "TEST_COUNT": 1468,
+  "PASS_COUNT": 1468,
+  "FAIL_COUNT": 0,
+  "FULL_REGRESSION": "PASS",
+  "targetedTakenTests": 18,
+  "targetedTakenFailures": 0
+}

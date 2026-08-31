@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "LIQUIDITY_TAKEN_PRODUCTION_INVARIANCE_V1",
+  "EXISTING_SWEEP_MUTATIONS": 0,
+  "EXISTING_LIQUIDITY_LIFECYCLE_MUTATIONS": 0,
+  "DISPLACEMENT_MUTATIONS": 0,
+  "WATCH_MUTATIONS": 0,
+  "FIRST_TOUCH_MUTATIONS": 0,
+  "SWEEP_RUNTIME_CHANGED": false,
+  "WATCH_RUNTIME_CHANGED": false,
+  "FVG_RUNTIME_CHANGED": false,
+  "FIRST_TOUCH_RUNTIME_CHANGED": false,
+  "AMD_RUNTIME_CHANGED": false,
+  "TAKEN_DOWNSTREAM_CONSUMER_COUNT": 0,
+  "evidence": [
+    "legacy Sweep adapter and lifecycle source files are unchanged",
+    "domain consumers continue querying LIQUIDITY_SWEEP by type",
+    "complete repository regression passed",
+    "only generic Event Registry stores LIQUIDITY_TAKEN"
+  ]
+}

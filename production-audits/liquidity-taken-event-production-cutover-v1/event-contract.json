@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "LIQUIDITY_TAKEN_EVENT_V1",
+  "type": "LIQUIDITY_TAKEN",
+  "idFormat": "<symbol>:5m:TAKEN:<liquidityId>:<interactionCandle.openTime>",
+  "eligibleLiquidityTypes": ["EQH", "EQL", "PDH", "PDL", "PWH", "PWL", "PMH", "PML"],
+  "fields": {
+    "id": "deterministic event identity",
+    "symbol": "market symbol",
+    "timeframe": "explicit 5m interaction timeframe",
+    "type": "LIQUIDITY_TAKEN",
+    "side": "liquiditySide: BSL or SSL",
+    "liquidityId": "stable liquidity lifecycle identity",
+    "occurredAt": "interactionCandleOpenTime",
+    "confirmedAt": "interactionCandleCloseTime",
+    "candleIndex": "interactionCandleIndex",
+    "price": "immutable interaction-time liquidityPrice",
+    "source.liquidityType": "frozen Narrative Liquidity type",
+    "source.interactionExtreme": "candle.high for BSL; candle.low for SSL"
+  },
+  "directionField": false,
+  "reclaimRequired": false,
+  "penetrationThreshold": null,
+  "newLifecycleStatus": false,
+  "eqMemberProvenance": "as-of candle.openTime snapshot when available"
+}

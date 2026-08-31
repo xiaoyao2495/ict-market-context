@@ -30,6 +30,7 @@ var eqProductionVersion = require('../config/eqProductionVersion');
 var eqSwingSource = require('../config/eqSwingSource');
 var liquidityLifecycle = require('../liquidity/liquidityLifecycle');
 var liquidityRegistry = require('../liquidity/liquidityRegistry');
+var liquidityTakenEventAdapter = require('../events/liquidityTakenEventAdapter');
 var sweepEventAdapter = require('../events/sweepEventAdapter');
 var fvgDetector = require('../fvg/fvgDetector');
 var fvgLifecycle = require('../fvg/fvgLifecycle');
@@ -68,6 +69,7 @@ function createReplayState(options) {
 
         // ---- 事件（持久，id 去重） ----
         eventRegistry: null, // 由调用方注入 events/eventRegistry
+        takenLiquidityIds: null, // 首次从 Event Registry 派生的运行时去重缓存
         displacementStore: canonicalDisplacementStore.createCanonicalDisplacementStore(),
 
         // ---- 持久状态机 ----
@@ -235,17 +237,41 @@ function incrementalLiquidity(state, candles, index, exchangeInfo, evaluationTim
 
 /**
  * 每根 K 增量事件：
- * 1. lifecycle × 新 K → SWEPT → sweep 事件
- * 2. A/C2 raw detections canonicalize into the sole production Displacement store
+ * 1. pre-bar Narrative Liquidity × 新 K → objective TAKEN event
+ * 2. lifecycle × 新 K → SWEPT → sweep 事件（legacy semantics unchanged）
+ * 3. A/C2 raw detections canonicalize into the sole production Displacement store
  */
 function incrementalEvents(state, candle, index, evaluationTime, rawDisplacements) {
+    var newTaken = [];
     var newSweeps = [];
     var registry = state.registry;
 
-    // 1. lifecycle：只评估本根新 K
+    // Restart/prefix-safe first-Taken ledger is the existing unified Event Registry.
+    // Derive a runtime cache once, then advance it with registered events; it is
+    // not a second persistence source and can always be rebuilt after restart.
+    var takenByLiquidityId = state.takenLiquidityIds;
+    if (!takenByLiquidityId) {
+        takenByLiquidityId = {};
+        state.eventRegistry.getByType(state.symbol, 'LIQUIDITY_TAKEN').forEach(function (event) {
+            if (event && event.liquidityId) takenByLiquidityId[event.liquidityId] = true;
+        });
+        state.takenLiquidityIds = takenByLiquidityId;
+    }
+
+    // Taken is evaluated before this candle mutates lifecycle. Same-candle event
+    // ordering is deterministic: registry insertion order is TAKEN, then SWEEP.
     var all = registry.getAll(state.symbol);
     for (var i = 0; i < all.length; i++) {
         var l = all[i];
+        if (!takenByLiquidityId[l.id]) {
+            var taken = liquidityTakenEventAdapter.buildTakenEvent(l, candle, index, state.timeframe);
+            if (taken && state.eventRegistry.add(taken)) {
+                takenByLiquidityId[l.id] = true;
+                newTaken.push(taken);
+            }
+        }
+
+        // Existing lifecycle/Sweep path below is intentionally unchanged.
         if (l.confirmedAt > candle.closeTime) {
             continue; // 防未来数据
         }
@@ -269,7 +295,7 @@ function incrementalEvents(state, candle, index, evaluationTime, rawDisplacement
     }
 
     var canonical = state.displacementStore.process(rawDisplacements || [], evaluationTime);
-    return { sweeps: newSweeps, displacements: canonical.created, displacementEvidenceUpdated: canonical.updated };
+    return { taken: newTaken, sweeps: newSweeps, displacements: canonical.created, displacementEvidenceUpdated: canonical.updated };
 }
 
 /**
