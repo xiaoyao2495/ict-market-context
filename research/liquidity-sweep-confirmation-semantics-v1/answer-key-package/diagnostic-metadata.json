@@ -1,0 +1,18 @@
+{
+  "task": "LIQUIDITY_SWEEP_CONFIRMATION_SEMANTICS_V1",
+  "hypothesisId": "TAKEN_FAILED_ACCEPTANCE_V1",
+  "samplingSeed": "LIQUIDITY_SWEEP_CONFIRMATION_SEMANTICS_V1|TAKEN_FAILED_ACCEPTANCE_V1|b4d4222",
+  "sampleCount": 40,
+  "candidateConfirmedCount": 20,
+  "candidateNotConfirmedCount": 20,
+  "stratificationDimensions": [
+    "symbol",
+    "liquiditySide",
+    "liquidityType"
+  ],
+  "chartWindow": {
+    "preEventBars": 36,
+    "postTakenBars": 12
+  },
+  "sampleSha256": "ca97715526e565c6bd19d3e48d320ca89b15c419794d205c840650266be90867"
+}

@@ -1,0 +1,92 @@
+{
+  "task": "LIQUIDITY_SWEEP_CONFIRMATION_SEMANTICS_V1",
+  "hypothesisId": "TAKEN_FAILED_ACCEPTANCE_V1",
+  "reviewStatus": "COMPLETE",
+  "labelFreezeValidation": {
+    "humanLabelsFrozen": true,
+    "answerKeyOpenedBeforeFreeze": false,
+    "labelCount": 40,
+    "uniqueCaseCount": 40,
+    "allowedLabelsOnly": true,
+    "answerKeyCoverageExact": true
+  },
+  "comparison": {
+    "candidateConfirmed": {
+      "total": 20,
+      "GOOD_SWEEP": 9,
+      "BORDERLINE": 2,
+      "TAKEN_ONLY": 7,
+      "NOT_SWEEP": 2
+    },
+    "candidateNotConfirmed": {
+      "total": 20,
+      "GOOD_SWEEP": 0,
+      "BORDERLINE": 0,
+      "TAKEN_ONLY": 9,
+      "NOT_SWEEP": 11
+    }
+  },
+  "bySymbol": {
+    "BTCUSDT": {
+      "candidateConfirmed": { "total": 12, "GOOD_SWEEP": 7, "BORDERLINE": 1, "TAKEN_ONLY": 4, "NOT_SWEEP": 0 },
+      "candidateNotConfirmed": { "total": 12, "GOOD_SWEEP": 0, "BORDERLINE": 0, "TAKEN_ONLY": 6, "NOT_SWEEP": 6 }
+    },
+    "ZECUSDT": {
+      "candidateConfirmed": { "total": 8, "GOOD_SWEEP": 2, "BORDERLINE": 1, "TAKEN_ONLY": 3, "NOT_SWEEP": 2 },
+      "candidateNotConfirmed": { "total": 8, "GOOD_SWEEP": 0, "BORDERLINE": 0, "TAKEN_ONLY": 3, "NOT_SWEEP": 5 }
+    }
+  },
+  "bySide": {
+    "BSL": {
+      "candidateConfirmed": { "total": 11, "GOOD_SWEEP": 3, "BORDERLINE": 1, "TAKEN_ONLY": 6, "NOT_SWEEP": 1 },
+      "candidateNotConfirmed": { "total": 16, "GOOD_SWEEP": 0, "BORDERLINE": 0, "TAKEN_ONLY": 9, "NOT_SWEEP": 7 }
+    },
+    "SSL": {
+      "candidateConfirmed": { "total": 9, "GOOD_SWEEP": 6, "BORDERLINE": 1, "TAKEN_ONLY": 1, "NOT_SWEEP": 1 },
+      "candidateNotConfirmed": { "total": 4, "GOOD_SWEEP": 0, "BORDERLINE": 0, "TAKEN_ONLY": 0, "NOT_SWEEP": 4 }
+    }
+  },
+  "byLiquidityType": {
+    "EQH": {
+      "candidateConfirmed": { "total": 5, "GOOD_SWEEP": 1, "BORDERLINE": 0, "TAKEN_ONLY": 3, "NOT_SWEEP": 1 },
+      "candidateNotConfirmed": { "total": 11, "GOOD_SWEEP": 0, "BORDERLINE": 0, "TAKEN_ONLY": 6, "NOT_SWEEP": 5 }
+    },
+    "EQL": {
+      "candidateConfirmed": { "total": 5, "GOOD_SWEEP": 3, "BORDERLINE": 1, "TAKEN_ONLY": 0, "NOT_SWEEP": 1 },
+      "candidateNotConfirmed": { "total": 4, "GOOD_SWEEP": 0, "BORDERLINE": 0, "TAKEN_ONLY": 0, "NOT_SWEEP": 4 }
+    },
+    "PDH": {
+      "candidateConfirmed": { "total": 5, "GOOD_SWEEP": 2, "BORDERLINE": 1, "TAKEN_ONLY": 2, "NOT_SWEEP": 0 },
+      "candidateNotConfirmed": { "total": 5, "GOOD_SWEEP": 0, "BORDERLINE": 0, "TAKEN_ONLY": 3, "NOT_SWEEP": 2 }
+    },
+    "PDL": {
+      "candidateConfirmed": { "total": 4, "GOOD_SWEEP": 3, "BORDERLINE": 0, "TAKEN_ONLY": 1, "NOT_SWEEP": 0 },
+      "candidateNotConfirmed": { "total": 0, "GOOD_SWEEP": 0, "BORDERLINE": 0, "TAKEN_ONLY": 0, "NOT_SWEEP": 0 }
+    },
+    "PWH": {
+      "candidateConfirmed": { "total": 1, "GOOD_SWEEP": 0, "BORDERLINE": 0, "TAKEN_ONLY": 1, "NOT_SWEEP": 0 },
+      "candidateNotConfirmed": { "total": 0, "GOOD_SWEEP": 0, "BORDERLINE": 0, "TAKEN_ONLY": 0, "NOT_SWEEP": 0 }
+    }
+  },
+  "frozenDecisionRuleEvaluation": {
+    "confirmedShowsClearGoodSweepConcentration": false,
+    "unconfirmedShowsMateriallyMoreTakenOnlyOrNotSweep": true,
+    "relationshipNotObviouslyDrivenByOneSymbolSideOrType": false,
+    "obviousCounterexamplesAreNotCommon": false,
+    "semanticRemainsSimpleAndExplainable": true,
+    "confirmedTakenOnlyOrNotSweepCount": 9,
+    "unconfirmedGoodSweepCount": 0
+  },
+  "interpretation": {
+    "negativeEvidence": "No unconfirmed control was labeled GOOD_SWEEP, so absence of the candidate confirmation is strongly associated with a non-Sweep human judgment in this sample.",
+    "positiveEvidence": "Candidate confirmation is not sufficient as a positive Sweep semantic: only 9 of 20 confirmed cases were GOOD_SWEEP, while 9 of 20 were TAKEN_ONLY or NOT_SWEEP.",
+    "heterogeneity": "The confirmed GOOD_SWEEP concentration varies materially by symbol, side, and liquidity type, with stronger results on SSL than BSL and weak EQH results.",
+    "scope": "Descriptive one-round semantic review only; no threshold optimization or production decision tuning was performed."
+  },
+  "verdict": "SWEEP_SEMANTICS_NOT_JUSTIFIED",
+  "productionSweepApproved": false,
+  "nextSweepHypothesis": "NONE",
+  "productionFilesModified": 0,
+  "parameterSearchRuns": 0,
+  "hardStopReached": true
+}

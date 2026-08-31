@@ -1,0 +1,202 @@
+[
+  {
+    "blindCaseId": "BLIND-001",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-002",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-003",
+    "candidateConfirmed": true,
+    "confirmationBars": 5
+  },
+  {
+    "blindCaseId": "BLIND-004",
+    "candidateConfirmed": true,
+    "confirmationBars": 3
+  },
+  {
+    "blindCaseId": "BLIND-005",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-006",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-007",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-008",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-009",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-010",
+    "candidateConfirmed": true,
+    "confirmationBars": 5
+  },
+  {
+    "blindCaseId": "BLIND-011",
+    "candidateConfirmed": true,
+    "confirmationBars": 6
+  },
+  {
+    "blindCaseId": "BLIND-012",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-013",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-014",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-015",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-016",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-017",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-018",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-019",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-020",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-021",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-022",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-023",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-024",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-025",
+    "candidateConfirmed": true,
+    "confirmationBars": 1
+  },
+  {
+    "blindCaseId": "BLIND-026",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-027",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-028",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-029",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-030",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-031",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-032",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-033",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-034",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-035",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-036",
+    "candidateConfirmed": true,
+    "confirmationBars": 0
+  },
+  {
+    "blindCaseId": "BLIND-037",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-038",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-039",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  },
+  {
+    "blindCaseId": "BLIND-040",
+    "candidateConfirmed": false,
+    "confirmationBars": null
+  }
+]

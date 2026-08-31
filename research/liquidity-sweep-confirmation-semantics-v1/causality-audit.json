@@ -1,0 +1,302 @@
+{
+  "productionTakenFoundation": {
+    "allowlistMatch": true,
+    "bslStrictTradeThrough": true,
+    "sslStrictTradeThrough": true,
+    "reclaimRequiredForTaken": false,
+    "firstTakenPerLiquidityLifecycle": true,
+    "takenDependsOnSweep": false,
+    "productionTakenVerified": true
+  },
+  "takenSource": "replay/replayState.incrementalEvents -> events/liquidityTakenEventAdapter.buildTakenEvent",
+  "frozenPriceSource": "LIQUIDITY_TAKEN.price and LIQUIDITY_TAKEN.source.liquidityPrice",
+  "mutableEqPriceLookupUsedForConfirmation": false,
+  "confirmationVisibilityRule": "first eligible closed candle only becomes visible at candle.closeTime",
+  "futureLiquidityUsage": 0,
+  "futureConfirmationVisibility": 0,
+  "frozenTakenPriceMutations": 0,
+  "prefixCheckCount": 40,
+  "prefixMutations": 0,
+  "prefixChecks": [
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787591400000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787597400000]]:1787618400000",
+      "historicalEvaluationTime": "2026-08-25T01:44:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:BTCUSDT:PDL:2026-08-26:1787933700000",
+      "historicalEvaluationTime": "2026-08-28T17:19:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:ZECUSDT:PDL:2026-08-23:1787691900000",
+      "historicalEvaluationTime": "2026-08-25T22:09:59.999Z",
+      "prefixFirstReturnBar": 5,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 5,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:ZECUSDT:PDH:2026-08-27:1788014700000",
+      "historicalEvaluationTime": "2026-08-29T15:49:59.999Z",
+      "prefixFirstReturnBar": 3,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 3,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:BTCUSDT:PDH:2026-08-26:1787817600000",
+      "historicalEvaluationTime": "2026-08-27T09:04:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:EQV3:ZECUSDT:5m:EQH:[QS:ZECUSDT:5m:HIGH:[ZECUSDT:5m:SWING_HIGH:1787673300000]]:[QS:ZECUSDT:5m:HIGH:[ZECUSDT:5m:SWING_HIGH:1787785500000]]:1787850300000",
+      "historicalEvaluationTime": "2026-08-27T18:09:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQL:[QS:BTCUSDT:5m:LOW:[BTCUSDT:5m:SWING_LOW:1787769600000]]:[QS:BTCUSDT:5m:LOW:[BTCUSDT:5m:SWING_LOW:1787772000000]]:1787775600000",
+      "historicalEvaluationTime": "2026-08-26T21:24:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:ZECUSDT:PDH:2026-08-26:1787850300000",
+      "historicalEvaluationTime": "2026-08-27T18:09:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787503800000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787508600000]]:1787514000000",
+      "historicalEvaluationTime": "2026-08-23T20:44:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:BTCUSDT:PDH:2026-08-27:1787879700000",
+      "historicalEvaluationTime": "2026-08-28T02:19:59.999Z",
+      "prefixFirstReturnBar": 5,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 5,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:EQV3:ZECUSDT:5m:EQH:[QS:ZECUSDT:5m:HIGH:[ZECUSDT:5m:SWING_HIGH:1787610900000]]:[QS:ZECUSDT:5m:HIGH:[ZECUSDT:5m:SWING_HIGH:1787616300000]]:1787618400000",
+      "historicalEvaluationTime": "2026-08-25T01:44:59.999Z",
+      "prefixFirstReturnBar": 6,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 6,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:BTCUSDT:PDH:2026-08-23:1787571000000",
+      "historicalEvaluationTime": "2026-08-24T12:34:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787514300000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787517600000]]:1787518800000",
+      "historicalEvaluationTime": "2026-08-23T22:04:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787585400000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787619600000]]:1787624100000",
+      "historicalEvaluationTime": "2026-08-25T03:19:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:BTCUSDT:PDH:2026-08-25:1787880600000",
+      "historicalEvaluationTime": "2026-08-28T02:34:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:BTCUSDT:PWH:2026-08-17:1787581200000",
+      "historicalEvaluationTime": "2026-08-24T15:24:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:EQV3:ZECUSDT:5m:EQL:[QS:ZECUSDT:5m:LOW:[ZECUSDT:5m:SWING_LOW:1787855400000]]:[QS:ZECUSDT:5m:LOW:[ZECUSDT:5m:SWING_LOW:1787866800000]]:1787881800000",
+      "historicalEvaluationTime": "2026-08-28T02:54:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787538900000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787552100000]]:1787553900000",
+      "historicalEvaluationTime": "2026-08-24T07:49:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:EQV3:ZECUSDT:5m:EQH:[QS:ZECUSDT:5m:HIGH:[ZECUSDT:5m:SWING_HIGH:1787447700000]]:[QS:ZECUSDT:5m:HIGH:[ZECUSDT:5m:SWING_HIGH:1787469300000]]:1787472000000",
+      "historicalEvaluationTime": "2026-08-23T09:04:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQL:[QS:BTCUSDT:5m:LOW:[BTCUSDT:5m:SWING_LOW:1787612400000]]:[QS:BTCUSDT:5m:LOW:[BTCUSDT:5m:SWING_LOW:1787659500000]]:1787660700000",
+      "historicalEvaluationTime": "2026-08-25T13:29:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:BTCUSDT:PDL:2026-08-27:1787926200000",
+      "historicalEvaluationTime": "2026-08-28T15:14:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:EQV3:ZECUSDT:5m:EQL:[QS:ZECUSDT:5m:LOW:[ZECUSDT:5m:SWING_LOW:1787496000000]]:[QS:ZECUSDT:5m:LOW:[ZECUSDT:5m:SWING_LOW:1787502000000]]:1787531100000",
+      "historicalEvaluationTime": "2026-08-24T01:29:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQL:[QS:BTCUSDT:5m:LOW:[BTCUSDT:5m:SWING_LOW:1788027300000]]:[QS:BTCUSDT:5m:LOW:[BTCUSDT:5m:SWING_LOW:1788037200000]]:1788052500000",
+      "historicalEvaluationTime": "2026-08-30T02:19:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787545200000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787548500000]]:1787551800000",
+      "historicalEvaluationTime": "2026-08-24T07:14:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1788014700000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1788020100000]]:1788028500000",
+      "historicalEvaluationTime": "2026-08-29T19:39:59.999Z",
+      "prefixFirstReturnBar": 1,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 1,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:EQV3:ZECUSDT:5m:EQL:[QS:ZECUSDT:5m:LOW:[ZECUSDT:5m:SWING_LOW:1787811300000]]:[QS:ZECUSDT:5m:LOW:[ZECUSDT:5m:SWING_LOW:1787827200000]]:1787925900000",
+      "historicalEvaluationTime": "2026-08-28T15:09:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787772300000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787773800000]]:1787778300000",
+      "historicalEvaluationTime": "2026-08-26T22:09:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:BTCUSDT:PDH:2026-08-24:1787624100000",
+      "historicalEvaluationTime": "2026-08-25T03:19:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:EQV3:ZECUSDT:5m:EQL:[QS:ZECUSDT:5m:LOW:[ZECUSDT:5m:SWING_LOW:1787820900000]]:[QS:ZECUSDT:5m:LOW:[ZECUSDT:5m:SWING_LOW:1787824500000]]:1787826000000",
+      "historicalEvaluationTime": "2026-08-27T11:24:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787696100000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787699400000]]:1787710800000",
+      "historicalEvaluationTime": "2026-08-26T03:24:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787795400000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787800800000]]:1787817000000",
+      "historicalEvaluationTime": "2026-08-27T08:54:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:BTCUSDT:PDH:2026-08-22:1787575200000",
+      "historicalEvaluationTime": "2026-08-24T13:44:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:ZECUSDT:PDL:2026-08-24:1787674800000",
+      "historicalEvaluationTime": "2026-08-25T17:24:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:EQV3:ZECUSDT:5m:EQH:[QS:ZECUSDT:5m:HIGH:[ZECUSDT:5m:SWING_HIGH:1787679900000]]:[QS:ZECUSDT:5m:HIGH:[ZECUSDT:5m:SWING_HIGH:1787683500000]]:1787782500000",
+      "historicalEvaluationTime": "2026-08-26T23:19:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:ZECUSDT:PDH:2026-08-22:1787492100000",
+      "historicalEvaluationTime": "2026-08-23T14:39:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:EQV3:ZECUSDT:5m:EQH:[QS:ZECUSDT:5m:HIGH:[ZECUSDT:5m:SWING_HIGH:1787928900000]]:[QS:ZECUSDT:5m:HIGH:[ZECUSDT:5m:SWING_HIGH:1787930700000]]:1788013500000",
+      "historicalEvaluationTime": "2026-08-29T15:29:59.999Z",
+      "prefixFirstReturnBar": 0,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": 0,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQL:[QS:BTCUSDT:5m:LOW:[BTCUSDT:5m:SWING_LOW:1787726100000]]:[QS:BTCUSDT:5m:LOW:[BTCUSDT:5m:SWING_LOW:1787731500000]]:1787734200000",
+      "historicalEvaluationTime": "2026-08-26T09:54:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:EQV3:ZECUSDT:5m:EQL:[QS:ZECUSDT:5m:LOW:[ZECUSDT:5m:SWING_LOW:1787709900000]]:[QS:ZECUSDT:5m:LOW:[ZECUSDT:5m:SWING_LOW:1787734500000]]:1787749500000",
+      "historicalEvaluationTime": "2026-08-26T14:09:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "ZECUSDT:5m:TAKEN:ZECUSDT:PDH:2026-08-28:1788014700000",
+      "historicalEvaluationTime": "2026-08-29T15:49:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    },
+    {
+      "caseId": "BTCUSDT:5m:TAKEN:EQV3:BTCUSDT:5m:EQH:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787466600000]]:[QS:BTCUSDT:5m:HIGH:[BTCUSDT:5m:SWING_HIGH:1787469300000]]:1787474100000",
+      "historicalEvaluationTime": "2026-08-23T09:39:59.999Z",
+      "prefixFirstReturnBar": null,
+      "longerDatasetFirstReturnBarAsOfHistoricalTime": null,
+      "mutationCount": 0
+    }
+  ]
+}

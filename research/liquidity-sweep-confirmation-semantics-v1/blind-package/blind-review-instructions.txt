@@ -1,0 +1,16 @@
+STRICT BLIND HUMAN REVIEW
+
+Question for every chart:
+Does the highlighted liquidity interaction look like a genuine liquidity sweep, rather than merely price trading through the level?
+
+Return exactly one line per case:
+BLIND-001 GOOD_SWEEP
+BLIND-002 TAKEN_ONLY
+
+Allowed labels only:
+GOOD_SWEEP — visually clear liquidity sweep.
+BORDERLINE — reasonable ambiguity.
+TAKEN_ONLY — the objective interaction is correct, but price looks more like it traded/accepted through liquidity than swept it.
+NOT_SWEEP — the highlighted case should not reasonably be described as a liquidity sweep.
+
+Review all 40 charts without consulting any separate diagnostic or answer package. Freeze all labels before any answer key is decoded.

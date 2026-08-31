@@ -1,0 +1,417 @@
+{
+  "task": "LIQUIDITY_SWEEP_CONFIRMATION_SEMANTICS_V1",
+  "packagePurpose": "STRICT_BLIND_HUMAN_REVIEW",
+  "reviewCaseCount": 40,
+  "sampleSeedSha256": "d7910f6b430a807175d80b841994f6b3828d21a6f5c2ae9f4e15854b2feeba40",
+  "sampleFrozenBeforeHumanLabels": true,
+  "allowedLabels": [
+    "GOOD_SWEEP",
+    "BORDERLINE",
+    "TAKEN_ONLY",
+    "NOT_SWEEP"
+  ],
+  "chartFilesUseOpaqueIdsOnly": true,
+  "classificationFieldsIncluded": false,
+  "cases": [
+    {
+      "caseId": "BLIND-001",
+      "chartFile": "charts/BLIND-001.svg",
+      "chartSha256": "4b5100da6d0c4a96d4164d6136f556af0e9b7b86f1a7dbaa93055038cd8c02c7",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-002",
+      "chartFile": "charts/BLIND-002.svg",
+      "chartSha256": "5575280eae9e1cb6fa3d30d5887cc987d91ef164823eaf12dbc727684dae21dc",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-003",
+      "chartFile": "charts/BLIND-003.svg",
+      "chartSha256": "3053d2c5171b0efb1ff20621e26a355d8d70421323a6ea0d9bc4a4156f30e1f2",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-004",
+      "chartFile": "charts/BLIND-004.svg",
+      "chartSha256": "9bf8f3f9d6530d04d33d28c3c19c04571c6148b465e51054d93c03ebad96ffca",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-005",
+      "chartFile": "charts/BLIND-005.svg",
+      "chartSha256": "591c033a7237f1f1894fe3993800e4abf71b28502ae412cdf2f357ad6d5c5e43",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-006",
+      "chartFile": "charts/BLIND-006.svg",
+      "chartSha256": "d324d20b3047dc04ab5f280de5a849c426294ace0c829b87cb2f71b2cac1fb9d",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-007",
+      "chartFile": "charts/BLIND-007.svg",
+      "chartSha256": "f9ae939567846ac7ecce1ce34f9913b689f2e375d335fd84de722b489ff1bc94",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-008",
+      "chartFile": "charts/BLIND-008.svg",
+      "chartSha256": "4847fc0c82a8403fe2269c372472903d677790fe06f564b5e7eb78f31034aa8c",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-009",
+      "chartFile": "charts/BLIND-009.svg",
+      "chartSha256": "f0f4de432dbbc217ba05245768d52c8d3b59e7d8a531483ad21888bfa5782c06",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-010",
+      "chartFile": "charts/BLIND-010.svg",
+      "chartSha256": "524845d7dff77c872e0417d831abc7e4ba3036f5d2c22fa2592c582da688a8a7",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-011",
+      "chartFile": "charts/BLIND-011.svg",
+      "chartSha256": "70b48dceacb962d77f29f5ad71eb434a18325b54494b92e6eb97df4265221352",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-012",
+      "chartFile": "charts/BLIND-012.svg",
+      "chartSha256": "bf830a53ebc1bc12b6991fe4c41f5e8c29648647cb8612aa72109f39040a9716",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-013",
+      "chartFile": "charts/BLIND-013.svg",
+      "chartSha256": "b2b82370d519d5cc7163ed1b077fbbe0ef468e5aaf3afac92c4390e4a8829be8",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-014",
+      "chartFile": "charts/BLIND-014.svg",
+      "chartSha256": "a920f34531e358b8b366b8c12f10b219cfacddcdaa20a4c96c5cb7ca7d519166",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-015",
+      "chartFile": "charts/BLIND-015.svg",
+      "chartSha256": "a0bccaf5a891ed0f2756606a89874d264bfdfb144627aec370b6df32142a59e0",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-016",
+      "chartFile": "charts/BLIND-016.svg",
+      "chartSha256": "0a75d84b3cc52033f157af62576165ac613a1a80ceba8f10779b264b5f36015f",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-017",
+      "chartFile": "charts/BLIND-017.svg",
+      "chartSha256": "d2827f8690d276de55c8fc1e92e74af9810e1e5b080b99356ab0aef509648f8a",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-018",
+      "chartFile": "charts/BLIND-018.svg",
+      "chartSha256": "1153638b749ebd276d858a8136ee9dacad9c166f7853d3f14832a3ce34461b81",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-019",
+      "chartFile": "charts/BLIND-019.svg",
+      "chartSha256": "c3dd1fb54e563dfe76841372214b5fcd6bb53777030cd474b174ae755138aaca",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-020",
+      "chartFile": "charts/BLIND-020.svg",
+      "chartSha256": "4160d73b623103bccca7cad096e45f0314887f6e074dd7317c5d10874f979d31",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-021",
+      "chartFile": "charts/BLIND-021.svg",
+      "chartSha256": "db4e0d46831254f2628c55158c97300d73a55a72124e838e7b440ab9ddd52e7b",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-022",
+      "chartFile": "charts/BLIND-022.svg",
+      "chartSha256": "6aaadbcba502d94dfd2579e0c54750c79f43aa1283c494fb485f6914a96d7d51",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-023",
+      "chartFile": "charts/BLIND-023.svg",
+      "chartSha256": "5cba77568bec518dcd179b755e931897f980be4f1af997ed28ef6ebc60a8357a",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-024",
+      "chartFile": "charts/BLIND-024.svg",
+      "chartSha256": "4eb4813e42a6820ee06ce1431d77444a45308a22fedf833007e03ed0911cb34d",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-025",
+      "chartFile": "charts/BLIND-025.svg",
+      "chartSha256": "a3d7a0fc8be22e28a29bcfc1e64a1395bdba0d488ade7da493c50cd693bd3c4d",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-026",
+      "chartFile": "charts/BLIND-026.svg",
+      "chartSha256": "183183182be562a86b00543721a332b8dbfeabcb4457191930e802ea35361b82",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-027",
+      "chartFile": "charts/BLIND-027.svg",
+      "chartSha256": "23ede5e7c54935df71af37bd89316aa78128721b8a61bffb8454ec94e3537fae",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-028",
+      "chartFile": "charts/BLIND-028.svg",
+      "chartSha256": "1ccf029ade9d4330ad992381337542907a68c09e4710c1aefd1c7f1cac9ddaf5",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-029",
+      "chartFile": "charts/BLIND-029.svg",
+      "chartSha256": "384609a84e9b08be92d80a1def915e4c3c231adb50e3141b53e7ab738bd037c4",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-030",
+      "chartFile": "charts/BLIND-030.svg",
+      "chartSha256": "743113dcfcbd8950b8762ecd427794d94061e392b24d65baade13dcb41b43d52",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-031",
+      "chartFile": "charts/BLIND-031.svg",
+      "chartSha256": "a1792518551619c9047623c3cb7d925cf227647c86ecad3f9bc415fe84a71d08",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-032",
+      "chartFile": "charts/BLIND-032.svg",
+      "chartSha256": "51add8eac1c3cce17893cd76f4aeb9591c5d80e0ebe3ca91692265cc8fd40529",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-033",
+      "chartFile": "charts/BLIND-033.svg",
+      "chartSha256": "e6934ebf299ff8c4a7bdcb9c71372836aeb3eb877417fe64b2373d584aab2553",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-034",
+      "chartFile": "charts/BLIND-034.svg",
+      "chartSha256": "9e7205a74223ed0ce2310b464def5c27d95cbd42f8f42f274544abd2e064b1da",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-035",
+      "chartFile": "charts/BLIND-035.svg",
+      "chartSha256": "5377592d0aca9b8ab2b5fc3ec8f2ca7e2a6a80cefe6172409458dcc6f55e60a7",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-036",
+      "chartFile": "charts/BLIND-036.svg",
+      "chartSha256": "ef17d38964a2eccaaad3703b7d36d90f5aaef555d8d67776ad9fb17d6cc13f8f",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-037",
+      "chartFile": "charts/BLIND-037.svg",
+      "chartSha256": "2ccf813a03a385ce235dc74d7c5b71eb16bf061a0bdef01f6e8a78a054f874b1",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-038",
+      "chartFile": "charts/BLIND-038.svg",
+      "chartSha256": "f087aef13413bf9bf9eeaa9eab8a94cf068cb1c0eef501147a8f87bb2c487cf0",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-039",
+      "chartFile": "charts/BLIND-039.svg",
+      "chartSha256": "56b3e676f9ea02dd8c6b574703a349051843613aff3e4fe24143d6a9d0440990",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    },
+    {
+      "caseId": "BLIND-040",
+      "chartFile": "charts/BLIND-040.svg",
+      "chartSha256": "027f666c124dbdd14b1f45c1b321ff43d64166616603e113183464dd225c1217",
+      "chartWindow": {
+        "preEventBars": 36,
+        "postEventBars": 12,
+        "totalBars": 49
+      }
+    }
+  ]
+}
