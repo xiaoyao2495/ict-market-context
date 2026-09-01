@@ -27,10 +27,10 @@ function candle(openTime, open, high, low, close) {
     };
 }
 
-function missingSweepWatch(symbol, firstCandle) {
+function missingTakenWatch(symbol, firstCandle) {
     var primary = {
         // Deliberately no id: this is the sole missing P4.1 requirement.
-        sourceId:'EQV3:' + symbol + ':5m:EQL:VALID_CLUSTER',
+        eventType:'LIQUIDITY_TAKEN', sourceId:'EQX1:' + symbol + ':5m:EQL:VALID_POINT',
         sourceType:'EQL', sourceTimeframe:'5m', sourcePrice:99,
         side:'SSL', occurredAt:firstCandle.openTime,
         confirmedAt:firstCandle.closeTime - 1, relation:'BEFORE_LEG'
@@ -41,7 +41,8 @@ function missingSweepWatch(symbol, firstCandle) {
         state:'WATCH_WAIT_FVG', createdAt:firstCandle.closeTime,
         updatedAt:firstCandle.closeTime,
         notificationKey:'WATCH:' + symbol + ':BULLISH:DISPLACEMENT:VALID_DISPLACEMENT:NATIVE_FVG:VALID:FIRST_TOUCH',
-        liquidityTaken:{ matched:true, primary:primary, allCandidates:[primary] },
+        liquidityTrigger:'LIQUIDITY_TAKEN',
+        liquidityTaken:{ matched:true, eventType:'LIQUIDITY_TAKEN', lookbackBars:24, primary:primary, allCandidates:[primary] },
         canonicalDisplacementId:'VALID_DISPLACEMENT',
         displacement:{ id:'VALID_DISPLACEMENT', type:'DISPLACEMENT', direction:'BULLISH', formationType:'SINGLE_CANDLE',
             startIndex:0, endIndex:0, startAt:firstCandle.openTime, endAt:firstCandle.closeTime,
@@ -64,12 +65,12 @@ function writeJson(file, value) {
 
 async function primaryIntegrationTest() {
     var beforeHashes = productionHashes();
-    var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'p4-1-missing-sweep-'));
+    var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-missing-taken-'));
     var symbol = 'FAILOPENUSDT';
     var symbolDir = path.join(tempDir, symbol);
     var first = candle(0, 110, 111, 109, 110);
     var touch = candle(300000, 100.5, 101.5, 99.5, 100.7);
-    var watch = missingSweepWatch(symbol, first);
+    var watch = missingTakenWatch(symbol, first);
     var notificationKey = watch.notificationKey;
     var config = require('../config/live.json');
     var dataSource = require('../live/dataSource');
@@ -117,8 +118,8 @@ async function primaryIntegrationTest() {
         await runner.tick();
 
         assert.strictEqual(messages.length, 1, 'FIRST_TOUCH must invoke DingTalk exactly once');
-        assert.ok(logs.some(function (line) { return line.indexOf('EXACT_SWEEP_ID_MISSING') >= 0; }),
-            'stable missing-sweep diagnostic must be logged');
+        assert.ok(logs.some(function (line) { return line.indexOf('EXACT_TAKEN_ID_MISSING') >= 0; }),
+            'stable missing-Taken diagnostic must be logged');
 
         var projection = runner.getNarrativeProjection();
         assert.strictEqual(projection.narratives.length, 0, 'no fallback/partial Narrative');
@@ -138,7 +139,7 @@ async function primaryIntegrationTest() {
         assert.ok(message.indexOf('检测') >= 0, 'DingTalk keyword');
         assert.ok(message.indexOf('WAIT FOR MANUAL CONFIRMATION') >= 0, 'manual confirmation');
         assert.ok(message.indexOf('这是 WATCH 观察事件，不是入场确认。') >= 0, 'WATCH-not-entry disclaimer');
-        ['💧 流动性扫取','⚡ 多头位移','🟦 原生 FVG','🧭 4H Daily Bias'].forEach(function (section) {
+        ['💧 流动性获取（Liquidity Taken）','⚡ 多头位移','🟦 原生 FVG','🧭 4H Daily Bias'].forEach(function (section) {
             assert.ok(message.indexOf(section) >= 0, 'missing notification section ' + section);
         });
         assert.strictEqual(/Narrative：|CONTINUATION|REACTIVATION/.test(message), false,
@@ -173,14 +174,14 @@ async function primaryIntegrationTest() {
 function coreNoMutationTest() {
     var lifecycle = require('../stats/watchNarrativeLifecycleV1');
     var first = candle(0, 110, 111, 109, 110);
-    var item = missingSweepWatch('COREUSDT', first);
+    var item = missingTakenWatch('COREUSDT', first);
     item.state = 'FVG_TOUCHED';
     item.firstTouchAt = first.closeTime + 1;
     var state = lifecycle.createState();
     var before = JSON.stringify(lifecycle.projection(state));
     var result = lifecycle.observeFirstTouch(state, item);
     assert.strictEqual(result.accepted, false);
-    assert.strictEqual(result.reason, 'EXACT_SWEEP_ID_MISSING');
+    assert.strictEqual(result.reason, 'EXACT_TAKEN_ID_MISSING');
     assert.strictEqual(JSON.stringify(lifecycle.projection(state)), before);
 }
 
@@ -189,16 +190,16 @@ async function main() {
     try {
         await primaryIntegrationTest();
         passed++;
-        console.log('PASS MISSING_EXACT_SWEEP_PROVENANCE_FAIL_OPEN_DELIVERY');
+        console.log('PASS MISSING_EXACT_TAKEN_PROVENANCE_FAIL_OPEN_DELIVERY');
         coreNoMutationTest();
         passed++;
-        console.log('PASS MISSING_EXACT_SWEEP_PROVENANCE_DOES_NOT_MUTATE_LIFECYCLE');
+        console.log('PASS MISSING_EXACT_TAKEN_PROVENANCE_DOES_NOT_MUTATE_LIFECYCLE');
     } catch (error) {
         console.error(error && error.stack || error);
         process.exitCode = 1;
         return;
     }
-    console.log('WATCH Narrative Missing Sweep Fail-Open V1 ' + passed + '/' + passed);
+    console.log('WATCH Narrative Missing Taken Fail-Open V1 ' + passed + '/' + passed);
 }
 
 main();

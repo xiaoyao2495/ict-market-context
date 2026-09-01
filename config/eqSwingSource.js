@@ -1,5 +1,9 @@
 'use strict';
 
+// Historical V3 Swing-source selector retained for archived audit tooling only.
+// Production runtime does not import this module.
+var DEPRECATED_FOR_PRODUCTION = true;
+
 var ENV_NAME = 'EQ_SWING_SOURCE';
 var STANDARD = 'STANDARD_CAUSAL_V1';
 var LEGACY = 'RAW_LEGACY';
@@ -19,6 +23,7 @@ function get(env) {
 }
 
 module.exports = {
+    DEPRECATED_FOR_PRODUCTION: DEPRECATED_FOR_PRODUCTION,
     ENV_NAME: ENV_NAME,
     STANDARD: STANDARD,
     LEGACY: LEGACY,

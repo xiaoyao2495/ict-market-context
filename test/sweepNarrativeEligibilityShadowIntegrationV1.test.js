@@ -5,6 +5,7 @@ var assert = require('node:assert/strict');
 var config = require('../config/sweepNarrativeEligibilityV1');
 var classifier = require('../events/sweepNarrativeEligibilityV1');
 var adapter = require('../events/sweepEventAdapter');
+var takenAdapter = require('../events/liquidityTakenEventAdapter');
 var amdState = require('../amd/amdState');
 var displacementWatch = require('../stats/displacementWatch');
 
@@ -34,6 +35,18 @@ function withFlag(value, fn) {
 function built(type, enabled) {
     return withFlag(enabled ? 'true' : undefined, function () {
         return adapter.buildSweepEvent(liquidity(type), candle(0, 100), 0);
+    });
+}
+function takenLiquidity(type) {
+    return {
+        id: 'X:5m:' + type + ':1', symbol: 'X', timeframe: '5m', type: type,
+        side: (/LOW$|PDL|PWL|PML|EQL/.test(type) ? 'SSL' : 'BSL'),
+        price: 100, status: 'ACTIVE', confirmedAt: -1, sweptAt: -1, metadata: {}
+    };
+}
+function builtTaken(type, enabled) {
+    return withFlag(enabled ? 'true' : undefined, function () {
+        return takenAdapter.buildTakenEvent(takenLiquidity(type), candle(0, 100), 0, '5m');
     });
 }
 function decision(type) { return classifier.classifySourceType(type); }
@@ -151,7 +164,7 @@ test('24 AMD still receives Swing Sweep with unchanged score/phase/transition', 
     assert.equal(b.manipulation.sweepEvent.narrativeEligibilityV1.narrativeEligible, false);
 });
 
-function watchFor(sweeps) {
+function watchFor(takens) {
     var displacement = {
         id: 'D1', type: 'DISPLACEMENT', symbol: 'X', timeframe: '5m', direction: 'BULLISH',
         startIndex: 3, endIndex: 3, startAt: candle(3, 103).openTime,
@@ -162,14 +175,14 @@ function watchFor(sweeps) {
         symbol: 'X',
         displacement: displacement,
         evaluationTime: displacement.confirmedAt,
-        sweepEvents: sweeps,
+        takenEvents: takens,
         candles: [candle(0, 100), candle(1, 100), candle(2, 100), candle(3, 103)]
     });
 }
 
 test('25 WATCH candidates/primary/count/timing/direction ignore shadow metadata', function () {
-    var off = built('EQL', false);
-    var on = built('EQL', true);
+    var off = builtTaken('EQL', false);
+    var on = builtTaken('EQL', true);
     off.confirmedAt = on.confirmedAt = candle(2, 100).closeTime;
     off.candleIndex = on.candleIndex = 2;
     var a = watchFor([off]);

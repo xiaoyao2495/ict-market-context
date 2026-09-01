@@ -6,7 +6,7 @@
  */
 'use strict';
 
-var persistentEqualLiquidityV3 = require('../liquidity/persistentEqualLiquidityV3');
+var productionEqProvenance = require('../liquidity/productionEqProvenance');
 
 var NARRATIVE_TYPES = {
     EQH: true,
@@ -46,16 +46,9 @@ function isStrictTradeThrough(liquidity, candle, referencePrice) {
 }
 
 function liquiditySnapshot(liquidity, evaluationTime) {
-    var snapshot = { price: liquidity.price, eqMemberProvenance: null };
+    var snapshot = { price: liquidity.price, eqPartnerProvenance: null };
     if (liquidity.type !== 'EQH' && liquidity.type !== 'EQL') return snapshot;
-    var projected = persistentEqualLiquidityV3.projectMembersAsOf(liquidity, evaluationTime);
-    if (!projected.members.length || projected.referencePrice === null) return snapshot;
-    projected.eqType = liquidity.type;
-    projected.side = liquidity.side;
-    projected.eqModelVersion = liquidity.metadata && liquidity.metadata.eqModelVersion ||
-        'V' + (liquidity.metadata && liquidity.metadata.pipelineVersion || 2);
-    snapshot.price = projected.referencePrice;
-    snapshot.eqMemberProvenance = projected;
+    snapshot.eqPartnerProvenance = productionEqProvenance.fromLiquidity(liquidity);
     return snapshot;
 }
 
@@ -88,8 +81,8 @@ function buildTakenEvent(liquidity, candle, candleIndex, timeframe) {
         },
         metadata: {}
     };
-    if (frozen.eqMemberProvenance) {
-        event.source.eqMemberProvenance = frozen.eqMemberProvenance;
+    if (frozen.eqPartnerProvenance) {
+        event.source.eqPartnerProvenance = frozen.eqPartnerProvenance;
     }
     return event;
 }

@@ -86,8 +86,8 @@ function buildCandidate(se, displacement) {
         candleIndex: se.candleIndex,
         relation: classifySweepDisplacementRelation(se, displacement)
     };
-    if (se.source && se.source.eqMemberProvenance) {
-        c.eqMemberProvenance = JSON.parse(JSON.stringify(se.source.eqMemberProvenance));
+    if (se.source && se.source.eqPartnerProvenance) {
+        c.eqPartnerProvenance = JSON.parse(JSON.stringify(se.source.eqPartnerProvenance));
     }
     if (displacement && typeof displacement.startIndex === 'number' && typeof se.candleIndex === 'number') {
         c.barsBeforeLegStart = displacement.startIndex - se.candleIndex;

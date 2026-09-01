@@ -66,38 +66,30 @@ function sourceLabel(primary) {
     return SOURCE_ZH[type] ? SOURCE_ZH[type] + '（' + type + '）' : type;
 }
 
-function eqMemberLines(primary, formatter) {
+function eqPartnerLines(primary, formatter) {
     if (!primary || (primary.sourceType !== 'EQH' && primary.sourceType !== 'EQL')) return [];
-    var provenance = primary.eqMemberProvenance;
-    var asOf = provenance && typeof provenance.asOf === 'number'
-        ? provenance.asOf : primary.confirmedAt;
-    var members = provenance && provenance.members;
-    if (Array.isArray(members) && typeof asOf === 'number') {
-        members = members.filter(function (member) {
-            var addedAt = member.memberAddedAt === undefined ? member.confirmedAt : member.memberAddedAt;
-            return member.confirmedAt <= asOf && addedAt <= asOf;
-        });
-    }
-    if (!Array.isArray(members) || members.length === 0) return ['EQ 构成：信息暂缺'];
-    var noun = primary.sourceType === 'EQH' ? '高点' : '低点';
-    var displayed = members.slice(0, 6);
-    var prices = displayed.map(function (member) {
-        return formatPrice(member.price, formatter);
+    var provenance = primary.eqPartnerProvenance;
+    var current = provenance && provenance.currentPivot;
+    var partners = provenance && provenance.historicalPartners;
+    if (!current || !Array.isArray(partners) || partners.length === 0) return ['EQ 配对：信息暂缺'];
+    var displayed = partners.slice(0, 6);
+    var prices = displayed.map(function (partner) {
+        return formatPrice(partner.price, formatter);
     }).join(' / ');
-    var memberTimes = displayed.map(function (member) {
-        var occurredAt = typeof member.occurredAt === 'number'
-            ? member.occurredAt : member.sourceOpenTime;
+    var partnerTimes = displayed.map(function (partner) {
+        var occurredAt = partner.occurredAt;
         return typeof occurredAt === 'number' && isFinite(occurredAt)
             ? formatBeijingTime(occurredAt) : '-';
     });
-    var hasMemberTime = memberTimes.some(function (value) { return value !== '-'; });
-    var times = hasMemberTime ? memberTimes.join(' / ') : '信息暂缺';
-    if (members.length > 6) prices += ' … 共 ' + members.length + ' 个';
-    if (members.length > 6 && hasMemberTime) times += ' … 共 ' + members.length + ' 个';
+    var hasPartnerTime = partnerTimes.some(function (value) { return value !== '-'; });
+    var times = hasPartnerTime ? partnerTimes.join(' / ') : '信息暂缺';
+    if (partners.length > 6) prices += ' … 共 ' + partners.length + ' 个';
+    if (partners.length > 6 && hasPartnerTime) times += ' … 共 ' + partners.length + ' 个';
     return [
-        'EQ 构成：' + members.length + ' 个' + noun,
-        '构成点位：' + prices,
-        '对应时间（北京时间）：' + times
+        'EQ 当前点：2/2 @ ' + formatPrice(current.price, formatter),
+        'ATR50 历史配对：' + partners.length + ' 个',
+        '历史点位：' + prices,
+        '历史时间（北京时间）：' + times
     ];
 }
 
@@ -110,6 +102,7 @@ function formatBeijingTime(epochMs) {
 function evidencePrimary(watch) {
     var envelope = watch && watch.liquidityEvidenceV1;
     var legacy = watch && watch.liquidityTaken && watch.liquidityTaken.primary;
+    if (watch && watch.liquidityTrigger === 'LIQUIDITY_TAKEN') return legacy || null;
     if (!envelope) return legacy || null;
     var current = envelope.currentPrimary || {};
     var candidates = envelope.candidates || envelope.allCandidates || [];
@@ -218,7 +211,7 @@ function buildSummary(watch, primary, bias, info) {
     var hasLiquidity = !!primary;
     var hasDisplacement = !!(watch && watch.displacement);
     if (hasLiquidity || hasDisplacement) {
-        var sentence = hasLiquidity ? info.liquidity + ' 被扫后' : '';
+        var sentence = hasLiquidity ? info.liquidity + ' 被获取后' : '';
         if (hasDisplacement) {
             var displacementLabel = displacementSummaryLabel(watch.displacement, info);
             sentence += hasLiquidity ? '出现' + displacementLabel
@@ -267,19 +260,19 @@ function build(watch, currentPrice, options) {
     if (narrative) lines.push(narrative.line);
 
     if (conflict) lines.push('', ...buildBiasLines(bias, info, true));
-    lines.push('', '💧 流动性扫取');
+    lines.push('', '💧 流动性获取（Liquidity Taken）');
 
     if (primary) {
-        var contextSourceLabel = opts.sweepContextEnabled
+        var contextSourceLabel = opts.sweepContextEnabled && watch.liquidityTrigger !== 'LIQUIDITY_TAKEN'
             ? sweepContextPresentationV1.contextualSourceLabel(primary) : null;
         lines.push((side || '流动性') + '：' + (contextSourceLabel || sourceLabel(primary)) + ' @ ' + formatPrice(primary.sourcePrice, fmtPrice));
-        eqMemberLines(primary, fmtPrice).forEach(function (line) { lines.push(line); });
-        if (opts.sweepContextEnabled) {
+        eqPartnerLines(primary, fmtPrice).forEach(function (line) { lines.push(line); });
+        if (opts.sweepContextEnabled && watch.liquidityTrigger !== 'LIQUIDITY_TAKEN') {
             sweepContextPresentationV1.lines(primary).forEach(function (line) { lines.push(line); });
         }
         lines.push('时机：' + translate(primary.relation || 'BEFORE_LEG'));
         if (count > 1) {
-            lines.push('候选：' + count + ' 个 · 当前按最近方向匹配扫取显示');
+            lines.push('候选：' + count + ' 个 · 当前按最近方向匹配 Taken 显示');
         }
     } else {
         lines.push('未提供');
@@ -316,7 +309,7 @@ module.exports = {
     translate: translate,
     liquiditySide: liquiditySide,
     sourceLabel: sourceLabel,
-    eqMemberLines: eqMemberLines,
+    eqPartnerLines: eqPartnerLines,
     formatBeijingTime: formatBeijingTime,
     BEIJING_TIMEZONE: BEIJING_TIMEZONE,
     SOURCE_ZH: SOURCE_ZH,

@@ -1,5 +1,11 @@
 # EQH/EQL V3 Production Migration + EQ Member Notification Provenance V1
 
+> Historical migration record. `DEPRECATED_FOR_PRODUCTION=true` as of
+> `PRODUCTION_REPLACE_EQ_WITH_ATR50_36H_UNVIOLATED_CROSS_SOURCE_V1`.
+> Statements below describe the former baseline and are not the current
+> production EQ contract. V2/V3 selectors, persistent cluster identity,
+> cluster lifecycle, and member evolution are no longer connected to runtime.
+
 ## Decision
 
 Production now selects exactly one EQ producer. `EQ_PRODUCTION_VERSION` defaults to `V3`; `V2` remains available only as an emergency rollback. No dual registration path exists.

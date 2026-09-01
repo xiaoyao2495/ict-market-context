@@ -38,6 +38,9 @@ var thresholds = require('../config/thresholds');
 function attachWatchLiquidityEvidenceV1(candidate, context) {
     var ctx = context || {};
     if (!ctx.enabled || !candidate) return candidate;
+    // WatchLiquidityEvidenceV1 is a legacy Sweep-specific envelope. A Taken
+    // WATCH must never put a Taken id into sweepEventId compatibility fields.
+    if (candidate.liquidityTrigger === 'LIQUIDITY_TAKEN') return candidate;
     try {
         watchLiquidityEvidenceV1.attach(candidate, {
             enabled: true,
@@ -90,8 +93,12 @@ function createLiveEngine(data, options) {
     var sweepContextV1Enabled = opts.sweepContextV1Enabled !== undefined
         ? !!opts.sweepContextV1Enabled : sweepContextFlag.isEnabled();
 
-    var state = replayState.createReplayState({ symbol: symbol, timeframe: '5m', snapshotInterval: snapshotInterval,
-        eqProductionVersion: opts.eqProductionVersion });
+    var state = replayState.createReplayState({
+        symbol: symbol,
+        timeframe: '5m',
+        snapshotInterval: snapshotInterval,
+        fourHourCandles: data.structureCandles && data.structureCandles['4h'] || []
+    });
     state.eventRegistry = eventRegistry.createEventRegistry();
     var atrSeries = {};
     var prevAtr = null;
@@ -123,7 +130,7 @@ function createLiveEngine(data, options) {
 
     /**
      * Displacement-Centric Watch V1: canonical displacement is the trigger. Only
-     * after it exists do we look backward for matching sweep provenance.
+     * after it exists do we look backward for matching LIQUIDITY_TAKEN.
      * Native FVG is calculated from each displacement's own K1/K2/K3 candles;
      * state.fvgReg is deliberately not passed to the builder.
      */
@@ -141,7 +148,7 @@ function createLiveEngine(data, options) {
             symbol: symbol,
             displacement: displacement,
             evaluationTime: evaluationTime,
-            sweepEvents: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),
+            takenEvents: state.eventRegistry.getByType(symbol, 'LIQUIDITY_TAKEN'),
             candles: window,
             dailyBias: dailyBias,
             existing: watchById['WATCH:' + symbol + ':' + displacement.direction + ':DISPLACEMENT:' + displacement.id] || null
@@ -383,7 +390,7 @@ function createLiveEngine(data, options) {
         },
         symbol: symbol
     };
-    engine.eqProductionVersion = state.eqProductionVersion;
+    engine.eqProductionModel = state.eqProductionModel;
     return engine;
 }
 

@@ -70,12 +70,8 @@ function lines(candidate) {
         if (role) out.push('结构角色：' + role);
         return out;
     }
-    if (context.contextApplicability === 'EQ_MULTI_MEMBER') {
-        var members = context.memberSwingContexts || [];
-        var eq = ['成员 Swing：' + members.length + ' 个'];
-        var highest = highestTimeframeLine(members);
-        if (highest) eq.push(highest);
-        return eq;
+    if (context.contextApplicability === 'EQ_POINT_IN_TIME_CROSS_SOURCE') {
+        return ['EQ 语义：当前 2/2 与未失效 ATR50 历史点配对'];
     }
     if (context.contextApplicability === 'NON_SWING_LIQUIDITY') {
         return ['类型：' + nonSwingType(candidate.sourceType)];

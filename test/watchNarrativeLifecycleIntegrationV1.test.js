@@ -24,7 +24,7 @@ function toWatch(row, symbol) {
         state:'FVG_TOUCHED', firstTouchAt:row.firstTouchAt, updatedAt:row.firstTouchAt,
         notificationKey:row.notificationKey,
         liquidityTaken:{ primary:{
-            id:row.sweepId, sourceId:row.liquidityId, sourceType:row.liquidityType,
+            id:'TAKEN:'+row.sweepId, eventType:'LIQUIDITY_TAKEN', sourceId:row.liquidityId, sourceType:row.liquidityType,
             sourceTimeframe:'5m', sourcePrice:row.liquidityPrice,
             side:row.direction === 'BEARISH' ? 'BSL' : 'SSL',
             occurredAt:row.sweepOccurredAt, confirmedAt:row.sweepConfirmedAt,
@@ -81,7 +81,7 @@ test('4 BTC final active owner is B and active cardinality is one', function () 
     assert.strictEqual(lifecycle.activeCount(state,'BTCUSDT','5m'),1);
     assert.strictEqual(state.activeNarrativeCardinalityViolations,0);
 });
-test('5 frozen fixtures use exact stable sweep identities', function () {
+test('5 frozen sequence projection uses exact stable Taken identities', function () {
     assert.strictEqual(new Set(zec.map(function(w){return w.liquidityTaken.primary.id;})).size,1);
     assert.strictEqual(btc[0].liquidityTaken.primary.id,btc[2].liquidityTaken.primary.id);
     assert.strictEqual(btc[1].liquidityTaken.primary.id,btc[3].liquidityTaken.primary.id);

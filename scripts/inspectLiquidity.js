@@ -8,7 +8,7 @@
  *   - RECENT SWEPT / RECENT BROKEN（5m 回放事件）
  *   - Registry 统计（Total / Active / Touched / Swept / Broken）
  *
- * 数据来源：5m(200) / 1d(5) / 1w(3) / 1M(3)，Swing + EQH/EQL + PDH/PDL +
+ * 数据来源：5m(1000) / 4h(100) / 1d(5) / 1w(3) / 1M(3)，Swing + EQH/EQL + PDH/PDL +
  * PWH/PWL + PMH/PML + Session(ASIA/LONDON/NEW_YORK)。
  *
  * 回放安全：
@@ -16,13 +16,11 @@
  *   - Cluster 为 Registry 派生视图，不写入 Registry
  */
 var binanceRest = require('../data/binanceRest');
-var pivotDetector = require('../structure/pivotDetector');
-var swingLiquidity = require('../liquidity/swingLiquidity');
+var replayState = require('../replay/replayState');
 var dailyLiquidity = require('../liquidity/dailyLiquidity');
 var weeklyLiquidity = require('../liquidity/weeklyLiquidity');
 var monthlyLiquidity = require('../liquidity/monthlyLiquidity');
 var sessionLiquidity = require('../liquidity/sessionLiquidity');
-var equalLiquidity = require('../liquidity/equalLiquidity');
 var lifecycle = require('../liquidity/liquidityLifecycle');
 var liquidityRegistry = require('../liquidity/liquidityRegistry');
 var liquidityCluster = require('../liquidity/liquidityCluster');
@@ -30,7 +28,6 @@ var liquidityScorer = require('../liquidity/liquidityScorer');
 var utcTime = require('../utils/utcTime');
 
 var SYMBOL = 'BTCUSDT';
-var RIGHT = 2;
 var evaluationTime = Date.now();
 
 var TYPE_LABEL = {
@@ -97,13 +94,19 @@ function labelOf(l) {
 }
 
 function memberLabel(m) {
-    var mult = m.type === 'EQH' || m.type === 'EQL' ? ' × ' + m.metadata.memberCount : '';
-    return labelOf(m) + mult + ' ' + m.price.toFixed(2);
+    if (m.type === 'EQH' || m.type === 'EQL') {
+        var metadata = m.metadata || {};
+        return labelOf(m) + ' ' + m.price.toFixed(2) +
+            ' current=ORDINARY_2X2 historical=ATR50_ZIGZAG lookback=36H partners=' +
+            (metadata.partnerCount || 0) + ' unviolated=true';
+    }
+    return labelOf(m) + ' ' + m.price.toFixed(2);
 }
 
 function fetchAll() {
     return Promise.all([
-        binanceRest.getKlines(SYMBOL, '5m', 200),
+        binanceRest.getKlines(SYMBOL, '5m', 1000),
+        binanceRest.getKlines(SYMBOL, '4h', 100),
         binanceRest.getKlines(SYMBOL, '1d', 5),
         binanceRest.getKlines(SYMBOL, '1w', 3),
         binanceRest.getKlines(SYMBOL, '1M', 3)
@@ -113,29 +116,27 @@ function fetchAll() {
 fetchAll()
     .then(function (results) {
         var candles5m = results[0];
-        var candles1d = results[1];
-        var candles1w = results[2];
-        var candles1M = results[3];
+        var candles4h = results[1];
+        var candles1d = results[2];
+        var candles1w = results[3];
+        var candles1M = results[4];
 
         var lastCandle = candles5m[candles5m.length - 1];
         var currentPrice = lastCandle ? lastCandle.close : null;
 
-        // Swing + EQH/EQL
-        var pivots = pivotDetector.detectPivots(candles5m, {
-            left: RIGHT,
-            right: RIGHT
+        // Production Swing + point-in-time cross-source EQH/EQL.
+        var productionState = replayState.createReplayState({
+            symbol:SYMBOL, timeframe:'5m', fourHourCandles:candles4h
         });
-        var swing = swingLiquidity.buildSwingLiquidity(
-            SYMBOL,
-            '5m',
-            pivots,
-            candles5m,
-            RIGHT
-        );
-        var equal = equalLiquidity.detectEqualLiquidity(swing, {
-            symbol: SYMBOL,
-            evaluationTime: evaluationTime
+        candles5m.forEach(function (candle, index) {
+            replayState.incrementalLiquidity(
+                productionState, candles5m, index, null, candle.closeTime
+            );
         });
+        var swing = productionState.registry.getByType(SYMBOL,'SWING_HIGH')
+            .concat(productionState.registry.getByType(SYMBOL,'SWING_LOW'));
+        var equal = productionState.registry.getByType(SYMBOL,'EQH')
+            .concat(productionState.registry.getByType(SYMBOL,'EQL'));
 
         // Calendar（Daily / Weekly / Monthly）
         var fetcher = cachedFetcher({ '1d': candles1d, '1w': candles1w, '1M': candles1M });

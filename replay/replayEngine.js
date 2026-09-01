@@ -174,7 +174,8 @@ function runReplay(data, options) {
     var state = replayState.createReplayState({
         symbol: symbol,
         timeframe: '5m',
-        snapshotInterval: snapshotInterval
+        snapshotInterval: snapshotInterval,
+        fourHourCandles: data.structureCandles && data.structureCandles['4h'] || []
     });
     state.eventRegistry = eventRegistry.createEventRegistry();
 
@@ -820,8 +821,7 @@ function runReplay(data, options) {
             // Phase 11D.8：liquidity sweep 事件（Alert Replay 的 Sweep 字段）
             sweepEvents: state.eventRegistry.getByType(symbol, 'LIQUIDITY_SWEEP'),
             swings: state.swings,
-            // Phase 11L.17：equal liquidity 事件只读暴露（EQL/EQH 本体含 metadata.members，
-            // 供 Equal Liquidity Quality Audit 用；零判定改动，仅暴露已有 registry 数据）
+            // Production point-in-time cross-source EQH/EQL observations.
             equalLiquidity: state.registry.getByType(symbol, 'EQL').concat(state.registry.getByType(symbol, 'EQH')),
             // Phase 13：全部 liquidity 对象只读暴露（PDH/PDL/PWH/PWL/Session/EQH/EQL/SWING，
             // 含 status/touchedAt/sweptAt/confirmedAt——供 Draw on Liquidity 候选池重建；

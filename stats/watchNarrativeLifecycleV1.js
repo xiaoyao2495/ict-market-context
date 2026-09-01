@@ -21,12 +21,12 @@ function clone(value) {
 
 function enc(value) { return encodeURIComponent(String(value)); }
 
-function primarySweep(watch) {
+function primaryTaken(watch) {
     return watch && watch.liquidityTaken && watch.liquidityTaken.primary || null;
 }
 
-function timeframeOf(watch, sweep) {
-    return sweep && (sweep.sourceTimeframe || sweep.timeframe) || watch && watch.timeframe || '5m';
+function timeframeOf(watch, taken) {
+    return taken && (taken.sourceTimeframe || taken.timeframe) || watch && watch.timeframe || '5m';
 }
 
 function scopeKey(symbol, timeframe) {
@@ -34,9 +34,9 @@ function scopeKey(symbol, timeframe) {
 }
 
 function buildNarrativeId(fields) {
-    if (!fields || !fields.symbol || !fields.timeframe || !fields.direction || !fields.exactSweepEventId) return null;
+    if (!fields || !fields.symbol || !fields.timeframe || !fields.direction || !fields.exactTakenEventId) return null;
     return 'WATCH_NARRATIVE:' + SCHEMA_VERSION + ':' + enc(fields.symbol) + ':' + enc(fields.timeframe) + ':' +
-        fields.direction + ':' + enc(fields.exactSweepEventId);
+        fields.direction + ':' + enc(fields.exactTakenEventId);
 }
 
 function buildObservationId(fields) {
@@ -46,13 +46,13 @@ function buildObservationId(fields) {
 }
 
 function identityForWatch(watch) {
-    var sweep = primarySweep(watch);
-    var timeframe = timeframeOf(watch, sweep);
+    var taken = primaryTaken(watch);
+    var timeframe = timeframeOf(watch, taken);
     var narrativeId = buildNarrativeId({
         symbol: watch && watch.symbol,
         timeframe: timeframe,
         direction: watch && watch.direction,
-        exactSweepEventId: sweep && sweep.id
+        exactTakenEventId: taken && taken.id
     });
     var observationId = buildObservationId({
         narrativeId: narrativeId,
@@ -65,13 +65,13 @@ function identityForWatch(watch) {
         symbol: watch && watch.symbol,
         timeframe: timeframe,
         direction: watch && watch.direction,
-        sweep: sweep
+        taken: taken
     };
 }
 
 function validateFirstTouch(watch) {
     var identity = identityForWatch(watch);
-    var sweep = identity.sweep;
+    var taken = identity.taken;
     var firstTouchAt = watch && watch.firstTouchAt;
     if (!watch || !watch.id) return { ok:false, reason:'WATCH_ID_MISSING' };
     if (watch.state !== 'FVG_TOUCHED' && watch.state !== 'NOTIFIED') return { ok:false, reason:'NOT_FIRST_TOUCH_TERMINAL' };
@@ -84,13 +84,13 @@ function validateFirstTouch(watch) {
     if (typeof watch.nativeFvg.confirmedAt === 'number' && watch.nativeFvg.confirmedAt > firstTouchAt) {
         return { ok:false, reason:'FVG_CONFIRMED_AFTER_FIRST_TOUCH' };
     }
-    if (!sweep || !sweep.id) return { ok:false, reason:'EXACT_SWEEP_ID_MISSING' };
-    if (typeof sweep.confirmedAt !== 'number' || sweep.confirmedAt > firstTouchAt) {
-        return { ok:false, reason:'SWEEP_NOT_CONFIRMED_AT_FIRST_TOUCH' };
+    if (!taken || taken.eventType !== 'LIQUIDITY_TAKEN' || !taken.id) return { ok:false, reason:'EXACT_TAKEN_ID_MISSING' };
+    if (typeof taken.confirmedAt !== 'number' || taken.confirmedAt > firstTouchAt) {
+        return { ok:false, reason:'TAKEN_NOT_CONFIRMED_AT_FIRST_TOUCH' };
     }
     if (!identity.narrativeId || !identity.observationId) return { ok:false, reason:'IDENTITY_UNRESOLVED' };
     var expectedSide = watch.direction === 'BULLISH' ? 'SSL' : watch.direction === 'BEARISH' ? 'BSL' : null;
-    if (!expectedSide || sweep.side !== expectedSide) return { ok:false, reason:'DIRECTION_SWEEP_SIDE_MISMATCH' };
+    if (!expectedSide || taken.side !== expectedSide) return { ok:false, reason:'DIRECTION_TAKEN_SIDE_MISMATCH' };
     return { ok:true, identity:identity };
 }
 
@@ -165,10 +165,10 @@ function observeFirstTouch(state, watch) {
             timeframe: identity.timeframe,
             direction: identity.direction,
             anchor: {
-                sweepEventId: identity.sweep.id,
-                liquidityId: identity.sweep.sourceId || identity.sweep.liquidityId || null,
-                occurredAt: identity.sweep.occurredAt === undefined ? null : identity.sweep.occurredAt,
-                confirmedAt: identity.sweep.confirmedAt
+                takenEventId: identity.taken.id,
+                liquidityId: identity.taken.sourceId || identity.taken.liquidityId || null,
+                occurredAt: identity.taken.occurredAt === undefined ? null : identity.taken.occurredAt,
+                confirmedAt: identity.taken.confirmedAt
             },
             state: SUPERSEDED,
             createdAt: watch.firstTouchAt,

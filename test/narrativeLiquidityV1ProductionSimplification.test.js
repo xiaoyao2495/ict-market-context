@@ -28,13 +28,13 @@ test('Swing plus PD keeps PD only', function () { var x=project('BEARISH',[sourc
 test('Swing-only cannot silently promote', function () { assert.equal(project('BULLISH',[source('SWING_LOW','SSL',9)]),null); });
 test('existing 48-bar temporal boundary is unchanged', function () { assert.ok(project('BEARISH',[source('EQH','BSL',-38)])); assert.equal(project('BEARISH',[source('EQH','BSL',-39)]),null); });
 test('persisted mixed WATCH reuses existing distance/recency primary heuristic', function () {
-    var swing={id:'S',sourceType:'SWING_LOW',candleIndex:10,confirmedAt:100};
-    var far={id:'F',sourceType:'PDL',candleIndex:5,confirmedAt:200};
-    var near={id:'N',sourceType:'EQL',candleIndex:9,confirmedAt:150};
+    var swing={id:'S',sourceType:'SWING_LOW',candleIndex:10,confirmedAt:100,eventType:'SWEEP'};
+    var far={id:'F',sourceType:'PDL',candleIndex:5,confirmedAt:200,eventType:'LIQUIDITY_TAKEN'};
+    var near={id:'N',sourceType:'EQL',candleIndex:9,confirmedAt:150,eventType:'LIQUIDITY_TAKEN'};
     var normalized=watches.normalizeNarrativeLiquidityV1Watch({id:'W',displacement:{startIndex:10},liquidityTaken:{primary:swing,allCandidates:[far,swing,near]}});
     assert.deepEqual(normalized.liquidityTaken.allCandidates.map(function(c){return c.id;}),['F','N']); assert.equal(normalized.liquidityTaken.primary.id,'N');
 });
-test('persisted Swing-only WATCH is not loaded', function () { assert.equal(watches.normalizeNarrativeLiquidityV1Watch({id:'W',displacement:{startIndex:10},liquidityTaken:{primary:{sourceType:'SWING_LOW'},allCandidates:[{sourceType:'SWING_LOW'}]}}),null); });
+test('persisted Swing-only WATCH is not loaded', function () { assert.equal(watches.normalizeNarrativeLiquidityV1Watch({id:'W',displacement:{startIndex:10},liquidityTaken:{primary:{sourceType:'SWING_LOW',eventType:'SWEEP'},allCandidates:[{sourceType:'SWING_LOW',eventType:'SWEEP'}]}}),null); });
 test('raw Swing Sweep ID and source identity remain unchanged', function () {
     var liquidity={id:'X:5m:SWING_LOW:1',symbol:'X',timeframe:'5m',type:'SWING_LOW',side:'SSL',price:100,status:'SWEPT',sweptAt:BAR-1,metadata:{}};
     var event=adapter.buildSweepEvent(liquidity,{openTime:0,closeTime:BAR-1,open:101,high:102,low:99,close:100,closed:true},0);

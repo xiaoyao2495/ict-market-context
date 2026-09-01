@@ -113,12 +113,14 @@ function identityOf(sweep, source, evaluationTime) {
             canonicalSwingIds: sweep.sourceId ? [sweep.sourceId] : [], eqObjectId: null };
     }
     if (sweep.sourceType === 'EQH' || sweep.sourceType === 'EQL') {
-        var frozen = sweep.eqMemberProvenance && sweep.eqMemberProvenance.members || null;
-        var members = frozen || source && source.confirmedAt <= evaluationTime && source.metadata && source.metadata.members || [];
-        var ids = members.filter(function (member) { return member.confirmedAt <= evaluationTime; }).map(function (member) { return member.id; });
-        ids = ids.filter(function (id, index) { return id && ids.indexOf(id) === index; }).sort();
+        var frozen = sweep.eqPartnerProvenance;
+        var currentPivotId = frozen && frozen.currentPivot && frozen.currentPivot.id || null;
+        var partnerIds = frozen && frozen.historicalPartners || [];
+        partnerIds = partnerIds.map(function (partner) { return partner.id; })
+            .filter(function (id, index, ids) { return id && ids.indexOf(id) === index; }).sort();
         return { status: sweep.sourceId ? 'REGISTRY_IDENTITY_RESOLVED' : 'UNRESOLVED', canonicalSwingId: null,
-            canonicalSwingIds: ids, eqObjectId: sweep.sourceId || null };
+            canonicalSwingIds: [], eqObjectId: sweep.sourceId || null,
+            currentPivotId: currentPivotId, historicalPartnerIds: partnerIds };
     }
     return { status: sweep.sourceId ? 'REGISTRY_IDENTITY_RESOLVED' : 'UNRESOLVED', canonicalSwingId: null,
         canonicalSwingIds: [], eqObjectId: null };
@@ -147,14 +149,15 @@ function mapCandidate(sweep, opts) {
         canonicalSwingId: identity.canonicalSwingId,
         canonicalSwingIds: identity.canonicalSwingIds,
         eqObjectId: identity.eqObjectId,
-        eqMembershipEventIds: identity.canonicalSwingIds.map(function (id) { return 'EQ_MEMBERSHIP:' + identity.eqObjectId + ':' + id; }),
+        eqCurrentPivotId: identity.currentPivotId || null,
+        eqHistoricalPartnerIds: identity.historicalPartnerIds || [],
         lifecycleStatus: lifecycle.status,
         lifecycleTransition: lifecycle.transition,
         lifecycleTransitionEventId: lifecycle.transitionEventId,
         lifecycleTransitionAt: lifecycle.transitionAt,
         provenance: lifecycle.provenance
     };
-    if (sweep.eqMemberProvenance) candidate.eqMemberProvenance = clone(sweep.eqMemberProvenance);
+    if (sweep.eqPartnerProvenance) candidate.eqPartnerProvenance = clone(sweep.eqPartnerProvenance);
     if (opts.sweepContextV1Enabled) {
         candidate.sweepContextV1 = sweepContextV1.buildSweepContextV1(sweep, {
             registry: opts.registry,
@@ -226,7 +229,7 @@ function build(watch, options) {
             productionPrimarySweepEventId:legacyPrimary && legacyPrimary.id || null,
             candidateSweepEventIds:candidates.map(function (item) { return item.sweepEventId; }),
             swingSource:'existing sweep sourceId / liquidity registry',
-            eqSource:'existing EQ registry metadata.members',
+            eqSource:'frozen point-in-time current 2/2 pivot and ATR50 historical partners',
             lifecycleSource:'liquidity/liquidityLifecycle.js',
             sweepSource:'existing LIQUIDITY_SWEEP event',
             biasSource:'existing Daily Bias enrichment'

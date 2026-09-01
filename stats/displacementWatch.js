@@ -3,7 +3,7 @@
  *
  * Trigger semantics are intentionally one-way:
  *   valid production Displacement -> look backward for matching production
- *   sweep provenance -> WATCH. Liquidity never opens a pending pre-displacement
+ *   prior LIQUIDITY_TAKEN within 24 completed 5m bars -> WATCH. Liquidity never opens a pending pre-displacement
  *   watch, and structure/bias never gate watch existence.
  *
  * Native FVG ownership is local to each K2 inside the immutable canonical
@@ -11,8 +11,7 @@
  * stream. The global FVG registry is not an input to this module.
  */
 'use strict';
-var liquidityProvenance = require('./liquidityProvenance');
-var narrativeLiquidityV1 = require('../events/sweepNarrativeEligibilityV1');
+var liquidityTakenAssociation = require('./liquidityTakenAssociation');
 
 function pickNarrativePrimary(watch, candidates) {
     var startIndex = watch && watch.displacement && watch.displacement.startIndex;
@@ -31,7 +30,7 @@ function pickNarrativePrimary(watch, candidates) {
 function normalizeNarrativeLiquidityV1Watch(watch) {
     if (!watch || !watch.liquidityTaken) return null;
     var candidates = (watch.liquidityTaken.allCandidates || []).filter(function (candidate) {
-        return !narrativeLiquidityV1.isStructuralPrimitive(candidate && candidate.sourceType);
+        return candidate && candidate.eventType === 'LIQUIDITY_TAKEN';
     });
     if (!candidates.length) return null;
     var normalized = JSON.parse(JSON.stringify(watch));
@@ -90,15 +89,11 @@ function buildWatch(opts) {
     var displacement = opts && opts.displacement;
     if (!displacement || !displacement.id || displacement.type !== 'DISPLACEMENT') return null;
     var evaluationTime = opts.evaluationTime;
-    var association = liquidityProvenance.associateSweeps({
+    var association = liquidityTakenAssociation.associateTaken({
         direction: displacement.direction,
         displacement: displacement,
         availableAt: evaluationTime,
-        sweepEvents: opts.sweepEvents || [],
-        maxLookbackBars: null,
-        // Narrative Liquidity V1: 2/2 Swing remains a raw Sweep/structural
-        // primitive, but cannot independently support a WATCH narrative.
-        excludeStructuralPrimitives: true
+        takenEvents: opts.takenEvents || []
     });
     if (!association || !association.allCandidates || association.allCandidates.length === 0) return null;
 
@@ -127,9 +122,12 @@ function buildWatch(opts) {
         },
         liquidityTaken: {
             matched: true,
-            primary: association.immediateSweep,
+            eventType: 'LIQUIDITY_TAKEN',
+            lookbackBars: liquidityTakenAssociation.WATCH_TAKEN_LOOKBACK_BARS,
+            primary: association.immediateTaken,
             allCandidates: association.allCandidates
         },
+        liquidityTrigger: 'LIQUIDITY_TAKEN',
         nativeFvg: primary,
         nativeFvgs: nativeFvgs,
         primaryFvgPolicy: 'EARLIEST_CONFIRMED_NATIVE_FVG_IN_CANONICAL_FORMATION',

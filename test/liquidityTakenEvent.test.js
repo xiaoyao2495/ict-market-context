@@ -130,38 +130,30 @@ test('N one candle preserves three eligible identities without primary', functio
     out.taken.forEach(function (e) { assert.strictEqual(e.primary, undefined); });
 });
 
-test('O P EQ as-of price and ID are immutable after future member append', function () {
-    var l = liquidity('EQV3:X', 'EQH', 'BSL', 100.05, 0);
+test('O P replacement EQ current price and frozen partner provenance are immutable', function () {
+    var l = liquidity('EQX1:X', 'EQH', 'BSL', 100.05, 0);
     l.metadata = {
-        eqModelVersion: 'V3', formationAnchorId: 'A',
-        members: [
-            { id:'A', canonicalSwingId:'A', price:100, sourceOpenTime:0, confirmedAt:0, memberAddedAt:0 },
-            { id:'B', canonicalSwingId:'B', price:100.1, sourceOpenTime:1, confirmedAt:1, memberAddedAt:1 }
-        ]
+        eqModelVersion:'ATR50_36H_UNVIOLATED_CROSS_SOURCE_V1',
+        currentPivot:{id:'P',source:'ORDINARY_CAUSAL_2X2',price:100.05,occurredAt:0,confirmedAt:0},
+        historicalPartners:[{id:'A',source:'CAUSAL_ATR50_ZIGZAG',price:100,occurredAt:-300000,confirmedAt:-1}]
     };
     var e = adapter.buildTakenEvent(l, candle(1, 101, 99, 99), 1, '5m');
     var id = e.id;
-    l.metadata.members.push({ id:'C', canonicalSwingId:'C', price:110, sourceOpenTime:600000, confirmedAt:600000, memberAddedAt:600000 });
+    l.metadata.historicalPartners.push({id:'FUTURE',price:110,occurredAt:600000,confirmedAt:900000});
     l.price = 103.3666666667;
     assert.strictEqual(e.price, 100.05); assert.strictEqual(e.source.liquidityPrice, 100.05);
-    assert.strictEqual(e.id, id); assert.deepStrictEqual(e.source.eqMemberProvenance.members.map(function (m) { return m.id; }), ['A','B']);
+    assert.strictEqual(e.id, id); assert.deepStrictEqual(e.source.eqPartnerProvenance.historicalPartners.map(function (p) { return p.id; }), ['A']);
+    assert.strictEqual(e.source.eqPartnerProvenance.currentPivot.id,'P');
 });
 
-test('O2 same-bar future EQ member cannot change crossing price or snapshot', function () {
+test('O2 old V3 member metadata is not interpreted by the production adapter', function () {
     var c = candle(2, 101, 99, 100);
-    var l = liquidity('EQV3:SAME_BAR', 'EQH', 'BSL', 105, 0);
-    l.metadata = {
-        eqModelVersion: 'V3', formationAnchorId: 'A',
-        members: [
-            { id:'A', canonicalSwingId:'A', price:100, sourceOpenTime:0, confirmedAt:0, memberAddedAt:0 },
-            { id:'B', canonicalSwingId:'B', price:100.1, sourceOpenTime:1, confirmedAt:1, memberAddedAt:1 },
-            { id:'FUTURE', canonicalSwingId:'FUTURE', price:114.9, sourceOpenTime:c.openTime, confirmedAt:c.closeTime, memberAddedAt:c.closeTime }
-        ]
-    };
+    var l = liquidity('EQV3:OLD', 'EQH', 'BSL', 100, 0);
+    l.metadata = {eqModelVersion:'V3',members:[{id:'A',price:100},{id:'B',price:100.1}]};
     var e = adapter.buildTakenEvent(l, c, 2, '5m');
-    assert.ok(e, 'pre-bar price 100.05 was strictly crossed even though mutable current mean is 105');
-    assert.strictEqual(e.price, 100.05);
-    assert.deepStrictEqual(e.source.eqMemberProvenance.members.map(function (m) { return m.id; }), ['A','B']);
+    assert.ok(e); assert.strictEqual(e.price,100);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(e.source,'eqMemberProvenance'),false);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(e.source,'eqPartnerProvenance'),false);
 });
 
 function replayProjection(bars) {

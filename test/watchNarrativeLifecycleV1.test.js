@@ -9,14 +9,14 @@ function test(name, fn) {
     try { fn(); passed++; console.log('PASS ' + name); }
     catch (error) { failed++; console.error('FAIL ' + name + ': ' + error.stack); }
 }
-function watch(id, sweepId, direction, at, overrides) {
+function watch(id, takenId, direction, at, overrides) {
     var bearish = direction === 'BEARISH';
     var value = {
         id:id, symbol:'BTCUSDT', timeframe:'5m', direction:direction,
         state:'FVG_TOUCHED', firstTouchAt:at, updatedAt:at,
         notificationKey:'NOTIFY:' + id,
         liquidityTaken:{ primary:{
-            id:sweepId, sourceId:'EQV3:SHARED', sourceTimeframe:'5m',
+            id:takenId, eventType:'LIQUIDITY_TAKEN', sourceId:'EQX1:SHARED', sourceTimeframe:'5m',
             side:bearish ? 'BSL' : 'SSL', occurredAt:at - 300, confirmedAt:at - 200
         } },
         canonicalDisplacementId:'D:' + id,
@@ -34,7 +34,7 @@ function observeAll(items) {
     return { state:state, results:results };
 }
 
-test('1 deterministic narrative identity uses exact sweep', function () {
+test('1 deterministic narrative identity uses exact Taken', function () {
     var a = watch('W1', 'S1', 'BEARISH', 1000);
     assert.strictEqual(lifecycle.identityForWatch(a).narrativeId, lifecycle.identityForWatch(a).narrativeId);
     assert.notStrictEqual(lifecycle.identityForWatch(a).narrativeId,
@@ -56,27 +56,27 @@ test('4 first touch creates NEW ACTIVE narrative', function () {
     assert.strictEqual(run.results[0].observation.type, 'NEW');
     assert.strictEqual(run.results[0].narrative.state, 'ACTIVE');
 });
-test('5 same exact active sweep is CONTINUATION', function () {
+test('5 same exact active Taken is CONTINUATION', function () {
     var run = observeAll([watch('W1', 'S1', 'BEARISH', 1000), watch('W2', 'S1', 'BEARISH', 2000)]);
     assert.deepStrictEqual(run.results.map(function (r) { return r.observation.type; }), ['NEW','CONTINUATION']);
     assert.strictEqual(Object.keys(run.state.narrativesById).length, 1);
 });
-test('6 same liquidity but different exact sweep is NEW narrative', function () {
+test('6 same liquidity but different exact Taken is NEW narrative', function () {
     var run = observeAll([watch('W1', 'S1', 'BEARISH', 1000), watch('W2', 'S2', 'BEARISH', 2000)]);
     assert.strictEqual(run.results[1].observation.type, 'NEW');
     assert.strictEqual(Object.keys(run.state.narrativesById).length, 2);
 });
-test('7 same-direction new exact sweep supersedes current active', function () {
+test('7 same-direction new exact Taken supersedes current active', function () {
     var run = observeAll([watch('W1', 'S1', 'BEARISH', 1000), watch('W2', 'S2', 'BEARISH', 2000)]);
     assert.strictEqual(run.results[0].narrative.state, 'SUPERSEDED');
     assert.strictEqual(run.results[1].narrative.state, 'ACTIVE');
 });
-test('8 opposite-direction new exact sweep supersedes current active', function () {
+test('8 opposite-direction new exact Taken supersedes current active', function () {
     var run = observeAll([watch('W1', 'S1', 'BULLISH', 1000), watch('W2', 'S2', 'BEARISH', 2000)]);
     assert.strictEqual(run.results[0].narrative.state, 'SUPERSEDED');
     assert.strictEqual(run.results[1].observation.type, 'NEW');
 });
-test('9 superseded exact sweep returns as REACTIVATION', function () {
+test('9 superseded exact Taken returns as REACTIVATION', function () {
     var run = observeAll([watch('W1', 'S1', 'BULLISH', 1000), watch('W2', 'S2', 'BEARISH', 2000),
         watch('W3', 'S1', 'BULLISH', 3000)]);
     assert.strictEqual(run.results[2].observation.type, 'REACTIVATION');
@@ -126,10 +126,10 @@ test('15 displacement and FVG are observation snapshots, not narrative identity'
     assert.notStrictEqual(obs[0].canonicalDisplacementId,obs[1].canonicalDisplacementId);
     assert.notStrictEqual(obs[0].primaryNativeFvgId,obs[1].primaryNativeFvgId);
 });
-test('16 future-confirmed sweep cannot create narrative', function () {
+test('16 future-confirmed Taken cannot create narrative', function () {
     var item=watch('W1','S1','BULLISH',1000); item.liquidityTaken.primary.confirmedAt=1001;
     var state=lifecycle.createState(), result=lifecycle.observeFirstTouch(state,item);
-    assert.strictEqual(result.reason,'SWEEP_NOT_CONFIRMED_AT_FIRST_TOUCH'); assert.strictEqual(Object.keys(state.narrativesById).length,0);
+    assert.strictEqual(result.reason,'TAKEN_NOT_CONFIRMED_AT_FIRST_TOUCH'); assert.strictEqual(Object.keys(state.narrativesById).length,0);
 });
 test('17 future-confirmed FVG cannot create observation', function () {
     var item=watch('W1','S1','BULLISH',1000); item.nativeFvg.confirmedAt=1001;

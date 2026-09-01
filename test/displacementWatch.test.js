@@ -11,7 +11,7 @@ function disp(direction, start, end, sources) {
         startPrice: 100, endPrice: direction === 'BULLISH' ? 107 : 93,
         sourceDetections: sources || [{ sourceDetectionId: 'RAW:A', source: 'SINGLE_CANDLE_A', attachedAt: (end + 1) * BAR - 1 }] };
 }
-function sweep(side, i, type) { return { id: 'SW:' + side + ':' + i, side: side, candleIndex: i, confirmedAt: (i + 1) * BAR - 1, liquidityId: 'L:' + i, price: 99, timeframe: '5m', source: { liquidityType: type || (side === 'SSL' ? 'EQL' : 'EQH') } }; }
+function taken(side, i, type) { return { id: 'TAKEN:' + side + ':' + i, type:'LIQUIDITY_TAKEN', side: side, candleIndex: i, occurredAt:i*BAR, confirmedAt: (i + 1) * BAR - 1, liquidityId: 'L:' + i, price: 99, timeframe: '5m', source: { liquidityType: type || (side === 'SSL' ? 'EQL' : 'EQH') } }; }
 
 test('native FVG belongs to canonical formation K2 and needs closed K3', function () {
     var d = disp('BULLISH', 2, 2);
@@ -25,7 +25,7 @@ test('native FVG belongs to canonical formation K2 and needs closed K3', functio
 test('matching liquidity creates one WATCH_NO_FVG direct from canonical displacement', function () {
     var d = disp('BULLISH', 2, 2);
     var w = dw.buildWatch({ symbol: 'X', displacement: d, evaluationTime: d.confirmedAt,
-        sweepEvents: [sweep('SSL', 1)], candles: [c(0, 99, 100, 98, 99), c(1, 99, 101, 98, 100), c(2, 100, 108, 99, 107)],
+        takenEvents: [taken('SSL', 1)], candles: [c(0, 99, 100, 98, 99), c(1, 99, 101, 98, 100), c(2, 100, 108, 99, 107)],
         structuralState: { structuralState: 'UNKNOWN', activeProtected: {} }, dailyBias: { bias: 'OPPOSITE' } });
     assert.ok(w); assert.strictEqual(w.state, 'WATCH_NO_FVG'); assert.strictEqual(w.canonicalDisplacementId, d.id);
     assert.strictEqual(Object.prototype.hasOwnProperty.call(w, 'displacementLegId'), false);
@@ -36,7 +36,7 @@ test('matching liquidity creates one WATCH_NO_FVG direct from canonical displace
 test('A+C2 provenance does not create duplicate WATCH identity', function () {
     var d1 = disp('BULLISH', 2, 2), d2 = JSON.parse(JSON.stringify(d1));
     d2.sourceDetections.push({ sourceDetectionId: 'RAW:C2:N2', source: 'MULTI_CANDLE_C2', attachedAt: d1.confirmedAt + BAR });
-    var args = { symbol: 'X', evaluationTime: d1.confirmedAt, sweepEvents: [sweep('SSL', 1)], candles: [], displacement: d1 };
+    var args = { symbol: 'X', evaluationTime: d1.confirmedAt, takenEvents: [taken('SSL', 1)], candles: [], displacement: d1 };
     var w1 = dw.buildWatch(args); args.displacement = d2; args.evaluationTime += BAR; args.existing = w1;
     var w2 = dw.buildWatch(args); assert.strictEqual(w1.id, w2.id); assert.strictEqual(w1.canonicalDisplacementId, w2.canonicalDisplacementId);
 });
@@ -44,15 +44,15 @@ test('A+C2 provenance does not create duplicate WATCH identity', function () {
 test('A-only and C2-only canonical events each create a WATCH', function () {
     var a=disp('BULLISH',2,2,[{sourceDetectionId:'RAW:A',source:'SINGLE_CANDLE_A',attachedAt:3*BAR-1}]);
     var c2=disp('BULLISH',4,5,[{sourceDetectionId:'RAW:C2',source:'MULTI_CANDLE_C2',attachedAt:6*BAR-1}]);
-    var wa=dw.buildWatch({symbol:'X',displacement:a,evaluationTime:a.confirmedAt,sweepEvents:[sweep('SSL',1,'EQL')],candles:[]});
-    var wc=dw.buildWatch({symbol:'X',displacement:c2,evaluationTime:c2.confirmedAt,sweepEvents:[sweep('SSL',3,'EQL')],candles:[]});
+    var wa=dw.buildWatch({symbol:'X',displacement:a,evaluationTime:a.confirmedAt,takenEvents:[taken('SSL',1,'EQL')],candles:[]});
+    var wc=dw.buildWatch({symbol:'X',displacement:c2,evaluationTime:c2.confirmedAt,takenEvents:[taken('SSL',3,'EQL')],candles:[]});
     assert.ok(wa);assert.ok(wc);assert.notStrictEqual(wa.id,wc.id);
 });
 
 test('opposite canonical directions remain separately WATCH-eligible', function () {
     var bull=disp('BULLISH',2,2),bear=disp('BEARISH',2,2);
-    var wb=dw.buildWatch({symbol:'X',displacement:bull,evaluationTime:bull.confirmedAt,sweepEvents:[sweep('SSL',1,'EQL')],candles:[]});
-    var ws=dw.buildWatch({symbol:'X',displacement:bear,evaluationTime:bear.confirmedAt,sweepEvents:[sweep('BSL',1,'EQH')],candles:[]});
+    var wb=dw.buildWatch({symbol:'X',displacement:bull,evaluationTime:bull.confirmedAt,takenEvents:[taken('SSL',1,'EQL')],candles:[]});
+    var ws=dw.buildWatch({symbol:'X',displacement:bear,evaluationTime:bear.confirmedAt,takenEvents:[taken('BSL',1,'EQH')],candles:[]});
     assert.ok(wb);assert.ok(ws);assert.notStrictEqual(wb.id,ws.id);
 });
 
@@ -60,34 +60,34 @@ test('later A/C2 evidence cannot duplicate FIRST_TOUCH identity', function () {
     var d1=disp('BULLISH',2,2),d2=JSON.parse(JSON.stringify(d1));
     d2.sourceDetections.push({sourceDetectionId:'RAW:C2',source:'MULTI_CANDLE_C2',attachedAt:4*BAR-1});
     var candles=[c(0,99,100,98,99),c(1,99,101,98,100),c(2,100,108,99,107),c(3,107,111,105,110)];
-    var args={symbol:'X',displacement:d1,evaluationTime:candles[3].closeTime,sweepEvents:[sweep('SSL',1,'EQL')],candles:candles};
+    var args={symbol:'X',displacement:d1,evaluationTime:candles[3].closeTime,takenEvents:[taken('SSL',1,'EQL')],candles:candles};
     var w1=dw.buildWatch(args);args.displacement=d2;args.existing=w1;var w2=dw.buildWatch(args);
     assert.strictEqual(w1.notificationKey,w2.notificationKey);var store=dw.createWatchStore([],{});store.upsert(w1);store.upsert(w2);
     assert.strictEqual(store.onPrice(106,5*BAR).length,0);assert.strictEqual(store.onPrice(104,5*BAR+1).length,1);assert.strictEqual(store.onPrice(103,5*BAR+2).length,0);
 });
 
-test('later backward-reaching evidence cannot retroactively associate an old sweep', function () {
+test('later backward-reaching evidence cannot retroactively associate an old Taken', function () {
     var d=disp('BULLISH',60,60);d.sourceDetections.push({sourceDetectionId:'RAW:C2:LATER',source:'MULTI_CANDLE_C2',startIndex:0,endIndex:61,startAt:0,endAt:62*BAR-1,attachedAt:62*BAR-1});
-    assert.strictEqual(dw.buildWatch({symbol:'X',displacement:d,evaluationTime:62*BAR-1,sweepEvents:[sweep('SSL',11,'EQL')],candles:[]}),null);
+    assert.strictEqual(dw.buildWatch({symbol:'X',displacement:d,evaluationTime:62*BAR-1,takenEvents:[taken('SSL',11,'EQL')],candles:[]}),null);
 });
 
 test('opposite or Swing-only liquidity cannot create WATCH', function () {
     var d = disp('BULLISH', 2, 2);
-    assert.strictEqual(dw.buildWatch({ symbol: 'X', displacement: d, evaluationTime: d.confirmedAt, sweepEvents: [sweep('BSL', 1)], candles: [] }), null);
-    assert.strictEqual(dw.buildWatch({ symbol: 'X', displacement: d, evaluationTime: d.confirmedAt, sweepEvents: [sweep('SSL', 1, 'SWING_LOW')], candles: [] }), null);
+    assert.strictEqual(dw.buildWatch({ symbol: 'X', displacement: d, evaluationTime: d.confirmedAt, takenEvents: [taken('BSL', 1)], candles: [] }), null);
+    assert.strictEqual(dw.buildWatch({ symbol: 'X', displacement: d, evaluationTime: d.confirmedAt, takenEvents: [taken('SSL', 1, 'SWING_LOW')], candles: [] }), null);
 });
 
 test('mixed Swing + EQL keeps only EQL and uses it as primary', function () {
     var d = disp('BULLISH', 3, 3);
     var w = dw.buildWatch({ symbol: 'X', displacement: d, evaluationTime: d.confirmedAt,
-        sweepEvents: [sweep('SSL', 2, 'SWING_LOW'), sweep('SSL', 1, 'EQL')], candles: [] });
+        takenEvents: [taken('SSL', 2, 'SWING_LOW'), taken('SSL', 1, 'EQL')], candles: [] });
     assert.ok(w); assert.deepStrictEqual(w.liquidityTaken.allCandidates.map(function (x) { return x.sourceType; }), ['EQL']);
     assert.strictEqual(w.liquidityTaken.primary.sourceType, 'EQL');
 });
 
-test('sweep confirmed after immutable canonical end cannot create WATCH', function () {
-    var d = disp('BULLISH', 2, 2), future = sweep('SSL', 3, 'EQL');
-    assert.strictEqual(dw.buildWatch({ symbol: 'X', displacement: d, evaluationTime: future.confirmedAt, sweepEvents: [future], candles: [] }), null);
+test('Taken confirmed after immutable canonical end cannot create WATCH', function () {
+    var d = disp('BULLISH', 2, 2), future = taken('SSL', 3, 'EQL');
+    assert.strictEqual(dw.buildWatch({ symbol: 'X', displacement: d, evaluationTime: future.confirmedAt, takenEvents: [future], candles: [] }), null);
 });
 
 test('persisted non-canonical WATCH is dropped at destructive cutover', function () {
@@ -99,7 +99,7 @@ test('K3 upgrade uses native geometry across canonical formation, not global reg
     var d = disp('BEARISH', 2, 2);
     var candles = [c(0, 101, 102, 100, 101), c(1, 101, 103, 99, 100), c(2, 100, 101, 92, 93), c(3, 93, 97, 90, 91)];
     var w = dw.buildWatch({ symbol: 'X', displacement: d, evaluationTime: candles[3].closeTime,
-        sweepEvents: [sweep('BSL', 1)], candles: candles, globalFvgRegistry: [{ id: 'MUST_NOT_BE_READ' }] });
+        takenEvents: [taken('BSL', 1)], candles: candles, globalFvgRegistry: [{ id: 'MUST_NOT_BE_READ' }] });
     assert.strictEqual(w.state, 'WATCH_WAIT_FVG'); assert.deepStrictEqual([w.nativeFvg.low, w.nativeFvg.high], [97, 99]);
     assert.ok(/:FIRST_TOUCH$/.test(w.notificationKey));
 });

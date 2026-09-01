@@ -34,7 +34,7 @@ function uniqueSorted(values) {
 }
 function sourceClass(sourceType) {
     if (SWING_TYPES.indexOf(sourceType) >= 0) return 'SWING_DERIVED';
-    if (EQ_TYPES.indexOf(sourceType) >= 0) return 'EQ_MULTI_MEMBER';
+    if (EQ_TYPES.indexOf(sourceType) >= 0) return 'EQ_POINT_IN_TIME_CROSS_SOURCE';
     if (EXPLICIT_TYPES.indexOf(sourceType) >= 0) return 'NON_SWING_LIQUIDITY';
     return 'UNRESOLVED';
 }
@@ -127,31 +127,24 @@ function buildSweepContextV1(candidate, options) {
         return base;
     }
 
-    if (category === 'EQ_MULTI_MEMBER') {
-        var members = opts.eqMembersById && opts.eqMembersById[candidate.sourceId];
-        if (!Array.isArray(members) && opts.registry && opts.registry.getById) {
+    if (category === 'EQ_POINT_IN_TIME_CROSS_SOURCE') {
+        var frozen = candidate.eqPartnerProvenance;
+        if (!frozen && opts.registry && opts.registry.getById) {
             var eqObject = opts.registry.getById(candidate.sourceId);
-            members = eqObject && eqObject.metadata && eqObject.metadata.members;
+            var metadata = eqObject && eqObject.metadata;
+            if (metadata && metadata.pointInTimeObservation) {
+                frozen = { currentPivot:metadata.currentPivot, historicalPartners:metadata.historicalPartners || [] };
+            }
         }
-        if (!Array.isArray(members)) return unresolved(candidate, 'EQ_MEMBER_PROVENANCE_UNAVAILABLE', category);
-        var eligible = members.filter(function (member) {
-            var availableAt = Number.isFinite(member.availableAt) ? member.availableAt : member.confirmedAt;
-            return member.id && Number.isFinite(availableAt) && availableAt <= evaluationTime;
-        });
-        var memberIds = uniqueSorted(eligible.map(function (member) { return member.id; }));
-        var memberContexts = memberIds.map(function (id) {
-            return opts.projectSwingContextV1 && opts.projectSwingContextV1({ canonicalSwingId: id, evaluationTime: evaluationTime });
-        });
-        if (memberIds.length === 0 || memberContexts.some(function (context) { return !context; })) {
-            return unresolved(candidate, memberIds.length === 0 ? 'NO_EQ_MEMBER_AVAILABLE_AS_OF_SWEEP' : 'EQ_MEMBER_SWING_CONTEXT_UNAVAILABLE', category);
+        if (!frozen || !frozen.currentPivot || !Array.isArray(frozen.historicalPartners)) {
+            return unresolved(candidate, 'EQ_PARTNER_PROVENANCE_UNAVAILABLE', category);
         }
-        base.canonicalSwingId = null;
-        base.memberSwingContexts = memberContexts.map(compactSwingContext).sort(function (a, b) {
-            return a.canonicalSwingId.localeCompare(b.canonicalSwingId);
-        });
         base.provenance.eqObjectId = candidate.sourceId;
-        base.provenance.eqMembershipRule = 'member.availableAt <= sweep.confirmedAt';
-        base.provenance.singleMemberPrimarySelected = false;
+        base.provenance.eqSemantic = 'POINT_IN_TIME_2X2_VS_ATR50_PARTNERS';
+        base.provenance.currentPivotId = frozen.currentPivot.id || null;
+        base.provenance.historicalPartnerIds = uniqueSorted(frozen.historicalPartners.map(function (partner) { return partner.id; }));
+        base.provenance.clusterIdentity = false;
+        base.provenance.memberEvolution = false;
         return base;
     }
 

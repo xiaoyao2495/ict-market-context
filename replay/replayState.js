@@ -24,10 +24,7 @@
  */
 var pivotDetector = require('../structure/pivotDetector');
 var swingLiquidity = require('../liquidity/swingLiquidity');
-var equalLiquidity = require('../liquidity/equalLiquidity');
-var persistentEqualLiquidityV3 = require('../liquidity/persistentEqualLiquidityV3');
-var eqProductionVersion = require('../config/eqProductionVersion');
-var eqSwingSource = require('../config/eqSwingSource');
+var productionEqualLiquidityV1 = require('../liquidity/productionEqualLiquidityV1');
 var liquidityLifecycle = require('../liquidity/liquidityLifecycle');
 var liquidityRegistry = require('../liquidity/liquidityRegistry');
 var liquidityTakenEventAdapter = require('../events/liquidityTakenEventAdapter');
@@ -37,7 +34,6 @@ var fvgLifecycle = require('../fvg/fvgLifecycle');
 var fvgRegistry = require('../fvg/fvgRegistry');
 var amdState = require('../amd/amdState');
 var structuralProvenance5m = require('../structure/structuralProvenance5m');
-var standardCausalSwingSegmentation = require('../structure/standardCausalSwingSegmentation');
 var canonicalDisplacementStore = require('../events/canonicalDisplacementStore');
 
 var RIGHT = 2;
@@ -47,22 +43,17 @@ function createReplayState(options) {
     return {
         symbol: opts.symbol || 'UNKNOWN',
         timeframe: opts.timeframe || '5m',
-        eqProductionVersion: opts.eqProductionVersion === undefined
-            ? eqProductionVersion.get(opts.env) : eqProductionVersion.normalize(opts.eqProductionVersion),
-        eqSwingSource: opts.eqSwingSource === undefined
-            ? eqSwingSource.get(opts.env) : eqSwingSource.normalize(opts.eqSwingSource),
+        eqProductionModel: productionEqualLiquidityV1.VERSION,
         index: 0,
 
         // ---- 持久 liquidity registry（增量加入，不重建） ----
         registry: liquidityRegistry.createRegistry(),
         swings: [],
-        qualifiedSwingSegmentation: standardCausalSwingSegmentation.createState({
-            symbol: opts.symbol || 'UNKNOWN', timeframe: opts.timeframe || '5m'
+        productionEq: productionEqualLiquidityV1.createState({
+            symbol: opts.symbol || 'UNKNOWN',
+            timeframe: opts.timeframe || '5m',
+            fourHourCandles: opts.fourHourCandles || []
         }),
-        qualifiedSwings: [],
-        qualifiedSwingById: {},
-        qualifiedHighPool: [],
-        qualifiedLowPool: [],
         structural5m: structuralProvenance5m.createState({
             symbol: opts.symbol || 'UNKNOWN', timeframe: opts.timeframe || '5m'
         }),
@@ -103,24 +94,15 @@ function createReplayState(options) {
 }
 
 /**
- * 每根 K 增量更新 liquidity：新 pivot → 新 swing → 新 equal（去重加入持久 registry）
- * 返回本根新产生的 swing 列表。
- *
- * 注意（Phase 11S.1）：曾尝试 O(1) 增量 pivot 优化，但 equal 检测池的行为语义
- * （EQH members 引用 registry 活动对象 vs 每根全新对象）会改变长窗口回放结果，
- * 破坏与既有 Diagnostic Run 的可比性 → 保持全量语义（性能可接受：90 天 ~7 分钟）。
- */
-/**
- * 每根 K 增量更新 liquidity：新 pivot → 新 swing → 新 equal（去重加入持久 registry）
+ * 每根 K 增量更新 liquidity：新 2/2 pivot → ordinary swing → cross-source EQ observation。
  * 返回本根新产生的 swing 列表。
  *
  * Phase 11D.4（性能）：增量 pivot —— 原实现每根 slice(0, index+1) + detectPivots 全量 = O(n²)
  * （180d 单币 ~30 分钟的主热点）。新实现利用 pivot 语义：pivot 极值 K 在 index = K + RIGHT
  * 时被右确认，每根最多一个新确认 pivot（极值 K = index - RIGHT），只需检测 5 根局部窗口。
  * 等价性：全量 detectPivots(candles[0..index]) 的已确认 pivot 集合 = 增量累积集合（每根恰覆盖
- * 新确认的 pivot）。buildSwingLiquidity 逐 pivot 独立处理（不依赖集合完整性）→ 传新 pivot 等价；
- * detectEqualLiquidity 只在传入 swings 内部聚类 → 增量需传新 swing + registry 已有 swing（等价）。
- * 已用 test/incrementalLiquidityEquiv.test.js 验证与全量逐根一致。
+ * 新确认的 pivot）。buildSwingLiquidity 逐 pivot 独立处理（不依赖集合完整性）。Production EQ
+ * 只评估本根新确认的 ordinary 2/2，并读取连续维护的 ATR50 历史点状态。
  */
 function incrementalLiquidity(state, candles, index, exchangeInfo, evaluationTime) {
     // 1. 增量 pivot：极值 K = index - RIGHT（确认根恰为 index）
@@ -160,69 +142,14 @@ function incrementalLiquidity(state, candles, index, exchangeInfo, evaluationTim
         }
     });
 
-    // Advance the separate EQ-only Qualified Swing lifecycle. These objects do
-    // not enter the main liquidity registry and therefore cannot create raw
-    // Sweep/WATCH/AMD side effects.
-    (state.qualifiedSwings || []).forEach(function (swing) {
-        if (swing.confirmedAt >= evaluationTime || (swing.status !== 'ACTIVE' && swing.status !== 'TOUCHED')) return;
-        var event = liquidityLifecycle.evaluateLiquidity(swing, candles[index]);
-        if (!event) return;
-        swing.status = event.status;
-        swing.touchedAt = event.touchedAt;
-        swing.sweptAt = event.sweptAt;
-        swing.brokenAt = event.brokenAt;
-    });
-
-    standardCausalSwingSegmentation.initializeAtIndex(state.qualifiedSwingSegmentation, candles, index);
-    var qualifiedAdded = standardCausalSwingSegmentation.step(
-        state.qualifiedSwingSegmentation,
-        candles[index],
-        index,
-        addedSwings,
-        index > 0 ? candles[index - 1] : null
+    // 3. Production EQ replacement: current confirmed ordinary 2/2 versus
+    // prior 36H confirmed causal ATR50 ZigZag, same-side and unviolated before
+    // current occurrence. The returned EQH/EQL is a point-in-time observation;
+    // no V2/V3 cluster identity, lifecycle, or member evolution is executed.
+    var equalStep = productionEqualLiquidityV1.step(
+        state.productionEq, candles[index], index, candles, addedSwings
     );
-    qualifiedAdded.forEach(function (swing) {
-        state.qualifiedSwings.push(swing);
-        state.qualifiedSwingById[swing.id] = swing;
-        (swing.type === 'SWING_HIGH' ? state.qualifiedHighPool : state.qualifiedLowPool).push(swing);
-    });
-
-    // 3. Equal Liquidity. V3 receives exactly one source: Standard Qualified
-    // Swing by default, or RAW_LEGACY for rollback. The pools are never mixed.
-    var equal = [];
-    if (state.eqProductionVersion === 'V3') {
-        var eqCandidates = state.eqSwingSource === eqSwingSource.STANDARD ? qualifiedAdded : addedSwings;
-        if (eqCandidates.length > 0) {
-            var standardPool = state.qualifiedSwings;
-            persistentEqualLiquidityV3.processCandidates(state, eqCandidates, {
-                symbol: state.symbol,
-                evaluationTime: evaluationTime,
-                tickSize: exchangeInfo.tickSize,
-                candles: candles,
-                index: index,
-                candidatePool: state.eqSwingSource === eqSwingSource.STANDARD ? standardPool : undefined,
-                getSwingById: state.eqSwingSource === eqSwingSource.STANDARD
-                    ? function (id) { return state.qualifiedSwingById[id] || null; }
-                    : undefined
-            });
-        }
-    } else if (addedSwings.length > 0) {
-            equal = equalLiquidity.detectEqualLiquidity(
-                addedSwings.concat(
-                    state.registry.getByType(state.symbol, 'SWING_HIGH'),
-                    state.registry.getByType(state.symbol, 'SWING_LOW')
-                ),
-                {
-                    symbol: state.symbol,
-                    evaluationTime: evaluationTime,
-                    tickSize: exchangeInfo.tickSize,
-                    secondSwingIds: addedSwings.map(function (s) { return s.id; }),
-                    lifecycleFromCurrentState: true,
-                    canonicalClosedCandles: true,
-                    candles: candles
-                }
-            );
-    }
+    var equal = equalStep.equalLiquidity;
     equal.forEach(function (e) {
         state.registry.add(e);
     });

@@ -29,7 +29,7 @@ function runOne(spec){
     var prefixHashes={};
     function emit(d,evaluationTime){
         var w=displacementWatch.buildWatch({symbol:spec.symbol,displacement:d,evaluationTime:evaluationTime,
-            sweepEvents:state.eventRegistry.getByType(spec.symbol,'LIQUIDITY_SWEEP'),candles:candles});
+            takenEvents:state.eventRegistry.getByType(spec.symbol,'LIQUIDITY_TAKEN'),candles:candles});
         if(w)watchStore.upsert(w);
     }
     for(var i=0;i<candles.length;i++){
