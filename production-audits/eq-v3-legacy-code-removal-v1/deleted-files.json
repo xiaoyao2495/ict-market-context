@@ -1,0 +1,448 @@
+{
+  "task": "EQ_V3_LEGACY_CODE_REMOVAL_V1",
+  "baselineCommit": "ab887b9c3851e00144ef92512cfd3fbb195751d3",
+  "totalDeleted": 58,
+  "deletedFiles": [
+    {
+      "path": "liquidity/persistentEqualLiquidityV3.js",
+      "reason": "V3 EQ producer with cluster identity / member evolution / cluster lifecycle; production replaced by productionEqualLiquidityV1 + atr50CausalZigZag point-in-time 2/2 model",
+      "productionReachableBefore": false,
+      "replacement": "liquidity/productionEqualLiquidityV1.js + liquidity/atr50CausalZigZag.js",
+      "safeToDelete": true
+    },
+    {
+      "path": "audit/eqPersistentClusterShadowV3.js",
+      "reason": "V3 persistent cluster shadow; only consumed by other deleted legacy files",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "audit/eqStructuralRetirementShadowV1.js",
+      "reason": "V3 structural retirement shadow; only consumed by deleted legacy scripts/tests",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "audit/eqV2V3BlindComparisonV1.js",
+      "reason": "V2/V3 blind comparison audit; V3 arm retired",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "audit/eqHistoricalStateProjectorV1.js",
+      "reason": "V3 object/member/lifecycle event projector; no production emitter exists (eventRegistry has no EQ_* events)",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "scripts/eqClusterIdentityCollisionFixV1.js",
+      "reason": "One-shot V3 cluster identity collision fix tool",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "scripts/eqClusterLifecycleBoundaryAuditV1.js",
+      "reason": "V3 cluster lifecycle boundary audit",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "scripts/eqHistoricalMembershipEventStreamAuditV1.js",
+      "reason": "V3 membership event stream capture; reads metadata.members which no longer exists in production; V3-era file hash pin",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "scripts/eqPersistentClusterShadowV3.js",
+      "reason": "V3 persistent cluster shadow runner",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "scripts/eqStructuralRetirementBoundedShadowV1.js",
+      "reason": "V3 structural retirement bounded shadow runner",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "scripts/eqV2V3BlindComparisonV1.js",
+      "reason": "V2/V3 blind comparison runner; V3 arm retired",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "scripts/eqV3ProductionMigrationAcceptanceV1.js",
+      "reason": "V3 migration acceptance runner; uses removed eqProductionVersion selector, reads metadata.members and eqMemberProvenance (both removed) - semantic invalid after ATR50 switch",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "scripts/eqhEqlProductionAlgorithmAuditV3.js",
+      "reason": "V3 production algorithm audit; audited V3 algorithm retired",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "test/eqClusterIdentityCollisionFixV1.test.js",
+      "reason": "Test for deleted V3 cluster identity collision fix",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "test/eqHistoricalMembershipEventStreamAuditV1.test.js",
+      "reason": "Test for deleted V3 membership event stream audit",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "test/eqPersistentClusterShadowV3.test.js",
+      "reason": "Test for deleted V3 persistent cluster shadow",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "test/eqStructuralRetirementShadowV1.test.js",
+      "reason": "Test for deleted V3 structural retirement shadow",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "test/eqV2V3BlindComparisonV1.test.js",
+      "reason": "Test for deleted V2/V3 blind comparison",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/REPORT.md",
+      "reason": "V3 cluster identity design package (12 files); 0 external references; production retired cluster identity",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/acceptance.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/architecture-options.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/cluster-schema-v3.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/member-append-contract.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/member-exclusivity-contract.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/multi-cluster-conflict-policy.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/readiness.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/recommended-cluster-contract.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/summary.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/synthetic-cases.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-persistent-cluster-identity-design-v3/temporal-provenance-design.json",
+      "reason": "V3 cluster identity design package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/REPORT.md",
+      "reason": "V3 production algorithm audit evidence (17 files); audited V3 algorithm retired; unique consumer scripts/eqhEqlProductionAlgorithmAuditV3.js deleted; evidence preserved in git history (HEAD tree)",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/acceptance.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/clean-eq-cases.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/eq-formation-temporal-distribution.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/eq-identity-lifecycle.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/eq-lifecycle-sweep-semantics.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/eq-member-contract.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/eq-member-independence-audit.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/eq-overlap-behavior.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/eq-production-path.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/eq-temporal-safety.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/eq-tolerance-cases.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/human-review-eqh.json",
+      "reason": "V3 production algorithm audit evidence (human review of retired V3 EQH output)",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/human-review-eql.json",
+      "reason": "V3 production algorithm audit evidence (human review of retired V3 EQL output)",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/summary.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/suspicious-eq-cases.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-production-algorithm-audit-v3/test-results.json",
+      "reason": "V3 production algorithm audit evidence",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/REPORT.md",
+      "reason": "V3 migration acceptance package (11 files, PRODUCTION_EQ_SOURCE=V3); superseded by ATR50 switch; unique consumer scripts/eqV3ProductionMigrationAcceptanceV1.js deleted",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/acceptance.json",
+      "reason": "V3 migration acceptance package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/deployment-readiness.json",
+      "reason": "V3 migration acceptance package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/duplicate-safety.json",
+      "reason": "V3 migration acceptance package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/notification-examples.md",
+      "reason": "V3 migration acceptance package (renders eqMemberProvenance-era notifications, field removed)",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/notification-temporal-safety.json",
+      "reason": "V3 migration acceptance package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/persistence-migration.json",
+      "reason": "V3 migration acceptance package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/registry-integration.json",
+      "reason": "V3 migration acceptance package (productionSource='V3')",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/summary.json",
+      "reason": "V3 migration acceptance package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/test-results.json",
+      "reason": "V3 migration acceptance package",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    },
+    {
+      "path": "eqh-eql-v3-production-migration-v1/v2-v3-production-comparison.json",
+      "reason": "V3 migration acceptance package (V2 vs V3 comparison; V3 arm retired)",
+      "productionReachableBefore": false,
+      "replacement": null,
+      "safeToDelete": true
+    }
+  ],
+  "partiallyEdited": [
+    {
+      "path": "test/eqV3ProductionMigrationV1.test.js",
+      "action": "removed legacy case (V3 module availability) + require('../liquidity/persistentEqualLiquidityV3'); kept 5 production contract guards",
+      "reason": "Mixed test: guards current production contract (replay ignores old toggles, production never imports V3, config DEPRECATED flags, V3 cluster cannot masquerade as partner provenance, replacement metadata rejects persistent identity/member evolution)",
+      "result": "5/5 PASS after edit"
+    }
+  ],
+  "relatedReferenceCleanup": [
+    {
+      "path": "test/accumulationAuctionRepresentationV1.test.js",
+      "action": "removed deleted path from production-baseline hash list",
+      "reason": "fs.readFileSync of deleted persistentEqualLiquidityV3.js would crash; test intent (no production source mutation) unchanged"
+    },
+    {
+      "path": "test/accumulationComparativeAuditV1.test.js",
+      "action": "removed deleted path from production-baseline hash list"
+    },
+    {
+      "path": "test/accumulationEqRoleAuditV1.test.js",
+      "action": "removed deleted path from production-baseline hash list"
+    },
+    {
+      "path": "test/accumulationGroundTruthV1.test.js",
+      "action": "removed deleted path from production-baseline hash list"
+    },
+    {
+      "path": "test/accumulationRepresentationV2PrototypeV1.test.js",
+      "action": "removed deleted path from production-baseline hash list"
+    },
+    {
+      "path": "test/accumulationResearchV1.test.js",
+      "action": "removed deleted path from production-baseline hash list"
+    }
+  ]
+}

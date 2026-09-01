@@ -1,0 +1,85 @@
+{
+  "task": "EQ_V3_LEGACY_CODE_REMOVAL_V1",
+  "baselineCommit": "ab887b9c3851e00144ef92512cfd3fbb195751d3",
+  "environment": "node 22.22.2-2 (managed), test/run.js enumerates test/*.test.js",
+  "baselineBeforeDelete": {
+    "command": "node test/run.js",
+    "exit": 0,
+    "result": "ALL TESTS PASSED",
+    "log": "/tmp/baseline-before-delete.txt"
+  },
+  "regressionAfterDelete": {
+    "command": "node test/run.js",
+    "exit": 0,
+    "result": "ALL TESTS PASSED",
+    "log": "/tmp/regression-after-delete.txt",
+    "note": "5 deleted EQ V3 test files excluded by design (§18); all remaining current tests pass"
+  },
+  "productionSmoke": {
+    "scope": "EQ generation -> registry -> LIQUIDITY_TAKEN -> WATCH (Taken+Displacement 24-bar) -> notification payload build (no real notification sent)",
+    "tests": [
+      { "file": "test/productionEqualLiquidityV1.test.js", "exit": 0, "stage": "new EQ generation (ATR50 point-in-time 2/2)" },
+      { "file": "test/liquidityTakenEvent.test.js", "exit": 0, "stage": "EQ -> LIQUIDITY_TAKEN event" },
+      { "file": "test/productionWatchTaken24BarV1.test.js", "exit": 0, "stage": "Taken + Displacement within 24 -> WATCH" },
+      { "file": "test/productionEqTakenNotificationChainAuditV1.test.js", "exit": 0, "stage": "EQ -> TAKEN -> notification chain integrity" },
+      { "file": "test/sweepContextNotificationPresentationV1.test.js", "exit": 0, "stage": "notification payload build" },
+      { "file": "test/eqMemberNotificationProvenanceV1.test.js", "exit": 0, "stage": "notification provenance (eqPartnerProvenance)" }
+    ],
+    "result": "6/6 PASS",
+    "realNotificationsSent": false
+  },
+  "categorizedTests": {
+    "PRODUCTION_EQ_TESTS": [
+      { "file": "test/productionEqualLiquidityV1.test.js", "exit": 0 },
+      { "file": "test/equalLiquidity.test.js", "exit": 0 }
+    ],
+    "LIQUIDITY_TESTS": [
+      { "file": "test/liquidityCluster.test.js", "exit": 0 },
+      { "file": "test/liquidityLifecycle.test.js", "exit": 0 },
+      { "file": "test/liquidityRegistry.test.js", "exit": 0 },
+      { "file": "test/incrementalLiquidityEquiv.test.js", "exit": 0 },
+      { "file": "test/liquidityProvenance.test.js", "exit": 0 }
+    ],
+    "TAKEN_TESTS": [
+      { "file": "test/liquidityTakenEvent.test.js", "exit": 0 },
+      { "file": "test/productionEqTakenNotificationChainAuditV1.test.js", "exit": 0 }
+    ],
+    "DISPLACEMENT_TESTS": [
+      { "file": "test/displacementDetector.test.js", "exit": 0 },
+      { "file": "test/displacementWatch.test.js", "exit": 0 },
+      { "file": "test/multiCandleDisplacementDetector.test.js", "exit": 0 }
+    ],
+    "WATCH_TESTS": [
+      { "file": "test/productionWatchTaken24BarV1.test.js", "exit": 0 },
+      { "file": "test/watchLiquidityEvidenceV1.test.js", "exit": 0 },
+      { "file": "test/watchNarrativeLifecycleV1.test.js", "exit": 0 },
+      { "file": "test/watchNotificationPresentationV1.test.js", "exit": 0 }
+    ],
+    "FVG_TESTS": [
+      { "file": "test/fvgEntry.test.js", "exit": 0 }
+    ],
+    "NOTIFICATION_TESTS": [
+      { "file": "test/eqMemberNotificationProvenanceV1.test.js", "exit": 0 },
+      { "file": "test/sweepContextNotificationPresentationV1.test.js", "exit": 0 },
+      { "file": "test/watchNotificationPresentationV1.test.js", "exit": 0 }
+    ],
+    "FULL_REGRESSION": {
+      "command": "node test/run.js",
+      "exit": 0,
+      "result": "ALL TESTS PASSED"
+    }
+  },
+  "relatedCleanupVerification": {
+    "editedMixedTest": { "file": "test/eqV3ProductionMigrationV1.test.js", "exit": 0, "detail": "5 passed, 0 failed (production contract guards)" },
+    "accumulationTests": [
+      { "file": "test/accumulationAuctionRepresentationV1.test.js", "exit": 0 },
+      { "file": "test/accumulationComparativeAuditV1.test.js", "exit": 0 },
+      { "file": "test/accumulationEqRoleAuditV1.test.js", "exit": 0 },
+      { "file": "test/accumulationGroundTruthV1.test.js", "exit": 0 },
+      { "file": "test/accumulationRepresentationV2PrototypeV1.test.js", "exit": 0 },
+      { "file": "test/accumulationResearchV1.test.js", "exit": 0 }
+    ]
+  },
+  "hardStopTriggered": false,
+  "unexplainedFailures": 0
+}

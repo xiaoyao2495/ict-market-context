@@ -69,7 +69,7 @@ test('conflicts expose every CLEAR and critical CLEAR rejection', function () {
 test('prototype processing does not mutate production sources', function () {
     var root = path.join(__dirname, '..');
     var files = ['amd/accumulationDetector.js', 'amd/amdState.js', 'config/thresholds.js',
-        'liquidity/persistentEqualLiquidityV3.js', 'events/displacementDetector.js', 'live/liveEngine.js'];
+        'events/displacementDetector.js', 'live/liveEngine.js'];
     function hashes() { return files.map(function (file) { return crypto.createHash('sha256')
         .update(fs.readFileSync(path.join(root, file))).digest('hex'); }); }
     var before = hashes(); prototype.decide(center([0.2, 0.5, 0.8]), reabsorb(1)); assert.deepStrictEqual(hashes(), before);

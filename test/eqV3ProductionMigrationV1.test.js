@@ -3,7 +3,6 @@
 var assert=require('assert');
 var fs=require('fs');
 var path=require('path');
-var v3=require('../liquidity/persistentEqualLiquidityV3');
 var replayState=require('../replay/replayState');
 var productionEq=require('../liquidity/productionEqualLiquidityV1');
 var partnerProvenance=require('../liquidity/productionEqProvenance');
@@ -12,10 +11,6 @@ var passed=0,failed=0;
 function test(name,fn){try{fn();passed++;console.log('PASS  '+name);}catch(error){failed++;console.log('FAIL  '+name+' -> '+error.stack);}}
 function source(file){return fs.readFileSync(path.join(__dirname,'..',file),'utf8');}
 
-test('V3 module remains available only as historical implementation',function(){
-    assert.strictEqual(typeof v3.processCandidates,'function');
-    assert.strictEqual(typeof v3.projectMembersAsOf,'function');
-});
 test('ReplayState ignores old version/source toggles and selects replacement model',function(){
     var state=replayState.createReplayState({eqProductionVersion:'V3',eqSwingSource:'STANDARD_CAUSAL_V1'});
     assert.strictEqual(state.eqProductionModel,productionEq.VERSION);

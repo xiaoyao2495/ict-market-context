@@ -1,0 +1,31 @@
+{
+  "task": "EQ_V3_LEGACY_CODE_REMOVAL_V1",
+  "configFile": "config/thresholds.js",
+  "auditResult": {
+    "legacyEqV3OnlyKeysFound": 0,
+    "legacyEqV3ConfigKeysRemoved": 0,
+    "currentEqConfigKeysPreserved": [
+      "equalLiquidity.version",
+      "equalLiquidity.atrPeriod",
+      "equalLiquidity.priceStrongMaxATR",
+      "equalLiquidity.priceFailAboveATR",
+      "equalLiquidity.formationDepartureMinATR",
+      "equalLiquidity.formationZoneATR",
+      "equalLiquidity.formationMinConsecutiveOutsideBars",
+      "equalLiquidity.percentageTolerance",
+      "equalLiquidity.minBarsApart",
+      "equalLiquidity.maxBarsApart",
+      "equalLiquidity.minTouches"
+    ],
+    "consumersOfPreservedSection": {
+      "liquidity/productionEqualLiquidityV1.js": ["thresholds.equalLiquidity.priceStrongMaxATR (lines 153, 166)"],
+      "liquidity/equalLiquidity.js": ["thresholds.equalLiquidity (V2 pairwise)"]
+    },
+    "note": "No clusterMultiplier / clusterStateMultiplier / persistent-cluster / member-evolution keys exist in config/thresholds.js. Scanned keys: cluster, member, Multiplier, equalLiquidity, eq, EQ. Only equalLiquidity section present and it is consumed by current production EQ - nothing deletable.",
+    "otherConfigFiles": {
+      "config/eqProductionVersion.js": "DEPRECATED_FOR_PRODUCTION=true soft flag retained (user decision); V2/V3 selectors kept for archived audit tools",
+      "config/eqSwingSource.js": "DEPRECATED_FOR_PRODUCTION=true soft flag retained (user decision)"
+    },
+    "sweepLegacyCleanupDeferred": true
+  }
+}

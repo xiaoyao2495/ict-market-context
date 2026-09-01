@@ -85,7 +85,7 @@ test('no label mutation', function () {
 test('no production or baseline source mutation', function () {
     var root = path.join(__dirname, '..');
     var files = ['amd/accumulationDetector.js', 'config/thresholds.js', 'events/displacementDetector.js',
-        'liquidity/persistentEqualLiquidityV3.js', 'liquidity/equalLiquidity.js', 'live/liveEngine.js'];
+        'liquidity/equalLiquidity.js', 'live/liveEngine.js'];
     function hashes() { return files.map(function (file) {
         return crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
     }); }

@@ -78,7 +78,7 @@ test('no composite score or parameter search in research module', function () {
 
 test('feature generation does not mutate production sources', function () {
     var root = path.join(__dirname, '..');
-    var files = ['amd/accumulationDetector.js', 'config/thresholds.js', 'liquidity/persistentEqualLiquidityV3.js',
+    var files = ['amd/accumulationDetector.js', 'config/thresholds.js',
         'events/displacementDetector.js', 'live/liveEngine.js'];
     function hashes() { return files.map(function (file) {
         return crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');

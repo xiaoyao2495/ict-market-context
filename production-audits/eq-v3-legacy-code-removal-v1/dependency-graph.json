@@ -1,0 +1,106 @@
+{
+  "task": "EQ_V3_LEGACY_CODE_REMOVAL_V1",
+  "baselineCommit": "ab887b9c3851e00144ef92512cfd3fbb195751d3",
+  "productionEntrypointsAudited": [
+    "scripts/live.js",
+    "live/liveEngine.js",
+    "replay/replayState.js",
+    "replay/replayEngine.js",
+    "events/eventRegistry.js",
+    "events/liquidityTakenEventAdapter.js",
+    "events/sweepEventAdapter.js",
+    "notify/watchNotificationPresentationV1.js",
+    "stats/displacementWatch.js",
+    "stats/liquidityTakenAssociation.js",
+    "stats/sweepContextV1.js",
+    "stats/watchLiquidityEvidenceV1.js"
+  ],
+  "productionReachabilityResult": {
+    "anyProductionEntrypointImportsLegacyEqV3": false,
+    "evidence": "grep persistentEqualLiquidityV3|eqPersistentClusterShadowV3|eqStructuralRetirementShadowV1|eqV2V3BlindComparisonV1|eqHistoricalStateProjectorV1|eqClusterIdentity|eqClusterLifecycle|eqHistoricalMembership|eqV3ProductionMigration|eqhEqlProductionAlgorithm on all production entrypoints -> 0 hits; full broken-require scan after deletion -> 0 hits",
+    "eventsRegistryHasEqObjectEvents": false,
+    "evidence": "events/eventRegistry.js contains no EQ_OBJECT_CREATED / EQ_MEMBER_ATTACHED / EQ_LIFECYCLE_* event types; current production EQ emits metadata.persistentIdentity=false, memberEvolution=false, members=undefined"
+  },
+  "legacyIsland": {
+    "coreProducer": {
+      "liquidity/persistentEqualLiquidityV3.js": {
+        "category": "core_producer",
+        "imports": ["liquidity/equalLiquidity.js", "liquidity/liquidityLifecycle.js"],
+        "importedBy": ["test/eqV3ProductionMigrationV1.test.js(legacy case, removed)"],
+        "productionRuntimeReachable": false,
+        "currentTestReachable": false,
+        "researchOnly": true,
+        "deleteCandidate": true
+      }
+    },
+    "auditLayer": {
+      "audit/eqPersistentClusterShadowV3.js": {
+        "category": "shadow",
+        "imports": ["structure/pivotDetector.js", "liquidity/liquidityLifecycle.js", "config/thresholds.js"],
+        "importedBy": ["audit/eqStructuralRetirementShadowV1.js", "audit/eqV2V3BlindComparisonV1.js", "scripts/eqClusterIdentityCollisionFixV1.js", "scripts/eqClusterLifecycleBoundaryAuditV1.js", "scripts/eqPersistentClusterShadowV3.js", "scripts/eqStructuralRetirementBoundedShadowV1.js", "scripts/eqV2V3BlindComparisonV1.js", "test/eqClusterIdentityCollisionFixV1.test.js", "test/eqPersistentClusterShadowV3.test.js"],
+        "productionRuntimeReachable": false,
+        "currentTestReachable": false,
+        "researchOnly": true,
+        "deleteCandidate": true
+      },
+      "audit/eqStructuralRetirementShadowV1.js": {
+        "category": "shadow",
+        "importedBy": ["scripts/eqClusterIdentityCollisionFixV1.js", "scripts/eqStructuralRetirementBoundedShadowV1.js", "test/eqClusterIdentityCollisionFixV1.test.js", "test/eqStructuralRetirementShadowV1.test.js"],
+        "productionRuntimeReachable": false,
+        "currentTestReachable": false,
+        "researchOnly": true,
+        "deleteCandidate": true
+      },
+      "audit/eqV2V3BlindComparisonV1.js": {
+        "category": "comparison",
+        "importedBy": ["scripts/eqV2V3BlindComparisonV1.js", "test/eqV2V3BlindComparisonV1.test.js"],
+        "productionRuntimeReachable": false,
+        "currentTestReachable": false,
+        "researchOnly": true,
+        "deleteCandidate": true
+      },
+      "audit/eqHistoricalStateProjectorV1.js": {
+        "category": "event_projection",
+        "importedBy": ["scripts/eqHistoricalMembershipEventStreamAuditV1.js", "test/eqHistoricalMembershipEventStreamAuditV1.test.js"],
+        "productionRuntimeReachable": false,
+        "currentTestReachable": false,
+        "researchOnly": true,
+        "deleteCandidate": true,
+        "note": "Projects EQ_OBJECT_CREATED/EQ_MEMBER_ATTACHED/EQ_LIFECYCLE_* events; no production emitter exists"
+      }
+    },
+    "scripts": {
+      "scripts/eqClusterIdentityCollisionFixV1.js": { "imports": ["audit/eqPersistentClusterShadowV3.js", "audit/eqStructuralRetirementShadowV1.js"], "productionRuntimeReachable": false, "deleteCandidate": true },
+      "scripts/eqClusterLifecycleBoundaryAuditV1.js": { "imports": ["audit/eqPersistentClusterShadowV3.js"], "productionRuntimeReachable": false, "deleteCandidate": true },
+      "scripts/eqHistoricalMembershipEventStreamAuditV1.js": { "imports": ["audit/eqHistoricalStateProjectorV1.js"], "productionRuntimeReachable": false, "deleteCandidate": true },
+      "scripts/eqPersistentClusterShadowV3.js": { "imports": ["audit/eqPersistentClusterShadowV3.js"], "productionRuntimeReachable": false, "deleteCandidate": true },
+      "scripts/eqStructuralRetirementBoundedShadowV1.js": { "imports": ["audit/eqPersistentClusterShadowV3.js", "audit/eqStructuralRetirementShadowV1.js"], "productionRuntimeReachable": false, "deleteCandidate": true },
+      "scripts/eqV2V3BlindComparisonV1.js": { "imports": ["audit/eqPersistentClusterShadowV3.js", "audit/eqV2V3BlindComparisonV1.js"], "productionRuntimeReachable": false, "deleteCandidate": true },
+      "scripts/eqV3ProductionMigrationAcceptanceV1.js": { "imports": ["live/liveEngine.js", "replay/replayState.js", "events/eventRegistry.js", "notify/watchNotificationPresentationV1.js", "config/thresholds.js"], "productionRuntimeReachable": false, "deleteCandidate": true, "note": "Uses removed eqProductionVersion selector + metadata.members + eqMemberProvenance; semantic invalid after ATR50 switch; writes eqh-eql-v3-production-migration-v1 output" },
+      "scripts/eqhEqlProductionAlgorithmAuditV3.js": { "imports": ["config/thresholds.js"], "productionRuntimeReachable": false, "deleteCandidate": true, "note": "V3 production algorithm audit; reads V3-era shadow calibration + 30d capture; writes eqh-eql-production-algorithm-audit-v3 output" }
+    },
+    "tests": {
+      "test/eqClusterIdentityCollisionFixV1.test.js": { "imports": ["audit/eqPersistentClusterShadowV3.js", "audit/eqStructuralRetirementShadowV1.js"], "deleteCandidate": true },
+      "test/eqHistoricalMembershipEventStreamAuditV1.test.js": { "imports": ["audit/eqHistoricalStateProjectorV1.js", "scripts/eqHistoricalMembershipEventStreamAuditV1.js"], "deleteCandidate": true },
+      "test/eqPersistentClusterShadowV3.test.js": { "imports": ["audit/eqPersistentClusterShadowV3.js"], "deleteCandidate": true },
+      "test/eqStructuralRetirementShadowV1.test.js": { "imports": ["audit/eqStructuralRetirementShadowV1.js"], "deleteCandidate": true },
+      "test/eqV2V3BlindComparisonV1.test.js": { "imports": ["audit/eqV2V3BlindComparisonV1.js"], "deleteCandidate": true },
+      "test/eqV3ProductionMigrationV1.test.js": { "deleteCandidate": "partial", "note": "Mixed: legacy case removed, 5 production contract guards kept" }
+    },
+    "artifactDirs": {
+      "eqh-eql-persistent-cluster-identity-design-v3/": { "files": 12, "externalReferences": 0, "verdict": "DELETE", "reason": "V3 cluster identity design package; production retired cluster identity" },
+      "eqh-eql-production-algorithm-audit-v3/": { "files": 17, "externalReferences": 1, "referencedBy": ["scripts/eqhEqlProductionAlgorithmAuditV3.js(deleted)"], "verdict": "DELETE", "reason": "V3 production algorithm audit evidence; audited object retired; evidence preserved in git history" },
+      "eqh-eql-v3-production-migration-v1/": { "files": 11, "externalReferences": 1, "referencedBy": ["scripts/eqV3ProductionMigrationAcceptanceV1.js(deleted)"], "verdict": "DELETE", "reason": "V3 migration acceptance package (PRODUCTION_EQ_SOURCE=V3); superseded by ATR50 switch" }
+    }
+  },
+  "deletionUnit": "complete legacy dependency island",
+  "postDeleteChecks": {
+    "brokenRequireScan": 0,
+    "liveCodeReferenceToRemovedEqV3": 0,
+    "remainingStringMentionsClassified": {
+      "accumulationResearchPathLists": "EXPECTED_RESEARCH_ARTIFACT (12 scripts/tests list persistentEqualLiquidityV3.js as path string only, read-ops=0; 6 test baseline lists cleaned)",
+      "productionContractGuards": "EXPECTED (eqV3ProductionMigrationV1.test.js line 21 regex guard; productionEqualLiquidityV1.test.js isolation assertions)",
+      "clusterId/clusterLifecycle/memberEvolution": "EXPECTED (current production negation contracts: metadata.clusterLifecycle=false, memberEvolution=false; Liquidity Map cluster in draw/drawCandidate.js)"
+    }
+  }
+}

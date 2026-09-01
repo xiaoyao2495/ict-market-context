@@ -1,0 +1,115 @@
+{
+  "task": "EQ_V3_LEGACY_CODE_REMOVAL_V1",
+  "keptFiles": [
+    {
+      "path": "liquidity/productionEqualLiquidityV1.js",
+      "reasonKept": "Current production EQ producer (NEW_PRODUCTION_EQ_ENABLED=true); semantics unchanged"
+    },
+    {
+      "path": "liquidity/atr50CausalZigZag.js",
+      "reasonKept": "Current production ATR50 causal ZigZag partner source; semantics unchanged"
+    },
+    {
+      "path": "liquidity/productionEqProvenance.js",
+      "reasonKept": "Current production EQ provenance snapshot (model=ATR50_36H_UNVIOLATED_CROSS_SOURCE_V1)"
+    },
+    {
+      "path": "liquidity/equalLiquidity.js",
+      "reasonKept": "V2 pairwise EQ tolerance utility (§14 type B): shared by inspect tools, production tests, config thresholds; SHARED_EQ_TOLERANCE_STILL_COUPLED=false means it is NOT coupled to deleted V3 module"
+    },
+    {
+      "path": "liquidity/liquidityLifecycle.js",
+      "reasonKept": "Lifecycle engine: required by replay/replayState.js, stats/watchLiquidityEvidenceV1.js and other production paths"
+    },
+    {
+      "path": "liquidity/liquidityRegistry.js",
+      "reasonKept": "Liquidity Registry (§7) - current production"
+    },
+    {
+      "path": "liquidity/liquidityCluster.js",
+      "reasonKept": "Liquidity Map derived cluster view (§7); price-zone clustering, unrelated to EQ V3 cluster identity"
+    },
+    {
+      "path": "config/thresholds.js",
+      "reasonKept": "Unchanged (§11); equalLiquidity section read by productionEqualLiquidityV1 (priceStrongMaxATR) and equalLiquidity.js"
+    },
+    {
+      "path": "config/eqProductionVersion.js",
+      "reasonKept": "Retained with DEPRECATED_FOR_PRODUCTION=true soft flag (archive audit tool compatibility; user decision 2026-09-01)"
+    },
+    {
+      "path": "config/eqSwingSource.js",
+      "reasonKept": "Retained with DEPRECATED_FOR_PRODUCTION=true soft flag (archive audit tool compatibility; user decision 2026-09-01)"
+    },
+    {
+      "path": "events/liquidityTakenEventAdapter.js",
+      "reasonKept": "LIQUIDITY_TAKEN event adapter (§7); snapshots eqPartnerProvenance"
+    },
+    {
+      "path": "events/sweepEventAdapter.js",
+      "reasonKept": "Sweep event adapter (§8 SWEEP_LEGACY_CLEANUP_DEFERRED=true)"
+    },
+    {
+      "path": "stats/displacementWatch.js",
+      "reasonKept": "Displacement WATCH builder (§7); normalizeNarrativeLiquidityV1Watch hard switch retained"
+    },
+    {
+      "path": "stats/liquidityTakenAssociation.js",
+      "reasonKept": "Taken 24-bar association (§7)"
+    },
+    {
+      "path": "stats/sweepContextV1.js",
+      "reasonKept": "Sweep context (§8 deferred); asserts clusterIdentity=false / memberEvolution=false (production negation contracts)"
+    },
+    {
+      "path": "stats/watchLiquidityEvidenceV1.js",
+      "reasonKept": "WATCH liquidity evidence (§8 deferred); production dependency on liquidityLifecycle"
+    },
+    {
+      "path": "notify/watchNotificationPresentationV1.js",
+      "reasonKept": "Notification payload builder (§7); eqPartnerLines / Liquidity Taken wording"
+    },
+    {
+      "path": "test/eqV3ProductionMigrationV1.test.js",
+      "reasonKept": "Partially edited: 5 production contract guards retained (replay ignores old toggles, no V3 import in production, config DEPRECATED flags, V3 cluster rejected as partner provenance, replacement metadata rejects persistent identity/member evolution)"
+    },
+    {
+      "path": "test/equalLiquidity.test.js",
+      "reasonKept": "§14 type B - generic pairwise EQ tolerance utility test"
+    },
+    {
+      "path": "test/productionEqualLiquidityV1.test.js",
+      "reasonKept": "§14 type C - current production cross-source EQ test"
+    },
+    {
+      "path": "test/eqMemberNotificationProvenanceV1.test.js",
+      "reasonKept": "Current production notification provenance test (eqPartnerProvenance semantics)"
+    },
+    {
+      "path": "test/accumulation*.test.js (6 files)",
+      "reasonKept": "§9 user-preserved accumulation research validation artifacts; only deleted-path entries removed from baseline hash lists"
+    },
+    {
+      "path": "research/liquidity-sweep-confirmation-semantics-v1/",
+      "reasonKept": "§9 A-class: hard dependency of committed test/liquiditySweepResearchClosureV1.test.js (SHA256-verified)"
+    },
+    {
+      "path": "research/watch-narrative-sweep-association-audit-v1/",
+      "reasonKept": "§9 A-class: FIXTURES/OUT path dependency of committed audit scripts"
+    },
+    {
+      "path": "production-audits/ (production-eq-to-taken-notification-chain-audit-v1, production-replace-eq-with-atr50-36h-unviolated-cross-source-v1, production-watch-replace-sweep-with-taken-24bar-v1)",
+      "reasonKept": "Ongoing WATCH_DUPLICATION / notification density audit evidence chain"
+    },
+    {
+      "path": "audit/shadowWatchConsumptionAdapterV1.js",
+      "reasonKept": "WATCH shadow audit (§7/§8); EQ_LIFECYCLE_SWEPT strings are Sweep type mapping only"
+    },
+    {
+      "path": "audit/swingStateProjectorV1.js",
+      "reasonKept": "Swing state model audit; EQ_MEMBERSHIP events are swing topology fixtures, not EQ V3 producer island"
+    }
+  ],
+  "historicalResearchArtifactsPreserved": true,
+  "note": "eqh-eql-* three dirs deleted as V3-era evidence; content remains recoverable from git history (HEAD ab887b9 tree intact; deletion staged but NOT committed)"
+}
