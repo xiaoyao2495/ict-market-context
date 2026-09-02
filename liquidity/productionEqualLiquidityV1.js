@@ -64,12 +64,39 @@ function pivotKey(pivot) {
     ].join('|');
 }
 
-function remainedUnviolatedBefore(point, currentOccurredAt) {
-    return point.status !== 'VIOLATED' || point.violatedAt >= currentOccurredAt;
-}
-
 function currentTradesThrough(side, currentPrice, historicalPrice) {
     return side === 'HIGH' ? currentPrice > historicalPrice : currentPrice < historicalPrice;
+}
+
+/**
+ * Point-in-time EQ anchor eligibility evaluated at the candidate ordinary 2/2
+ * OCCURRENCE (candidate.occurredAt), not at its later confirmation
+ * (candidate.confirmedAt).
+ *
+ * A historical ZigZag anchor may pair only if it was already causally confirmed,
+ * still inside the frozen 432-bar lookback window measured at the candidate's
+ * occurrence index, and unviolated as of the candidate's occurrence instant.
+ *
+ * This is a pure backward reconstruction from the anchor's own immutable fields.
+ * It does NOT query the anchor's current survival status (status === 'ACTIVE'),
+ * so a candidate's own trade-through at its occurrence bar can never retroactively
+ * expel a prior anchor that was genuinely valid when the candidate appeared.
+ *
+ * Strict boundary on firstViolationOccurredAt (real field: violatedAt):
+ *   violatedAt <  candidateOccurredAt  -> NOT eligible
+ *   violatedAt == candidateOccurredAt  -> eligible
+ *   violatedAt >  candidateOccurredAt  -> eligible
+ */
+function wasEligibleAtCandidateOccurrence(anchor, candidateOccurredAt, candidateOccurredBarIndex) {
+    if (candidateOccurredAt == null || candidateOccurredBarIndex == null) return false;
+    if (typeof anchor.occurredAt !== 'number' || typeof anchor.confirmedAt !== 'number') return false;
+    var barsBetween = candidateOccurredBarIndex - anchor.occurredBarIndex;
+    return (
+        anchor.confirmedAt <= candidateOccurredAt &&
+        anchor.occurredAt < candidateOccurredAt &&
+        barsBetween >= 1 && barsBetween <= LOOKBACK_BARS &&
+        (anchor.violatedAt == null || anchor.violatedAt >= candidateOccurredAt)
+    );
 }
 
 function eligibleHistoricalPoints(state, pivot) {
@@ -79,12 +106,8 @@ function eligibleHistoricalPoints(state, pivot) {
     if (!side || typeof occurredAt !== 'number' || typeof pivot.confirmedAt !== 'number' ||
             typeof sourceIndex !== 'number') return [];
     return state.zigzag.recentSurvivalPoints.filter(function (point) {
-        var barsBetween = sourceIndex - point.occurredBarIndex;
         return point.pointSide === side &&
-            point.occurredAt < occurredAt &&
-            point.confirmedAt <= pivot.confirmedAt &&
-            barsBetween >= 1 && barsBetween <= LOOKBACK_BARS &&
-            remainedUnviolatedBefore(point, occurredAt);
+            wasEligibleAtCandidateOccurrence(point, occurredAt, sourceIndex);
     });
 }
 
@@ -217,7 +240,7 @@ module.exports = {
     createState: createState,
     updateFiveMinuteAtr: updateFiveMinuteAtr,
     pivotKey: pivotKey,
-    remainedUnviolatedBefore: remainedUnviolatedBefore,
+    wasEligibleAtCandidateOccurrence: wasEligibleAtCandidateOccurrence,
     currentTradesThrough: currentTradesThrough,
     eligibleHistoricalPoints: eligibleHistoricalPoints,
     evaluatePivot: evaluatePivot,

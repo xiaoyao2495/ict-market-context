@@ -3,15 +3,20 @@
 /**
  * Production causal ATR50 ZigZag state.
  *
- * Reversal threshold at each completed 5m close is 0.50 × the latest causally
+ * Reversal threshold at each completed 5m candle is 0.50 × the latest causally
  * available completed 4H Wilder ATR(14). Confirmed points are immutable;
  * ACTIVE/VIOLATED is objective survival state, not EQ identity or lifecycle.
+ *
+ * Price semantics (V2): directional extremes and reversal confirmation both use
+ * the real intrabar price extreme — HIGH uses candle.high, LOW uses candle.low.
+ * candle.close is NOT used for extreme storage or for reversal measurement.
  */
 var atrIndicator = require('../indicators/atr');
 
 var ATR_PERIOD = 14;
 var ATR_MULTIPLIER = 0.5;
-var VERSION = 'CAUSAL_ATR50_ZIGZAG_V1';
+var VERSION = 'CAUSAL_ATR50_ZIGZAG_V2';
+var PRICE_SOURCE = 'HIGH_LOW';
 
 function createState(options) {
     var opts = options || {};
@@ -37,6 +42,13 @@ function createState(options) {
 }
 
 function numeric(value) { return Number(value); }
+
+/**
+ * Real intrabar extreme price for a side. HIGH -> candle.high, LOW -> candle.low.
+ */
+function extremePrice(side, candle) {
+    return side === 'HIGH' ? numeric(candle.high) : numeric(candle.low);
+}
 
 function advanceFourHourAtr(state, evaluationTime) {
     var rows = state.fourHourCandles || [];
@@ -101,7 +113,7 @@ function applyViolation(point, violation) {
 function pointId(state, side, extreme) {
     return [
         'ATR50', state.symbol, state.timeframe, side,
-        extreme.candle.openTime, numeric(extreme.candle.close)
+        extreme.candle.openTime, extremePrice(side, extreme.candle)
     ].join(':');
 }
 
@@ -114,7 +126,8 @@ function buildPoint(state, side, extreme, confirmationCandle, confirmationIndex,
         timeframe: state.timeframe,
         pointSide: side,
         type: side === 'HIGH' ? 'ATR50_ZIGZAG_HIGH' : 'ATR50_ZIGZAG_LOW',
-        price: numeric(extreme.candle.close),
+        price: extremePrice(side, extreme.candle),
+        priceSource: PRICE_SOURCE,
         occurredAt: extreme.candle.openTime,
         confirmedAt: confirmationCandle.closeTime,
         occurredBarIndex: extreme.index,
@@ -180,23 +193,24 @@ function step(state, candle, index, fiveMinuteCandles) {
         return [];
     }
 
-    var close = numeric(candle.close);
+    var candleHigh = numeric(candle.high);
+    var candleLow = numeric(candle.low);
     if (state.direction === null) {
-        if (close > numeric(state.high.candle.close)) state.high = envelope(candle, index);
-        if (close < numeric(state.low.candle.close)) state.low = envelope(candle, index);
+        if (candleHigh > numeric(state.high.candle.high)) state.high = envelope(candle, index);
+        if (candleLow < numeric(state.low.candle.low)) state.low = envelope(candle, index);
     }
     if (!(state.fourHourAtrValue > 0)) return [];
 
     var threshold = state.fourHourAtrValue * ATR_MULTIPLIER;
     var emitted = [];
     if (state.direction === null) {
-        if (close - numeric(state.low.candle.close) >= threshold) {
+        if (candleHigh - numeric(state.low.candle.low) >= threshold) {
             emitted.push(registerPoint(state, buildPoint(
                 state, 'LOW', state.low, candle, index, fiveMinuteCandles
             )));
             state.direction = 'UPTREND';
             state.activeExtreme = envelope(candle, index);
-        } else if (numeric(state.high.candle.close) - close >= threshold) {
+        } else if (numeric(state.high.candle.high) - candleLow >= threshold) {
             emitted.push(registerPoint(state, buildPoint(
                 state, 'HIGH', state.high, candle, index, fiveMinuteCandles
             )));
@@ -204,8 +218,8 @@ function step(state, candle, index, fiveMinuteCandles) {
             state.activeExtreme = envelope(candle, index);
         }
     } else if (state.direction === 'UPTREND') {
-        if (close > numeric(state.activeExtreme.candle.close)) state.activeExtreme = envelope(candle, index);
-        if (numeric(state.activeExtreme.candle.close) - close >= threshold) {
+        if (candleHigh > numeric(state.activeExtreme.candle.high)) state.activeExtreme = envelope(candle, index);
+        if (numeric(state.activeExtreme.candle.high) - candleLow >= threshold) {
             emitted.push(registerPoint(state, buildPoint(
                 state, 'HIGH', state.activeExtreme, candle, index, fiveMinuteCandles
             )));
@@ -213,8 +227,8 @@ function step(state, candle, index, fiveMinuteCandles) {
             state.activeExtreme = envelope(candle, index);
         }
     } else {
-        if (close < numeric(state.activeExtreme.candle.close)) state.activeExtreme = envelope(candle, index);
-        if (close - numeric(state.activeExtreme.candle.close) >= threshold) {
+        if (candleLow < numeric(state.activeExtreme.candle.low)) state.activeExtreme = envelope(candle, index);
+        if (candleHigh - numeric(state.activeExtreme.candle.low) >= threshold) {
             emitted.push(registerPoint(state, buildPoint(
                 state, 'LOW', state.activeExtreme, candle, index, fiveMinuteCandles
             )));
@@ -227,8 +241,10 @@ function step(state, candle, index, fiveMinuteCandles) {
 
 module.exports = {
     VERSION: VERSION,
+    PRICE_SOURCE: PRICE_SOURCE,
     ATR_PERIOD: ATR_PERIOD,
     ATR_MULTIPLIER: ATR_MULTIPLIER,
+    extremePrice: extremePrice,
     createState: createState,
     advanceFourHourAtr: advanceFourHourAtr,
     violationFor: violationFor,
