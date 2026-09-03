@@ -1,0 +1,20 @@
+{
+  "task": "PRODUCTION_HISTORICAL_EXTREME_CC_DYNAMIC_D_V1",
+  "dataset": "data-cache/BTCUSDT_5m_20636_20697.json",
+  "dataSource": "futures",
+  "networkUsed": false,
+  "bars": 17580,
+  "candleSpacingMs": 300000,
+  "continuityOk": true,
+  "runtimeMsDynamicD": 118,
+  "anchors": {
+    "total": 560,
+    "HIGH": 280,
+    "LOW": 280,
+    "wickDiffersFromCloseCount": 523
+  },
+  "determinism": true,
+  "productionWrap": true,
+  "ageExpiryTerminal": true,
+  "verdict": "PASS"
+}

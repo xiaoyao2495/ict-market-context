@@ -31,7 +31,7 @@ test('historical source-selection config is not reachable from live or replay ru
     });
 });
 test('replacement source has no research artifact import',function(){
-    ['liquidity/atr50CausalZigZag.js','liquidity/productionEqualLiquidityV1.js','replay/replayState.js'].forEach(function(file){
+    ['liquidity/productionEqualLiquidityV1.js','replay/replayState.js'].forEach(function(file){
         assert.strictEqual(/require\([^)]*research|research\//.test(source(file)),false,file);
     });
 });

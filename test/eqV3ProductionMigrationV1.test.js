@@ -32,8 +32,7 @@ test('old V3 cluster cannot masquerade as replacement partner provenance',functi
 });
 test('replacement metadata explicitly rejects persistent identity and member evolution',function(){
     var state=productionEq.createState({symbol:'X',timeframe:'5m'}); state.fiveMinuteAtrValue=10;
-    state.zigzag.confirmedPoints=[{id:'Z',pointSide:'HIGH',price:100,occurredAt:0,confirmedAt:1,occurredBarIndex:0,status:'ACTIVE',violatedAt:null}];
-    state.zigzag.recentSurvivalPoints=state.zigzag.confirmedPoints;
+    state.dynamicD.recentSurvivalPoints=[{id:'Z',pointSide:'HIGH',price:100,selectorPrice:100,occurredAt:0,confirmedAt:1,occurredBarIndex:0,state:'ACTIVE',inactivatedBy:null,inactivatedAt:null}];
     var event=productionEq.evaluatePivot(state,{id:'P',symbol:'X',type:'SWING_HIGH',price:100,sourceOpenTime:3000000,sourceCloseTime:3299999,confirmedAt:3900000,metadata:{index:10}});
     assert.ok(event); assert.strictEqual(event.metadata.persistentIdentity,false);
     assert.strictEqual(event.metadata.memberEvolution,false); assert.strictEqual(event.metadata.members,undefined);

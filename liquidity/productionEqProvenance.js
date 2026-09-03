@@ -1,6 +1,10 @@
 'use strict';
 
-var MODEL = 'ATR50_36H_UNVIOLATED_CROSS_SOURCE_V1';
+var producer = require('../liquidity/productionEqualLiquidityV1');
+var dynamicD = require('../liquidity/causalDynamicDHistoricalExtremes');
+
+var MODEL = producer.VERSION; // 'DYNAMIC_D_36H_CROSS_SOURCE_V1'
+var HISTORICAL_SOURCE = dynamicD.VERSION; // 'CAUSAL_DYNAMIC_D_V1'
 
 function clone(value) {
     return value == null ? value : JSON.parse(JSON.stringify(value));
@@ -17,8 +21,8 @@ function fromLiquidity(liquidity) {
         pointInTimeObservation: true,
         asOf: liquidity.confirmedAt,
         currentSource: 'ORDINARY_CAUSAL_2X2',
-        historicalSource: 'CAUSAL_ATR50_ZIGZAG',
-        historicalLookbackBars: 432,
+        historicalSource: HISTORICAL_SOURCE,
+        historicalLookbackBars: dynamicD.LOOKBACK_BARS,
         historicalLookbackTime: '36H',
         currentPivot: clone(metadata.currentPivot),
         partnerCount: metadata.historicalPartners.length,
@@ -28,5 +32,6 @@ function fromLiquidity(liquidity) {
 
 module.exports = {
     MODEL: MODEL,
+    HISTORICAL_SOURCE: HISTORICAL_SOURCE,
     fromLiquidity: fromLiquidity
 };

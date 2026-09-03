@@ -133,9 +133,9 @@ test('N one candle preserves three eligible identities without primary', functio
 test('O P replacement EQ current price and frozen partner provenance are immutable', function () {
     var l = liquidity('EQX1:X', 'EQH', 'BSL', 100.05, 0);
     l.metadata = {
-        eqModelVersion:'ATR50_36H_UNVIOLATED_CROSS_SOURCE_V1',
+        eqModelVersion:'DYNAMIC_D_36H_CROSS_SOURCE_V1',
         currentPivot:{id:'P',source:'ORDINARY_CAUSAL_2X2',price:100.05,occurredAt:0,confirmedAt:0},
-        historicalPartners:[{id:'A',source:'CAUSAL_ATR50_ZIGZAG',price:100,occurredAt:-300000,confirmedAt:-1}]
+        historicalPartners:[{id:'A',source:'CAUSAL_DYNAMIC_D_V1',price:100,occurredAt:-300000,confirmedAt:-1}]
     };
     var e = adapter.buildTakenEvent(l, candle(1, 101, 99, 99), 1, '5m');
     var id = e.id;

@@ -1,0 +1,77 @@
+{
+  "task": "PRODUCTION_HISTORICAL_EXTREME_CC_DYNAMIC_D_V1",
+  "generatedAt": "2026-09-03T06:28:18.724Z",
+  "governance": {
+    "FULL_REPLACEMENT": true,
+    "BACKWARD_COMPATIBILITY": false,
+    "FEATURE_FLAG": false,
+    "DUAL_PATH": false,
+    "FALLBACK_TO_ZIGZAG": false,
+    "LEGACY_ZIGZAG_OUTPUT_COMPATIBILITY": false
+  },
+  "productionFilesScanned": 133,
+  "checks": [
+    {
+      "id": "OLD_ZIGZAG_MODULE_REMOVED",
+      "pass": true,
+      "detail": "liquidity/atr50CausalZigZag.js deleted"
+    },
+    {
+      "id": "NO_PRODUCTION_ZIGZAG_REFERENCE",
+      "pass": true,
+      "detail": "scanned 133 production files, 0 ZigZag token hits"
+    },
+    {
+      "id": "DYNAMIC_D_VERSION_CONSTANT",
+      "pass": true,
+      "detail": "dynamicD.VERSION=CAUSAL_DYNAMIC_D_V1 producer.VERSION=DYNAMIC_D_36H_CROSS_SOURCE_V1"
+    },
+    {
+      "id": "DYNAMIC_D_NO_EXTERNAL_REQUIRE",
+      "pass": true,
+      "detail": "requires: none"
+    },
+    {
+      "id": "DYNAMIC_D_NO_4H_ATR_RESIDUAL",
+      "pass": true,
+      "detail": "no HTF/ATR/Parkinson/GARCH/CWT/Prominence tokens in detection module"
+    },
+    {
+      "id": "SELECTOR_PRICE_NOT_USED_IN_EQ",
+      "pass": true,
+      "detail": "EQ comparison uses point.price (wick); selectorPrice (close) isolated to detection"
+    },
+    {
+      "id": "CONFIRMED_AT_IS_CONFIRMATION_CLOSE_TIME",
+      "pass": true,
+      "detail": "buildPoint.confirmedAt === det.confirmationCloseTime (current reversal candle, no future)"
+    },
+    {
+      "id": "INACTIVE_TERMINAL_NO_RESURRECTION",
+      "pass": true,
+      "detail": "markInactive is a no-op when state !== ACTIVE (INACTIVE never revives)"
+    },
+    {
+      "id": "FROZEN_PARAMETERS",
+      "pass": true,
+      "detail": "LOOKBACK=288 K=1.0 THETA_FLOOR=0.003 SQRT12=√12 LOOKBACK_BARS=432 FIVE_DAYS_MS=432000000"
+    },
+    {
+      "id": "NOTIFY_LABEL_DYNAMIC_D",
+      "pass": true,
+      "detail": "old ATR50 label removed; CAUSAL_DYNAMIC_D_V1 -> \"Dynamic D 历史配对\" present"
+    },
+    {
+      "id": "OLD_ZIGZAG_TEST_REMOVED",
+      "pass": true,
+      "detail": "test/atr50CausalZigZagHighLowV2.test.js deleted"
+    },
+    {
+      "id": "DOWNSTREAM_SCRIPTS_RESIDUAL_DOCUMENTED",
+      "pass": true,
+      "detail": "KNOWN OUT-OF-SCOPE residual in scripts/: scripts/seedFeasibilityRealV1.js, scripts/warmup1164ParityV1.js, scripts/warmup876ParityV1.js, scripts/warmup950ParityV1.js, scripts/zigzagConvergenceV1.js — diagnostic tooling only; not in test runner or live/replay pipeline"
+    }
+  ],
+  "hardFailures": [],
+  "verdict": "PASS"
+}

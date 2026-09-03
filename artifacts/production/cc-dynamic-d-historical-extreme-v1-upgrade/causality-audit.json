@@ -1,0 +1,32 @@
+{
+  "task": "PRODUCTION_HISTORICAL_EXTREME_CC_DYNAMIC_D_V1",
+  "generatedAt": "2026-09-03T06:29:36.267Z",
+  "gates": {
+    "CONFIRMED_AT_LE_EVALUATION_TIME": {
+      "pass": true,
+      "failures": [],
+      "failureCount": 0
+    },
+    "NO_FUTURE_DATA": {
+      "pass": true,
+      "failures": [],
+      "failureCount": 0
+    },
+    "SELECTOR_PRICE_CLOSE_BUSINESS_PRICE_WICK": {
+      "pass": true,
+      "failures": [],
+      "failureCount": 0,
+      "note": "selectorPrice=close used only for detection; price=wick (HIGH->candle.high, LOW->candle.low) used for EQ + invalidation"
+    },
+    "DETERMINISM": {
+      "pass": true
+    },
+    "PRODUCTION_WRAPS_DETECTION_1TO1": {
+      "pass": true
+    },
+    "INACTIVE_TERMINAL_NO_RESURRECTION": {
+      "pass": true
+    }
+  },
+  "verdict": "PASS"
+}

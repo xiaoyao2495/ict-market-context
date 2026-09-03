@@ -1,0 +1,872 @@
+{
+  "task": "PRODUCTION_HISTORICAL_EXTREME_CC_DYNAMIC_D_V1",
+  "generatedAt": "2026-09-03T06:40:11.834Z",
+  "sourceLog": "/tmp/fulltestrun2.log",
+  "totalFiles": 123,
+  "totalPassed": 1204,
+  "totalFailed": 0,
+  "overall": "PASS",
+  "files": [
+    {
+      "file": "5mRangeBalanceFactStructureV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "5mRangeBalanceMatureMethodBenchmarkV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "accumulationAuctionRepresentationV1.test.js",
+      "passed": 11,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationComparativeAuditV1.test.js",
+      "passed": 8,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationConflictHumanAuditPhase2V1.test.js",
+      "passed": 4,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationConflictHumanAuditV1.test.js",
+      "passed": 5,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationDetector.test.js",
+      "passed": 7,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationEqRoleAuditV1.test.js",
+      "passed": 9,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationGroundTruthConsistencyAuditV2.test.js",
+      "passed": 6,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationGroundTruthConsistencyAuditV2Phase2.test.js",
+      "passed": 5,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationGroundTruthV1.test.js",
+      "passed": 12,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationGroundTruthV2DefinitionCalibrationV1.test.js",
+      "passed": 4,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationGroundTruthV2DefinitionSynthesisV1.test.js",
+      "passed": 5,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationGroundTruthV2FreezeV1.test.js",
+      "passed": 3,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationGroundTruthV2FullRelabelPhase2V1.test.js",
+      "passed": 5,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationGroundTruthV2FullRelabelV1.test.js",
+      "passed": 5,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationRepresentationV2PrototypeV1.test.js",
+      "passed": 10,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationRepresentationV3ResearchV1.test.js",
+      "passed": 7,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "accumulationResearchV1.test.js",
+      "passed": 12,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "alertPrioritization.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "amdDetectors.test.js",
+      "passed": 6,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "amdStateMachine.test.js",
+      "passed": 22,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "atr.test.js",
+      "passed": 10,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "auditWatchNarrativeSweepAssociationV1.test.js",
+      "passed": 7,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "biasComponents.test.js",
+      "passed": 20,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "biasContextAudit.test.js",
+      "passed": 2,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "biasEngine.test.js",
+      "passed": 25,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "biasResponseValidator.test.js",
+      "passed": 17,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "canonicalDisplacementStore.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "dailyBiasIntegration.test.js",
+      "passed": 10,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "dailyBiasMssDiagnostic.test.js",
+      "passed": 5,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "dailyLiquidity.test.js",
+      "passed": 10,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "dealingRange.test.js",
+      "passed": 12,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "deepseek4hBiasAudit.test.js",
+      "passed": 42,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "deliveryBias.test.js",
+      "passed": 8,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "dingTalk.test.js",
+      "passed": 5,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "displacementDetector.test.js",
+      "passed": 8,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "displacementWatch.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "distanceScorer.test.js",
+      "passed": 14,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "drawCandidate.test.js",
+      "passed": 11,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "drawEngine.test.js",
+      "passed": 24,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "drawLiquidityAudit.test.js",
+      "passed": 8,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "drawScorer.test.js",
+      "passed": 6,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "eqMemberNotificationProvenanceV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "eqV3ProductionMigrationV1.test.js",
+      "passed": 5,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "equalLiquidity.test.js",
+      "passed": 19,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "eventRegistry.test.js",
+      "passed": 10,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "exchangeInfo.test.js",
+      "passed": 8,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "freshnessScorer.test.js",
+      "passed": 8,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "fvgEntry.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "htfClosure.test.js",
+      "passed": 21,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "incrementalLiquidityEquiv.test.js",
+      "passed": 1,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquidityCluster.test.js",
+      "passed": 11,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquidityLifecycle.test.js",
+      "passed": 15,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquidityObjectQualificationRegistrySemanticsV1.test.js",
+      "passed": 16,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquidityObjectShadowAudit.test.js",
+      "passed": 4,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquidityProvenance.test.js",
+      "passed": 18,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquidityRecencyAudit.test.js",
+      "passed": 4,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquidityRegistry.test.js",
+      "passed": 18,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquidityRelevanceAudit.test.js",
+      "passed": 10,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquidityScorer.test.js",
+      "passed": 17,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquiditySweepContextConsumptionV1.test.js",
+      "passed": 15,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "liquiditySweepResearchClosureV1.test.js",
+      "passed": 4,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liquidityTakenEvent.test.js",
+      "passed": 18,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "liveBootstrapPerformanceV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "liveBootstrapRetention.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "liveDataGuard.test.js",
+      "passed": 16,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "livePrioritizationAudit.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "liveWarmup876Boundary.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "marketFactsAudit.test.js",
+      "passed": 14,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "minimalSweepContextProductionIntegrationV1.test.js",
+      "passed": 40,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "monthlyLiquidity.test.js",
+      "passed": 9,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "mtfSwingRealTimeAvailabilityV1.test.js",
+      "passed": 6,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "multiCandleDisplacementDetector.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "multiTimeframeSwingHierarchyV1.test.js",
+      "passed": 6,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "narrativeBoundary.test.js",
+      "passed": 59,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "narrativeLiquidityEvidenceShadowEvaluationV1.test.js",
+      "passed": 22,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "narrativeLiquidityV1ProductionSimplification.test.js",
+      "passed": 20,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "narrativeStats.test.js",
+      "passed": 10,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "nearStaleness.test.js",
+      "passed": 7,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "pivotDetector.test.js",
+      "passed": 11,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "pivotPopulationAudit.test.js",
+      "passed": 7,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "productionEqTakenNotificationChainAuditV1.test.js",
+      "passed": 10,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "productionEqTemporalEligibilityV1.test.js",
+      "passed": 15,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "productionEqualLiquidityV1.test.js",
+      "passed": 20,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "productionHistoricalExtremeDynamicDV1.test.js",
+      "passed": 63,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "productionWatchTaken24BarV1.test.js",
+      "passed": 16,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "reactionBoundaryPolicyV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "reactionLegParameterizationAuditV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "replayIntegrity.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "replayStats.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "retraceDiagnostics.test.js",
+      "passed": 22,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "scenarioEngine.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "sessionLiquidity.test.js",
+      "passed": 12,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "shadowWatchConsumptionAdapterV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "standardCausalSwingSegmentationV1.test.js",
+      "passed": 6,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "stopDiagnostics.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "stopSemantics.test.js",
+      "passed": 9,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "stopV2Counterfactual.test.js",
+      "passed": 18,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "structuralProvenance4hAudit.test.js",
+      "passed": 11,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "structuralProvenance5m.test.js",
+      "passed": 5,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "sweepContextNotificationPresentationV1.test.js",
+      "passed": 38,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "sweepNarrativeEligibilityShadowIntegrationV1.test.js",
+      "passed": 27,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "swingClassifier.test.js",
+      "passed": 11,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "swingContextProjectionV1.test.js",
+      "passed": 8,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "swingLiquidity.test.js",
+      "passed": 10,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "swingMultiDimensionalStateModelDesignV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "swingOutcomeReactionPopulationAuditV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "swingReactionLegStructuralAttributionAuditV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "swingSignificanceHumanReview.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "swingStateFinalizationV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "tradePlan.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "triggerPriceAudit.test.js",
+      "passed": 11,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "utcTime.test.js",
+      "passed": 13,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    },
+    {
+      "file": "watchLiquidityEvidenceV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "watchNarrativeEligibleCandidateShadowComparisonV1.test.js",
+      "passed": 14,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "watchNarrativeLifecycleIntegrationV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "watchNarrativeLifecycleV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "watchNarrativeLiquidityPolicyDesignV1.test.js",
+      "passed": 16,
+      "failed": 0,
+      "status": "PASS",
+      "format": "node:test"
+    },
+    {
+      "file": "watchNarrativeMissingSweepFailOpenV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "watchNotificationPresentationV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "watchShadowConsumptionIntegrationV1.test.js",
+      "passed": 0,
+      "failed": 0,
+      "status": "NO_RESULT",
+      "format": "unknown"
+    },
+    {
+      "file": "weeklyLiquidity.test.js",
+      "passed": 10,
+      "failed": 0,
+      "status": "PASS",
+      "format": "custom-wrapper"
+    }
+  ]
+}

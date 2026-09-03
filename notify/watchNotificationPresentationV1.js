@@ -36,6 +36,16 @@ var SOURCE_ZH = {
     EQH: '等高点', EQL: '等低点'
 };
 
+// Dynamic-D / historical-anchor source labels for EQ partner presentation.
+// Pure display text; WATCH/FVG/Taken semantics are unchanged.
+var EQ_PARTNER_SOURCE_LABEL = {
+    CAUSAL_DYNAMIC_D_V1: 'Dynamic D 历史配对'
+};
+function partnerSourceLabel(partner) {
+    var src = partner && partner.source;
+    return EQ_PARTNER_SOURCE_LABEL[src] || '历史配对';
+}
+
 function raw(value) {
     return value === null || value === undefined || value === '' ? null : String(value);
 }
@@ -87,7 +97,7 @@ function eqPartnerLines(primary, formatter) {
     if (partners.length > 6 && hasPartnerTime) times += ' … 共 ' + partners.length + ' 个';
     return [
         'EQ 当前点：2/2 @ ' + formatPrice(current.price, formatter),
-        'ATR50 历史配对：' + partners.length + ' 个',
+        partnerSourceLabel(partners[0]) + '：' + partners.length + ' 个',
         '历史点位：' + prices,
         '历史时间（北京时间）：' + times
     ];
