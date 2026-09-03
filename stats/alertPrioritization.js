@@ -8,7 +8,7 @@
  *        → PRIORITY_HIGH → 钉钉
  *
  * Significant Liquidity（用户限定第一版）：
- *   EQL / EQH / PDL / PDH / Session Low / High（复用 liquidityRelevanceAudit.sourceGroupOf → 'SIGNIFICANT'）
+ *   EQL / EQH / Session Low / High（复用 liquidityRelevanceAudit.sourceGroupOf → 'SIGNIFICANT'）
  * 普通 5M SWING_HIGH / SWING_LOW → 保留在 Engine（Structure / Context），但不足单独触发优先通知。
  *
  * 两个口径（都算，供用户审计后定）：
@@ -30,7 +30,7 @@ var lra = require('./liquidityRelevanceAudit');
 var WINDOWS = [{ key: '30m', bars: 6 }, { key: '1h', bars: 12 }];
 
 /**
- * sourceType → 是否 Significant Liquidity（EQL/EQH/PDL/PDH/Session；普通 swing 不算）
+ * sourceType → 是否 Significant Liquidity（EQL/EQH/Session；普通 swing 不算）
  */
 function isSignificant(sourceType) {
     return lra.sourceGroupOf(sourceType) === 'SIGNIFICANT';

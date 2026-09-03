@@ -35,8 +35,6 @@ function m5(open, high, low, close, i) {
 test('11L.10：sourceGroupOf 分组', function () {
     assert.strictEqual(lra.sourceGroupOf('EQL'), 'SIGNIFICANT');
     assert.strictEqual(lra.sourceGroupOf('EQH'), 'SIGNIFICANT');
-    assert.strictEqual(lra.sourceGroupOf('PDH'), 'SIGNIFICANT');
-    assert.strictEqual(lra.sourceGroupOf('PDL'), 'SIGNIFICANT');
     assert.strictEqual(lra.sourceGroupOf('ASIA_LOW'), 'SIGNIFICANT');
     assert.strictEqual(lra.sourceGroupOf('LONDON_HIGH'), 'SIGNIFICANT');
     assert.strictEqual(lra.sourceGroupOf('NEW_YORK_LOW'), 'SIGNIFICANT');

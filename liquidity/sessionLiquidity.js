@@ -5,7 +5,8 @@
  * - Session 定义集中放在 config/sessions.js（全部 UTC，未来 DST / Kill Zone 只改配置）
  * - ASIA_HIGH / LONDON_HIGH / NEW_YORK_HIGH → BSL
  * - ASIA_LOW / LONDON_LOW / NEW_YORK_LOW → SSL
- * - 只有 Session【完整结束】后才允许生成（与 PDH 的未来数据问题完全一致）
+ * - 只有 Session【完整结束】后才允许生成（避免未来数据混入，与所有
+ *   历史级别 liquidity 的 causality 约束一致）
  * - evaluationTime 位于 Session 中间 → 使用上一个完整结束的 Session 日期
  * - confirmedAt = 该 Session 时段内【最后一根已收盘 K 线】的 closeTime
  * - 未来 candle 混入一律被 closeTime <= evaluationTime 过滤

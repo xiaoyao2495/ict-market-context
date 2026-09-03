@@ -29,8 +29,8 @@ function cls(overrides) { return audit.evaluateCandidate(fixture(overrides)).ass
 
 test('1 EQH SHORT inside is strong', function () { assert.equal(cls({inside: true}), 'STRONG_ASSOCIATION_CANDIDATE'); });
 test('2 EQL LONG before 1 is strong', function () { assert.equal(cls({sourceType: 'EQL', direction: 'BULLISH', distance: 1}), 'STRONG_ASSOCIATION_CANDIDATE'); });
-test('3 PDH SHORT before 2 is strong', function () { assert.equal(cls({sourceType: 'PDH', distance: 2}), 'STRONG_ASSOCIATION_CANDIDATE'); });
-test('4 PDL LONG before 3 is strong', function () { assert.equal(cls({sourceType: 'PDL', direction: 'BULLISH', distance: 3}), 'STRONG_ASSOCIATION_CANDIDATE'); });
+test('3 EQH SHORT before 2 is strong', function () { assert.equal(cls({sourceType: 'EQH', distance: 2}), 'STRONG_ASSOCIATION_CANDIDATE'); });
+test('4 EQL LONG before 3 is strong', function () { assert.equal(cls({sourceType: 'EQL', direction: 'BULLISH', distance: 3}), 'STRONG_ASSOCIATION_CANDIDATE'); });
 test('5 before 4 is weak', function () { assert.equal(cls({distance: 4}), 'WEAK_ASSOCIATION_CANDIDATE'); });
 test('6 before 48 is weak', function () { assert.equal(cls({distance: 48}), 'WEAK_ASSOCIATION_CANDIDATE'); });
 test('7 before 49 is outside', function () { assert.equal(cls({distance: 49}), 'NO_NARRATIVE_ASSOCIATION'); });

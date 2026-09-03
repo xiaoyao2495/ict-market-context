@@ -10,13 +10,7 @@ var productionEqProvenance = require('../liquidity/productionEqProvenance');
 
 var NARRATIVE_TYPES = {
     EQH: true,
-    EQL: true,
-    PDH: true,
-    PDL: true,
-    PWH: true,
-    PWL: true,
-    PMH: true,
-    PML: true
+    EQL: true
 };
 
 function isNarrativeLiquidityV1(liquidity) {

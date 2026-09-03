@@ -209,7 +209,7 @@ function buildMessage(opp, symbol) {
     // Phase 11L.8 + 11L.15b：流动性通知行 —— 展示与判定依据对齐。
     //
     //   判定（B 口径，windowHasSignificant）看的是 48 根窗口内 allCandidates 是否存在
-    //   Significant Liquidity（EQL/EQH/PDL/PDH/Session）；而 immediateSweep 只是"离 leg 最近
+    //   Significant Liquidity（EQL/EQH/Session）；而 immediateSweep 只是"离 leg 最近
     //   （或同距最新）的 sweep"，经常被更频繁的普通 swing 抢走 —— 这就是 XRP/ETH 案例里
     //   "消息显示 5M SWING_HIGH 但实际是 PRIORITY_HIGH"的来源，不是筛选 bug。
     //

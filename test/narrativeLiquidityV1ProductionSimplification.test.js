@@ -16,20 +16,23 @@ function source(type, side, index) {
 function displacement(direction) { return {id:'D',type:'DISPLACEMENT',direction:direction,startIndex:10,endIndex:10,startAt:10*BAR,endAt:11*BAR-1,confirmedAt:11*BAR-1}; }
 function project(direction, rows) { return provenance.associateSweeps({direction:direction,displacement:displacement(direction),availableAt:11*BAR-1,sweepEvents:rows,excludeStructuralPrimitives:true}); }
 
-['EQH','EQL','PDH','PDL','PWH','PWL','PMH','PML'].forEach(function (type) {
+['EQH','EQL'].forEach(function (type) {
     test(type + ' is frozen Narrative Liquidity V1', function () { assert.equal(classifier.isNarrativeLiquiditySourceV1(type), true); });
+});
+['PDH','PDL','PWH','PWL','PMH','PML'].forEach(function (type) {
+    test(type + ' is removed from Narrative Liquidity V1', function () { assert.equal(classifier.isNarrativeLiquiditySourceV1(type), false); });
 });
 test('SWING_HIGH is structural primitive only', function () { assert.equal(classifier.isStructuralPrimitive('SWING_HIGH'), true); assert.equal(classifier.isNarrativeLiquiditySourceV1('SWING_HIGH'), false); });
 test('SWING_LOW is structural primitive only', function () { assert.equal(classifier.isStructuralPrimitive('SWING_LOW'), true); assert.equal(classifier.isNarrativeLiquiditySourceV1('SWING_LOW'), false); });
 test('Session remains out of scope', function () { var x=classifier.classifySourceType('NEW_YORK_HIGH'); assert.equal(x.narrativeEligible,null); assert.equal(x.status,'OUT_OF_SCOPE_FROZEN'); });
 test('SHORT mixed candidate projection keeps EQH only', function () { var x=project('BEARISH',[source('SWING_HIGH','BSL',9),source('EQH','BSL',8)]); assert.deepEqual(x.allCandidates.map(function(c){return c.sourceType;}),['EQH']); });
 test('LONG mixed candidate projection keeps EQL only', function () { var x=project('BULLISH',[source('SWING_LOW','SSL',9),source('EQL','SSL',8)]); assert.deepEqual(x.allCandidates.map(function(c){return c.sourceType;}),['EQL']); });
-test('Swing plus PD keeps PD only', function () { var x=project('BEARISH',[source('SWING_HIGH','BSL',9),source('PDH','BSL',7)]); assert.deepEqual(x.allCandidates.map(function(c){return c.sourceType;}),['PDH']); });
+test('Swing plus EQH keeps EQH only (multiple swings dropped)', function () { var x=project('BEARISH',[source('SWING_HIGH','BSL',9),source('SWING_LOW','SSL',6),source('EQH','BSL',8)]); assert.deepEqual(x.allCandidates.map(function(c){return c.sourceType;}),['EQH']); });
 test('Swing-only cannot silently promote', function () { assert.equal(project('BULLISH',[source('SWING_LOW','SSL',9)]),null); });
 test('existing 48-bar temporal boundary is unchanged', function () { assert.ok(project('BEARISH',[source('EQH','BSL',-38)])); assert.equal(project('BEARISH',[source('EQH','BSL',-39)]),null); });
 test('persisted mixed WATCH reuses existing distance/recency primary heuristic', function () {
     var swing={id:'S',sourceType:'SWING_LOW',candleIndex:10,confirmedAt:100,eventType:'SWEEP'};
-    var far={id:'F',sourceType:'PDL',candleIndex:5,confirmedAt:200,eventType:'LIQUIDITY_TAKEN'};
+    var far={id:'F',sourceType:'EQL',candleIndex:5,confirmedAt:200,eventType:'LIQUIDITY_TAKEN'};
     var near={id:'N',sourceType:'EQL',candleIndex:9,confirmedAt:150,eventType:'LIQUIDITY_TAKEN'};
     var normalized=watches.normalizeNarrativeLiquidityV1Watch({id:'W',displacement:{startIndex:10},liquidityTaken:{primary:swing,allCandidates:[far,swing,near]}});
     assert.deepEqual(normalized.liquidityTaken.allCandidates.map(function(c){return c.id;}),['F','N']); assert.equal(normalized.liquidityTaken.primary.id,'N');

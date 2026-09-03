@@ -138,16 +138,16 @@ test('directionLabel：极端值', function () {
 
 test('engine：BSL/SSL 分开排名，primary/secondary 正确', function () {
     var r = makeRegistry([
-        liq('B1', 'PDH', 'BSL', 64000), // strength 70
+        liq('B1', 'EQH', 'BSL', 64000), // strength 70
         liq('B2', 'SWING_HIGH', 'BSL', 63420), // strength 20，更近
-        liq('S1', 'PDL', 'SSL', 62716), // strength 70
+        liq('S1', 'EQL', 'SSL', 62716), // strength 70
         liq('S2', 'SWING_LOW', 'SSL', 63030) // strength 20，更近
     ]);
     var out = engine(r, [], 63343);
     // BSL：primary 应为更近的 B2？distance 77/63343=0.12% → 100；B1 657/63343=1.04% → 50
     // B2 draw = 20*.55 + 100*.3 + 100*.15 = 11+30+15 = 56
-    // B1 draw = 70*.55 + 50*.3 + 100*.15 = 38.5+15+15 = 68.5
-    // → primary = B1（68.5 > 56）
+    // B1(EQH 55) draw = 55*.55 + 50*.3 + 100*.15 = 30.25+15+15 = 60.25
+    // → primary = B1（60.25 > 56）
     assert.strictEqual(out.bsl.candidates.length, 2);
     assert.strictEqual(out.bsl.primary.targetPrice, 64000);
     assert.strictEqual(out.bsl.secondary.targetPrice, 63420);
@@ -160,8 +160,8 @@ test('engine：BSL/SSL 分开排名，primary/secondary 正确', function () {
 
 test('engine：imbalance = BSL primary - SSL primary', function () {
     var r = makeRegistry([
-        liq('B1', 'PDH', 'BSL', 64000),
-        liq('S1', 'PDL', 'SSL', 62716)
+        liq('B1', 'EQH', 'BSL', 64000),
+        liq('S1', 'EQL', 'SSL', 62716)
     ]);
     var out = engine(r, [], 63343);
     var expected = Math.round((out.bsl.score - out.ssl.score) * 10) / 10;
@@ -170,10 +170,10 @@ test('engine：imbalance = BSL primary - SSL primary', function () {
 });
 
 test('engine：BSL cluster 作为 primary（cluster 优先且更强）', function () {
-    var m1 = liq('M1', 'PDH', 'BSL', 63590);
+    var m1 = liq('M1', 'SWING_HIGH', 'BSL', 63590);
     var m2 = liq('M2', 'EQH', 'BSL', 63600);
     var c = cluster('BSL', 63580, 63610, 'ACTIVE', { members: [m1, m2], strength: 92 });
-    var r = makeRegistry([m1, m2, liq('S1', 'PDL', 'SSL', 62716)]);
+    var r = makeRegistry([m1, m2, liq('S1', 'EQL', 'SSL', 62716)]);
     var out = engine(r, [c], 63343);
     assert.strictEqual(out.bsl.primary.targetType, 'CLUSTER');
     assert.strictEqual(out.bsl.primary.targetPrice, 63610); // zoneHigh
@@ -186,15 +186,15 @@ test('engine：BSL cluster 作为 primary（cluster 优先且更强）', functio
 
 test('engine：BSL 无候选 → score 0，SSL 主导 → direction SSL', function () {
     var r = makeRegistry([
-        liq('S1', 'PDL', 'SSL', 62716),
-        liq('S2', 'PWL', 'SSL', 62535)
+        liq('S1', 'EQL', 'SSL', 62716),
+        liq('S2', 'SWING_LOW', 'SSL', 62535)
     ]);
     var out = engine(r, [], 63343);
     assert.strictEqual(out.bsl.candidates.length, 0);
     assert.strictEqual(out.bsl.primary, null);
     assert.strictEqual(out.bsl.score, 0);
     assert.ok(out.ssl.score > 0);
-    // imbalance = 0 - ssl < 0；方向取决于幅度（此处 ssl 不会超过 25？PDL 70 → draw≈74.5 → imbalance=-74.5 → SSL）
+    // imbalance = 0 - ssl < 0；方向取决于幅度（此处 ssl 不会超过 25？EQL 55 → draw≈60.3 → imbalance=-60.3 → SSL）
     assert.strictEqual(out.direction, 'SSL');
 });
 
@@ -219,8 +219,8 @@ test('engine：无候选不抛异常（合法状态）', function () {
 
 test('engine：confirmedAt > evaluationTime 的 liquidity 不参与', function () {
     var r = makeRegistry([
-        liq('B1', 'PDH', 'BSL', 64000, { confirmedAt: 9999999999999 }), // 未来
-        liq('S1', 'PDL', 'SSL', 62716, { confirmedAt: 1000 })
+        liq('B1', 'EQH', 'BSL', 64000, { confirmedAt: 9999999999999 }), // 未来
+        liq('S1', 'EQL', 'SSL', 62716, { confirmedAt: 1000 })
     ]);
     var out = engine(r, [], 63343, 5000);
     assert.strictEqual(out.bsl.candidates.length, 0); // B1 未确认
@@ -228,7 +228,7 @@ test('engine：confirmedAt > evaluationTime 的 liquidity 不参与', function (
 });
 
 test('engine：cluster 成员未确认不参与', function () {
-    var m1 = liq('M1', 'PDH', 'BSL', 63590, { confirmedAt: 9999999999999 });
+    var m1 = liq('M1', 'SWING_HIGH', 'BSL', 63590, { confirmedAt: 9999999999999 });
     var m2 = liq('M2', 'EQH', 'BSL', 63600, { confirmedAt: 9999999999999 });
     var c = cluster('BSL', 63580, 63610, 'ACTIVE', { members: [m1, m2], confirmedAt: 9999999999999 });
     var r = makeRegistry([m1, m2]);
@@ -273,9 +273,9 @@ test('compareCandidates：全部相同 → id 字典序（deterministic）', fun
 
 test('engine：排序 deterministic（两次运行结果一致）', function () {
     var r = makeRegistry([
-        liq('B1', 'PDH', 'BSL', 64000),
-        liq('B2', 'PWH', 'BSL', 65391),
-        liq('S1', 'PDL', 'SSL', 62716)
+        liq('B1', 'EQH', 'BSL', 64000),
+        liq('B2', 'SWING_HIGH', 'BSL', 65391),
+        liq('S1', 'EQL', 'SSL', 62716)
     ]);
     var out1 = engine(r, [], 63343);
     var out2 = engine(r, [], 63343);

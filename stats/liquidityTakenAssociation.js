@@ -6,8 +6,7 @@
  */
 var WATCH_TAKEN_LOOKBACK_BARS = 24;
 var ELIGIBLE_TYPES = {
-    EQH:true, EQL:true, PDH:true, PDL:true,
-    PWH:true, PWL:true, PMH:true, PML:true
+    EQH:true, EQL:true
 };
 
 function clone(value) {

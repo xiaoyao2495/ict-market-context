@@ -13,7 +13,7 @@
  *       Entry Gate（previousState 持久）
  *       Pending Trade（逐根增量模拟 + cancelCheck）
  *   - 每 snapshotInterval 根（默认 12）：刷新【慢变量快照】
- *       Calendar liquidity（PDH/PWH/PMH/Session——日/周边界才变）
+ *       Session liquidity（ASIA/LONDON/NEW_YORK——日/周边界才变）
  *       Cluster / Draw / Bias / Scenario / Structure / Location
  *
  * 正确性保证：

@@ -27,9 +27,6 @@ var displacementDetector = require('../events/displacementDetector');
 var multiCandleDisplacementDetector = require('../events/multiCandleDisplacementDetector');
 var atrIndicator = require('../indicators/atr');
 var structuralProvenance5m = require('../structure/structuralProvenance5m');
-var dailyLiquidity = require('../liquidity/dailyLiquidity');
-var weeklyLiquidity = require('../liquidity/weeklyLiquidity');
-var monthlyLiquidity = require('../liquidity/monthlyLiquidity');
 var sessionLiquidity = require('../liquidity/sessionLiquidity');
 var liquidityCluster = require('../liquidity/liquidityCluster');
 var liquidityScorer = require('../liquidity/liquidityScorer');
@@ -52,20 +49,16 @@ var RIGHT = 2;
 var STRUCTURE_TIMEFRAMES = ['1d', '4h', '1h'];
 
 /**
- * 刷新慢变量快照（calendar + cluster + draw + structure + bias + scenario）
- * 返回 snapshot 对象；calendar liquidity 去重加入持久 registry。
+ * 刷新慢变量快照（session + cluster + draw + structure + bias + scenario）
+ * 返回 snapshot 对象；session liquidity 去重加入持久 registry。
  */
 function rebuildSnapshot(state, candles, index, evaluationTime, data) {
     var symbol = state.symbol;
     var slice = candles.slice(0, index + 1);
     var currentPrice = slice[slice.length - 1].close;
-    var fetcher = data.fetcher;
     var cfg = data.thresholds || thresholds;
 
-    var p1 = dailyLiquidity.getDailyLiquidity(symbol, evaluationTime, { fetcher: fetcher });
-    var p2 = weeklyLiquidity.getWeeklyLiquidity(symbol, evaluationTime, { fetcher: fetcher });
-    var p3 = monthlyLiquidity.getMonthlyLiquidity(symbol, evaluationTime, { fetcher: fetcher });
-    var p4 = Promise.all(['ASIA', 'LONDON', 'NEW_YORK'].map(function (name) {
+    var p1 = Promise.all(['ASIA', 'LONDON', 'NEW_YORK'].map(function (name) {
         return sessionLiquidity.getSessionLiquidity(symbol, name, evaluationTime, { candles: slice });
     })).then(function (lists) {
         var out = [];
@@ -73,7 +66,7 @@ function rebuildSnapshot(state, candles, index, evaluationTime, data) {
         return out;
     });
 
-    return Promise.all([p1, p2, p3, p4]).then(function (more) {
+    return Promise.all([p1]).then(function (more) {
         more.forEach(function (list) {
             list.forEach(function (l) {
                 state.registry.add(l); // 去重加入持久 registry
@@ -823,7 +816,7 @@ function runReplay(data, options) {
             swings: state.swings,
             // Production point-in-time cross-source EQH/EQL observations.
             equalLiquidity: state.registry.getByType(symbol, 'EQL').concat(state.registry.getByType(symbol, 'EQH')),
-            // Phase 13：全部 liquidity 对象只读暴露（PDH/PDL/PWH/PWL/Session/EQH/EQL/SWING，
+            // Phase 13：全部 liquidity 对象只读暴露（Session/EQH/EQL/SWING，
             // 含 status/touchedAt/sweptAt/confirmedAt——供 Draw on Liquidity 候选池重建；
             // 零判定改动，仅暴露已有 registry 数据）
             liquidityObjects: state.registry.getAll(symbol),

@@ -10,7 +10,7 @@
  *     严禁在注释/变量/文案中称其为 causal / Narrative / "导致本次机会的流动性"。
  *
  * 数据链：
- *   Liquidity (EQL, EQH, SWING_HIGH, SWING_LOW, PDH, PDL 等) → SweepEvent → Opportunity.liquidityContext → DingTalk
+ *   Liquidity (EQL, EQH, SWING_HIGH, SWING_LOW, Session 等) → SweepEvent → Opportunity.liquidityContext → DingTalk
  *
  * 关联规则（第一版保守，不扩范围）：
  *   - BULLISH → 只关联 SSL；BEARISH → 只关联 BSL

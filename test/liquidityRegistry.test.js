@@ -7,6 +7,11 @@
  * - getById / getAll / getActive / getBySide / getBSL / getSSL / getByType
  * - symbol 过滤
  * - clear / size
+ *
+ * REMOVE_CALENDAR_NAMED_LIQUIDITY_V1 治理约束：
+ * PDH/PDL/PWH/PWL/PMH/PML 已被 liquidityRegistry.add() 的 denylist 拒绝准入
+ * （返回 false）。本测试不再使用这 6 类作为 fixture，一律改用合法的
+ * 生产类型（EQH/EQL/SWING_HIGH/SWING_LOW）。
  */
 var assert = require('assert');
 var liquidityRegistry = require('../liquidity/liquidityRegistry');
@@ -56,16 +61,16 @@ test('add：新增成功返回 true，重复 id 返回 false', function () {
 test('add：无 id / null 不加入', function () {
     var r = liquidityRegistry.createRegistry();
     assert.strictEqual(r.add(null), false);
-    assert.strictEqual(r.add({ type: 'PDH', side: 'BSL' }), false); // 缺 id
+    assert.strictEqual(r.add({ type: 'EQH', side: 'BSL' }), false); // 缺 id
     assert.strictEqual(r.size(), 0);
 });
 
 test('addMany：返回实际加入数量（去重后）', function () {
     var r = liquidityRegistry.createRegistry();
     var list = [
-        makeLiquidity('BTCUSDT:PDH:2026-08-16', 'BTCUSDT', 'PDH', 'BSL', 100),
-        makeLiquidity('BTCUSDT:PDL:2026-08-16', 'BTCUSDT', 'PDL', 'SSL', 90),
-        makeLiquidity('BTCUSDT:PDH:2026-08-16', 'BTCUSDT', 'PDH', 'BSL', 100) // 重复
+        makeLiquidity('BTCUSDT:EQH:2026-08-16', 'BTCUSDT', 'EQH', 'BSL', 100),
+        makeLiquidity('BTCUSDT:EQL:2026-08-16', 'BTCUSDT', 'EQL', 'SSL', 90),
+        makeLiquidity('BTCUSDT:EQH:2026-08-16', 'BTCUSDT', 'EQH', 'BSL', 100) // 重复
     ];
     assert.strictEqual(r.addMany(list), 2);
     assert.strictEqual(r.size(), 2);
@@ -101,7 +106,7 @@ test('getBySide / getBSL / getSSL', function () {
     var r = liquidityRegistry.createRegistry();
     r.add(makeLiquidity('A1', 'BTCUSDT', 'SWING_HIGH', 'BSL', 100));
     r.add(makeLiquidity('A2', 'BTCUSDT', 'SWING_LOW', 'SSL', 99));
-    r.add(makeLiquidity('A3', 'BTCUSDT', 'PDH', 'BSL', 110));
+    r.add(makeLiquidity('A3', 'BTCUSDT', 'EQH', 'BSL', 110));
 
     assert.strictEqual(r.getBySide('BTCUSDT', 'BSL').length, 2);
     assert.strictEqual(r.getBySide('BTCUSDT', 'SSL').length, 1);
@@ -113,10 +118,10 @@ test('getBySide / getBSL / getSSL', function () {
 test('getByType', function () {
     var r = liquidityRegistry.createRegistry();
     r.add(makeLiquidity('A1', 'BTCUSDT', 'SWING_HIGH', 'BSL', 100));
-    r.add(makeLiquidity('A2', 'BTCUSDT', 'PDH', 'BSL', 110));
-    r.add(makeLiquidity('A3', 'BTCUSDT', 'PDL', 'SSL', 90));
+    r.add(makeLiquidity('A2', 'BTCUSDT', 'EQH', 'BSL', 110));
+    r.add(makeLiquidity('A3', 'BTCUSDT', 'EQL', 'SSL', 90));
 
-    assert.strictEqual(r.getByType('BTCUSDT', 'PDH').length, 1);
+    assert.strictEqual(r.getByType('BTCUSDT', 'EQH').length, 1);
     assert.strictEqual(r.getByType('BTCUSDT', 'SWING_HIGH').length, 1);
     assert.strictEqual(r.getByType('BTCUSDT', 'PWL').length, 0);
 });
@@ -127,7 +132,7 @@ test('getActive：只返回 ACTIVE（SWEPT/BROKEN 不进入）', function () {
     var swept = makeLiquidity('A2', 'BTCUSDT', 'SWING_LOW', 'SSL', 99);
     swept.status = 'SWEPT';
     r.add(swept);
-    var broken = makeLiquidity('A3', 'BTCUSDT', 'PDH', 'BSL', 110);
+    var broken = makeLiquidity('A3', 'BTCUSDT', 'SWING_HIGH', 'BSL', 110);
     broken.status = 'BROKEN';
     r.add(broken);
 
@@ -199,7 +204,7 @@ test('getByStatus：正确按状态过滤', function () {
     var swept = makeLiquidity('A2', 'BTCUSDT', 'SWING_LOW', 'SSL', 99);
     swept.status = 'SWEPT';
     r.add(swept);
-    var broken = makeLiquidity('A3', 'BTCUSDT', 'PDH', 'BSL', 110);
+    var broken = makeLiquidity('A3', 'BTCUSDT', 'SWING_HIGH', 'BSL', 110);
     broken.status = 'BROKEN';
     r.add(broken);
 
@@ -213,10 +218,10 @@ test('getByStatus：正确按状态过滤', function () {
 test('SWEPT/BROKEN 不删除：全量仍可查询，getActive 不返回', function () {
     var r = liquidityRegistry.createRegistry();
     r.add(makeLiquidity('A1', 'BTCUSDT', 'SWING_HIGH', 'BSL', 100));
-    var swept = makeLiquidity('A2', 'BTCUSDT', 'PDL', 'SSL', 90);
+    var swept = makeLiquidity('A2', 'BTCUSDT', 'SWING_LOW', 'SSL', 90);
     swept.status = 'SWEPT';
     r.add(swept);
-    var broken = makeLiquidity('A3', 'BTCUSDT', 'PDH', 'BSL', 110);
+    var broken = makeLiquidity('A3', 'BTCUSDT', 'SWING_HIGH', 'BSL', 110);
     broken.status = 'BROKEN';
     r.add(broken);
 
@@ -232,14 +237,14 @@ test('SWEPT/BROKEN 不删除：全量仍可查询，getActive 不返回', functi
 test('getActiveBySide：ACTIVE + side 双条件', function () {
     var r = liquidityRegistry.createRegistry();
     r.add(makeLiquidity('A1', 'BTCUSDT', 'SWING_HIGH', 'BSL', 100));
-    var swept = makeLiquidity('A2', 'BTCUSDT', 'PDH', 'BSL', 110);
+    var swept = makeLiquidity('A2', 'BTCUSDT', 'EQH', 'BSL', 110);
     swept.status = 'SWEPT';
     r.add(swept);
     r.add(makeLiquidity('A3', 'BTCUSDT', 'SWING_LOW', 'SSL', 90));
 
     var bsl = r.getActiveBySide('BTCUSDT', 'BSL');
     assert.strictEqual(bsl.length, 1);
-    assert.strictEqual(bsl[0].id, 'A1'); // SWEPT 的 PDH 不进入
+    assert.strictEqual(bsl[0].id, 'A1'); // SWEPT 的 EQH 不进入
     assert.strictEqual(r.getActiveBySide('BTCUSDT', 'SSL').length, 1);
 });
 
@@ -262,15 +267,15 @@ test('getActiveAt：回放时刻之前未确认的流动性不可见', function 
 
 test('getActiveByType：ACTIVE + type 双条件', function () {
     var r = liquidityRegistry.createRegistry();
-    r.add(makeLiquidity('A1', 'BTCUSDT', 'PDH', 'BSL', 100));
-    var swept = makeLiquidity('A2', 'BTCUSDT', 'PDH', 'BSL', 110);
+    r.add(makeLiquidity('A1', 'BTCUSDT', 'EQH', 'BSL', 100));
+    var swept = makeLiquidity('A2', 'BTCUSDT', 'EQH', 'BSL', 110);
     swept.status = 'SWEPT';
     r.add(swept);
     r.add(makeLiquidity('A3', 'BTCUSDT', 'SWING_HIGH', 'BSL', 105));
 
-    var pdh = r.getActiveByType('BTCUSDT', 'PDH');
-    assert.strictEqual(pdh.length, 1);
-    assert.strictEqual(pdh[0].id, 'A1');
+    var eqh = r.getActiveByType('BTCUSDT', 'EQH');
+    assert.strictEqual(eqh.length, 1);
+    assert.strictEqual(eqh[0].id, 'A1');
     assert.strictEqual(r.getActiveByType('BTCUSDT', 'SWING_HIGH').length, 1);
 });
 

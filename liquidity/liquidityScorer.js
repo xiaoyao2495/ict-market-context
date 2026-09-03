@@ -9,10 +9,10 @@
  *
  * ── Individual ─────────────────────────────────────────
  * score = round((typeWeight + swingTimeframeBonus) * freshness)
- *   - typeWeight 按类型（PMH=90 ... EQH=55 ...）
+ *   - typeWeight 按类型（ASIA/LONDON/NEW_YORK=45~50 ... EQH=55 ...）
  *   - swingTimeframeBonus 只对 SWING 生效（5m +0 → 1d +55），
  *     与 swingBaseWeight 合成后 = 表值（5m 20 / 15m 30 / 1h 45 / 4h 60 / 1d 75）
- *   - 非 SWING 不加 timeframeBonus（如 PDH 已含 daily significance，防 double counting）
+ *   - 非 SWING 不加 timeframeBonus（如 EQH 已是独立 identity，防 double counting）
  *   - freshness 为乘数：ACTIVE 1.0 / TOUCHED 0.8 / SWEPT·BROKEN 0
  *
  * ── Cluster ────────────────────────────────────────────
@@ -20,12 +20,11 @@
  *   - base = max(有效成员 individual strength)
  *   - confluenceBonus = (有效成员数 - 1) * 每额外成员分，上限 confluenceMax
  *   - diversityBonus  = (有效成员类别数 - 1) * 每额外类别分，上限 diversityMax
- *   - 类别：CALENDAR(PDH/PWH/PMH...) / EQUAL(EQH/EQL) / STRUCTURE(Swing) / SESSION
+ *   - 类别：EQUAL(EQH/EQL) / STRUCTURE(Swing) / SESSION
  *   - 输出 scoring breakdown { base, confluenceBonus, diversityBonus, final } 方便调参
  */
 var thresholds = require('../config/thresholds');
 
-var CALENDAR_TYPES = ['PDH', 'PDL', 'PWH', 'PWL', 'PMH', 'PML'];
 var EQUAL_TYPES = ['EQH', 'EQL'];
 var SESSION_PREFIX = ['ASIA', 'LONDON', 'NEW_YORK'];
 
@@ -34,9 +33,6 @@ var SESSION_PREFIX = ['ASIA', 'LONDON', 'NEW_YORK'];
  */
 function categoryOf(liquidity) {
     var t = liquidity.type;
-    if (CALENDAR_TYPES.indexOf(t) !== -1) {
-        return 'CALENDAR';
-    }
     if (EQUAL_TYPES.indexOf(t) !== -1) {
         return 'EQUAL';
     }

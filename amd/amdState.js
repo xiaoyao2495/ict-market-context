@@ -358,7 +358,7 @@ function evaluateManipulationScore(ev, acc, penetration, candle, input, cfg) {
     var lt = ev.source && ev.source.liquidityType;
     if (lt === 'EQH' || lt === 'EQL') {
         score += w.equalLiquiditySweep;
-    } else if (isCalendarOrSession(lt)) {
+    } else if (isSession(lt)) {
         score += w.calendarSessionSweep;
     }
 
@@ -383,11 +383,8 @@ function evaluateManipulationScore(ev, acc, penetration, candle, input, cfg) {
     return score;
 }
 
-function isCalendarOrSession(type) {
+function isSession(type) {
     return (
-        type === 'PDH' || type === 'PDL' ||
-        type === 'PWH' || type === 'PWL' ||
-        type === 'PMH' || type === 'PML' ||
         type === 'ASIA_HIGH' || type === 'ASIA_LOW' ||
         type === 'LONDON_HIGH' || type === 'LONDON_LOW' ||
         type === 'NEW_YORK_HIGH' || type === 'NEW_YORK_LOW'

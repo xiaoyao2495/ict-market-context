@@ -95,7 +95,7 @@ test('Sweep alone cannot satisfy WATCH and Taken without Sweep can', function ()
 });
 
 test('all Taken candidates are retained and nearest/latest candidate is primary', function () {
-    var rows=[taken('SSL',5,'PDL'),taken('SSL',9,'EQL'),taken('SSL',8,'PWL')];
+    var rows=[taken('SSL',5,'EQH'),taken('SSL',9,'EQL'),taken('SSL',8,'EQH')];
     var result=watch('BULLISH',10,rows);
     assert.equal(result.liquidityTaken.allCandidates.length,3);
     assert.equal(result.liquidityTaken.primary.id,rows[1].id);

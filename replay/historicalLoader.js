@@ -8,9 +8,9 @@
  *   5m:  至少 150 根（pivot right=2 + ATR(14) + accumulation 36 + 保险）
  *   1h:  至少 96 根（4 天）
  *   4h:  至少 60 根（10 天）
- *   1d:  至少 150 根（覆盖 30 天回放 + PDH 完整日）
- *   1w:  至少 12 根（12 周，覆盖 30 天 + 上一完整周）
- *   1M:  至少 6 根（6 个月，覆盖上一完整月）
+ *   1d:  至少 150 根（覆盖 30 天回放 + HTF structure 消费）
+ *   1w:  至少 12 根（12 周，HTF 收盘维护保留）
+ *   1M:  至少 6 根（6 个月，HTF 收盘维护保留）
  */
 var binanceRest = require('../data/binanceRest');
 var fs = require('fs');

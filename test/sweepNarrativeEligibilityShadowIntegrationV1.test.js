@@ -15,7 +15,7 @@ var BAR = 300000;
 function liquidity(type, side) {
     return {
         id: 'X:5m:' + type + ':1', symbol: 'X', timeframe: '5m', type: type,
-        side: side || (/LOW$|PDL|PWL|PML|EQL/.test(type) ? 'SSL' : 'BSL'),
+        side: side || (/LOW$|EQL/.test(type) ? 'SSL' : 'BSL'),
         price: 100, status: 'SWEPT', sweptAt: BAR - 1, metadata: {}
     };
 }
@@ -40,7 +40,7 @@ function built(type, enabled) {
 function takenLiquidity(type) {
     return {
         id: 'X:5m:' + type + ':1', symbol: 'X', timeframe: '5m', type: type,
-        side: (/LOW$|PDL|PWL|PML|EQL/.test(type) ? 'SSL' : 'BSL'),
+        side: (/LOW$|EQL/.test(type) ? 'SSL' : 'BSL'),
         price: 100, status: 'ACTIVE', confirmedAt: -1, sweptAt: -1, metadata: {}
     };
 }
@@ -66,12 +66,12 @@ test('1 feature flag defaults OFF', function () {
     ['SWING_LOW', 'PROPOSED_INELIGIBLE', false, 'STRUCTURAL_PRIMITIVE'],
     ['EQH', 'PROPOSED_ELIGIBLE', true, 'EQUAL_LIQUIDITY'],
     ['EQL', 'PROPOSED_ELIGIBLE', true, 'EQUAL_LIQUIDITY'],
-    ['PDH', 'PROPOSED_ELIGIBLE', true, 'CALENDAR_LIQUIDITY'],
-    ['PDL', 'PROPOSED_ELIGIBLE', true, 'CALENDAR_LIQUIDITY'],
-    ['PWH', 'PROPOSED_ELIGIBLE', true, 'CALENDAR_LIQUIDITY'],
-    ['PWL', 'PROPOSED_ELIGIBLE', true, 'CALENDAR_LIQUIDITY'],
-    ['PMH', 'PROPOSED_ELIGIBLE', true, 'CALENDAR_LIQUIDITY'],
-    ['PML', 'PROPOSED_ELIGIBLE', true, 'CALENDAR_LIQUIDITY'],
+    ['PDH', 'UNRESOLVED', null, 'UNRESOLVED'],
+    ['PDL', 'UNRESOLVED', null, 'UNRESOLVED'],
+    ['PWH', 'UNRESOLVED', null, 'UNRESOLVED'],
+    ['PWL', 'UNRESOLVED', null, 'UNRESOLVED'],
+    ['PMH', 'UNRESOLVED', null, 'UNRESOLVED'],
+    ['PML', 'UNRESOLVED', null, 'UNRESOLVED'],
     ['ASIA_HIGH', 'OUT_OF_SCOPE_FROZEN', null, 'SESSION_LIQUIDITY'],
     ['ASIA_LOW', 'OUT_OF_SCOPE_FROZEN', null, 'SESSION_LIQUIDITY'],
     ['LONDON_HIGH', 'OUT_OF_SCOPE_FROZEN', null, 'SESSION_LIQUIDITY'],

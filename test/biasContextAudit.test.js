@@ -47,8 +47,8 @@ test('13A.1：bias 分布 + bias vs nextDraw 命中（BULLISH→BSL）+ 分桶 +
     candles[22] = mkBar(22, 100, 101, 94, 100);  // SSL @95 raid bar22
     var liqs = [
         mkLiq('B1', 'EQH', 'BSL', 105, 4),
-        mkLiq('S1', 'PDL', 'SSL', 95, 6),
-        mkLiq('B3', 'PDH', 'BSL', 107, 25)  // confirm bar25，bar30 high 108 raid
+        mkLiq('S1', 'EQL', 'SSL', 95, 6),
+        mkLiq('B3', 'EQH', 'BSL', 107, 25)  // confirm bar25，bar30 high 108 raid
     ];
     var biasTrace = {};
     // t=5..11：BULLISH bias（预测 BSL）；nextDraw = BSL（B1 raid bar12）→ 命中

@@ -1,0 +1,42 @@
+{
+  "audit": "REMOVE_CALENDAR_NAMED_LIQUIDITY_V1 — static dependency audit",
+  "generatedAt": "2026-09-03T09:11:27Z",
+  "removedTypes": ["PDH", "PDL", "PWH", "PWL", "PMH", "PML"],
+  "frozenRemovalSet": "FROZEN_REMOVAL_SET = {PDH,PDL,PWH,PWL,PMH,PML}",
+  "productionRuntimeScope": [
+    "notify/", "stats/", "events/", "liquidity/", "amd/", "draw/",
+    "replay/", "config/", "ai/", "scripts/live.js"
+  ],
+  "runtimeCodeReferencesToRemovedTypes": 0,
+  "intentionalEnforcement": {
+    "file": "liquidity/liquidityRegistry.js",
+    "mechanism": "REMOVED_CALENDAR_LIQUIDITY_TYPES denylist inside add()",
+    "effect": "add() returns false for PDH/PDL/PWH/PWL/PMH/PML — rejected at准入 (addmission)",
+    "classification": "ACTIVE_ENFORCEMENT_NOT_DEAD_CODE"
+  },
+  "presentationLayerCleanup": {
+    "file": "notify/sweepContextPresentationV1.js",
+    "function": "nonSwingType(sourceType)",
+    "change": "removed /^P[DM][HL]$/ (日线/月线) and /^PW[HL]$/ (周线) calendar branches; removed types now fall through to generic '原生流动性' instead of a guessed calendar-hierarchy label",
+    "verifiedBy": "test/sweepContextNotificationPresentationV1.test.js tests 16/17 (removed PDH/PDL render raw identity without calendar label)"
+  },
+  "eligibilityTakenWatchCleanup": {
+    "events/sweepNarrativeEligibilityV1.js": "CONTRACT no longer contains the 6 types -> classifySourceType returns UNRESOLVED",
+    "stats/sweepContextV1.js": "sourceClass() returns UNRESOLVED for the 6 types",
+    "events/liquidityTakenEventAdapter.js": "NARRATIVE_TYPES = {EQH,EQL} only — LIQUIDITY_TAKEN no longer produced from the 6 types",
+    "stats/liquidityTakenAssociation.js": "ELIGIBLE_TYPES = {EQH,EQL} only — WATCH no longer originates from the 6 types",
+    "notify/watchNotificationPresentationV1.js": "SOURCE_ZH has no PDH/PDL/etc entries — unknown types render raw identity",
+    "stats/liquidityRelevanceAudit.js": "sourceGroupOf() returns 'OTHER' (not SIGNIFICANT) for the 6 types"
+  },
+  "nonRuntimeReferencesRecordedNotModified": [
+    {"path": "scripts/inspectDraw.js", "note": "dev inspect-tool enum PDH..PML; not a production decision path"},
+    {"path": "scripts/inspectLiquidity.js", "note": "comment + enum listing calendar sources in data-source description; dev tool"},
+    {"path": "scripts/narrativeLiquidityV1ProductionSimplification.js", "note": "NARRATIVE array includes calendar types (audit/research script)"},
+    {"path": "scripts/swingOutcomeReactionPopulationAuditV1.js", "note": "feature keys PDH/PDL/PWH/PWL (audit population script)"},
+    {"path": "scripts/sweepContextNotificationPresentationV1.js", "note": "category regex /^P[DMW][HL]$/ + context-translation-map documents legacy labels (standalone audit script)"},
+    {"path": "scripts/alertPrioritization.js", "note": "comments mention PDL/PDH (CLI audit script)"},
+    {"path": "research/liquidity-sweep-confirmation-semantics-v1/run.js", "note": "research harness uses calendar types as fixtures"},
+    {"path": "repository-production-core-reduction-v1/golden-smoke.js", "note": "golden fixture referenceRole:'PDH'"}
+  ],
+  "verdict": "PASS — production runtime contains 0 behavioral references to the 6 removed types; the only production mention is the intentional registry denylist (active enforcement), plus the now-removed calendar branch in notify/sweepContextPresentationV1.js. All non-runtime references live in scripts/research/JSON audit fixtures and are intentionally preserved for archival reproducibility."
+}

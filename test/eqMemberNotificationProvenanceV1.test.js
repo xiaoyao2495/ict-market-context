@@ -16,7 +16,7 @@ test('EQH displays current 2/2 and ATR50 historical partners',function(){var s=b
 test('EQL uses the same non-cluster point-in-time wording',function(){var s=build(watch('EQL',[partner('A',90,10)]));assert.ok(s.includes('Dynamic D 历史配对：1 个'));assert.ok(!s.includes('EQ 构成'));assert.ok(!s.includes('成员'));});
 test('partner order stays frozen input order',function(){var s=build(watch('EQH',[partner('A',101,10),partner('B',99,20),partner('C',100,25)]));assert.ok(s.includes('101.0 / 99.0 / 100.0'));});
 test('missing EQ provenance degrades safely',function(){assert.ok(build(watch('EQH')).includes('EQ 配对：信息暂缺'));});
-test('non-EQ notification has no EQ pairing line',function(){var w=watch('EQH',[partner('A',1,1)]);w.liquidityTaken.primary.sourceType='PDH';delete w.liquidityTaken.primary.eqPartnerProvenance;var s=build(w);assert.ok(!s.includes('EQ 配对'));assert.ok(!s.includes('Dynamic D 历史配对'));});
+test('non-EQ notification has no EQ pairing line',function(){var w=watch('EQH',[partner('A',1,1)]);w.liquidityTaken.primary.sourceType='SWING_HIGH';delete w.liquidityTaken.primary.eqPartnerProvenance;var s=build(w);assert.ok(!s.includes('EQ 配对'));assert.ok(!s.includes('Dynamic D 历史配对'));});
 test('more than six partners truncates presentation only',function(){var ps=[];for(var i=0;i<7;i++)ps.push(partner(String(i),i,10+i));var s=build(watch('EQL',ps));assert.ok(s.includes('… 共 7 个'));assert.ok(s.includes('Dynamic D 历史配对：7 个'));});
 test('MSS absent grammar remains correct',function(){var s=build(watch('EQL',[partner('A',1,1)]));assert.ok(s.includes('被获取后出现多头位移'));assert.ok(!s.includes('被获取后 与多头位移'));});
 

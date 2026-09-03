@@ -34,42 +34,6 @@ var CONTRACT = {
         narrativeEligible: true,
         reason: 'INDEPENDENT_EQUAL_LIQUIDITY_IDENTITY'
     },
-    PDH: {
-        sourceClass: 'CALENDAR_LIQUIDITY',
-        status: 'PROPOSED_ELIGIBLE',
-        narrativeEligible: true,
-        reason: 'INDEPENDENT_PREVIOUS_DAY_LIQUIDITY_IDENTITY'
-    },
-    PDL: {
-        sourceClass: 'CALENDAR_LIQUIDITY',
-        status: 'PROPOSED_ELIGIBLE',
-        narrativeEligible: true,
-        reason: 'INDEPENDENT_PREVIOUS_DAY_LIQUIDITY_IDENTITY'
-    },
-    PWH: {
-        sourceClass: 'CALENDAR_LIQUIDITY',
-        status: 'PROPOSED_ELIGIBLE',
-        narrativeEligible: true,
-        reason: 'INDEPENDENT_PREVIOUS_WEEK_LIQUIDITY_IDENTITY'
-    },
-    PWL: {
-        sourceClass: 'CALENDAR_LIQUIDITY',
-        status: 'PROPOSED_ELIGIBLE',
-        narrativeEligible: true,
-        reason: 'INDEPENDENT_PREVIOUS_WEEK_LIQUIDITY_IDENTITY'
-    },
-    PMH: {
-        sourceClass: 'CALENDAR_LIQUIDITY',
-        status: 'PROPOSED_ELIGIBLE',
-        narrativeEligible: true,
-        reason: 'INDEPENDENT_PREVIOUS_MONTH_LIQUIDITY_IDENTITY'
-    },
-    PML: {
-        sourceClass: 'CALENDAR_LIQUIDITY',
-        status: 'PROPOSED_ELIGIBLE',
-        narrativeEligible: true,
-        reason: 'INDEPENDENT_PREVIOUS_MONTH_LIQUIDITY_IDENTITY'
-    },
     ASIA_HIGH: frozenSession(),
     ASIA_LOW: frozenSession(),
     LONDON_HIGH: frozenSession(),

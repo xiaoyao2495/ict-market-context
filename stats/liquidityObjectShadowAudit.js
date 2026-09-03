@@ -5,7 +5,7 @@
  * 作为 Liquidity Taken 容易失真；但 11L.10 尚未证明"删掉它以后解释层更好"。
  *
  * 决策：不直接删生产；先做 shadow —— 把普通 5m SWING 从 Liquidity Object 候选排除：
- *   保留：EQL / EQH / PDH / PDL / Session（ASIA/LONDON/NEW_YORK）等明确 external liquidity
+ *   保留：EQL / EQH / Session（ASIA/LONDON/NEW_YORK）等明确 external liquidity
  *   排除：普通 5m SWING_HIGH / SWING_LOW（产品语义倾向回归 Structure）
  *
  * 同一批 BTC 90d HIGH 比较：

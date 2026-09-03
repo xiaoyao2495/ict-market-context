@@ -44,8 +44,9 @@ function highestTimeframeLine(contexts) {
 }
 
 function nonSwingType(sourceType) {
-    if (/^P[DM][HL]$/.test(sourceType || '')) return sourceType.indexOf('PM') === 0 ? '月线流动性' : '日线流动性';
-    if (/^PW[HL]$/.test(sourceType || '')) return '周线流动性';
+    // calendar-named liquidity（PDH/PDL/PWH/PWL/PMH/PML）已于
+    // REMOVE_CALENDAR_NAMED_LIQUIDITY_V1 正式删除，不再渲染「日线/周线/月线流动性」标签；
+    // 若遗留数据到达此处，回退到通用「原生流动性」而非猜测日历层级。
     if (/^(SESSION|ASIA|LONDON|NEW_YORK)_(HIGH|LOW)$/.test(sourceType || '')) return '时段流动性';
     return '原生流动性';
 }

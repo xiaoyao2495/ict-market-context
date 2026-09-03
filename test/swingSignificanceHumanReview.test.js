@@ -53,7 +53,7 @@ function fixture() {
             sameSideCountWithin1_0ATR: 3,
             nearestSameSideDistanceATR: 0.25,
             nearestSameSideBarsApart: 1,
-            nearestHigherOrderType: 'PDH',
+            nearestHigherOrderType: 'SWING_HIGH',
             nearestHigherOrderPrice: 65020,
             nearestHigherOrderDistanceATR: 1,
             nearestHigherOrderProvenance: 'FORMATION_TIME_VISIBLE',

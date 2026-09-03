@@ -12,7 +12,7 @@
  *    （价格已经越过的 liquidity 不应继续作为 active draw）
  * 5. 收集 cluster member IDs
  * 6. standalone 遍历时，凡 id 已属于某 cluster → 排除
- *    （避免 PDH+EQH Cluster 与 PDH、EQH 同时进入排名，人为重复计分）
+ *    （避免 EQH Cluster 与 EQH 同时进入排名，人为重复计分）
  *
  * Cluster 的 confirmedAt = max(member.confirmedAt)（由 cluster 构造时计算）
  */

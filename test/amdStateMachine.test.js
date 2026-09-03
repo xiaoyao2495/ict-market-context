@@ -78,7 +78,7 @@ function sweep(id, side, price, confirmedAt, candleIndex, type) {
         id: id, symbol: 'BTCUSDT', timeframe: '5m', type: 'LIQUIDITY_SWEEP',
         direction: side === 'SSL' ? 'BULLISH' : 'BEARISH', side: side,
         liquidityId: id, price: price, confirmedAt: confirmedAt, candleIndex: candleIndex,
-        source: { liquidityType: type || 'PDH', side: side }, metadata: {}
+        source: { liquidityType: type || 'LONDON_HIGH', side: side }, metadata: {}
     };
 }
 
@@ -120,7 +120,7 @@ test('accumulation confirmed → ACCUMULATION_CONFIRMED（无 manipulation）', 
 test('accumulation + manipulation → MANIPULATION_CONFIRMED', function () {
     var candles = chopCandles(24);
     var accTime = candles[23].closeTime;
-    var events = [sweep('s1', 'SSL', 95, accTime + 2 * BAR, 26, 'PDL')];
+    var events = [sweep('s1', 'SSL', 95, accTime + 2 * BAR, 26, 'LONDON_LOW')];
     var r = amdStateMachine.runAmd(makeContext(candles, events, {
         evaluationTime: accTime + 3 * BAR
     }), {});
@@ -132,7 +132,7 @@ test('完整 bullish AMD → DISTRIBUTION_CONFIRMED', function () {
     var candles = chopCandles(24);
     var accTime = candles[23].closeTime;
     var events = [
-        sweep('s1', 'SSL', 95, accTime + 2 * BAR, 26, 'PDL'),
+        sweep('s1', 'SSL', 95, accTime + 2 * BAR, 26, 'LONDON_LOW'),
         mss('m1', 'BULLISH', accTime + 3 * BAR, 27),
         disp('d1', 'BULLISH', accTime + 4 * BAR, 114, 28)
     ];
@@ -161,7 +161,7 @@ test('distribution timeout → INVALIDATED（C）', function () {
     var candles = chopCandles(24);
     var accTime = candles[23].closeTime;
     var sweepTime = accTime + 2 * BAR;
-    var events = [sweep('s1', 'SSL', 95, sweepTime, 26, 'PDL')];
+    var events = [sweep('s1', 'SSL', 95, sweepTime, 26, 'LONDON_LOW')];
     // 有 manipulation 但无 displacement，时间超过 timeout
     var r = amdStateMachine.runAmd(makeContext(candles, events, {
         evaluationTime: sweepTime + 20 * BAR
@@ -174,7 +174,7 @@ test('opposite legacy structure event has no AMD effect', function () {
     var candles = chopCandles(24);
     var accTime = candles[23].closeTime;
     var events = [
-        sweep('s1', 'SSL', 95, accTime + 2 * BAR, 26, 'PDL'),
+        sweep('s1', 'SSL', 95, accTime + 2 * BAR, 26, 'LONDON_LOW'),
         mss('mBear', 'BEARISH', accTime + 4 * BAR, 28) // 相反方向 MSS 先出现
     ];
     var r = amdStateMachine.runAmd(makeContext(candles, events, {
@@ -190,7 +190,7 @@ test('deterministic replay', function () {
     var candles = chopCandles(24);
     var accTime = candles[23].closeTime;
     var events = [
-        sweep('s1', 'SSL', 95, accTime + 2 * BAR, 26, 'PDL'),
+        sweep('s1', 'SSL', 95, accTime + 2 * BAR, 26, 'LONDON_LOW'),
         mss('m1', 'BULLISH', accTime + 3 * BAR, 27),
         disp('d1', 'BULLISH', accTime + 4 * BAR, 114, 28)
     ];
@@ -206,7 +206,7 @@ test('deterministic replay', function () {
 test('future sweep 不推进状态（evaluationTime 早于 sweep）', function () {
     var candles = chopCandles(24);
     var accTime = candles[23].closeTime;
-    var events = [sweep('s1', 'SSL', 95, accTime + 2 * BAR, 26, 'PDL')];
+    var events = [sweep('s1', 'SSL', 95, accTime + 2 * BAR, 26, 'LONDON_LOW')];
     var r = amdStateMachine.runAmd(makeContext(candles, events, {
         evaluationTime: accTime + 1 * BAR // sweep 还没发生
     }), {});

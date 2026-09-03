@@ -106,7 +106,7 @@ test('SSL cluster target = zoneLow', function () {
 });
 
 test('standalone：target = zoneLow = zoneHigh = price', function () {
-    var l = liq('L1', 'PDH', 'BSL', 64000);
+    var l = liq('L1', 'EQH', 'BSL', 64000);
     var out = drawCandidate.buildCandidates({
         symbol: 'BTCUSDT', currentPrice: 63343, evaluationTime: BASE.evaluationTime,
         clusters: [], standalone: [l]
@@ -116,14 +116,14 @@ test('standalone：target = zoneLow = zoneHigh = price', function () {
     assert.strictEqual(out[0].targetPrice, 64000);
     assert.strictEqual(out[0].zoneLow, 64000);
     assert.strictEqual(out[0].zoneHigh, 64000);
-    assert.strictEqual(out[0].strength, 70); // PDH 权重
-    assert.strictEqual(out[0].sourceTypes[0], 'PDH');
+    assert.strictEqual(out[0].strength, 55); // EQH 权重
+    assert.strictEqual(out[0].sourceTypes[0], 'EQH');
 });
 
 /* ---------- 方向过滤 ---------- */
 
 test('BSL 只保留 currentPrice 上方', function () {
-    var above = liq('L1', 'PDH', 'BSL', 64000); // 64000 > 63343 ✓
+    var above = liq('L1', 'EQH', 'BSL', 64000); // 64000 > 63343 ✓
     var below = liq('L2', 'SWING_HIGH', 'BSL', 62000); // 已被价格越过 ✗
     var out = drawCandidate.buildCandidates({
         symbol: 'BTCUSDT', currentPrice: 63343, evaluationTime: BASE.evaluationTime,
@@ -134,7 +134,7 @@ test('BSL 只保留 currentPrice 上方', function () {
 });
 
 test('SSL 只保留 currentPrice 下方', function () {
-    var below = liq('L1', 'PDL', 'SSL', 62716);
+    var below = liq('L1', 'EQL', 'SSL', 62716);
     var above = liq('L2', 'SWING_LOW', 'SSL', 64000);
     var out = drawCandidate.buildCandidates({
         symbol: 'BTCUSDT', currentPrice: 63343, evaluationTime: BASE.evaluationTime,
@@ -147,17 +147,17 @@ test('SSL 只保留 currentPrice 下方', function () {
 /* ---------- 成员不重复 ---------- */
 
 test('cluster members 不重复成为 standalone candidate', function () {
-    var m1 = liq('M1', 'PDH', 'BSL', 63590);
+    var m1 = liq('M1', 'SWING_HIGH', 'BSL', 63590);
     var m2 = liq('M2', 'EQH', 'BSL', 63600);
     var c = cluster('BSL', 63580, 63610, 'ACTIVE', { members: [m1, m2] });
     var out = drawCandidate.buildCandidates({
         symbol: 'BTCUSDT', currentPrice: 63343, evaluationTime: BASE.evaluationTime,
         clusters: [c], standalone: [m1, m2]
     });
-    assert.strictEqual(out.length, 1); // 只有 cluster，没有 PDH/EQH 独立候选
+    assert.strictEqual(out.length, 1); // 只有 cluster，没有 SWING_HIGH/EQH 独立候选
     assert.strictEqual(out[0].targetType, 'CLUSTER');
     assert.strictEqual(out[0].sourceTypes.length, 2);
-    assert.ok(out[0].sourceTypes.indexOf('PDH') !== -1);
+    assert.ok(out[0].sourceTypes.indexOf('SWING_HIGH') !== -1);
     assert.ok(out[0].sourceTypes.indexOf('EQH') !== -1);
 });
 
@@ -194,7 +194,7 @@ test('confirmedAt > evaluationTime 的 cluster 排除', function () {
 });
 
 test('confirmedAt > evaluationTime 的 standalone 排除', function () {
-    var l = liq('L1', 'PDH', 'BSL', 64000, { confirmedAt: 9999999999999 });
+    var l = liq('L1', 'EQH', 'BSL', 64000, { confirmedAt: 9999999999999 });
     var out = drawCandidate.buildCandidates({
         symbol: 'BTCUSDT', currentPrice: 63343, evaluationTime: 5000,
         clusters: [], standalone: [l]
@@ -205,7 +205,7 @@ test('confirmedAt > evaluationTime 的 standalone 排除', function () {
 /* ---------- 字段完整性 ---------- */
 
 test('candidate 统一字段完整（cluster）', function () {
-    var m1 = liq('M1', 'PDH', 'BSL', 63590, { confirmedAt: 3000 });
+    var m1 = liq('M1', 'SWING_HIGH', 'BSL', 63590, { confirmedAt: 3000 });
     var m2 = liq('M2', 'EQH', 'BSL', 63600, { confirmedAt: 5000 });
     var c = cluster('BSL', 63580, 63610, 'ACTIVE', { members: [m1, m2] });
     var out = drawCandidate.buildCandidates({

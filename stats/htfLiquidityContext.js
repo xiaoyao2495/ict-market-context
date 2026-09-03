@@ -2,29 +2,29 @@
  * Phase 11D.10 — HTF Liquidity Context（纯诊断）
  *
  * 背景：当前 sweep 几乎全是 5m 内部流动性。"扫掉 5m swing high"和"扫掉
- * PDH / 1H protected high / 4H swing high"对后续 delivery 的意义不同。
+ * 1H protected high / 4H swing high"对后续 delivery 的意义不同。
  *
  * 目标：回答唯一问题——"扫的是什么级别的流动性"能否解释为什么有些
  * 强 displacement 可能形成持续 Delivery，也可能只是局部 impulse。
  *
  * 实现（全部只读，不碰交易层 / HIGH 定义 / 参数）：
  *   1. 1H/4H confirmed pivots（11E.0 封板：confirmedAt = 右确认 K closeTime）
- *      + PDH/PDL（1d 已收盘前一日 high/low）→ HTF liquidity pool
+ *      → HTF liquidity pool
  *   2. 每个 5m Opportunity（alert）判定此前 sweep 层级：
  *      BULLISH = 下方流动性被穿过（min low <= price）且 anchor 已收回（price < anchor）
  *      BEARISH = 上方流动性被穿过且 anchor 已收回
- *      取被扫到的最高层级：4H_SWING > PDH_PDL > 1H_SWING > 5M_INTERNAL > NONE
+ *      取被扫到的最高层级：4H_SWING > 1H_SWING > 5M_INTERNAL > NONE
  *
  * 输出标签（后续正式化的方向，本轮只出数据）：
  *   Direction Confidence：ALIGNED / UNCONFIRMED / COUNTERTREND（初步）
  */
 var pivotDetector = require('../structure/pivotDetector');
 
-var LEVEL_ORDER = ['4H_SWING', 'PDH_PDL', '1H_SWING', '5M_INTERNAL', 'NONE'];
+var LEVEL_ORDER = ['4H_SWING', '1H_SWING', '5M_INTERNAL', 'NONE'];
 var SWEEP_WINDOW_BARS = 48; // sweep 搜索窗口 = leg 完成前 48 根 5m（4 小时）
 
 /**
- * 构建 HTF liquidity pool（1H/4H confirmed pivots；PDH/PDL 因依赖 evaluationTime 由 sweepLevelOf 动态算）。
+ * 构建 HTF liquidity pool（1H/4H confirmed pivots）。
  * @param {Array} data1h 1h candles（已收盘）
  * @param {Array} data4h 4h candles（已收盘）
  * @returns {Array} [{ level: '1H_SWING'|'4H_SWING', price, side: 'BSL'|'SSL', confirmedAt }]
@@ -53,10 +53,9 @@ function buildHtfLiquidity(data1h, data4h) {
  * @param {Object} alert buildAlerts 输出（anchorIndex/anchorPrice/anchorTime/direction/sweep）
  * @param {Array} candles 5m candles
  * @param {Array} htfPool buildHtfLiquidity 输出
- * @param {Array} [data1d] 1d candles（PDH/PDL）
  * @returns {Object} { level, price, distPct }
  */
-function sweepLevelOf(alert, candles, htfPool, data1d) {
+function sweepLevelOf(alert, candles, htfPool) {
     var anchorIdx = alert.anchorIndex;
     var anchorPrice = alert.anchorPrice;
     var anchorTime = alert.anchorTime;
@@ -86,17 +85,6 @@ function sweepLevelOf(alert, candles, htfPool, data1d) {
         if (lq.confirmedAt > anchorTime) return; // future-safety：未确认的 HTF liquidity 不可见
         consider(lq.level, lq.price);
     });
-    // PDH/PDL：1d 已收盘前一日（closeTime <= anchorTime 的倒数第二根）
-    if (data1d && data1d.length > 0) {
-        var lastIdx = -1;
-        for (var k = 0; k < data1d.length; k++) {
-            if (data1d[k].closeTime <= anchorTime) lastIdx = k;
-        }
-        if (lastIdx >= 1) {
-            consider('PDH_PDL', data1d[lastIdx - 1].high);
-            consider('PDH_PDL', data1d[lastIdx - 1].low);
-        }
-    }
     // 5M_INTERNAL：现有 5m sweep 事件（buildAlerts 已关联最近同向）
     if (!best && alert.sweep) {
         best = { level: '5M_INTERNAL', price: alert.sweep.price, distPct: Math.abs(anchorPrice - alert.sweep.price) / anchorPrice * 100 };

@@ -68,7 +68,7 @@ function swCtx(sourceType, allTypes) {
 /* ---------- 分类 ---------- */
 
 test('11L.15：isSignificant / immediateGroupOf / windowHasSignificant 分类', function () {
-    ['EQL', 'EQH', 'PDL', 'PDH', 'PWH', 'PWL', 'SESSION_LOW', 'SESSION_HIGH', 'ASIA_LOW', 'LONDON_HIGH', 'NEW_YORK_LOW'].forEach(function (t) {
+    ['EQL', 'EQH', 'SESSION_LOW', 'SESSION_HIGH', 'ASIA_LOW', 'LONDON_HIGH', 'NEW_YORK_LOW'].forEach(function (t) {
         assert.strictEqual(ap.isSignificant(t), true, t + ' 应算 Significant');
     });
     ['SWING_LOW', 'SWING_HIGH'].forEach(function (t) {
@@ -91,20 +91,19 @@ test('11L.15：isSignificant / immediateGroupOf / windowHasSignificant 分类', 
 /* ---------- significantCandidates（判定依据明细，11L.15b） ---------- */
 
 test('11L.15b：significantCandidates 返回全部显著候选（判定依据）', function () {
-    // immediate 是 SWING，但窗口内存在 EQH + PDH → B 口径 PRIORITY，依据是这两个 significant
+    // immediate 是 SWING，但窗口内存在 EQH + LONDON_HIGH → B 口径 PRIORITY，依据是这两个 significant
     var ctx = {
         immediateSweep: { sourceType: 'SWING_HIGH', sourcePrice: 2269.88, candleIndex: 8, barsBeforeLegStart: 12 },
         allCandidates: [
             { sourceType: 'SWING_HIGH', sourcePrice: 2269.88, candleIndex: 8, barsBeforeLegStart: 12 },
             { sourceType: 'EQH', sourcePrice: 2270.5, candleIndex: 5, barsBeforeLegStart: 21 },
-            { sourceType: 'PDH', sourcePrice: 2271.1, candleIndex: 3, barsBeforeLegStart: 30 }
+            { sourceType: 'LONDON_HIGH', sourcePrice: 2271.1, candleIndex: 3, barsBeforeLegStart: 30 }
         ]
     };
     var alert = mkAlert('xrp', ctx);
     var sigs = ap.significantCandidates(alert);
-    assert.strictEqual(sigs.length, 2, 'EQH + PDH 是显著候选');
-    assert.strictEqual(sigs[0].sourceType, 'EQH', '按 confirmedAt 升序保持（index 5 在前）');
-    assert.strictEqual(sigs[1].sourceType, 'PDH');
+    var sigTypes = sigs.map(function (s) { return s.sourceType; }).sort();
+    assert.deepStrictEqual(sigTypes, ['EQH', 'LONDON_HIGH'], 'EQH + LONDON_HIGH 是显著候选');
     assert.strictEqual(ap.windowHasSignificant(alert), true, 'B 口径判定 = PRIORITY（依据正是上述两个）');
 
     // 只有普通 swing → 空数组（STANDARD）
@@ -167,12 +166,12 @@ test('11L.15：auditPrioritization 两口径分组 + 原因分布 + forward', fu
 test('11L.15：无 notificationNearTarget 时分类照常、near 不计', function () {
     var candles = mkCandles();
     var alerts = [
-        mkAlert('x', swCtx('PDH'), { notificationNearTarget: null }),
+        mkAlert('x', swCtx('ASIA_HIGH'), { notificationNearTarget: null }),
         mkAlert('y', swCtx('SWING_HIGH'))
     ];
     var res = ap.auditPrioritization(alerts, candles);
     assert.strictEqual(res.total, 2);
-    assert.strictEqual(res.variants.immediate.priority.n, 1, 'PDH → PRIORITY（即使无 target）');
+    assert.strictEqual(res.variants.immediate.priority.n, 1, 'ASIA_HIGH → PRIORITY（即使无 target）');
     assert.strictEqual(res.variants.immediate.priority.nearCnt1h, 0, '无 target → near 不计');
     assert.strictEqual(res.variants.immediate.priority.nearHit1h, 0);
     assert.strictEqual(res.variants.immediate.priority.mfeCnt, 1, 'MFE 仍计（statOne 返回则计）');

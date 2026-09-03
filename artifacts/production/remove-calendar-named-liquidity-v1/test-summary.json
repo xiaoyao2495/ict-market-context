@@ -1,0 +1,25 @@
+{
+  "gate": "FULL_SUITE_EXIT_CODE=0 / UNEXPECTED_FAILURES=0",
+  "runner": "node test/run.js",
+  "runArtifact": "/tmp/full_run_v4.txt",
+  "totalTests": 238,
+  "passed": 238,
+  "failed": 0,
+  "notOk": 0,
+  "exitCode": 0,
+  "removalContractTests": {
+    "file": "test/calendarNamedLiquidityRemovalV1.test.js",
+    "count": 40,
+    "passed": 40
+  },
+  "testFilesModified": 25,
+  "testFilesAdded": 1,
+  "testFilesDeleted": 3,
+  "testFilesDeletedList": [
+    "test/dailyLiquidity.test.js",
+    "test/weeklyLiquidity.test.js",
+    "test/monthlyLiquidity.test.js"
+  ],
+  "rewritePolicy": "Old tests that asserted calendar liquidity still existed were rewritten to the NEW production contract (UNRESOLVED / raw identity / EQH-EQL eligibility). No legacy behavioral contract was restored to make a test pass (spec §16).",
+  "verdict": "PASS"
+}

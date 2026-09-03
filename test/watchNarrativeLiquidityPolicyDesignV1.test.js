@@ -69,7 +69,7 @@ test('9 stale eligible source is not automatically strong', function () {
     assert.equal(row.narrativeEvidenceEligible, false);
 });
 test('10 multiple strong eligible Sweeps preserve ambiguity', function () {
-    var a = evaluate('EQH', 'BSL', 8, 'BEARISH'), b = evaluate('PDH', 'BSL', 9, 'BEARISH');
+    var a = evaluate('EQH', 'BSL', 8, 'BEARISH'), b = evaluate('EQH', 'BSL', 9, 'BEARISH');
     assert.equal(policy.classifyWatchAssociation([a, b]), 'ELIGIBLE_SOURCE_ASSOCIATION_AMBIGUOUS');
 });
 test('11 MSS absent remains allowed by proposed policy', function () {

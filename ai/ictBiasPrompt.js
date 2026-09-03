@@ -97,8 +97,8 @@ var SYSTEM_PROMPT = [
     '    "structureState": "BULLISH" | "BEARISH" | "UNCLEAR"',
     '  },',
     '  "liquidity": {',
-    '    "buySide":  [ { "price": number, "time": "ISO8601", "type": "PDH|PWH|SWING_HIGH|EQH|BSL" } ],',
-    '    "sellSide": [ { "price": number, "time": "ISO8601", "type": "PDL|PWL|SWING_LOW|EQL|SSL" } ],',
+    '    "buySide":  [ { "price": number, "time": "ISO8601", "type": "SWING_HIGH|EQH|BSL" } ],',
+    '    "sellSide": [ { "price": number, "time": "ISO8601", "type": "SWING_LOW|EQL|SSL" } ],',
     '    "recentSweeps": [ { "side": "BSL"|"SSL", "liquidityPrice": number, "sweepTime": "ISO8601", "reason": "..." } ]',
     '  },',
     '  "imbalances": {',
@@ -301,8 +301,8 @@ function buildAllowedDrawTargets(marketFacts, evaluationTime) {
         if (seen[direction][key]) return;
         seen[direction][key] = true;
         var allowedTypes = s.refSide === 'HIGH'
-            ? ['SWING_HIGH', 'PDH', 'PWH', 'EQH', 'BSL']
-            : ['SWING_LOW', 'PDL', 'PWL', 'EQL', 'SSL'];
+            ? ['SWING_HIGH', 'EQH', 'BSL']
+            : ['SWING_LOW', 'EQL', 'SSL'];
         var suppliedType = s.liquidityType || s.type;
         var liquidityType = allowedTypes.indexOf(suppliedType) >= 0
             ? suppliedType

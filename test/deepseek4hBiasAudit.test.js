@@ -165,8 +165,8 @@ function baseValid() {
             structureState: 'BULLISH'
         },
         liquidity: {
-            buySide: [{ price: 111, time: '2026-01-01T00:00:00Z', type: 'PDH' }],
-            sellSide: [{ price: 89, time: '2026-01-02T00:00:00Z', type: 'PDL' }],
+            buySide: [{ price: 111, time: '2026-01-01T00:00:00Z', type: 'EQH' }],
+            sellSide: [{ price: 89, time: '2026-01-02T00:00:00Z', type: 'EQL' }],
             recentSweeps: [{ side: 'SSL', liquidityPrice: 89, sweepTime: '2026-01-02T00:00:00Z', reason: 'x' }]
         },
         imbalances: {

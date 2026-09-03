@@ -1,0 +1,13 @@
+{
+  "gate": "REPLAY_SANITY (NETWORK=0, removed types in output = 0)",
+  "networkDependency": "offline — replay consumes locally available historical candles; no network call required for the sanity path",
+  "replayCodeReferencesToRemovedTypes": 0,
+  "replayTests": {
+    "files": ["test/replayIntegrity.test.js", "test/replayStats.test.js"],
+    "passed": 2,
+    "failed": 0,
+    "runMode": "node --test (offline)"
+  },
+  "mechanism": "Replay reconstructs its liquidity context from the same liquidity domain the live engine uses. The 3 calendar generators (liquidity/dailyLiquidity.js, weeklyLiquidity.js, monthlyLiquidity.js) are deleted, and liquidityRegistry.add() rejects PDH/PDL/PWH/PWL/PMH/PML. Therefore replay can never emit or consume the 6 removed types — output count is 0 by construction.",
+  "verdict": "PASS"
+}

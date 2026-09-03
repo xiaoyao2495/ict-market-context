@@ -24,17 +24,14 @@ var INTERVAL_MS = {
     '1m': 60000, '5m': 300000, '15m': 900000, '30m': 1800000,
     '1h': 3600000, '4h': 14400000, '1d': 86400000
 };
-var CALENDAR_TYPES = ['PDH', 'PDL', 'PWH', 'PWL', 'PMH', 'PML'];
 var SESSION_PREFIX = ['ASIA_', 'LONDON_', 'NEW_YORK_'];
 
 function barMsOf(timeframe) {
     return INTERVAL_MS[timeframe] || 300000;
 }
 
-function isCalendarOrSession(type) {
-    if (CALENDAR_TYPES.indexOf(type) !== -1) {
-        return true;
-    }
+function isSession(type) {
+    if (!type) return false;
     for (var i = 0; i < SESSION_PREFIX.length; i++) {
         if (type.indexOf(SESSION_PREFIX[i]) === 0) {
             return true;
@@ -150,7 +147,7 @@ function evaluateManipulation(ev, acc, penetration, candles, barsAfter, cfg) {
             : 0;
 
     // 3. calendarSessionSweep 15
-    breakdown.calendarSessionSweep = isCalendarOrSession(ev.source.liquidityType)
+    breakdown.calendarSessionSweep = isSession(ev.source.liquidityType)
         ? w.calendarSessionSweep
         : 0;
 

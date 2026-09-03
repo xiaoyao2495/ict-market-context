@@ -39,7 +39,7 @@ module.exports = {
      * Strength Score（项目自定义量化模型，不是 ICT 官方评分）
      *
      * Individual: score = round((typeWeight + swingTimeframeBonus) * freshness)
-     *   - 非 SWING 类型不加 timeframeBonus（如 PDH 已含 daily significance，防 double counting）
+     *   - 非 SWING 类型不加 timeframeBonus（如 EQH/EQL 已含均衡 significance，防 double counting）
      *   - SWING: swingBaseWeight + swingTimeframeBonus = 表值（5m 20 / 15m 30 / 1h 45 / 4h 60 / 1d 75）
      *
      * Cluster: final = min(100, max(memberStrength) + confluence + diversity)
@@ -51,12 +51,6 @@ module.exports = {
      */
     strength: {
         typeWeights: {
-            PMH: 90,
-            PML: 90,
-            PWH: 80,
-            PWL: 80,
-            PDH: 70,
-            PDL: 70,
             EQH: 55,
             EQL: 55,
             ASIA_HIGH: 45,
@@ -301,7 +295,7 @@ module.exports = {
      * 拆两层：Detection（HIGH/WATCH/LOW 全保留落日志）与 Notification（Alert Filter → 钉钉）。
      *
      * B 口径（用户选定，A 口径数据失败已关闭）：
-     *   HIGH + 48 窗口内存在任一 Significant Liquidity（EQL/EQH/PDL/PDH/Session）
+     *   HIGH + 48 窗口内存在任一 Significant Liquidity（EQL/EQH/Session）
      *     → notifyPriority = PRIORITY_HIGH → 钉钉立即推
      *   HIGH + 窗口内无显著流动性
      *     → notifyPriority = STANDARD_HIGH → 只落日志 / shadow（3-7 天 Live 对比后决定是否正式只推 PRIORITY）

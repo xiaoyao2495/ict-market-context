@@ -30,9 +30,6 @@ var SOURCE_ZH = {
     ASIA_HIGH: '亚洲时段高点', ASIA_LOW: '亚洲时段低点',
     SESSION_HIGH: '时段高点', SESSION_LOW: '时段低点',
     SWING_HIGH: '5m 摆动高点', SWING_LOW: '5m 摆动低点',
-    PDH: '前一日高点', PDL: '前一日低点',
-    PWH: '前一周高点', PWL: '前一周低点',
-    PMH: '前一月高点', PML: '前一月低点',
     EQH: '等高点', EQL: '等低点'
 };
 

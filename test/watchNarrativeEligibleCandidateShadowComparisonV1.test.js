@@ -10,7 +10,7 @@ function candidate(id, type, options) {
     var opts = options || {};
     return {
         id: id, sourceId: 'LIQ:' + id, sourceType: type,
-        side: opts.side || (/LOW$|PDL|PWL|PML|EQL/.test(type) ? 'SSL' : 'BSL'),
+        side: opts.side || (/LOW$|EQL/.test(type) ? 'SSL' : 'BSL'),
         confirmedAt: opts.confirmedAt === undefined ? 100 : opts.confirmedAt,
         candleIndex: opts.candleIndex === undefined ? 10 : opts.candleIndex,
         barsBeforeLegStart: opts.barsBeforeLegStart === undefined ? 2 : opts.barsBeforeLegStart,
@@ -72,19 +72,19 @@ test('6 unresolved or missing -> Bucket E', function () {
     assert.equal(classify(swing, [swing, missing], {M: {missing: true}}).bucket, audit.BUCKETS.UNRESOLVED_PRESENT);
 });
 
-test('7 Swing primary + EQH + PDH gives two eligible alternatives', function () {
-    var swing = candidate('S', 'SWING_HIGH'), eqh = candidate('E', 'EQH'), pdh = candidate('D', 'PDH');
-    var row = classify(swing, [eqh, swing, pdh]);
+test('7 Swing primary + EQH + EQL gives two eligible alternatives', function () {
+    var swing = candidate('S', 'SWING_HIGH'), eqh = candidate('E', 'EQH'), eql = candidate('L', 'EQL');
+    var row = classify(swing, [eqh, swing, eql]);
     assert.equal(row.bucket, audit.BUCKETS.PRIMARY_INELIGIBLE_BUT_ELIGIBLE_ALTERNATIVE_EXISTS);
     assert.equal(row.eligibleAlternativeCount, 2);
-    assert.deepEqual(row.eligibleAlternativeSourceTypes, ['EQH', 'PDH']);
+    assert.deepEqual(row.eligibleAlternativeSourceTypes, ['EQH', 'EQL']);
 });
 
-test('8 PMH is an eligible Bucket B alternative', function () {
+test('8 removed calendar type PMH is no longer an eligible alternative', function () {
     var swing = candidate('S', 'SWING_HIGH'), pmh = candidate('M', 'PMH');
     var row = classify(swing, [swing, pmh]);
-    assert.equal(row.bucket, audit.BUCKETS.PRIMARY_INELIGIBLE_BUT_ELIGIBLE_ALTERNATIVE_EXISTS);
-    assert.deepEqual(row.eligibleAlternativeSourceTypes, ['PMH']);
+    assert.equal(row.bucket, audit.BUCKETS.UNRESOLVED_PRESENT);
+    assert.deepEqual(row.eligibleAlternativeSourceTypes, []);
 });
 
 test('9 current primary identity is immutable', function () {
@@ -95,9 +95,9 @@ test('9 current primary identity is immutable', function () {
 });
 
 test('10 candidate order is immutable', function () {
-    var swing = candidate('S', 'SWING_HIGH'), eqh = candidate('E', 'EQH'), pdh = candidate('D', 'PDH');
-    var input = watch(swing, [eqh, swing, pdh]), before = input.liquidityTaken.allCandidates.map(function (c) { return c.id; });
-    var result = audit.analyze([input], [sweep(swing), sweep(eqh), sweep(pdh)]);
+    var swing = candidate('S', 'SWING_HIGH'), eqh = candidate('E', 'EQH'), other = candidate('D', 'SWING_LOW');
+    var input = watch(swing, [eqh, swing, other]), before = input.liquidityTaken.allCandidates.map(function (c) { return c.id; });
+    var result = audit.analyze([input], [sweep(swing), sweep(eqh), sweep(other)]);
     assert.deepEqual(input.liquidityTaken.allCandidates.map(function (c) { return c.id; }), before);
     assert.deepEqual(result.rows[0].candidateOrder, before);
 });
@@ -121,10 +121,10 @@ test('12 future structural/lifecycle fields cannot alter bucket', function () {
 });
 
 test('13 same input is deterministic including nearest audit field', function () {
-    var swing = candidate('S', 'SWING_HIGH'), eqh = candidate('E', 'EQH', {barsBeforeLegStart: 4}), pdh = candidate('D', 'PDH', {barsBeforeLegStart: 1});
-    var input = watch(swing, [eqh, swing, pdh]), events = [sweep(swing), sweep(eqh), sweep(pdh)];
+    var swing = candidate('S', 'SWING_HIGH'), eqh = candidate('E', 'EQH', {barsBeforeLegStart: 4}), other = candidate('D', 'SWING_LOW', {barsBeforeLegStart: 1});
+    var input = watch(swing, [eqh, swing, other]), events = [sweep(swing), sweep(eqh), sweep(other)];
     assert.deepEqual(audit.analyze([input], events).rows, audit.analyze([input], events).rows);
-    assert.equal(audit.analyze([input], events).rows[0].nearestEligibleAlternative.sweepId, 'D');
+    assert.equal(audit.analyze([input], events).rows[0].nearestEligibleAlternative.sweepId, 'E');
 });
 
 test('14 every WATCH enters exactly one canonical bucket', function () {

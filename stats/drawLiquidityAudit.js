@@ -7,7 +7,7 @@
  * 结构（三层）：
  *   ① Liquidity Map：上方 BSL / 下方 SSL 候选池（ACTIVE 未 take）。
  *      候选来源（全部 categorical，不编码权重）：
- *        PDH/PDL/PWH/PWL、Session H/L、EQH/EQL（registry）、
+ *        Session H/L、EQH/EQL（registry）、
  *        SWING_HIGH/LOW（registry 的 legacy swing）、
  *        DC STRUCTURAL_SWING（buildDcSwings 包装，仅作 candidate，不假定 significant）
  *   ② 每候选特征向量（原始字段，无总分）：
@@ -34,8 +34,6 @@ var HORIZON_BARS = 96; // label 窗口：未来 8h（96 × 5m）内找下一个�
 /** 类型分组（categorical；用户明确不写死权重） */
 function typeGroup(type) {
     var t = String(type || '').toUpperCase();
-    if (t === 'PDH' || t === 'PDL') return 'PD';
-    if (t === 'PWH' || t === 'PWL') return 'PW';
     if (t.indexOf('SESSION') === 0 || t.indexOf('ASIA') === 0 || t.indexOf('LONDON') === 0 || t.indexOf('NEW_YORK') === 0) return 'SESSION';
     if (t === 'EQH' || t === 'EQL') return 'EQL';
     if (t === 'SWING_HIGH' || t === 'SWING_LOW') return 'SWING';
@@ -250,7 +248,7 @@ function auditDrawLiquidity(ctx) {
     var candles = ctx.candles || [];
     var candidates = normalizeCandidates(ctx.liquidityObjects || [], ctx.dcSwings || [], candles);
     // Phase 13.1：候选池净化（排除 legacy 2-2 LOCAL_PIVOT swing；DC swing 保留）。
-    // 保留：PDH/PDL/PWH/PWL/Session/EQH/EQL/DC_SWING。一次一个变量，其他全冻结。
+    // 保留：Session/EQH/EQL/DC_SWING。一次一个变量，其他全冻结。
     if (ctx.excludeLegacySwing) {
         candidates = candidates.filter(function (c) {
             return c.type !== 'SWING_HIGH' && c.type !== 'SWING_LOW';

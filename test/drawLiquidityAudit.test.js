@@ -47,8 +47,8 @@ test('13：normalizeCandidates（registry + DC 统一，confirmBar 解析）', f
     var candles = [];
     for (var i = 0; i < 60; i++) candles.push(mkBar(i, 100, 101, 99, 100.5));
     var liqs = [
-        mkLiq('L1', 'PDH', 'BSL', 105, 5),
-        mkLiq('L2', 'PDL', 'SSL', 95, 7)
+        mkLiq('L1', 'EQH', 'BSL', 105, 5),
+        mkLiq('L2', 'EQL', 'SSL', 95, 7)
     ];
     var dcRaw = [
         { direction: 'HIGH', price: 110, extremeIndex: 10, occurredAt: 10, confirmedAt: 12,
@@ -94,7 +94,7 @@ test('13：isActiveAt（确认前不 ACTIVE / take 后不 ACTIVE / sweptAt 防�
     assert.strictEqual(dla.isActiveAt(cs[0], idx, 9, candles), true, '确认后未 take → ACTIVE');
     assert.strictEqual(dla.isActiveAt(cs[0], idx, 10, candles), false, 'raid bar10 → 已被 take 不再 ACTIVE');
     // sweptAt 防御：价格未穿越但 registry 标记 swept
-    var cs2 = [mkLiq('B2', 'PDH', 'BSL', 200, 4)]; // price 200 永不被穿越
+    var cs2 = [mkLiq('B2', 'EQH', 'BSL', 200, 4)]; // price 200 永不被穿越
     var idx2 = dla.buildCandidateIndex(cs2, candles);
     cs2[0].sweptAt = 1000000 + 20 * BAR + BAR - 1; // bar20 swept
     assert.strictEqual(dla.isActiveAt(cs2[0], idx2, 19, candles), true, 'swept 前 ACTIVE');
@@ -137,7 +137,7 @@ test('13：futureLabel（未来第一个被 raid 的候选；label 独立于 fea
     candles[20] = mkBar(20, 100, 101, 94, 100);  // SSL1 @95 raid bar20
     var cs = [
         mkLiq('B1', 'EQH', 'BSL', 105, 4),
-        mkLiq('S1', 'PDL', 'SSL', 95, 6)
+        mkLiq('S1', 'EQL', 'SSL', 95, 6)
     ];
     var idx = dla.buildCandidateIndex(cs, candles);
     // t=8：两个都 ACTIVE，B1 raid bar12 < S1 raid bar20 → nextDraw = B1(BSL)
@@ -151,7 +151,7 @@ test('13：futureLabel（未来第一个被 raid 的候选；label 独立于 fea
     assert.strictEqual(actives15.length, 1, 'B1 已被 take 出池');
     var lb15 = dla.futureLabel(actives15, idx, 15);
     assert.strictEqual(lb15.nextSide, 'SSL');
-    assert.strictEqual(lb15.nextType, 'PDL');
+    assert.strictEqual(lb15.nextType, 'EQL');
 });
 
 /* ---------- auditDrawLiquidity（基线对比） ---------- */
@@ -164,7 +164,7 @@ test('13：auditDrawLiquidity（基线：最近距离 vs 随机；分布输出�
     candles[30] = mkBar(30, 100, 108, 99, 100);  // BSL @105 再次 raid（后续）
     var liqs = [
         mkLiq('B1', 'EQH', 'BSL', 105, 4),
-        mkLiq('S1', 'PDL', 'SSL', 95, 6)
+        mkLiq('S1', 'EQL', 'SSL', 95, 6)
     ];
     var atrSeries = {};
     candles.forEach(function (c, i) { atrSeries[i] = 2; });
@@ -194,7 +194,7 @@ test('13：auditDrawLiquidity（基线：最近距离 vs 随机；分布输出�
 
 /* ---------- Phase 13.1：净化 + 分桶 ---------- */
 
-test('13.1：excludeLegacySwing 净化（排除 legacy SWING，保留 DC_SWING/EQH/PDL 等）', function () {
+test('13.1：excludeLegacySwing 净化（排除 legacy SWING，保留 DC_SWING/EQH/EQL 等）', function () {
     var candles = [];
     for (var i = 0; i < 60; i++) candles.push(mkBar(i, 100, 101, 99, 100.5));
     candles[12] = mkBar(12, 100, 106, 99, 100);
@@ -202,7 +202,7 @@ test('13.1：excludeLegacySwing 净化（排除 legacy SWING，保留 DC_SWING/E
     candles[30] = mkBar(30, 100, 108, 99, 100);
     var liqs = [
         mkLiq('L1', 'SWING_HIGH', 'BSL', 105, 4),  // legacy 2-2 → 净化后排除
-        mkLiq('L2', 'PDL', 'SSL', 95, 6)
+        mkLiq('L2', 'EQL', 'SSL', 95, 6)
     ];
     var dcRaw = [{ direction: 'HIGH', price: 108, extremeIndex: 10, occurredAt: 10, confirmedAt: 12, replacements: 1, extremeATR: 2 }];
     var dcSwings = dcRaw.map(function (r) {
@@ -225,11 +225,11 @@ test('13.1：excludeLegacySwing 净化（排除 legacy SWING，保留 DC_SWING/E
         startIndex: 0, excludeLegacySwing: true
     });
     assert.ok(resV1.n > 0, 'V1 全池有 label');
-    assert.ok(res13.n > 0, '净化后仍有 label（DC_SWING/PDL 保留）');
+    assert.ok(res13.n > 0, '净化后仍有 label（DC_SWING/EQH/EQL 保留）');
     // typeDist 不应含 legacy SWING
     assert.strictEqual(res13.typeDist.SWING_HIGH, undefined, '净化后 nextType 无 legacy SWING_HIGH');
     assert.strictEqual(res13.typeDist.SWING_LOW, undefined, '净化后 nextType 无 legacy SWING_LOW');
-    assert.ok(res13.typeDist.PDL !== undefined || res13.typeDist.DC_SWING_HIGH !== undefined, '净化后 label 来自 significant');
+    assert.ok(res13.typeDist.EQL !== undefined || res13.typeDist.DC_SWING_HIGH !== undefined, '净化后 label 来自 significant');
     // 分桶（barsToRaid 分桶聚合）
     var totalB = Object.keys(res13.bucketStats).reduce(function (s, k) { return s + res13.bucketStats[k].n; }, 0);
     assert.strictEqual(totalB, res13.n, '净化模式分桶 n 之和 = label 数');

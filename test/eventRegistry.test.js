@@ -123,7 +123,7 @@ function candle(open, high, low, close, openTime) {
 }
 
 test('BSL sweep → direction BEARISH，side 保留，confirmedAt = closeTime', function () {
-    var l = liq('L1', 'PDH', 'BSL', 63390);
+    var l = liq('L1', 'EQH', 'BSL', 63390);
     var c = candle(63300, 63400, 63250, 63320, 1000000);
     var ev = sweepEventAdapter.buildSweepEvent(l, c, 42);
     assert.ok(ev);
@@ -133,7 +133,7 @@ test('BSL sweep → direction BEARISH，side 保留，confirmedAt = closeTime', 
     assert.strictEqual(ev.liquidityId, 'L1'); // 顶层保留
     assert.strictEqual(ev.source.side, 'BSL');
     assert.strictEqual(ev.source.liquidityId, 'L1');
-    assert.strictEqual(ev.source.liquidityType, 'PDH');
+    assert.strictEqual(ev.source.liquidityType, 'EQH');
     assert.strictEqual(ev.source.liquidityPrice, 63390);
     assert.strictEqual(ev.price, 63390);
     assert.strictEqual(ev.confirmedAt, 1000000 + 300000 - 1); // candle.closeTime
@@ -142,7 +142,7 @@ test('BSL sweep → direction BEARISH，side 保留，confirmedAt = closeTime', 
 });
 
 test('SSL sweep → direction BULLISH', function () {
-    var l = liq('L2', 'PDL', 'SSL', 62716);
+    var l = liq('L2', 'EQL', 'SSL', 62716);
     var c = candle(62800, 62850, 62600, 62750, 2000000);
     var ev = sweepEventAdapter.buildSweepEvent(l, c, 7);
     assert.strictEqual(ev.direction, 'BULLISH');
@@ -150,14 +150,14 @@ test('SSL sweep → direction BULLISH', function () {
 });
 
 test('未收盘 candle → null', function () {
-    var l = liq('L1', 'PDH', 'BSL', 100);
+    var l = liq('L1', 'EQH', 'BSL', 100);
     var c = candle(100, 101, 99, 100.5, 3000000);
     c.closed = false;
     assert.strictEqual(sweepEventAdapter.buildSweepEvent(l, c, 0), null);
 });
 
 test('sweep 事件 id 确定性（liquidityId 唯一）', function () {
-    var l = liq('L1', 'PDH', 'BSL', 63390);
+    var l = liq('L1', 'EQH', 'BSL', 63390);
     var c = candle(100, 101, 99, 100.5, 4000000);
     var ev = sweepEventAdapter.buildSweepEvent(l, c, 1);
     assert.strictEqual(ev.id, 'BTCUSDT:5m:SWEEP:L1');

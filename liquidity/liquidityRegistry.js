@@ -1,8 +1,9 @@
 /**
  * Liquidity Registry —— 所有流动性的统一管理者
  *
- * Swing / Daily / Weekly / EQH / EQL /（未来 PMH / PML / Session）
- * 全部进入同一个 Registry，避免各管各的。
+ * Swing / Session / EQH / EQL 全部进入同一个 Registry，避免各管各的。
+ * （calendar-named liquidity PDH/PDL/PWH/PWL/PMH/PML 已于
+ *  REMOVE_CALENDAR_NAMED_LIQUIDITY_V1 正式删除，不再受支持。）
  *
  * 核心规则：
  * - 以 id 为唯一键，相同 id 不允许重复加入
@@ -11,18 +12,30 @@
  *   “哪些流动性已经被获取”，因此所有历史状态都可查询
  * - getActive 只返回 status === 'ACTIVE'（严格定义）
  * - 所有查询默认按 symbol 过滤
+ *
+ * 类型准入（REMOVE_CALENDAR_NAMED_LIQUIDITY_V1）：
+ * calendar-named liquidity PDH/PDL/PWH/PWL/PMH/PML 已正式删除，
+ * 不得再进入 Registry（静默接受后再忽略 = 违反删除语义）。
+ * 采用 denylist（仅这 6 类），不动其他任何生产类型的准入。
  */
+var REMOVED_CALENDAR_LIQUIDITY_TYPES = {
+    PDH: true, PDL: true, PWH: true, PWL: true, PMH: true, PML: true
+};
+
 function createRegistry() {
     var store = {}; // id -> liquidity
     var order = []; // 加入顺序（保证输出稳定）
 
     /**
      * 新增一条 liquidity
-     * @returns {boolean} 是否真正加入（重复 id 返回 false）
+     * @returns {boolean} 是否真正加入（重复 id / 已删除类型返回 false）
      */
     function add(liquidity) {
         if (!liquidity || !liquidity.id) {
             return false;
+        }
+        if (REMOVED_CALENDAR_LIQUIDITY_TYPES[liquidity.type]) {
+            return false; // REMOVE_CALENDAR_NAMED_LIQUIDITY_V1：已删除类型，拒绝准入
         }
         if (store[liquidity.id]) {
             return false; // 去重
@@ -109,7 +122,7 @@ function createRegistry() {
     }
 
     /**
-     * 按类型获取（SWING_HIGH / PDH / PWH / ...）
+     * 按类型获取（SWING_HIGH / SWING_LOW / EQH / EQL / SESSION_* ...）
      */
     function getByType(symbol, type) {
         return getAll(symbol).filter(function (l) {

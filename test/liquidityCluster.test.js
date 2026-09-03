@@ -55,7 +55,7 @@ var OPTS = { symbol: 'BTCUSDT', evaluationTime: 9999999999999 };
 test('相近 BSL 合并：zone 链式扩展（63390 → 63401 → 63408 → 63415）', function () {
     // tolerance = 63415 * 0.0003 ≈ 19.02
     var list = [
-        liquidity('a', 'PDH', 'BSL', 63390, 'ACTIVE'),
+        liquidity('a', 'EQH', 'BSL', 63390, 'ACTIVE'),
         liquidity('b', 'EQH', 'BSL', 63401, 'ACTIVE'),
         liquidity('c', 'SWING_HIGH', 'BSL', 63408, 'ACTIVE'),
         liquidity('d', 'SWING_HIGH', 'BSL', 63415, 'ACTIVE')
@@ -73,10 +73,10 @@ test('相近 BSL 合并：zone 链式扩展（63390 → 63401 → 63408 → 6341
 
 test('超 tolerance 不合并（63550 与 zone 上沿脱节）', function () {
     var list = [
-        liquidity('a', 'PDH', 'BSL', 63390, 'ACTIVE'),
+        liquidity('a', 'EQH', 'BSL', 63390, 'ACTIVE'),
         liquidity('b', 'SWING_HIGH', 'BSL', 63400, 'ACTIVE'), // 桥接成员
         liquidity('c', 'EQH', 'BSL', 63415, 'ACTIVE'),
-        liquidity('d', 'PWH', 'BSL', 63550, 'ACTIVE') // 与 63415 差 135 >> 19
+        liquidity('d', 'SWING_HIGH', 'BSL', 63550, 'ACTIVE') // 与 63415 差 135 >> 19
     ];
     var clusters = liquidityCluster.buildClusters(list, OPTS);
     assert.strictEqual(clusters.length, 1); // 63550 单独 → 不是 cluster
@@ -87,7 +87,7 @@ test('超 tolerance 不合并（63550 与 zone 上沿脱节）', function () {
 
 test('相近 SSL 合并', function () {
     var list = [
-        liquidity('a', 'PDL', 'SSL', 63020, 'ACTIVE'),
+        liquidity('a', 'EQL', 'SSL', 63020, 'ACTIVE'),
         liquidity('b', 'EQL', 'SSL', 63031, 'ACTIVE'),
         liquidity('c', 'SWING_LOW', 'SSL', 63040, 'ACTIVE')
     ];
@@ -102,9 +102,9 @@ test('相近 SSL 合并', function () {
 
 test('BSL 与 SSL 绝不混合', function () {
     var list = [
-        liquidity('a', 'PDH', 'BSL', 63400, 'ACTIVE'),
+        liquidity('a', 'EQH', 'BSL', 63400, 'ACTIVE'),
         liquidity('b', 'EQH', 'BSL', 63410, 'ACTIVE'),
-        liquidity('c', 'PDL', 'SSL', 63405, 'ACTIVE'), // 价格相近但方向相反
+        liquidity('c', 'EQL', 'SSL', 63405, 'ACTIVE'), // 价格相近但方向相反
         liquidity('d', 'EQL', 'SSL', 63408, 'ACTIVE')
     ];
     var clusters = liquidityCluster.buildClusters(list, OPTS);
@@ -117,9 +117,9 @@ test('BSL 与 SSL 绝不混合', function () {
 
 test('两个独立簇：分别生成，不互相吞并', function () {
     var list = [
-        liquidity('a', 'PDH', 'BSL', 63400, 'ACTIVE'),
+        liquidity('a', 'EQH', 'BSL', 63400, 'ACTIVE'),
         liquidity('b', 'EQH', 'BSL', 63410, 'ACTIVE'),
-        liquidity('c', 'PWH', 'BSL', 65000, 'ACTIVE'),
+        liquidity('c', 'SWING_HIGH', 'BSL', 65000, 'ACTIVE'),
         liquidity('d', 'SWING_HIGH', 'BSL', 65010, 'ACTIVE')
     ];
     var clusters = liquidityCluster.buildClusters(list, OPTS);
@@ -132,8 +132,8 @@ test('两个独立簇：分别生成，不互相吞并', function () {
 
 test('单成员不构成 cluster', function () {
     var list = [
-        liquidity('a', 'PDH', 'BSL', 63400, 'ACTIVE'),
-        liquidity('b', 'PWH', 'BSL', 65000, 'ACTIVE')
+        liquidity('a', 'EQH', 'BSL', 63400, 'ACTIVE'),
+        liquidity('b', 'SWING_HIGH', 'BSL', 65000, 'ACTIVE')
     ];
     var clusters = liquidityCluster.buildClusters(list, OPTS);
     assert.strictEqual(clusters.length, 0); // 两个都是孤立单点
@@ -143,7 +143,7 @@ test('单成员不构成 cluster', function () {
 
 test('state：含 SWEPT 成员 → PARTIAL', function () {
     var list = [
-        liquidity('a', 'PDH', 'BSL', 63408, 'BROKEN'), // 历史，price 落在 zone 内
+        liquidity('a', 'EQH', 'BSL', 63408, 'BROKEN'), // 历史，price 落在 zone 内
         liquidity('b', 'EQH', 'BSL', 63406, 'ACTIVE'),
         liquidity('c', 'SWING_HIGH', 'BSL', 63412, 'ACTIVE')
     ];
@@ -159,7 +159,7 @@ test('state：含 SWEPT 成员 → PARTIAL', function () {
 
 test('state：全部消耗 → CONSUMED（buildCluster 内部推导）', function () {
     var all = [
-        liquidity('a', 'PDH', 'BSL', 63400, 'SWEPT'),
+        liquidity('a', 'EQH', 'BSL', 63400, 'SWEPT'),
         liquidity('b', 'EQH', 'BSL', 63410, 'BROKEN')
     ];
     // 直接构造：两个有效成员都已消耗的场景（聚类从有效成员开始，V1 不会自然产生，
@@ -173,7 +173,7 @@ test('state：全部消耗 → CONSUMED（buildCluster 内部推导）', functio
 
 test('state：全部有效 → ACTIVE', function () {
     var list = [
-        liquidity('a', 'PDH', 'BSL', 63400, 'ACTIVE'),
+        liquidity('a', 'EQH', 'BSL', 63400, 'ACTIVE'),
         liquidity('b', 'EQH', 'BSL', 63410, 'TOUCHED') // TOUCHED 仍有效
     ];
     var clusters = liquidityCluster.buildClusters(list, OPTS);
@@ -186,7 +186,7 @@ test('state：全部有效 → ACTIVE', function () {
 
 test('confirmedAt > evaluationTime 的成员不参与聚类', function () {
     var list = [
-        liquidity('a', 'PDH', 'BSL', 63400, 'ACTIVE', { confirmedAt: 5000 }),
+        liquidity('a', 'EQH', 'BSL', 63400, 'ACTIVE', { confirmedAt: 5000 }),
         liquidity('b', 'EQH', 'BSL', 63410, 'ACTIVE', { confirmedAt: 9000 }) // 尚未确认
     ];
     var clusters = liquidityCluster.buildClusters(list, {
@@ -200,10 +200,10 @@ test('confirmedAt > evaluationTime 的成员不参与聚类', function () {
 
 test('findStandalone：未进任何 cluster 的 ACTIVE 被识别', function () {
     var list = [
-        liquidity('a', 'PDH', 'BSL', 63400, 'ACTIVE'),
+        liquidity('a', 'EQH', 'BSL', 63400, 'ACTIVE'),
         liquidity('b', 'EQH', 'BSL', 63410, 'ACTIVE'), // 与 a 成 cluster
-        liquidity('c', 'PWH', 'BSL', 65391, 'ACTIVE'), // 孤立
-        liquidity('d', 'PDL', 'SSL', 62716, 'ACTIVE')
+        liquidity('c', 'SWING_HIGH', 'BSL', 65391, 'ACTIVE'), // 孤立
+        liquidity('d', 'EQL', 'SSL', 62716, 'ACTIVE')
     ];
     var clusters = liquidityCluster.buildClusters(list, OPTS);
     assert.strictEqual(clusters.length, 1);

@@ -11,11 +11,11 @@
  *   INSIDE / 1-3 / 4-6 / 7-12 / 13-24 / 25-48 / NONE
  *
  * ② Source significance（liquidity 类型权重）：
- *   SIGNIFICANT = EQL / EQH / PDH / PDL / SESSION（ASIA/LONDON/NEW_YORK/PWH/PWL）
+ *   SIGNIFICANT = EQL / EQH / SESSION（ASIA/LONDON/NEW_YORK）
  *   SWING       = SWING_HIGH / SWING_LOW（普通 swing，ICT 语义上权重最低）
  *   OTHER       = 其余（UNKNOWN 等）
  *   NONE        = 无关联
- *   —— 普通小 swing low ≠ meaningful SSL pool，不应与 EQL/PDL/Session 同权重。
+ *   —— 普通小 swing low ≠ meaningful SSL pool，不应与 EQL/Session 同权重。
  *
  * ③ Post-sweep behavior（sweep 后价格行为 —— 最接近"仍属当前 Narrative？"）：
  *   IMMEDIATE_REJECTION : sweep 后第一根收盘即 reclaim，且 leg 前从未再穿越 sweep 价
@@ -42,7 +42,6 @@ var liquidityRecencyAudit = require('./liquidityRecencyAudit');
 function sourceGroupOf(sourceType) {
     var t = String(sourceType || '').toUpperCase();
     if (t === 'EQL' || t === 'EQH') return 'SIGNIFICANT';
-    if (t === 'PDH' || t === 'PDL' || t === 'PWH' || t === 'PWL') return 'SIGNIFICANT';
     if (t.indexOf('ASIA') === 0 || t.indexOf('LONDON') === 0 || t.indexOf('NEW_YORK') === 0) return 'SIGNIFICANT';
     // SESSION_* 前缀防御（registry 实际只发 ASIA/LONDON/NEW_YORK_*，SESSION_* 未落地；用户语义含 Session High/Low）
     if (t.indexOf('SESSION') === 0) return 'SIGNIFICANT';

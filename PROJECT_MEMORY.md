@@ -326,3 +326,23 @@ Live HIGH rules             ✅ 不动
 - 审计式验收：baseline byte-identical、shadow diagnostics 先行、promotion 前零侵入证明
 - 生产级质量：完整测试 + inspect 脚本 + 自主 BASELINE vs SHADOW 对比；锁定边界用例（INVALID_REFERENCE、future leakage、self-fill 等）
 - 重大语义决策先跑数据再定（11L.5 教训：审计假设被 90d 数据推翻）
+
+## 11. 生产清理记录：REMOVE_CALENDAR_NAMED_LIQUIDITY_V1
+
+- **目标**：从生产架构**彻底删除** 6 类 calendar-named liquidity：PDH/PDL/PWH/PWL/PMH/PML（正式删除，非 disable）。
+- **治理约束**：`FROZEN_REMOVAL_SET={PDH,PDL,PWH,PWL,PMH,PML}`；`BACKWARD_COMPATIBILITY/ FEATURE_FLAG/DEPRECATION_LAYER/FALLBACK/LEGACY_ADAPTER/EMPTY_COMPATIBILITY_OUTPUT` 全部 false。
+- **保留不动（KEEP_AND_DO_NOT_CHANGE）**：EQH/EQL、CC_DYNAMIC_D_V1、HISTORICAL_EXTREME lifecycle、ORDINARY_CAUSAL_2X2、PRODUCTION_EQ_TOLERANCE、LIQUIDITY_TAKEN core、TAKEN_BASED_WATCH、WATCH_TAKEN_LOOKBACK_24、DISPLACEMENT/FVG/FIRST_TOUCH/NOTIFICATION_TRIGGER/BIAS/AMD/SCENARIO。
+- **Enforcement 落点**：
+  - `liquidity/liquidityRegistry.js`：新增 denylist `REMOVED_CALENDAR_LIQUIDITY_TYPES`，6 类 `add()` 返回 false（核心强制点）。
+  - `events/sweepNarrativeEligibilityV1.js`：CONTRACT 删除 6 类 → 现返回 `UNRESOLVED` / `SOURCE_TYPE_NOT_IN_V1_CONTRACT` / `narrativeEligible=null`。
+  - `stats/sweepContextV1.js`：`sourceClass` 对 6 类返回 `UNRESOLVED`。
+  - `events/liquidityTakenEventAdapter.js`：`NARRATIVE_TYPES` 仅 EQH/EQL；`stats/liquidityTakenAssociation.js`：`ELIGIBLE_TYPES` 仅 EQH/EQL（WATCH 不再源自 6 类）。
+  - `notify/sweepContextPresentationV1.js`：`nonSwingType` 删除 `P[DM][HL]`/`PW[HL]` 日历标签分支（**§13 漏改点，已补**）。
+  - 删除 generators：`liquidity/{daily,weekly,monthly}Liquidity.js` 及对应 `test/{daily,weekly,monthly}Liquidity.test.js`。
+- **验证 gate（全部 PASS）**：
+  - 全量 `node test/run.js`：EXIT=0，0 失败（含 removal contract 40/40）。
+  - 静态依赖审计：production runtime 对 6 类**零代码引用**（仅 `liquidityRegistry.js` denylist 刻意保留）。
+  - dead code：已删 generator **无孤儿引用**。
+  - replay sanity：replay 代码对 6 类零引用，replay 测试离线通过。
+  - causality/determinism：replay/tradePlan/liquidityProvenance 等离线 5/5 通过。
+- **非 runtime 残留（仅记录不修改）**：`scripts/` `research/` `repository-*` `accumulation-*` `artifacts/` 中仍有 6 类字符串引用（历史审计/文档/JSON），不影响生产路径。
