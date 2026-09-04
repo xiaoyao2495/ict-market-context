@@ -1,0 +1,29 @@
+{
+  "implementation": "RANGE_OBJECT_V1",
+  "productionGate": "PASS",
+  "parameters": {
+    "length": 24,
+    "mult": 1.0,
+    "atrLength": 500
+  },
+  "timeframe": "5m",
+  "canarySymbols": [
+    "BTCUSDT",
+    "ZECUSDT"
+  ],
+  "gates": {
+    "BTC_RESEARCH_PRODUCTION_PARITY": "PASS",
+    "ZEC_RESEARCH_PRODUCTION_PARITY": "PASS",
+    "CAUSALITY_GATE": "PASS",
+    "DEDUPE_GATE": "PASS",
+    "DETERMINISM_GATE": "PASS",
+    "FULL_TEST_SUITE": "PASS"
+  },
+  "testFilesExecuted": 122,
+  "notifyOnConfirm": true,
+  "notifyOnContinuation": false,
+  "notifyOnBreakout": false,
+  "noParameterTuning": true,
+  "researchLogicChanged": false,
+  "push": "NONE"
+}

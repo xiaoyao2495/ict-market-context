@@ -6,6 +6,19 @@
   "snapshotInterval": 12,
   "dataDir": ".live-state",
   "requireFutures": true,
+  "rangeDetector": {
+    "enabled": true,
+    "version": "RANGE_OBJECT_V1",
+    "timeframes": ["5m"],
+    "symbols": ["BTCUSDT", "ZECUSDT"],
+    "notifyOnConfirm": true,
+    "notifyOnBreakout": false,
+    "parameters": {
+      "length": 24,
+      "mult": 1.0,
+      "atrLength": 500
+    }
+  },
   "topSymbols": {
     "count": 10,
     "refreshHourUTC": 8,

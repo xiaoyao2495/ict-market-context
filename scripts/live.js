@@ -36,6 +36,9 @@ var watchNotificationPresentationV1 = require('../notify/watchNotificationPresen
 var watchNotificationZhV1Flag = require('../config/watchNotificationZhV1');
 var sweepContextV1Flag = require('../config/sweepContextV1');
 var productionEqualLiquidityV1 = require('../liquidity/productionEqualLiquidityV1');
+var rangeDetectorV1 = require('../range/rangeDetectorV1');
+var rangeAlertService = require('../live/rangeAlertService');
+var rangeNotificationV1 = require('../notify/rangeNotificationV1');
 
 var CONFIG = require('../config/live.json');
 var EQ_PRODUCTION_MODEL = productionEqualLiquidityV1.VERSION;
@@ -175,6 +178,18 @@ function fmtPrice(p) {
     if (p >= 0.01) return p.toFixed(4);
     return p.toFixed(6);
 }
+
+function rangeEnabledFor(symbol) {
+    var cfg = CONFIG.rangeDetector || {};
+    var params = cfg.parameters || {};
+    return cfg.enabled === true && cfg.version === rangeDetectorV1.VERSION &&
+        (cfg.timeframes || []).indexOf('5m') !== -1 &&
+        (cfg.symbols || []).indexOf(symbol) !== -1 &&
+        params.length === rangeDetectorV1.PARAMETERS.length &&
+        params.mult === rangeDetectorV1.PARAMETERS.mult &&
+        params.atrLength === rangeDetectorV1.PARAMETERS.atrLength &&
+        cfg.notifyOnConfirm === true && cfg.notifyOnBreakout === false;
+}
 function buildMessage(opp, symbol) {
     var dir = opp.direction === 'BULLISH' ? 'LONG (BULLISH)' : 'SHORT (BEARISH)';
     var keyword = CONFIG.dingtalk.keyword || '检测';
@@ -312,6 +327,10 @@ function createRunner(symbol) {
     var watchFile = path.join(dir, 'displacement-watches.json');
     var watchDeliveredFile = path.join(dir, 'fvg-watch-delivered.json');
     var watchOutboxFile = path.join(dir, 'fvg-watch-outbox.json');
+    var rangeEventsFile = path.join(dir, 'range-events.jsonl');
+    var rangeDeliveredFile = path.join(dir, 'range-notified.json');
+    var rangeOutboxFile = path.join(dir, 'range-outbox.json');
+    var rangeStateFile = path.join(dir, 'range-detector-state.json');
     var dailyBiasService = dailyBiasServiceModule.createDailyBiasService({
         symbol: symbol,
         file: dailyBiasFile
@@ -351,6 +370,49 @@ function createRunner(symbol) {
     var priceDeliveryChain = Promise.resolve();
     var bootstrapRetentionBars = dataSource.initial5mRetentionBars(CONFIG.warmupDays);
     var persistedCandles = [];
+    var rangeAlerts = null;
+    var rangeStateRestored = false;
+
+    function saveRangeAlertState(snapshot) {
+        persistence.saveJson(rangeDeliveredFile, snapshot.delivered);
+        persistence.saveJson(rangeOutboxFile, snapshot.pending);
+    }
+
+    function recordRangeEvent(event) {
+        try {
+            fs.appendFileSync(rangeEventsFile, JSON.stringify(event) + '\n');
+        } catch (e) {
+            // Observability must not strand the shared completed-candle runner
+            // after the existing engines have already advanced this candle.
+            log(symbol + ' RANGE_EVENT_WRITE_ERROR: ' + (e && e.message || e));
+        }
+        if (event.type === 'RANGE_CONFIRMED') {
+            log(symbol + ' RANGE_CONFIRMED rangeId=' + event.rangeId +
+                ' visualStartAt=' + event.visualStartAt + ' confirmedAt=' + event.confirmedAt +
+                ' upper=' + event.upper + ' lower=' + event.lower +
+                ' midpoint=' + event.midpoint + ' widthPct=' + event.widthPct);
+        } else if (event.type === 'RANGE_BROKEN') {
+            log(symbol + ' RANGE_BROKEN rangeId=' + event.rangeId +
+                ' direction=' + event.direction + ' confirmedAt=' + event.confirmedAt +
+                '（记录事件，不通知）');
+        }
+    }
+
+    function sendRangeConfirmation(event, key) {
+        var msg = rangeNotificationV1.buildRangeConfirmationMessage(event, {
+            exchangeInfo: runnerData && runnerData.raw && runnerData.raw.exchangeInfo,
+            formatTime: fmt,
+            keyword: CONFIG.dingtalk.keyword || '检测'
+        });
+        return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {
+            if (!res || res.errcode !== 0) throw new Error('errcode=' + (res ? res.errcode : 'none'));
+            log(symbol + ' Range confirmation 钉钉投递成功 key=' + key);
+            return res;
+        }).catch(function (e) {
+            log(symbol + ' Range confirmation 钉钉投递失败 key=' + key + ': ' + e.message + '（保留 range outbox）');
+            return { errcode: -1, errmsg: e.message };
+        });
+    }
 
     function loadPushed() {
         return persistence.loadJson(pushedFile, {});
@@ -526,6 +588,25 @@ function createRunner(symbol) {
             eqProductionModel: EQ_PRODUCTION_MODEL
         });
 
+        if (rangeEnabledFor(symbol)) {
+            var savedRangeState = persistence.loadJson(rangeStateFile, null);
+            var restoreRangeState = savedRangeState && all.length > 0 &&
+                savedRangeState.lastOpenTime === all[all.length - 1].openTime;
+            rangeAlerts = rangeAlertService.createRangeAlertService({
+                symbol: symbol,
+                detector: rangeDetectorV1.createRangeDetectorV1({
+                    symbol: symbol,
+                    state: restoreRangeState ? savedRangeState : null
+                }),
+                delivered: persistence.loadJson(rangeDeliveredFile, {}),
+                pending: persistence.loadJson(rangeOutboxFile, []),
+                send: sendRangeConfirmation,
+                record: recordRangeEvent,
+                persist: saveRangeAlertState
+            });
+            rangeStateRestored = !!restoreRangeState;
+        }
+
         delivered = loadPushed();
 
         // 逐根推进历史（warmup 段机会不推送：已过去）。每根完整完成后显式
@@ -533,6 +614,9 @@ function createRunner(symbol) {
         var chain = replayBootstrapBars(all, function (c, idx) {
             return engine.onBar(c, idx);
         }, function (c) {
+            if (rangeAlerts && !rangeStateRestored) {
+                rangeAlerts.onCandle(c, { notificationsEnabled: false, recordEvents: false });
+            }
             // Bootstrap reconstructs lifecycle but never sends historical touches.
             engine.drainDisplacementWatchUpdates().forEach(function (w) { watchStore.upsert(w); });
             classifyNarrativeTouches(watchStore.onCandle(c));
@@ -545,6 +629,11 @@ function createRunner(symbol) {
         });
         return chain.then(function () {
             return refreshDailyBias();
+        }).then(function () {
+            // Retry a pre-restart confirmation outbox only after deterministic
+            // candle replay has restored the current Range lifecycle.
+            if (rangeAlerts) persistence.saveJson(rangeStateFile, rangeAlerts.getDetector().getState());
+            return rangeAlerts ? rangeAlerts.flush() : null;
         }).then(function () {
             lastCloseTime = all[all.length - 1].closeTime;
             lastOpenTime = all[all.length - 1].openTime;
@@ -678,6 +767,14 @@ function createRunner(symbol) {
                     if (fallbackTouches.length) return handleWatchTouches(fallbackTouches).then(function () { return opp; });
                     saveWatchState();
                     return opp;
+                }).then(function (opp) {
+                    if (!rangeAlerts) return opp;
+                    rangeAlerts.onCandle(c, {
+                        notificationsEnabled: !!(CONFIG.rangeDetector && CONFIG.rangeDetector.notifyOnConfirm),
+                        recordEvents: true
+                    });
+                    persistence.saveJson(rangeStateFile, rangeAlerts.getDetector().getState());
+                    return rangeAlerts.flush().then(function () { return opp; });
                 }).then(function (opp) {
                     if (opp && opp.tier === 'HIGH_QUALITY') {
                         return handleHigh(opp);
@@ -936,6 +1033,7 @@ module.exports = {
     buildMessage: buildMessage,
     buildLegacyFvgRetracementMessage: buildLegacyFvgRetracementMessage,
     buildFvgRetracementMessage: buildFvgRetracementMessage,
+    rangeEnabledFor: rangeEnabledFor,
     yieldToEventLoop: yieldToEventLoop,
     replayBootstrapBars: replayBootstrapBars,
     retainLatestCandles: retainLatestCandles,
