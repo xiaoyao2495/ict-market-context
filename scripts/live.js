@@ -1,10 +1,10 @@
 /**
  * Phase 11L — Live Opportunity Radar（实时机会提醒入口）
  *
- * Production notification flow:
- *   closed 5m -> valid Displacement -> backward matching-liquidity association -> WATCH
- *   -> owning Displacement K1/K2/K3 native FVG -> Futures aggTrade FIRST_TOUCH -> DingTalk.
- * Legacy HIGH/WATCH/LOW remains statistical/shadow output only.
+ * Production EQ notification flow:
+ *   closed 5m -> newly-confirmed EQH/EQL -> EQ_FVG_COUNT_WATCH_V1
+ *   -> accumulated raw three-candle FVG counts -> matching #1/#2 -> DingTalk.
+ * Legacy HIGH/WATCH/LOW remains an independent statistical output only.
  *
  * Phase 11L.3（Final Production Guardrails）：
  *   1. requireFutures → 初始化 + HTF 增量 futures-only fail-closed（spot 绝不进入）
@@ -29,12 +29,9 @@ var continuityChecker = require('../replay/continuityChecker');
 var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
 var thresholds = require('../config/thresholds');
-var displacementWatch = require('../stats/displacementWatch');
-var watchNarrativeLifecycleV1 = require('../stats/watchNarrativeLifecycleV1');
-var futuresPriceStream = require('../live/futuresPriceStream');
-var watchNotificationPresentationV1 = require('../notify/watchNotificationPresentationV1');
-var watchNotificationZhV1Flag = require('../config/watchNotificationZhV1');
-var sweepContextV1Flag = require('../config/sweepContextV1');
+var eqFvgCountWatchV1 = require('../live/eqFvgCountWatchV1');
+var eqFvgCountWatchAlertServiceV1 = require('../live/eqFvgCountWatchAlertServiceV1');
+var eqFvgCountWatchNotificationV1 = require('../notify/eqFvgCountWatchNotificationV1');
 var productionEqualLiquidityV1 = require('../liquidity/productionEqualLiquidityV1');
 var rangeDetectorV1 = require('../range/rangeDetectorV1');
 var rangeAlertService = require('../live/rangeAlertService');
@@ -42,6 +39,7 @@ var rangeNotificationV1 = require('../notify/rangeNotificationV1');
 
 var CONFIG = require('../config/live.json');
 var EQ_PRODUCTION_MODEL = productionEqualLiquidityV1.VERSION;
+var EQ_NOTIFICATION_MODEL = eqFvgCountWatchV1.VERSION;
 var DISPLACEMENT_PRODUCTION_MODE = 'CANONICAL_A_C2_V1';
 
 // Phase 11L.15：B 口径 Live Shadow Prioritization 开关（thresholds.notify.prioritization.enabled）。
@@ -262,54 +260,6 @@ function buildMessage(opp, symbol) {
     return lines.join('\n');
 }
 
-function buildLegacyFvgRetracementMessage(watch, currentPrice) {
-    var keyword = CONFIG.dingtalk.keyword || '检测';
-    var dir = watch.direction === 'BULLISH' ? 'LONG' : 'SHORT';
-    var liq = watch.liquidityTaken && watch.liquidityTaken.primary;
-    var f = watch.nativeFvg;
-    var bias = watch.dailyBias || { bias: 'UNKNOWN', confidence: null, alignment: 'UNKNOWN', status: 'UNKNOWN' };
-    return [
-        keyword + ' · ' + watch.symbol + ' ' + dir + ' WATCH TRIGGERED',
-        '',
-        'Liquidity Taken:',
-        liq ? ((liq.sourceType || 'UNKNOWN') + ' @ ' + fmtPrice(liq.sourcePrice) + ' · ' + (liq.relation || 'BEFORE_LEG')) : 'NONE',
-        '',
-        'Displacement:',
-        watch.direction + ' · quality ' + (watch.displacement.quality || 'UNKNOWN'),
-        'start/end: ' + watch.displacement.startIndex + '/' + watch.displacement.endIndex,
-        '',
-        'Native FVG:',
-        'low: ' + fmtPrice(f.low),
-        'high: ' + fmtPrice(f.high),
-        'midpoint: ' + fmtPrice(f.midpoint),
-        'current price: ' + fmtPrice(currentPrice),
-        'touch: FIRST_TOUCH',
-        '',
-        '4H Daily Bias:',
-        (bias.bias || 'UNKNOWN') + ' / ' + (bias.confidence || '-') +
-            ' · ' + (bias.alignment || 'UNKNOWN') + ' · ' + (bias.status || 'UNKNOWN'),
-        '',
-        '仅为市场结构监测，不是自动交易指令。'
-    ].join('\n');
-}
-
-function buildFvgRetracementMessage(watch, currentPrice, options) {
-    var opts = options || {};
-    var enabled = opts.zhEnabled !== undefined ? !!opts.zhEnabled : watchNotificationZhV1Flag.isEnabled(opts.env);
-    if (!enabled) return buildLegacyFvgRetracementMessage(watch, currentPrice);
-    var sweepContextEnabled = opts.sweepContextEnabled !== undefined
-        ? !!opts.sweepContextEnabled : sweepContextV1Flag.isEnabled(opts.env);
-    return watchNotificationPresentationV1.build(watch, currentPrice, {
-        formatPrice: fmtPrice,
-        keyword: opts.keyword !== undefined ? opts.keyword : (CONFIG.dingtalk.keyword || '检测'),
-        sweepContextEnabled: sweepContextEnabled,
-        // Actual formatter/send-attempt time. This is presentation-only and is
-        // intentionally not derived from candle or WATCH evaluation timestamps.
-        notificationGeneratedAt: opts.notificationGeneratedAt !== undefined
-            ? opts.notificationGeneratedAt : Date.now()
-    });
-}
-
 // ---------- 每个 symbol 的运行时 ----------
 // Generic Structural Provenance V1 supports Swing context only.
 // Persist the mode name so a pre-refactor cursor fails closed and is rebuilt.
@@ -324,9 +274,9 @@ function createRunner(symbol) {
     var stateFile = path.join(dir, 'cursor.json');
     var dailyBiasFile = path.join(dir, 'daily-bias.json');
     var shadowFile = path.join(dir, 'prioritization.jsonl'); // 11L.15：两组 HIGH 的 shadow 记录（3-7 天后 forward 对比）
-    var watchFile = path.join(dir, 'displacement-watches.json');
-    var watchDeliveredFile = path.join(dir, 'fvg-watch-delivered.json');
-    var watchOutboxFile = path.join(dir, 'fvg-watch-outbox.json');
+    // One atomically-renamed snapshot keeps WATCH close and notification #2
+    // outbox creation crash-consistent in the same completed-candle transition.
+    var eqStateFile = path.join(dir, 'eq-fvg-count-watch-v1.json');
     var rangeEventsFile = path.join(dir, 'range-events.jsonl');
     var rangeDeliveredFile = path.join(dir, 'range-notified.json');
     var rangeOutboxFile = path.join(dir, 'range-outbox.json');
@@ -342,32 +292,14 @@ function createRunner(symbol) {
     var historyLoaded = false;
     var runnerData = null; // Fix 1：{ raw, structureCandles, calendarCandles }（HTF 增量共用同一对象）
     var delivered = {}; // Fix 3（11L.3）：oppId -> anchorIndex（钉钉确认投递成功才写入；持久化跨重启）
-    var watchStore = displacementWatch.createWatchStore(
-        persistence.loadJson(watchFile, []),
-        persistence.loadJson(watchDeliveredFile, {})
-    );
-    // P4.1: Narrative ownership is derived from already-touched WATCHes. It is
-    // not a checkpoint and does not participate in WATCH/touch eligibility.
-    var narrativeReconstruction = watchNarrativeLifecycleV1.reconstructFromWatches(watchStore.getAll());
-    var narrativeState = narrativeReconstruction.state;
-    narrativeReconstruction.results.forEach(function (item) {
-        var persistedWatch = watchStore.get(item.watchId);
-        var canonicalMetadata = watchNarrativeLifecycleV1.metadataOf(item.result);
-        var persistedMetadata = persistedWatch && persistedWatch.observationId ? {
-            narrativeId:persistedWatch.narrativeId,
-            observationId:persistedWatch.observationId,
-            observationType:persistedWatch.observationType,
-            narrativeStateSnapshot:persistedWatch.narrativeStateSnapshot
-        } : null;
-        if (persistedMetadata && JSON.stringify(persistedMetadata) !== JSON.stringify(canonicalMetadata)) {
-            log(symbol + ' WATCH_NARRATIVE_V1_RECONSTRUCTION_MISMATCH watch=' + item.watchId +
-                '（reported and canonically reconstructed；delivery dedup unchanged）');
-        }
-        watchNarrativeLifecycleV1.attachMetadata(persistedWatch, item.result);
+    var savedEqAlertState = persistence.loadJson(eqStateFile, {});
+    var eqAlerts = eqFvgCountWatchAlertServiceV1.createService({
+        watches: savedEqAlertState.watches || [],
+        delivered: savedEqAlertState.delivered || {},
+        pending: savedEqAlertState.pending || [],
+        send: sendEqFvgNotification,
+        persist: saveEqAlertState
     });
-    var watchPending = persistence.loadJson(watchOutboxFile, []);
-    var priceStream = null;
-    var priceDeliveryChain = Promise.resolve();
     var bootstrapRetentionBars = dataSource.initial5mRetentionBars(CONFIG.warmupDays);
     var persistedCandles = [];
     var rangeAlerts = null;
@@ -418,31 +350,33 @@ function createRunner(symbol) {
         return persistence.loadJson(pushedFile, {});
     }
 
-    function saveWatchState() {
-        persistence.saveJson(watchFile, watchStore.getAll());
-        persistence.saveJson(watchDeliveredFile, watchStore.getDelivered());
-        persistence.saveJson(watchOutboxFile, watchPending);
+    function saveEqAlertState(snapshot) {
+        persistence.saveJson(eqStateFile, snapshot);
     }
 
-    /**
-     * P4.1 classification runs only after an existing WATCH store has emitted
-     * FIRST_TOUCH. It is fail-open for delivery: unresolved legacy provenance
-     * is logged but never suppresses or changes the touched WATCH population.
-     */
-    function classifyNarrativeTouches(touched) {
-        var rows = (touched || []).slice().sort(watchNarrativeLifecycleV1.compareTouchOrder);
-        rows.forEach(function (watch) {
-            var result = watchNarrativeLifecycleV1.observeFirstTouch(narrativeState, watch);
-            if (result.observation) {
-                watchNarrativeLifecycleV1.attachMetadata(watch, result);
-                return;
-            }
-            if (!result.duplicate) {
-                log(symbol + ' WATCH_NARRATIVE_V1_UNRESOLVED watch=' + (watch && watch.id || 'UNKNOWN') +
-                    ' reason=' + result.reason + '（classification only；FIRST_TOUCH delivery unchanged）');
-            }
+    function sendEqFvgNotification(event, key) {
+        var message = eqFvgCountWatchNotificationV1.build(event, {
+            formatPrice: fmtPrice,
+            formatTime: fmt,
+            keyword: CONFIG.dingtalk.keyword || '检测'
         });
-        return touched;
+        return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, message).then(function (res) {
+            if (!res || res.errcode !== 0) throw new Error('errcode=' + (res ? res.errcode : 'none'));
+            log(symbol + ' EQ FVG #' + event.ordinal + ' 钉钉投递成功 key=' + key);
+            return res;
+        }).catch(function (e) {
+            log(symbol + ' EQ FVG #' + event.ordinal + ' 钉钉投递失败 key=' + key + ': ' + e.message + '（保留 outbox）');
+            return { errcode: -1, errmsg: e.message };
+        });
+    }
+
+    function handleEqFvgCountStep(step) {
+        var result = eqAlerts.onStep(step);
+        result.opened.forEach(function (watch) {
+            log(symbol + ' EQ_FVG_COUNT_WATCH OPEN id=' + watch.watchId +
+                ' liquidity=' + watch.liquidityType + ' expected=' + watch.expectedDirection);
+        });
+        return result;
     }
 
     /**
@@ -539,6 +473,10 @@ function createRunner(symbol) {
             log(symbol + ' EQ producer migration: ' + persistedEqModel + ' -> ' +
                 EQ_PRODUCTION_MODEL + '（旧 EQ state 忽略，Registry 由 closed candles 确定性重建）');
         }
+        if (!cursor || cursor.eqNotificationModel !== EQ_NOTIFICATION_MODEL) {
+            log(symbol + ' EQ notification cutover -> ' + EQ_NOTIFICATION_MODEL +
+                '（legacy EQ watch files ignored; historical EQ/FVG not backfilled）');
+        }
         // Fix 1 (P0)：runnerData 保存组装后的 HTF 引用（fetchHtfIncrement 增量更新同一对象）
         var structureCandles = { '1d': data['1d'], '4h': data['4h'], '1h': data['1h'] };
         var calendarCandles = { '1d': data['1d'], '1w': data['1w'], '1M': data['1M'] };
@@ -617,9 +555,9 @@ function createRunner(symbol) {
             if (rangeAlerts && !rangeStateRestored) {
                 rangeAlerts.onCandle(c, { notificationsEnabled: false, recordEvents: false });
             }
-            // Bootstrap reconstructs lifecycle but never sends historical touches.
-            engine.drainDisplacementWatchUpdates().forEach(function (w) { watchStore.upsert(w); });
-            classifyNarrativeTouches(watchStore.onCandle(c));
+            // Deployment/restart bootstrap rebuilds the EQ detector only. Historical
+            // EQ/FVG steps are deliberately discarded and never create/fill WATCHes.
+            engine.drainEqFvgCountSteps();
         }, function (progress) {
             log(symbol + ' [BOOTSTRAP] ' + progress.completed + ' / ' + progress.total +
                 ' ' + progress.progressPct.toFixed(1) + '%' +
@@ -628,107 +566,31 @@ function createRunner(symbol) {
                 ' bars/s=' + (progress.barsPerSecond === null ? '-' : progress.barsPerSecond.toFixed(1)));
         });
         return chain.then(function () {
+            // Activate only after bootstrap so historical EQ/FVG steps can never
+            // create Production WATCHes. Live steps are persisted immediately at
+            // the EQ/raw-FVG boundary, before unrelated downstream engines run.
+            engine.setEqFvgCountStepHandler(handleEqFvgCountStep);
             return refreshDailyBias();
         }).then(function () {
             // Retry a pre-restart confirmation outbox only after deterministic
             // candle replay has restored the current Range lifecycle.
             if (rangeAlerts) persistence.saveJson(rangeStateFile, rangeAlerts.getDetector().getState());
-            return rangeAlerts ? rangeAlerts.flush() : null;
+            return Promise.all([
+                eqAlerts.flush(),
+                rangeAlerts ? rangeAlerts.flush() : Promise.resolve(null)
+            ]);
         }).then(function () {
             lastCloseTime = all[all.length - 1].closeTime;
             lastOpenTime = all[all.length - 1].openTime;
             historyLoaded = true;
             persistence.saveJson(pushedFile, delivered);
-            saveWatchState();
+            saveEqAlertState(eqAlerts.snapshot());
             persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: all.length,
                 structureMode: mode, eqProductionModel: EQ_PRODUCTION_MODEL,
-                displacementMode: DISPLACEMENT_PRODUCTION_MODE });
+                displacementMode: DISPLACEMENT_PRODUCTION_MODE,
+                eqNotificationModel: EQ_NOTIFICATION_MODEL });
             log(symbol + ' 状态就绪，已推进 ' + all.length + ' 根，去重集合 ' + Object.keys(delivered).length + ' 个已投递机会');
         });
-    }
-
-    function isWatchPending(key) {
-        return watchPending.some(function (x) { return x.notificationKey === key; });
-    }
-
-    function deliverWatchTouch(watch) {
-        var key = watch.notificationKey;
-        if (!key || watchStore.getDelivered()[key]) return Promise.resolve(true);
-        var eqPrimary = watch.liquidityTaken && watch.liquidityTaken.primary;
-        if (eqPrimary && (eqPrimary.sourceType === 'EQH' || eqPrimary.sourceType === 'EQL') &&
-            !eqPrimary.eqPartnerProvenance) {
-            log(symbol + ' EQ_PARTNER_PROVENANCE_MISSING watch=' + watch.id +
-                ' sourceId=' + (eqPrimary.sourceId || 'UNKNOWN') + '（通知安全降级，不阻止发送）');
-        }
-        var msg = buildFvgRetracementMessage(watch, watch.firstTouchPrice);
-        log('FVG FIRST_TOUCH: ' + symbol + ' ' + watch.direction + ' watch=' + watch.id +
-            ' fvg=' + watch.nativeFvg.id + ' price=' + fmtPrice(watch.firstTouchPrice));
-        return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {
-            if (!res || res.errcode !== 0) throw new Error('errcode=' + (res ? res.errcode : 'none'));
-            watchStore.markNotified(watch.id, Date.now());
-            saveWatchState();
-            log(symbol + ' FVG retracement 钉钉投递成功 key=' + key);
-            return true;
-        }).catch(function (e) {
-            log(symbol + ' FVG retracement 钉钉投递失败 key=' + key + ': ' + e.message + '（保留 watch outbox）');
-            return false;
-        });
-    }
-
-    function handleWatchTouches(touched) {
-        classifyNarrativeTouches(touched);
-        (touched || []).forEach(function (watch) {
-            if (!watch.notificationKey || watchStore.getDelivered()[watch.notificationKey] || isWatchPending(watch.notificationKey)) return;
-            watchPending.push({ notificationKey: watch.notificationKey, watchId: watch.id, attempts: 0 });
-        });
-        saveWatchState();
-        return retryWatchPending();
-    }
-
-    function retryWatchPending() {
-        if (!watchPending.length) return Promise.resolve();
-        var list = watchPending.slice();
-        watchPending = [];
-        return list.reduce(function (p, item) {
-            return p.then(function () {
-                var watch = watchStore.get(item.watchId);
-                if (!watch || watchStore.getDelivered()[item.notificationKey]) { saveWatchState(); return; }
-                return deliverWatchTouch(watch).then(function (ok) {
-                    if (!ok) watchPending.push(item);
-                    saveWatchState();
-                });
-            });
-        }, Promise.resolve());
-    }
-
-    function applyWatchUpdates() {
-        var updates = engine.drainDisplacementWatchUpdates();
-        updates.forEach(function (watch) {
-            var current = watchStore.upsert(watch);
-            log(symbol + ' DISPLACEMENT_WATCH ' + current.state + ' id=' + current.id +
-                ' liquidity=' + (current.liquidityTaken.primary && current.liquidityTaken.primary.sourceType || 'UNKNOWN') +
-                ' nativeFvg=' + (current.nativeFvg ? current.nativeFvg.id : 'NONE'));
-        });
-        if (updates.length) saveWatchState();
-    }
-
-    function onRealtimePrice(price, at) {
-        priceDeliveryChain = priceDeliveryChain.then(function () {
-            var touched = watchStore.onPrice(price, at);
-            if (touched.changed) saveWatchState();
-            return touched.length ? handleWatchTouches(touched) : null;
-        }).catch(function (e) { log(symbol + ' PRICE_STREAM_HANDLER_ERROR: ' + (e && e.message || e)); });
-    }
-
-    function startPriceStream() {
-        if (priceStream) return;
-        priceStream = futuresPriceStream.createFuturesPriceStream(symbol, {
-            onOpen: function () { log(symbol + ' Futures WebSocket aggTrade connected'); },
-            onPrice: onRealtimePrice,
-            onClose: function () { log(symbol + ' Futures WebSocket closed; reconnect scheduled'); },
-            onError: function (e) { log(symbol + ' Futures WebSocket error: ' + (e && e.message || e)); }
-        });
-        priceStream.start();
     }
 
     /** Legacy HIGH remains a statistical/shadow output and no longer drives DingTalk. */
@@ -760,13 +622,9 @@ function createRunner(symbol) {
         list.forEach(function (c) {
             chain = chain.then(function () {
                 return engine.onBar(c, engine.getWindowLength()).then(function (opp) {
-                    applyWatchUpdates();
-                    // Closed-candle fallback covers WebSocket outages. It starts strictly
-                    // after watch/native-FVG confirmation and cannot self-touch K3.
-                    var fallbackTouches = watchStore.onCandle(c);
-                    if (fallbackTouches.length) return handleWatchTouches(fallbackTouches).then(function () { return opp; });
-                    saveWatchState();
-                    return opp;
+                    var steps = engine.drainEqFvgCountSteps();
+                    steps.forEach(handleEqFvgCountStep);
+                    return eqAlerts.flush().then(function () { return opp; });
                 }).then(function (opp) {
                     if (!rangeAlerts) return opp;
                     rangeAlerts.onCandle(c, {
@@ -797,7 +655,8 @@ function createRunner(symbol) {
             persistence.saveJson(pushedFile, delivered);
             persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength(),
                 structureMode: structuralSwingMode(), eqProductionModel: EQ_PRODUCTION_MODEL,
-                displacementMode: DISPLACEMENT_PRODUCTION_MODE });
+                displacementMode: DISPLACEMENT_PRODUCTION_MODE,
+                eqNotificationModel: EQ_NOTIFICATION_MODEL });
         });
     }
 
@@ -828,7 +687,7 @@ function createRunner(symbol) {
     }
 
     function doTick() {
-        return retryWatchPending().then(function () {
+        return eqAlerts.flush().then(function () {
             // Fix 1（11L.3 P0）：HTF 增量 futures-only（spot 不 append）+ 错误不吞
             return dataSource.fetchHtfIncrement(symbol, runnerData.structureCandles, runnerData.calendarCandles, CONFIG.requireFutures);
         }).then(function (htf) {
@@ -893,7 +752,6 @@ function createRunner(symbol) {
 
     /** 11L.5（P0-1）：setTimeout 串行链 —— tick 完成后再等 pollMs 调度下一轮（无重入） */
     function startLoop() {
-        startPriceStream();
         function schedule() {
             loopTimer = setTimeout(function () {
                 tick().then(schedule);
@@ -907,7 +765,6 @@ function createRunner(symbol) {
             clearTimeout(loopTimer);
             loopTimer = null;
         }
-        if (priceStream) { priceStream.stop(); priceStream = null; }
     }
 
     return {
@@ -915,7 +772,7 @@ function createRunner(symbol) {
         tick: tick,
         startLoop: startLoop,
         stopLoop: stopLoop,
-        getNarrativeProjection: function () { return watchNarrativeLifecycleV1.projection(narrativeState); }
+        getEqFvgCountSnapshot: function () { return eqAlerts.snapshot(); }
     };
 }
 
@@ -926,7 +783,9 @@ function main() {
     log('STRUCTURAL_SWING_MODE=' + structuralSwingMode() +
         '（Swing context source：confirmed 2L/2R pivots + Structural Provenance）');
     log('EQ_PRODUCTION_MODEL=' + EQ_PRODUCTION_MODEL +
-        '（current ordinary 2/2 vs prior 36H unviolated ATR50 ZigZag）');
+        '（current ordinary 2/2 vs prior 36H active Causal Dynamic D anchors）');
+    log('EQ_NOTIFICATION_MODEL=' + EQ_NOTIFICATION_MODEL +
+        '（new EQ confirmation -> accumulated raw 3-candle FVG #1/#2）');
     log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED
         ? 'ENABLED（钉钉只推 PRIORITY_HIGH = HIGH + 48 窗口内 Significant Liquidity；STANDARD_HIGH 只落日志）'
         : 'DISABLED（全部 HIGH 照常推钉钉，仅记录 notifyPriority 字段）'));
@@ -1031,8 +890,6 @@ if (require.main === module) main();
 
 module.exports = {
     buildMessage: buildMessage,
-    buildLegacyFvgRetracementMessage: buildLegacyFvgRetracementMessage,
-    buildFvgRetracementMessage: buildFvgRetracementMessage,
     rangeEnabledFor: rangeEnabledFor,
     yieldToEventLoop: yieldToEventLoop,
     replayBootstrapBars: replayBootstrapBars,

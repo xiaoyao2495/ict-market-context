@@ -3,7 +3,7 @@
 var test = require('node:test');
 var assert = require('node:assert/strict');
 var crypto = require('crypto');
-var live = require('../scripts/live');
+var presentation = require('../notify/watchNotificationPresentationV1');
 var helper = require('../notify/sweepContextPresentationV1');
 
 var FIXED_TIME = Date.parse('2026-08-26T00:12:00.000Z');
@@ -48,7 +48,7 @@ function watch(direction, type, context) {
     };
 }
 function render(watchValue, enabled, at) {
-    return live.buildFvgRetracementMessage(watchValue, 1.5, {zhEnabled:true,sweepContextEnabled:enabled,notificationGeneratedAt:at === undefined ? FIXED_TIME : at});
+    return presentation.build(watchValue, 1.5, {formatPrice:String,keyword:'检测',sweepContextEnabled:enabled,notificationGeneratedAt:at === undefined ? FIXED_TIME : at});
 }
 function liquiditySection(message) { return (message.split('💧 流动性获取（Liquidity Taken）')[1] || '').split('⚡')[0]; }
 function summarySection(message) { return (message.split('📌 当前结构解读')[1] || '').split('仅用于')[0]; }

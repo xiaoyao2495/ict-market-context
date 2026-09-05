@@ -1,9 +1,9 @@
 /**
  * Phase 11L — Live Engine（实时机会雷达核心）
  *
- * 把回测的单根状态推进复用到实时。Production notification 的新入口是
- * valid Displacement -> backward matching liquidity -> Displacement Watch；legacy
- * Opportunity tier 继续返回给统计/兼容层，但不再决定 FVG retracement DingTalk。
+ * 把回测的单根状态推进复用到实时。EQ Production notification 的唯一入口是
+ * newly-confirmed EQH/EQL + 当前 completed-candle raw three-candle FVG step。
+ * Legacy Opportunity tier 继续返回给独立统计层，但不参与 EQ notification。
  *
  * 与回测 11D.8 的一致性保证：
  *   - 复用同一批检测器（incrementalLiquidity / incrementalEvents / incrementalFvg /
@@ -27,11 +27,8 @@ var nearStaleness = require('../stats/nearStaleness');
 var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
 var structuralProvenance5m = require('../structure/structuralProvenance5m');
-var displacementWatch = require('../stats/displacementWatch');
 var watchLiquidityEvidenceV1 = require('../stats/watchLiquidityEvidenceV1');
-var watchLiquidityEvidenceFlag = require('../config/watchLiquidityEvidenceV1');
-var sweepContextFlag = require('../config/sweepContextV1');
-var runtimeSwingContextV1 = require('../stats/runtimeSwingContextV1');
+var eqFvgCountWatchV1 = require('./eqFvgCountWatchV1');
 var dailyBiasAlignment = require('../bias/dailyBiasAlignment');
 var thresholds = require('../config/thresholds');
 
@@ -87,12 +84,6 @@ function createLiveEngine(data, options) {
     var snapshotInterval = opts.snapshotInterval !== undefined ? opts.snapshotInterval : 12;
     var baseIndex = opts.baseIndex !== undefined ? opts.baseIndex : 0;
     var dailyBiasProvider = opts.dailyBiasProvider;
-    var watchLiquidityEvidenceV1Enabled = opts.watchLiquidityEvidenceV1Enabled !== undefined
-        ? !!opts.watchLiquidityEvidenceV1Enabled
-        : watchLiquidityEvidenceFlag.isEnabled();
-    var sweepContextV1Enabled = opts.sweepContextV1Enabled !== undefined
-        ? !!opts.sweepContextV1Enabled : sweepContextFlag.isEnabled();
-
     var state = replayState.createReplayState({
         symbol: symbol,
         timeframe: '5m',
@@ -108,16 +99,8 @@ function createLiveEngine(data, options) {
     // 投递确认（钉钉 errcode=0）与去重（delivered）由 scripts/live.js 负责：
     //   钉钉失败 → 机会保留 pending，下轮重试；确认成功才记 delivered（跨重启持久化）。
     var window = []; // 全局 index 对齐的已收盘 5m 序列（window.length === 最后 index + 1）
-    var watchById = {};
-    var watchUpdates = [];
-    var runtimeSwingContext = sweepContextV1Enabled ? runtimeSwingContextV1.createRuntimeSwingContextV1({
-        symbol: symbol,
-        initialCandles5m: data.contextCandles5m || [],
-        structureCandles: data.structureCandles || {},
-        getCandles5m: function () { return window; },
-        getRegistry: function () { return state.registry; },
-        getStructuralState: function () { return state.structural5m; }
-    }) : null;
+    var eqFvgCountSteps = [];
+    var eqFvgCountStepHandler = null;
 
     var fullData = {
         symbol: symbol,
@@ -127,52 +110,6 @@ function createLiveEngine(data, options) {
         exchangeInfo: data.exchangeInfo,
         thresholds: cfg
     };
-
-    /**
-     * Displacement-Centric Watch V1: canonical displacement is the trigger. Only
-     * after it exists do we look backward for matching LIQUIDITY_TAKEN.
-     * Native FVG is calculated from each displacement's own K1/K2/K3 candles;
-     * state.fvgReg is deliberately not passed to the builder.
-     */
-    function emitDisplacementWatch(displacement, evaluationTime) {
-        if (!displacement || !displacement.id) return null;
-        var dailyBias;
-        try {
-            dailyBias = dailyBiasProvider
-                ? dailyBiasProvider(displacement.direction, evaluationTime, { canonicalDisplacementId: displacement.id })
-                : dailyBiasAlignment.unknownDailyBias();
-        } catch (e) {
-            dailyBias = dailyBiasAlignment.unknownDailyBias();
-        }
-        var candidate = displacementWatch.buildWatch({
-            symbol: symbol,
-            displacement: displacement,
-            evaluationTime: evaluationTime,
-            takenEvents: state.eventRegistry.getByType(symbol, 'LIQUIDITY_TAKEN'),
-            candles: window,
-            dailyBias: dailyBias,
-            existing: watchById['WATCH:' + symbol + ':' + displacement.direction + ':DISPLACEMENT:' + displacement.id] || null
-        });
-        if (!candidate) return null;
-        if (watchLiquidityEvidenceV1Enabled || sweepContextV1Enabled) {
-            if (!state.watchLiquidityEvidenceV1Errors) state.watchLiquidityEvidenceV1Errors = [];
-            attachWatchLiquidityEvidenceV1(candidate, {
-                enabled: true,
-                evaluationTime: evaluationTime,
-                registry: state.registry,
-                candles: window,
-                dailyBias: dailyBias,
-                sweepContextV1Enabled: sweepContextV1Enabled,
-                projectSwingContextV1: runtimeSwingContext && runtimeSwingContext.projectSwingContextV1,
-                errors: state.watchLiquidityEvidenceV1Errors
-            });
-        }
-        var old = watchById[candidate.id];
-        var changed = !old || displacementWatch.watchFingerprint(old) !== displacementWatch.watchFingerprint(candidate);
-        watchById[candidate.id] = candidate;
-        if (changed) watchUpdates.push(JSON.parse(JSON.stringify(candidate)));
-        return candidate;
-    }
 
     /**
      * 单根推进（5m 已收盘，index 必须 == window.length 且连续）。
@@ -188,7 +125,20 @@ function createLiveEngine(data, options) {
         var evaluationTime = candle.closeTime;
 
         // ---- 1. 增量 liquidity（全局 slice 语义） ----
+        var eqCountBefore = state.productionEq.events.length;
         var newConfirmedSwings = replayState.incrementalLiquidity(state, window, i, data.exchangeInfo, evaluationTime);
+        var newEqualLiquidity = state.productionEq.events.slice(eqCountBefore);
+        var currentRawFvg = eqFvgCountWatchV1.rawFvgAt(window, i, symbol);
+        var eqFvgCountStep = {
+            evaluationTime: evaluationTime,
+            newEqualLiquidity: JSON.parse(JSON.stringify(newEqualLiquidity)),
+            rawFvg: currentRawFvg ? JSON.parse(JSON.stringify(currentRawFvg)) : null
+        };
+        // This branch is deliberately completed before snapshot/displacement/AMD
+        // work. The EQ notification lifecycle has no semantic or operational
+        // prerequisite beyond causal EQ confirmation and the latest raw FVG.
+        if (eqFvgCountStepHandler) eqFvgCountStepHandler(eqFvgCountStep);
+        else eqFvgCountSteps.push(eqFvgCountStep);
 
         // ---- 2. 慢变量快照（每 snapshotInterval 根） ----
         var doSnapshot = (i === baseIndex) || (i - (state.lastSnapshotIndex !== undefined ? state.lastSnapshotIndex : baseIndex - snapshotInterval)) >= snapshotInterval;
@@ -251,15 +201,10 @@ function createLiveEngine(data, options) {
                 state.drawTrace[i] = { bslNear: null, bslMacro: null, sslNear: null, sslMacro: null };
             }
 
-            // ---- 7. Canonical Displacement → WATCH / downstream opportunity ----
+            // ---- 7. Independent legacy displacement opportunity statistics ----
             var opp = null;
             (newEvents.displacements || []).forEach(function (d) {
-                emitDisplacementWatch(d, evaluationTime);
                 opp = evaluateOpportunity(d, i) || opp;
-            });
-            // A canonical ending on the previous candle may gain its native K3 FVG now.
-            state.displacementStore.getEndingAt(i - 1, evaluationTime, symbol).forEach(function (d) {
-                if (d.endIndex === i - 1) emitDisplacementWatch(d, evaluationTime);
             });
             return opp;
         });
@@ -380,13 +325,13 @@ function createLiveEngine(data, options) {
         onBar: onBar,
         getState: getState,
         getWindowLength: getWindowLength,
-        drainDisplacementWatchUpdates: function () {
-            var out = watchUpdates.slice();
-            watchUpdates = [];
+        drainEqFvgCountSteps: function () {
+            var out = eqFvgCountSteps.slice();
+            eqFvgCountSteps = [];
             return out;
         },
-        getDisplacementWatches: function () {
-            return Object.keys(watchById).map(function (id) { return watchById[id]; });
+        setEqFvgCountStepHandler: function (handler) {
+            eqFvgCountStepHandler = typeof handler === 'function' ? handler : null;
         },
         symbol: symbol
     };
