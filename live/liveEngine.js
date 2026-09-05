@@ -27,39 +27,9 @@ var nearStaleness = require('../stats/nearStaleness');
 var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
 var structuralProvenance5m = require('../structure/structuralProvenance5m');
-var watchLiquidityEvidenceV1 = require('../stats/watchLiquidityEvidenceV1');
 var eqFvgCountWatchV1 = require('./eqFvgCountWatchV1');
 var dailyBiasAlignment = require('../bias/dailyBiasAlignment');
 var thresholds = require('../config/thresholds');
-
-function attachWatchLiquidityEvidenceV1(candidate, context) {
-    var ctx = context || {};
-    if (!ctx.enabled || !candidate) return candidate;
-    // WatchLiquidityEvidenceV1 is a legacy Sweep-specific envelope. A Taken
-    // WATCH must never put a Taken id into sweepEventId compatibility fields.
-    if (candidate.liquidityTrigger === 'LIQUIDITY_TAKEN') return candidate;
-    try {
-        watchLiquidityEvidenceV1.attach(candidate, {
-            enabled: true,
-            evaluationTime: ctx.evaluationTime,
-            registry: ctx.registry,
-            candles: ctx.candles,
-            dailyBias: ctx.dailyBias,
-            sweepContextV1Enabled: ctx.sweepContextV1Enabled,
-            projectSwingContextV1: ctx.projectSwingContextV1
-        });
-    } catch (e) {
-        // P1 is observability-only: enrichment failure must never alter
-        // WATCH existence, identity, direction, timing, or transitions.
-        if (ctx.errors) ctx.errors.push({
-            watchId: candidate.id,
-            evaluationTime: ctx.evaluationTime,
-            code: e && e.code || 'WATCH_LIQUIDITY_EVIDENCE_V1_ERROR',
-            message: e && e.message || String(e)
-        });
-    }
-    return candidate;
-}
 
 function attachDailyBias(opp, provider) {
     try {
@@ -340,7 +310,6 @@ function createLiveEngine(data, options) {
 }
 
 module.exports = {
-    attachWatchLiquidityEvidenceV1: attachWatchLiquidityEvidenceV1,
     createLiveEngine: createLiveEngine,
     attachDailyBias: attachDailyBias
 };

@@ -4,10 +4,9 @@ var flag=require('../config/watchLiquidityEvidenceV1');
 var evidence=require('../stats/watchLiquidityEvidenceV1');
 var shadow=require('../audit/shadowWatchConsumptionAdapterV1');
 var scenario=require('../scenario/scenarioEngine');
-var liveEngine=require('../live/liveEngine');
 var passed=0,failed=0;
 function test(name,fn){try{fn();passed++;console.log('PASS  '+name);}catch(e){failed++;console.log('FAIL  '+name+' -> '+e.stack);}}
-function clone(v){return JSON.parse(JSON.stringify(v));}function stable(v){if(Array.isArray(v))return'['+v.map(stable).join(',')+']';if(v&&typeof v==='object')return'{'+Object.keys(v).sort().map(function(k){return JSON.stringify(k)+':'+stable(v[k]);}).join(',')+'}';return JSON.stringify(v);}function hash(v){return crypto.createHash('sha256').update(stable(v)).digest('hex');}
+function stable(v){if(Array.isArray(v))return'['+v.map(stable).join(',')+']';if(v&&typeof v==='object')return'{'+Object.keys(v).sort().map(function(k){return JSON.stringify(k)+':'+stable(v[k]);}).join(',')+'}';return JSON.stringify(v);}function hash(v){return crypto.createHash('sha256').update(stable(v)).digest('hex');}
 function candidate(o){return Object.assign({id:'SW1',sourceId:'BTCUSDT:5m:SWING_LOW:1',sourceType:'SWING_LOW',sourceTimeframe:'5m',sourcePrice:100,side:'SSL',confirmedAt:150,candleIndex:1,relation:'BEFORE_LEG',barsBeforeLegStart:2},o||{});}
 function watch(cs,p,bias){return{id:'W',updatedAt:200,createdAt:200,direction:'BULLISH',state:'WATCH_NO_FVG',notificationKey:null,liquidityTaken:{primary:p||cs[0],allCandidates:cs},dailyBias:bias||{bias:'UNKNOWN',alignment:'UNKNOWN',status:'UNKNOWN',evaluationTime:null}};}
 function registry(objects){var by={};(objects||[]).forEach(function(o){by[o.id]=o;});return{getById:function(id){return by[id]||null;}};}
@@ -46,9 +45,6 @@ test('27 shadow vs production equality',function(){var c=candidate(),prod=built(
 test('28 incremental/full equivalence',function(){var c=candidate(),short=built(c,{candles:[candle(0,100),candle(1,100)]}),full=built(c,{candles:[candle(0,100),candle(1,100),Object.assign(candle(2,99),{closeTime:250})]});assert.deepStrictEqual(short,full);});
 test('29 past-state immutability',function(){var c=candidate(),x=built(c),before=hash(x);built(c,{candles:[candle(0,100),candle(1,100),Object.assign(candle(2,99),{closeTime:250})]});assert.strictEqual(hash(x),before);});
 test('30 blocked causal fields absent',function(){var x=built(candidate()),s=JSON.stringify(x);assert.strictEqual(x.blockedCausalEvidence.attributedStructureProductionAllowed,false);assert.ok(!/reactionLegId|attributedStructure\"|sameDeliveryDisplacement\"|followThrough\"/.test(s));});
-test('31 liveEngine helper flag OFF exact legacy object',function(){var c=candidate(),w=watch([c]),before=hash(w);liveEngine.attachWatchLiquidityEvidenceV1(w,{enabled:false});assert.strictEqual(hash(w),before);});
-test('32 liveEngine helper flag ON attaches only envelope',function(){var c=candidate(),w=watch([c]),legacy=clone(w);liveEngine.attachWatchLiquidityEvidenceV1(w,opts(c));var envelope=w.liquidityEvidenceV1;delete w.liquidityEvidenceV1;assert.ok(envelope);assert.deepStrictEqual(w,legacy);});
-test('33 liveEngine helper adapter error fails open',function(){var c=candidate(),w=watch([c]),before=hash(w),old=evidence.attach,errors=[];evidence.attach=function(){throw new Error('synthetic');};try{liveEngine.attachWatchLiquidityEvidenceV1(w,{enabled:true,evaluationTime:200,errors:errors});}finally{evidence.attach=old;}assert.strictEqual(hash(w),before);assert.strictEqual(errors.length,1);});
 test('34 authoritative registry BROKEN is projected when time-local',function(){var c=candidate(),x=built(c,{registry:registry([source(c,{status:'BROKEN',brokenAt:180})])});assert.strictEqual(x.liquidity.lifecycleStatus,'BROKEN');assert.strictEqual(x.liquidity.lifecycleTransitionAt,180);});
 test('35 future registry BROKEN is hidden',function(){var c=candidate(),x=built(c,{registry:registry([source(c,{status:'BROKEN',brokenAt:250})])});assert.strictEqual(x.liquidity.lifecycleStatus,'SWEPT');});
 test('36 frozen candidates field and allCandidates alias agree',function(){var x=built(candidate());assert.deepStrictEqual(x.candidates,x.allCandidates);assert.notStrictEqual(x.candidates,x.allCandidates);});
