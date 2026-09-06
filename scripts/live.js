@@ -32,6 +32,7 @@ var thresholds = require('../config/thresholds');
 var eqFvgCountWatchV1 = require('../live/eqFvgCountWatchV1');
 var eqFvgCountWatchAlertServiceV1 = require('../live/eqFvgCountWatchAlertServiceV1');
 var eqFvgCountWatchNotificationV1 = require('../notify/eqFvgCountWatchNotificationV1');
+var eq4hDirectionalContextV2 = require('../live/eq4hDirectionalContextV2');
 var productionEqualLiquidityV1 = require('../liquidity/productionEqualLiquidityV1');
 var rangeDetectorV1 = require('../range/rangeDetectorV1');
 var rangeAlertService = require('../live/rangeAlertService');
@@ -291,6 +292,12 @@ function createRunner(symbol) {
     var lastOpenTime = null;
     var historyLoaded = false;
     var runnerData = null; // Fix 1：{ raw, structureCandles, calendarCandles }（HTF 增量共用同一对象）
+    var eq4hContext = eq4hDirectionalContextV2.createService({
+        symbol: symbol,
+        getFourHourCandles: function () {
+            return runnerData && runnerData.structureCandles && runnerData.structureCandles['4h'] || [];
+        }
+    });
     var delivered = {}; // Fix 3（11L.3）：oppId -> anchorIndex（钉钉确认投递成功才写入；持久化跨重启）
     var savedEqAlertState = persistence.loadJson(eqStateFile, {});
     var eqAlerts = eqFvgCountWatchAlertServiceV1.createService({
@@ -371,11 +378,25 @@ function createRunner(symbol) {
     }
 
     function handleEqFvgCountStep(step) {
-        var result = eqAlerts.onStep(step);
+        var liquidity = step.newEqualLiquidity || [];
+        var enrichedLiquidity = liquidity.map(function (item) {
+            var enriched = JSON.parse(JSON.stringify(item));
+            enriched.researchContext4hV2 = eq4hContext.peek(item.confirmedAt);
+            return enriched;
+        });
+        var result = eqAlerts.onStep({
+            evaluationTime: step.evaluationTime,
+            newEqualLiquidity: enrichedLiquidity,
+            rawFvg: step.rawFvg
+        });
         result.opened.forEach(function (watch) {
             log(symbol + ' EQ_FVG_COUNT_WATCH OPEN id=' + watch.watchId +
-                ' liquidity=' + watch.liquidityType + ' expected=' + watch.expectedDirection);
+                ' liquidity=' + watch.liquidityType + ' expected=' + watch.expectedDirection +
+                ' 4hResearch=' + watch.researchContext4hV2.status);
         });
+        // Pre-warm the immutable snapshot for later EQ events. This promise is
+        // deliberately not awaited: WATCH/FVG lifecycle remains synchronous.
+        eq4hContext.resolve(step.evaluationTime).catch(function () {});
         return result;
     }
 
