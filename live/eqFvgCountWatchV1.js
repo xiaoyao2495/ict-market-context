@@ -2,7 +2,6 @@
 
 var VERSION = 'EQ_FVG_COUNT_WATCH_V1';
 var eqSourceContextV1 = require('./eqSourceContextV1');
-var eq4hDirectionalContextV2 = require('./eq4hDirectionalContextV2');
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
@@ -63,8 +62,6 @@ function buildWatch(liquidity) {
         expectedDirection: type === 'EQL' ? 'BULLISH' : 'BEARISH',
         openedAt: liquidity.confirmedAt,
         eqSourceContext: eqSourceContextV1.fromLiquidity(liquidity),
-        researchContext4hV2: clone(liquidity.researchContext4hV2 ||
-            eq4hDirectionalContextV2.unavailable(liquidity.confirmedAt, 'V2_CONTEXT_NOT_AVAILABLE_AT_WATCH_CREATION')),
         bullFvgCount: 0,
         bearFvgCount: 0,
         firstBullFvg: null,
@@ -92,8 +89,6 @@ function notificationFor(watch, rawFvg, ordinal) {
         expectedDirection: watch.expectedDirection,
         eqConfirmedAt: watch.openedAt,
         eqSourceContext: clone(watch.eqSourceContext || eqSourceContextV1.unavailable('EQ_SOURCE_CONTEXT_MISSING')),
-        researchContext4hV2: clone(watch.researchContext4hV2 ||
-            eq4hDirectionalContextV2.unavailable(watch.openedAt, 'V2_CONTEXT_MISSING_FROM_LEGACY_WATCH')),
         ordinal: ordinal,
         rawFvg: clone(rawFvg),
         watchStatusAfterEvent: ordinal === 2 ? 'CLOSED' : 'OPEN'
@@ -130,7 +125,13 @@ function createStateMachine(options) {
     var opts = options || {};
     var watches = {};
     (opts.watches || []).forEach(function (watch) {
-        if (watch && watch.version === VERSION && watch.watchId) watches[watch.watchId] = clone(watch);
+        if (watch && watch.version === VERSION && watch.watchId) {
+            var restored = clone(watch);
+            // Historical V2 context was frozen at WATCH open. It is intentionally
+            // discarded; notification-time context now comes from 4H_BIAS_V3.
+            delete restored.researchContext4hV2;
+            watches[restored.watchId] = restored;
+        }
     });
 
     function step(input) {

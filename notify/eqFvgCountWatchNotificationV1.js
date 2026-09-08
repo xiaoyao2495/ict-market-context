@@ -1,7 +1,7 @@
 'use strict';
 
 var eqSourceContextV1 = require('../live/eqSourceContextV1');
-var eq4hDirectionalContextV2 = require('../live/eq4hDirectionalContextV2');
+var biasContext = require('./4hBiasContext');
 
 function fallbackPrice(value) {
     if (value === null || value === undefined) return '-';
@@ -38,24 +38,6 @@ function sourceContextLines(event, time, price) {
     return lines;
 }
 
-function directionalContextLines(event, time) {
-    var context = event.researchContext4hV2;
-    var lines = ['4H Directional Context (Research):'];
-    if (!context || context.status !== 'AVAILABLE') {
-        lines.push('Status: UNAVAILABLE');
-        lines.push('Alignment: UNKNOWN');
-        lines.push('Snapshot At: ' + time(event.eqConfirmedAt));
-        return lines;
-    }
-    lines.push('Direction: ' + context.direction);
-    lines.push('Confidence: ' + context.confidence);
-    lines.push('Alignment: ' + eq4hDirectionalContextV2.alignment(context, event.expectedDirection));
-    lines.push('Snapshot At: ' + time(context.evaluationTime));
-    // Binance closeTime is interval-boundary minus 1ms; display the actual 4H close boundary.
-    lines.push('Latest Closed 4H: ' + time(context.latestClosedCandleTime + 1));
-    return lines;
-}
-
 function build(event, options) {
     var opts = options || {};
     var price = opts.formatPrice || fallbackPrice;
@@ -74,7 +56,7 @@ function build(event, options) {
     ];
     lines = lines.concat(sourceContextLines(event, time, price));
     lines.push('', 'Expected Direction: ' + event.expectedDirection, '');
-    lines = lines.concat(directionalContextLines(event, time));
+    lines = lines.concat(biasContext.lines(event.current4hBias));
     lines.push(
         '',
         'FVG Ordinal: ' + event.ordinal,
@@ -93,5 +75,5 @@ function build(event, options) {
 module.exports = {
     build: build,
     sourceContextLines: sourceContextLines,
-    directionalContextLines: directionalContextLines
+    biasLines: biasContext.lines
 };

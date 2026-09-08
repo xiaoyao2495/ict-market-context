@@ -171,7 +171,7 @@ test('delivery failure retries, success dedupes, replay does not resend, and #2 
 
 test('new message contains only EQ/FVG count semantics', function () {
     var event=run('EQL',['BULLISH']).notifications[0], message=notification.build(event);
-    ['BTCUSDT','EQL','77280','BULLISH','FVG Ordinal: 1','FVG Low:','FVG High:','EQ确认:','FVG确认:','WATCH继续'].forEach(function(value){assert.ok(message.includes(value),value);});
+    ['BTCUSDT','EQL','77280','BULLISH','FVG Ordinal: 1','FVG Low:','FVG High:','EQ确认:','FVG确认:','WATCH继续','📊 4H Bias','暂不可用'].forEach(function(value){assert.ok(message.includes(value),value);});
     assert.doesNotMatch(message,/Taken|Sweep|Displacement|FIRST_TOUCH|retracement/);
 });
 

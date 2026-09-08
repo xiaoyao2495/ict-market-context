@@ -1,6 +1,7 @@
 /** Frozen local-only 4H_DIRECTIONAL_CONTEXT_V1 deterministic fact builder. */
 var dailyBiasContext = require('../../ai/dailyBiasContext');
 var leg = require('./4hDirectionalLegV1');
+var metrics = require('./4hDirectionalMetrics');
 
 var SCHEMA_VERSION = 'LLM_INPUT_FACT_SET_V1';
 var TIMEFRAME = '4h';
@@ -32,21 +33,7 @@ function assertNativeFourHourSequence(candles) {
     return true;
 }
 
-function priceDelivery(candles, atr, bars) {
-    var t = candles.length - 1;
-    if (t - bars < 0 || !isFinite(atr[t])) {
-        throw new Error('PRICE_DELIVERY_WARMUP_NOT_READY_' + bars);
-    }
-    var net = candles[t].close - candles[t - bars].close;
-    var travelled = 0;
-    for (var i = t - bars + 1; i <= t; i++) {
-        travelled += Math.abs(candles[i].close - candles[i - 1].close);
-    }
-    return {
-        signedMoveAtr: net / atr[t],
-        signedEfficiency: travelled === 0 ? 0 : net / travelled
-    };
-}
+var priceDelivery = metrics.priceDelivery;
 
 function mapDirection(value) {
     if (value === 'BULLISH') return 'UP';

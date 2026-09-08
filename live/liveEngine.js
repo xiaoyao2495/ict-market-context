@@ -28,23 +28,11 @@ var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
 var structuralProvenance5m = require('../structure/structuralProvenance5m');
 var eqFvgCountWatchV1 = require('./eqFvgCountWatchV1');
-var dailyBiasAlignment = require('../bias/dailyBiasAlignment');
 var thresholds = require('../config/thresholds');
-
-function attachDailyBias(opp, provider) {
-    try {
-        opp.dailyBias = provider
-            ? provider(opp.direction, opp.availableAt, opp)
-            : dailyBiasAlignment.unknownDailyBias();
-    } catch (e) {
-        opp.dailyBias = dailyBiasAlignment.unknownDailyBias();
-    }
-    return opp;
-}
 
 /**
  * @param {Object} data { symbol, exchangeInfo, structureCandles, calendarCandles, fetcher, thresholds }
- * @param {Object} [options] { snapshotInterval, baseIndex, dailyBiasProvider }
+ * @param {Object} [options] { snapshotInterval, baseIndex }
  * @returns {Object} engine
  */
 function createLiveEngine(data, options) {
@@ -53,7 +41,6 @@ function createLiveEngine(data, options) {
     var symbol = data.symbol;
     var snapshotInterval = opts.snapshotInterval !== undefined ? opts.snapshotInterval : 12;
     var baseIndex = opts.baseIndex !== undefined ? opts.baseIndex : 0;
-    var dailyBiasProvider = opts.dailyBiasProvider;
     var state = replayState.createReplayState({
         symbol: symbol,
         timeframe: '5m',
@@ -283,9 +270,7 @@ function createLiveEngine(data, options) {
                 : 'STANDARD_HIGH';
         }
 
-        // Daily Bias V1 is reporting-only enrichment. It runs strictly after tier and
-        // notifyPriority are finalized, and failures degrade to UNKNOWN without touching either.
-        return attachDailyBias(opp, dailyBiasProvider);
+        return opp;
     }
 
     function getState() { return state; }
@@ -310,6 +295,5 @@ function createLiveEngine(data, options) {
 }
 
 module.exports = {
-    createLiveEngine: createLiveEngine,
-    attachDailyBias: attachDailyBias
+    createLiveEngine: createLiveEngine
 };

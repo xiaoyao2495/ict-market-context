@@ -1,4 +1,5 @@
 /** Presentation-only formatter for RANGE_OBJECT_V1 confirmations. */
+var biasContext = require('./4hBiasContext');
 function decimalsFromTick(tickSize, fallback) {
     if (tickSize !== null && tickSize !== undefined && Number(tickSize) > 0) {
         var text = Number(tickSize).toFixed(12).replace(/0+$/, '');
@@ -19,7 +20,7 @@ function buildRangeConfirmationMessage(event, options) {
     var fmtTime = opts.formatTime || function (value) { return new Date(value).toISOString(); };
     var fmtPrice = opts.formatPrice || function (value) { return formatPrice(value, opts.exchangeInfo); };
     var keyword = opts.keyword ? opts.keyword + ' · ' : '';
-    return [
+    var lines = [
         '📦 ' + keyword + event.symbol + ' 5m 震荡区间确认',
         '',
         '区间: ' + fmtPrice(event.lower) + ' - ' + fmtPrice(event.upper),
@@ -33,8 +34,10 @@ function buildRangeConfirmationMessage(event, options) {
         '参数: L24 / ATR500 / 1.0',
         '版本: RANGE_OBJECT_V1',
         '',
-        '观察: 等待价格离开区间'
-    ].join('\n');
+        '观察: 等待价格离开区间',
+        ''
+    ];
+    return lines.concat(biasContext.lines(event.current4hBias)).join('\n');
 }
 
 module.exports = {

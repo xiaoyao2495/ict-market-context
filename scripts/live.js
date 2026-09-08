@@ -23,7 +23,6 @@ var liveEngineMod = require('../live/liveEngine');
 var dataSource = require('../live/dataSource');
 var binanceRest = require('../data/binanceRest');
 var persistence = require('../live/persistence');
-var dailyBiasServiceModule = require('../live/dailyBiasService');
 var dingTalk = require('../notify/dingTalk');
 var continuityChecker = require('../replay/continuityChecker');
 var liquidityProvenance = require('../stats/liquidityProvenance');
@@ -32,7 +31,8 @@ var thresholds = require('../config/thresholds');
 var eqFvgCountWatchV1 = require('../live/eqFvgCountWatchV1');
 var eqFvgCountWatchAlertServiceV1 = require('../live/eqFvgCountWatchAlertServiceV1');
 var eqFvgCountWatchNotificationV1 = require('../notify/eqFvgCountWatchNotificationV1');
-var eq4hDirectionalContextV2 = require('../live/eq4hDirectionalContextV2');
+var fourHourBiasV3 = require('../live/4hBiasV3');
+var notificationMarketContext = require('../notify/4hBiasContext');
 var productionEqualLiquidityV1 = require('../liquidity/productionEqualLiquidityV1');
 var rangeDetectorV1 = require('../range/rangeDetectorV1');
 var rangeAlertService = require('../live/rangeAlertService');
@@ -189,7 +189,7 @@ function rangeEnabledFor(symbol) {
         params.atrLength === rangeDetectorV1.PARAMETERS.atrLength &&
         cfg.notifyOnConfirm === true && cfg.notifyOnBreakout === false;
 }
-function buildMessage(opp, symbol) {
+function buildMessage(opp, symbol, current4hBias) {
     var dir = opp.direction === 'BULLISH' ? 'LONG (BULLISH)' : 'SHORT (BEARISH)';
     var keyword = CONFIG.dingtalk.keyword || '检测';
     // 11L.4：时间 = 真正通知时点（availableAt = 系统首次能确认 leg 结束），
@@ -210,16 +210,8 @@ function buildMessage(opp, symbol) {
         headTag + keyword + ' · HIGH QUALITY WATCH · ' + symbol,
         dir
     ];
-    var dailyBias = opp.dailyBias || {
-        bias: 'UNKNOWN', confidence: null, alignment: 'UNKNOWN', status: 'UNKNOWN',
-        evaluationTime: null, ageMs: null
-    };
-    lines.push('Daily Bias:');
-    lines.push(dailyBias.bias + ' / ' + (dailyBias.confidence || '-') +
-        ' · ' + dailyBias.alignment + ' · ' + dailyBias.status);
-    lines.push('Bias Eval: ' + (dailyBias.evaluationTime !== null
-        ? fmt(dailyBias.evaluationTime) + ' · age ' + Math.round(dailyBias.ageMs / 60000) + 'm'
-        : '-'));
+    lines.push('');
+    lines = lines.concat(notificationMarketContext.lines(current4hBias));
     // Phase 11L.8 + 11L.15b：流动性通知行 —— 展示与判定依据对齐。
     //
     //   判定（B 口径，windowHasSignificant）看的是 48 根窗口内 allCandidates 是否存在
@@ -273,7 +265,6 @@ function createRunner(symbol) {
     var candlesFile = path.join(dir, 'candles.jsonl');
     var pushedFile = path.join(dir, 'pushed.json');
     var stateFile = path.join(dir, 'cursor.json');
-    var dailyBiasFile = path.join(dir, 'daily-bias.json');
     var shadowFile = path.join(dir, 'prioritization.jsonl'); // 11L.15：两组 HIGH 的 shadow 记录（3-7 天后 forward 对比）
     // One atomically-renamed snapshot keeps WATCH close and notification #2
     // outbox creation crash-consistent in the same completed-candle transition.
@@ -282,20 +273,18 @@ function createRunner(symbol) {
     var rangeDeliveredFile = path.join(dir, 'range-notified.json');
     var rangeOutboxFile = path.join(dir, 'range-outbox.json');
     var rangeStateFile = path.join(dir, 'range-detector-state.json');
-    var dailyBiasService = dailyBiasServiceModule.createDailyBiasService({
-        symbol: symbol,
-        file: dailyBiasFile
-    });
-
     var engine = null;
     var lastCloseTime = 0;
     var lastOpenTime = null;
     var historyLoaded = false;
     var runnerData = null; // Fix 1：{ raw, structureCandles, calendarCandles }（HTF 增量共用同一对象）
-    var eq4hContext = eq4hDirectionalContextV2.createService({
+    var current4hBias = fourHourBiasV3.createService({
         symbol: symbol,
         getFourHourCandles: function () {
             return runnerData && runnerData.structureCandles && runnerData.structureCandles['4h'] || [];
+        },
+        observe: function (record) {
+            log(symbol + ' 4H_BIAS_CREATED ' + JSON.stringify(record));
         }
     });
     var delivered = {}; // Fix 3（11L.3）：oppId -> anchorIndex（钉钉确认投递成功才写入；持久化跨重启）
@@ -338,7 +327,8 @@ function createRunner(symbol) {
     }
 
     function sendRangeConfirmation(event, key) {
-        var msg = rangeNotificationV1.buildRangeConfirmationMessage(event, {
+        var contextualEvent = notificationMarketContext.attach(event, current4hBias.getCurrent());
+        var msg = rangeNotificationV1.buildRangeConfirmationMessage(contextualEvent, {
             exchangeInfo: runnerData && runnerData.raw && runnerData.raw.exchangeInfo,
             formatTime: fmt,
             keyword: CONFIG.dingtalk.keyword || '检测'
@@ -362,7 +352,8 @@ function createRunner(symbol) {
     }
 
     function sendEqFvgNotification(event, key) {
-        var message = eqFvgCountWatchNotificationV1.build(event, {
+        var contextualEvent = notificationMarketContext.attach(event, current4hBias.getCurrent());
+        var message = eqFvgCountWatchNotificationV1.build(contextualEvent, {
             formatPrice: fmtPrice,
             formatTime: fmt,
             keyword: CONFIG.dingtalk.keyword || '检测'
@@ -378,25 +369,15 @@ function createRunner(symbol) {
     }
 
     function handleEqFvgCountStep(step) {
-        var liquidity = step.newEqualLiquidity || [];
-        var enrichedLiquidity = liquidity.map(function (item) {
-            var enriched = JSON.parse(JSON.stringify(item));
-            enriched.researchContext4hV2 = eq4hContext.peek(item.confirmedAt);
-            return enriched;
-        });
         var result = eqAlerts.onStep({
             evaluationTime: step.evaluationTime,
-            newEqualLiquidity: enrichedLiquidity,
+            newEqualLiquidity: step.newEqualLiquidity || [],
             rawFvg: step.rawFvg
         });
         result.opened.forEach(function (watch) {
             log(symbol + ' EQ_FVG_COUNT_WATCH OPEN id=' + watch.watchId +
-                ' liquidity=' + watch.liquidityType + ' expected=' + watch.expectedDirection +
-                ' 4hResearch=' + watch.researchContext4hV2.status);
+                ' liquidity=' + watch.liquidityType + ' expected=' + watch.expectedDirection);
         });
-        // Pre-warm the immutable snapshot for later EQ events. This promise is
-        // deliberately not awaited: WATCH/FVG lifecycle remains synchronous.
-        eq4hContext.resolve(step.evaluationTime).catch(function () {});
         return result;
     }
 
@@ -446,7 +427,6 @@ function createRunner(symbol) {
                 }),
                 structureMode: structuralSwingMode()
             };
-            rec.dailyBias = opp.dailyBias || null;
             fs.appendFileSync(shadowFile, JSON.stringify(rec) + '\n');
         } catch (e) {
             log(symbol + ' PRIORITIZATION_SHADOW_WRITE_ERROR: ' + (e && e.message || e) + '（shadow 样本未落盘，钉钉/雷达不受影响）');
@@ -541,9 +521,6 @@ function createRunner(symbol) {
         }, {
             snapshotInterval: CONFIG.snapshotInterval,
             baseIndex: 0,
-            dailyBiasProvider: function (direction, atTime) {
-                return dailyBiasService.getDailyBias(direction, atTime);
-            },
             eqProductionModel: EQ_PRODUCTION_MODEL
         });
 
@@ -591,7 +568,7 @@ function createRunner(symbol) {
             // create Production WATCHes. Live steps are persisted immediately at
             // the EQ/raw-FVG boundary, before unrelated downstream engines run.
             engine.setEqFvgCountStepHandler(handleEqFvgCountStep);
-            return refreshDailyBias();
+            return refresh4hBias();
         }).then(function () {
             // Retry a pre-restart confirmation outbox only after deterministic
             // candle replay has restored the current Range lifecycle.
@@ -689,29 +666,18 @@ function createRunner(symbol) {
     var tickRunning = false;
     var loopTimer = null;
 
-    function refreshDailyBias() {
-        return dailyBiasService.updateOnClosed4h(runnerData.structureCandles['4h']).then(function (result) {
-            if (!result.attempted) return result;
-            if (result.updated) {
-                log(symbol + ' Daily Bias 更新: ' + result.snapshot.bias + '/' + result.snapshot.confidence +
-                    ' evaluationTime=' + fmt(result.snapshot.evaluationTime));
-            } else {
-                log(symbol + ' Daily Bias API 失败: ' + result.error.code + ' ' + result.error.message +
-                    '（保留上一 snapshot，按 8h 规则标记 STALE/UNKNOWN）');
-            }
-            return result;
-        }).catch(function (e) {
-            log(symbol + ' Daily Bias service 错误: ' + (e && e.message || e) +
-                '（不影响 Opportunity detection/notification）');
+    function refresh4hBias() {
+        return current4hBias.refresh(Date.now()).catch(function (error) {
+            log(symbol + ' 4H Bias refresh error: ' + (error && error.message || error) +
+                '（不影响 EQ/FVG/WATCH/notification）');
             return null;
         });
     }
 
     function doTick() {
-        return eqAlerts.flush().then(function () {
-            // Fix 1（11L.3 P0）：HTF 增量 futures-only（spot 不 append）+ 错误不吞
-            return dataSource.fetchHtfIncrement(symbol, runnerData.structureCandles, runnerData.calendarCandles, CONFIG.requireFutures);
-        }).then(function (htf) {
+        // Update/refresh 4H before retrying pending notifications so delivery-time
+        // context always reflects the latest fully closed native 4H known now.
+        return dataSource.fetchHtfIncrement(symbol, runnerData.structureCandles, runnerData.calendarCandles, CONFIG.requireFutures).then(function (htf) {
             (htf.issues || []).forEach(function (iss) {
                 if (iss.kind === 'DEGRADED') {
                     log(symbol + ' HTF DATA_SOURCE_DEGRADED: ' + iss.tf + ' 返回 ' + iss.source +
@@ -720,7 +686,7 @@ function createRunner(symbol) {
                     log(symbol + ' HTF_NETWORK_ERROR: ' + iss.tf + ' ' + (iss.error || 'network') + '（保留旧 HTF snapshot，stale 状态）');
                 }
             });
-            return refreshDailyBias().then(function () {
+            return refresh4hBias().then(function () { return eqAlerts.flush(); }).then(function () {
                 // 11L.5（P1-2）：HTF 更新异常 → 本轮暂停 5m 推进。
                 // Near Draw/Liquidity/Snapshot 依赖 HTF context，stale HTF 下不应发 HIGH；
                 // 下轮 HTF 恢复后 poll 自动检测 gap → backfill → 连续推进（Live/Replay 状态一致）
@@ -807,6 +773,8 @@ function main() {
         '（current ordinary 2/2 vs prior 36H active Causal Dynamic D anchors）');
     log('EQ_NOTIFICATION_MODEL=' + EQ_NOTIFICATION_MODEL +
         '（new EQ confirmation -> accumulated raw 3-candle FVG #1/#2）');
+    log('4H_BIAS_MODEL=' + fourHourBiasV3.VERSION +
+        '（new fully closed native 4H -> deterministic Direction/Strength facts -> one semantic compression）');
     log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED
         ? 'ENABLED（钉钉只推 PRIORITY_HIGH = HIGH + 48 窗口内 Significant Liquidity；STANDARD_HIGH 只落日志）'
         : 'DISABLED（全部 HIGH 照常推钉钉，仅记录 notifyPriority 字段）'));

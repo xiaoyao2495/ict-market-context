@@ -196,7 +196,8 @@ async function main() {
     });
     assert.ok(message.indexOf('BTCUSDT 5m 震荡区间确认') !== -1);
     assert.ok(message.indexOf('参数: L24 / ATR500 / 1.0') !== -1);
-    ['Bullish', 'Bearish', 'AMD', 'Bias', 'Sweep', 'MSS', 'Displacement', 'FVG', 'WATCH', 'Entry', 'Trade'].forEach(function (term) {
+    assert.ok(message.indexOf('📊 4H Bias') !== -1);
+    ['Bullish', 'Bearish', 'AMD', 'Sweep', 'MSS', 'Displacement', 'FVG', 'WATCH', 'Entry', 'Trade'].forEach(function (term) {
         assert.strictEqual(message.indexOf(term), -1, term);
     });
 
