@@ -89,6 +89,7 @@ function createLiveEngine(data, options) {
         var eqFvgCountStep = {
             evaluationTime: evaluationTime,
             newEqualLiquidity: JSON.parse(JSON.stringify(newEqualLiquidity)),
+            newConfirmedSwings: JSON.parse(JSON.stringify(newConfirmedSwings || [])),
             rawFvg: currentRawFvg ? JSON.parse(JSON.stringify(currentRawFvg)) : null
         };
         // This branch is deliberately completed before snapshot/displacement/AMD
@@ -280,6 +281,7 @@ function createLiveEngine(data, options) {
         onBar: onBar,
         getState: getState,
         getWindowLength: getWindowLength,
+        getWindowSnapshot: function () { return JSON.parse(JSON.stringify(window)); },
         drainEqFvgCountSteps: function () {
             var out = eqFvgCountSteps.slice();
             eqFvgCountSteps = [];

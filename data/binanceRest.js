@@ -156,26 +156,53 @@ function parseExchangeInfo(data, symbol, source) {
     if (!symbolInfo) {
         return {
             symbol: symbol,
+            status: null,
+            contractType: null,
             tickSize: null,
             stepSize: null,
+            minQty: null,
+            maxQty: null,
+            minNotional: null,
+            minPrice: null,
+            maxPrice: null,
             pricePrecision: null,
             source: source || 'not-found'
         };
     }
     var tickSize = null;
     var stepSize = null;
+    var minQty = null;
+    var maxQty = null;
+    var minNotional = null;
+    var minPrice = null;
+    var maxPrice = null;
     (symbolInfo.filters || []).forEach(function (f) {
         if (f.filterType === 'PRICE_FILTER' && f.tickSize) {
             tickSize = Number(f.tickSize);
+            minPrice = f.minPrice !== undefined ? Number(f.minPrice) : null;
+            maxPrice = f.maxPrice !== undefined ? Number(f.maxPrice) : null;
         }
         if (f.filterType === 'LOT_SIZE' && f.stepSize) {
             stepSize = Number(f.stepSize);
+            minQty = f.minQty !== undefined ? Number(f.minQty) : null;
+            maxQty = f.maxQty !== undefined ? Number(f.maxQty) : null;
+        }
+        if ((f.filterType === 'MIN_NOTIONAL' || f.filterType === 'NOTIONAL') &&
+            (f.notional !== undefined || f.minNotional !== undefined)) {
+            minNotional = Number(f.notional !== undefined ? f.notional : f.minNotional);
         }
     });
     return {
         symbol: symbol,
+        status: symbolInfo.status || null,
+        contractType: symbolInfo.contractType || null,
         tickSize: tickSize,
         stepSize: stepSize,
+        minQty: minQty,
+        maxQty: maxQty,
+        minNotional: minNotional,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
         pricePrecision:
             symbolInfo.pricePrecision !== undefined
                 ? symbolInfo.pricePrecision

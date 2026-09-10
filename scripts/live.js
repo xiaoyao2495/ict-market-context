@@ -12,7 +12,9 @@
  *   3. 钉钉投递确认后才去重（失败保留 pending 自动重试）
  *   4. 第一版默认 fixed 模式（只监控 symbols 列表，默认 BTCUSDT）
  *
- * 无下单/仓位/交易执行。Windows/Linux 通用（纯 Node 22，fs + fetch）。
+ * REAL_ORDER_EXECUTION_V1 is an isolated consumer of the existing WATCH output.
+ * It cannot gate or interrupt WATCH/FVG/DingTalk processing and is hard-disabled
+ * unless LIVE_TRADING_ENABLED is the literal string "true".
  * 部署：node scripts/live.js（建议 pm2 或计划任务保活）
  *
  * 重启恢复：candles.jsonl（最近 N 根重放重建状态，幂等）+ pushed.json（已投递去重集合）
@@ -37,11 +39,16 @@ var productionEqualLiquidityV1 = require('../liquidity/productionEqualLiquidityV
 var rangeDetectorV1 = require('../range/rangeDetectorV1');
 var rangeAlertService = require('../live/rangeAlertService');
 var rangeNotificationV1 = require('../notify/rangeNotificationV1');
+var executionRepositoryV1 = require('../execution/executionRepositoryV1');
+var binanceExecutionClientV1 = require('../execution/binanceExecutionClientV1');
+var realOrderExecutionV1 = require('../execution/realOrderExecutionV1');
+var executionNotificationV1 = require('../notify/executionNotificationV1');
 
 var CONFIG = require('../config/live.json');
 var EQ_PRODUCTION_MODEL = productionEqualLiquidityV1.VERSION;
 var EQ_NOTIFICATION_MODEL = eqFvgCountWatchV1.VERSION;
 var DISPLACEMENT_PRODUCTION_MODE = 'CANONICAL_A_C2_V1';
+var LIVE_TRADING_ENABLED = process.env.LIVE_TRADING_ENABLED === 'true';
 
 // Phase 11L.15：B 口径 Live Shadow Prioritization 开关（thresholds.notify.prioritization.enabled）。
 //   true  → 钉钉只推 PRIORITY_HIGH（HIGH + 48 窗口内 Significant Liquidity），STANDARD_HIGH 只落日志
@@ -273,6 +280,8 @@ function createRunner(symbol) {
     var rangeDeliveredFile = path.join(dir, 'range-notified.json');
     var rangeOutboxFile = path.join(dir, 'range-outbox.json');
     var rangeStateFile = path.join(dir, 'range-detector-state.json');
+    var executionStateFile = path.join(dir, 'real-order-execution-v1.json');
+    var executionEventsFile = path.join(dir, 'real-order-execution-v1.jsonl');
     var engine = null;
     var lastCloseTime = 0;
     var lastOpenTime = null;
@@ -300,6 +309,57 @@ function createRunner(symbol) {
     var persistedCandles = [];
     var rangeAlerts = null;
     var rangeStateRestored = false;
+    var execution = null;
+    var executionSymbolRules = null;
+
+    function executionContext(decisionTime) {
+        var state = engine && engine.getState();
+        var points = state && state.productionEq && state.productionEq.dynamicD &&
+            state.productionEq.dynamicD.recentSurvivalPoints || [];
+        var fourHour = runnerData && runnerData.structureCandles && runnerData.structureCandles['4h'] || [];
+        var latest = fourHour.filter(function (c) { return c.closed === true && c.closeTime <= decisionTime; })
+            .sort(function (a, b) { return b.closeTime - a.closeTime; })[0];
+        return {
+            bias: current4hBias.getCurrent(),
+            expected4hClosedAt: latest ? latest.closeTime : null,
+            dynamicDPoints: points,
+            candles: engine ? engine.getWindowSnapshot() : [],
+            symbolRules: executionSymbolRules || (runnerData && runnerData.raw && runnerData.raw.exchangeInfo)
+        };
+    }
+
+    function sendExecutionAlert(event) {
+        log(symbol + ' EXECUTION ' + event.type + ' reason=' + (event.reasonCode || '-') +
+            ' tradeId=' + (event.tradeId || '-'));
+        if (event.type === 'NO_TRADE') return Promise.resolve();
+        if (event.type === 'SHADOW_ORDER' && process.env.EXECUTION_SHADOW_DINGTALK_ENABLED !== 'true') return Promise.resolve();
+        if (!CONFIG.dingtalk.webhook || CONFIG.dingtalk.webhook.indexOf('YOUR_') !== -1) return Promise.resolve();
+        var message = executionNotificationV1.build(event, CONFIG.dingtalk.keyword || '检测');
+        return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, message).then(function (response) {
+            if (!response || response.errcode !== 0) throw new Error('errcode=' + (response ? response.errcode : 'none'));
+        });
+    }
+
+    function recordExecutionEvent(event) {
+        try { fs.appendFileSync(executionEventsFile, JSON.stringify(Object.assign({ at: Date.now() }, event)) + '\n'); }
+        catch (error) { log(symbol + ' EXECUTION_EVENT_WRITE_ERROR: ' + error.message); }
+    }
+
+    function createExecutionService() {
+        var repository = executionRepositoryV1.createRepository({
+            initial: persistence.loadJson(executionStateFile, {}),
+            persist: function (snapshot) { persistence.saveJson(executionStateFile, snapshot); }
+        });
+        return realOrderExecutionV1.createService({
+            symbol: symbol,
+            liveTradingEnabled: LIVE_TRADING_ENABLED,
+            repository: repository,
+            client: binanceExecutionClientV1.createClient({ liveTradingEnabled: LIVE_TRADING_ENABLED }),
+            getContext: executionContext,
+            observe: recordExecutionEvent,
+            alert: sendExecutionAlert
+        });
+    }
 
     function saveRangeAlertState(snapshot) {
         persistence.saveJson(rangeDeliveredFile, snapshot.delivered);
@@ -378,6 +438,14 @@ function createRunner(symbol) {
             log(symbol + ' EQ_FVG_COUNT_WATCH OPEN id=' + watch.watchId +
                 ' liquidity=' + watch.liquidityType + ' expected=' + watch.expectedDirection);
         });
+        // Execution is a downstream, error-contained consumer. WATCH has already
+        // advanced and persisted before any trading gate or exchange call occurs.
+        if (execution) {
+            (result.notifications || []).forEach(function (event) {
+                if (event.ordinal === 1) execution.onFirstMatchingFvg(event);
+            });
+            execution.onConfirmedSwings(step.newConfirmedSwings || []);
+        }
         return result;
     }
 
@@ -568,7 +636,15 @@ function createRunner(symbol) {
             // create Production WATCHes. Live steps are persisted immediately at
             // the EQ/raw-FVG boundary, before unrelated downstream engines run.
             engine.setEqFvgCountStepHandler(handleEqFvgCountStep);
-            return refresh4hBias();
+            execution = createExecutionService();
+            // Execution rules are fetched afresh from Futures exchangeInfo instead
+            // of trusting the long-lived historical-loader cache.
+            return binanceRest.getExchangeInfo(symbol).then(function (info) {
+                executionSymbolRules = info;
+                return refresh4hBias();
+            });
+        }).then(function () {
+            return execution.start();
         }).then(function () {
             // Retry a pre-restart confirmation outbox only after deterministic
             // candle replay has restored the current Range lifecycle.
@@ -752,6 +828,7 @@ function createRunner(symbol) {
             clearTimeout(loopTimer);
             loopTimer = null;
         }
+        if (execution) execution.stop();
     }
 
     return {
@@ -775,6 +852,8 @@ function main() {
         '（new EQ confirmation -> accumulated raw 3-candle FVG #1/#2）');
     log('4H_BIAS_MODEL=' + fourHourBiasV3.VERSION +
         '（new fully closed native 4H -> deterministic Direction/Strength facts -> one semantic compression）');
+    log('REAL_ORDER_EXECUTION_V1=' + (LIVE_TRADING_ENABLED ? 'LIVE' : 'SHADOW') +
+        '（only literal LIVE_TRADING_ENABLED=true permits mutating Binance requests）');
     log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED
         ? 'ENABLED（钉钉只推 PRIORITY_HIGH = HIGH + 48 窗口内 Significant Liquidity；STANDARD_HIGH 只落日志）'
         : 'DISABLED（全部 HIGH 照常推钉钉，仅记录 notifyPriority 字段）'));
