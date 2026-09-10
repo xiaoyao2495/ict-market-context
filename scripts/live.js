@@ -19,6 +19,8 @@
  *
  * 重启恢复：candles.jsonl（最近 N 根重放重建状态，幂等）+ pushed.json（已投递去重集合）
  */
+require('../config/loadEnv')();
+
 var fs = require('fs');
 var path = require('path');
 var liveEngineMod = require('../live/liveEngine');
