@@ -1,7 +1,5 @@
 {
-  "symbols": ["BTCUSDT", "ZECUSDT", "PROMUSDT"],
-  "symbolsMode": "fixed",
-  "warmupDays": 30,
+  "symbolsMode": "dynamic",
   "pollMs": 30000,
   "snapshotInterval": 12,
   "dataDir": ".live-state",
@@ -19,10 +17,17 @@
       "atrLength": 500
     }
   },
-  "topSymbols": {
-    "count": 10,
-    "refreshHourUTC": 8,
-    "refreshIntervalMs": 3600000
+  "dynamicUniverse": {
+    "version": "DYNAMIC_CONTRACT_UNIVERSE_V1",
+    "topN": 10,
+    "rankTimeframe": "4h",
+    "rankClosedBars": 6,
+    "refreshHourUTC": 0,
+    "refreshMinuteUTC": 5,
+    "refreshCheckIntervalMs": 60000,
+    "retryIntervalMs": 3600000,
+    "concurrency": 8,
+    "requestIntervalMs": 200
   },
   "dingtalk": {
     "webhook": "https://oapi.dingtalk.com/robot/send?access_token=YOUR_ACCESS_TOKEN",

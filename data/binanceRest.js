@@ -12,8 +12,8 @@
  * - 主域名失败（超时 / 502 / ECONNREFUSED / 5xx）自动回退官方数据镜像
  *   data-api.binance.vision（现货端点），并标记 source: 'spot-mirror'
  */
-var axios = require('axios');
 var network = require('../config/network');
+var binanceHttp = require('./binanceHttpTransportV1');
 
 var INTERVAL_MS = {
     '1m': 60000,
@@ -60,6 +60,16 @@ function proxyConfig() {
     return {};
 }
 
+function httpGet(url, cfg, endpoint, category) {
+    return binanceHttp.request(Object.assign({}, cfg || {}, { method: 'GET', url: url }), {
+        meta: { endpoint: endpoint, category: category || 'PUBLIC_MARKET_DATA' }
+    });
+}
+
+function fallbackEligible(error) {
+    return !binanceHttp.isRateLimitError(error);
+}
+
 /**
  * 标准化单根原始 K 线（Binance klines 数组格式）
  */
@@ -75,6 +85,9 @@ function normalizeCandle(item, source, interval) {
         low: Number(item[3]),
         close: Number(item[4]),
         volume: Number(item[5]),
+        // Binance kline field 7. Dynamic Contract Universe V1 ranks only by
+        // the sum of this quote-asset volume across six fully closed 4H bars.
+        quoteAssetVolume: item[7] !== undefined ? Number(item[7]) : null,
         closeTime: closeTime,
         closed: closed,
         source: source
@@ -102,8 +115,7 @@ function requestKlines(symbol, interval, limit, startTime, endTime, useFallback)
     var cfg = proxyConfig();
     cfg.params = params;
     cfg.timeout = 10000;
-    return axios
-        .get(url + path, cfg)
+    return httpGet(url + path, cfg, path, useFallback ? 'SPOT_FALLBACK' : 'FUTURES_MARKET_DATA')
         .then(function (response) {
             return response.data
                 .map(function (item) {
@@ -129,6 +141,7 @@ function getKlines(symbol, interval, limit, startTime, endTime) {
     var forceFallback = shouldUseFallback();
     return requestKlines(symbol, interval, limit, startTime, endTime, forceFallback).catch(
         function (primaryError) {
+            if (forceFallback || !fallbackEligible(primaryError)) throw primaryError;
             // 主域名失败 → 自动回退镜像；镜像也失败才抛错
             return requestKlines(symbol, interval, limit, startTime, endTime, true).catch(
                 function () {
@@ -137,6 +150,11 @@ function getKlines(symbol, interval, limit, startTime, endTime) {
             );
         }
     );
+}
+
+/** Strict native Futures candles with no spot-mirror fallback. */
+function getFuturesKlinesStrict(symbol, interval, limit, startTime, endTime) {
+    return requestKlines(symbol, interval, limit, startTime, endTime, false);
 }
 
 /**
@@ -212,6 +230,28 @@ function parseExchangeInfo(data, symbol, source) {
 }
 
 var exchangeInfoCache = {}; // symbol -> info
+var futuresExchangeInfoPromise = null;
+var futuresExchangeInfoFetchedAt = 0;
+
+/** Fetch the authoritative USDⓈ-M Futures exchangeInfo document once. */
+function getFuturesExchangeInfo() {
+    if (futuresExchangeInfoPromise && (futuresExchangeInfoFetchedAt === 0 ||
+            Date.now() - futuresExchangeInfoFetchedAt < 5 * 60 * 1000)) {
+        return futuresExchangeInfoPromise;
+    }
+    var cfg = proxyConfig();
+    cfg.timeout = 10000;
+    futuresExchangeInfoPromise = httpGet(network.baseUrl + '/fapi/v1/exchangeInfo', cfg,
+        '/fapi/v1/exchangeInfo', 'FUTURES_EXCHANGE_INFO').then(function (response) {
+        futuresExchangeInfoFetchedAt = Date.now();
+        return { source: 'futures', symbols: response.data && response.data.symbols || [] };
+    }).catch(function (error) {
+        futuresExchangeInfoPromise = null;
+        futuresExchangeInfoFetchedAt = 0;
+        throw error;
+    });
+    return futuresExchangeInfoPromise;
+}
 
 /**
  * 获取某 symbol 的 exchangeInfo（缓存）
@@ -233,7 +273,7 @@ function getExchangeInfo(symbol) {
         var source = useFallback ? 'spot-mirror' : 'futures';
         var cfg = proxyConfig();
         cfg.timeout = 10000;
-        return axios.get(url + path, cfg).then(function (response) {
+        return httpGet(url + path, cfg, path, useFallback ? 'SPOT_FALLBACK' : 'FUTURES_EXCHANGE_INFO').then(function (response) {
             return parseExchangeInfo(response.data, symbol, source);
         });
     };
@@ -242,13 +282,15 @@ function getExchangeInfo(symbol) {
             exchangeInfoCache[symbol] = info;
             return info;
         })
-        .catch(function () {
+        .catch(function (primaryError) {
+            if (forceFallback || !fallbackEligible(primaryError)) throw primaryError;
             return fetchInfo(true)
                 .then(function (info) {
                     exchangeInfoCache[symbol] = info;
                     return info;
                 })
-                .catch(function () {
+                .catch(function (fallbackError) {
+                    if (!fallbackEligible(fallbackError)) throw fallbackError;
                     var info = {
                         symbol: symbol,
                         tickSize: null,
@@ -334,7 +376,7 @@ function fetchTopVolumeSymbols(count) {
         var source = useFallback ? 'spot-mirror' : 'futures';
         var cfg = proxyConfig();
         cfg.timeout = 10000;
-        return axios.get(url + path, cfg).then(function (response) {
+        return httpGet(url + path, cfg, path, useFallback ? 'SPOT_FALLBACK' : 'FUTURES_UNIVERSE').then(function (response) {
             var symbols = (response.data && response.data.symbols) || [];
             return { candidates: parseTopCandidates(symbols), source: source, useFallback: useFallback };
         });
@@ -345,7 +387,7 @@ function fetchTopVolumeSymbols(count) {
         var path = useFallback ? '/api/v3/ticker/24hr' : '/fapi/v1/ticker/24hr';
         var cfg = proxyConfig();
         cfg.timeout = 10000;
-        return axios.get(url + path, cfg).then(function (r) {
+        return httpGet(url + path, cfg, path, useFallback ? 'SPOT_FALLBACK' : 'FUTURES_UNIVERSE').then(function (r) {
             var map = {};
             (r.data || []).forEach(function (t) {
                 if (t.symbol && t.quoteVolume !== undefined) {
@@ -353,7 +395,10 @@ function fetchTopVolumeSymbols(count) {
                 }
             });
             return map;
-        }).catch(function () { return {}; }); // 成交量失败 → 保持 exchangeInfo 顺序兜底
+        }).catch(function (error) {
+            if (!fallbackEligible(error)) throw error;
+            return {};
+        }); // 非限流成交量失败 → 保持 exchangeInfo 顺序兜底
     }
 
     function rank(info) {
@@ -370,16 +415,19 @@ function fetchTopVolumeSymbols(count) {
         });
     }
 
-    return fetchCandidates(forceFallback).then(rank).catch(function () {
+    return fetchCandidates(forceFallback).then(rank).catch(function (primaryError) {
+        if (forceFallback || !fallbackEligible(primaryError)) throw primaryError;
         return fetchCandidates(!forceFallback).then(rank); // 另一个源兜底
     });
 }
 
 module.exports = {
     getKlines: getKlines,
+    getFuturesKlinesStrict: getFuturesKlinesStrict,
     getExchangeInfo: getExchangeInfo,
     loadHistory: loadHistory,
     parseExchangeInfo: parseExchangeInfo,
     fetchTopVolumeSymbols: fetchTopVolumeSymbols,
-    parseTopCandidates: parseTopCandidates
+    parseTopCandidates: parseTopCandidates,
+    getFuturesExchangeInfo: getFuturesExchangeInfo
 };

@@ -31,7 +31,7 @@ var eqFvgCountWatchV1 = require('./eqFvgCountWatchV1');
 var thresholds = require('../config/thresholds');
 
 /**
- * @param {Object} data { symbol, exchangeInfo, structureCandles, calendarCandles, fetcher, thresholds }
+ * @param {Object} data { symbol, exchangeInfo, structureCandles, thresholds }
  * @param {Object} [options] { snapshotInterval, baseIndex }
  * @returns {Object} engine
  */
@@ -61,9 +61,7 @@ function createLiveEngine(data, options) {
 
     var fullData = {
         symbol: symbol,
-        fetcher: data.fetcher,
         structureCandles: data.structureCandles,
-        calendarCandles: data.calendarCandles,
         exchangeInfo: data.exchangeInfo,
         thresholds: cfg
     };

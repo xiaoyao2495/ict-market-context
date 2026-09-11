@@ -10,7 +10,7 @@
  *   1. requireFutures → 初始化 + HTF 增量 futures-only fail-closed（spot 绝不进入）
  *   2. DATA_GAP backfill 后严格 continuity 验证（不通过不推进，下轮继续补）
  *   3. 钉钉投递确认后才去重（失败保留 pending 自动重试）
- *   4. 第一版默认 fixed 模式（只监控 symbols 列表，默认 BTCUSDT）
+ *   4. DYNAMIC_CONTRACT_UNIVERSE_V1 每日冻结 Top10，并保留 active lifecycle symbols
  *
  * REAL_ORDER_EXECUTION_V1 is an isolated consumer of the existing WATCH output.
  * It cannot gate or interrupt WATCH/FVG/DingTalk processing and is hard-disabled
@@ -45,6 +45,7 @@ var executionRepositoryV1 = require('../execution/executionRepositoryV1');
 var binanceExecutionClientV1 = require('../execution/binanceExecutionClientV1');
 var realOrderExecutionV1 = require('../execution/realOrderExecutionV1');
 var executionNotificationV1 = require('../notify/executionNotificationV1');
+var dynamicContractUniverseV1 = require('../live/dynamicContractUniverseV1');
 
 var CONFIG = require('../config/live.json');
 var EQ_PRODUCTION_MODEL = productionEqualLiquidityV1.VERSION;
@@ -268,7 +269,8 @@ function buildMessage(opp, symbol, current4hBias) {
 function structuralSwingMode() {
     return 'STRUCTURAL_PROVENANCE_2L2R_V1';
 }
-function createRunner(symbol) {
+function createRunner(symbol, options) {
+    var runnerOptions = options || {};
     var dir = path.join(CONFIG.dataDir, symbol);
     persistence.ensureDir(dir);
     var candlesFile = path.join(dir, 'candles.jsonl');
@@ -288,7 +290,7 @@ function createRunner(symbol) {
     var lastCloseTime = 0;
     var lastOpenTime = null;
     var historyLoaded = false;
-    var runnerData = null; // Fix 1：{ raw, structureCandles, calendarCandles }（HTF 增量共用同一对象）
+    var runnerData = null; // { raw, structureCandles }；live HTF 增量共用同一对象
     var current4hBias = fourHourBiasV3.createService({
         symbol: symbol,
         getFourHourCandles: function () {
@@ -307,12 +309,15 @@ function createRunner(symbol) {
         send: sendEqFvgNotification,
         persist: saveEqAlertState
     });
-    var bootstrapRetentionBars = dataSource.initial5mRetentionBars(CONFIG.warmupDays);
+    var bootstrapRetentionBars = dataSource.production5mRetentionBars();
+    var htfBoundaryScheduler = dataSource.createHtfBoundaryScheduler({ retryIntervalMs: 60000 });
     var persistedCandles = [];
     var rangeAlerts = null;
     var rangeStateRestored = false;
     var execution = null;
     var executionSymbolRules = null;
+    var scanAdmitted = runnerOptions.scanAdmitted !== false;
+    var analysisReady = false;
 
     function executionContext(decisionTime) {
         var state = engine && engine.getState();
@@ -358,6 +363,12 @@ function createRunner(symbol) {
             repository: repository,
             client: binanceExecutionClientV1.createClient({ liveTradingEnabled: LIVE_TRADING_ENABLED }),
             getContext: executionContext,
+            getNewTradeAdmission: function () {
+                if (!scanAdmitted) return { admitted: false, reasonCode: 'SYMBOL_NOT_IN_SCAN_UNIVERSE' };
+                if (!analysisReady) return { admitted: false, reasonCode: 'INSUFFICIENT_ANALYSIS_HISTORY' };
+                if (!dataSource.executionRulesReady(executionSymbolRules)) return { admitted: false, reasonCode: 'SYMBOL_RULES_NOT_READY' };
+                return { admitted: true, reasonCode: null };
+            },
             observe: recordExecutionEvent,
             alert: sendExecutionAlert
         });
@@ -431,6 +442,14 @@ function createRunner(symbol) {
     }
 
     function handleEqFvgCountStep(step) {
+        if (!scanAdmitted) {
+            // Lifecycle-retained symbols do not advance EQ/WATCH/FVG notification
+            // state and cannot create a new trade. Confirmed swings remain wired
+            // only because an already-open Entry may require the existing
+            // structural pending-cancel rule.
+            if (execution) execution.onConfirmedSwings(step.newConfirmedSwings || []);
+            return { opened: [], notifications: [], lifecycleOnly: true };
+        }
         var result = eqAlerts.onStep({
             evaluationTime: step.evaluationTime,
             newEqualLiquidity: step.newEqualLiquidity || [],
@@ -444,7 +463,7 @@ function createRunner(symbol) {
         // advanced and persisted before any trading gate or exchange call occurs.
         if (execution) {
             (result.notifications || []).forEach(function (event) {
-                if (event.ordinal === 1) execution.onFirstMatchingFvg(event);
+                if (event.ordinal === 1 && scanAdmitted) execution.onFirstMatchingFvg(event);
             });
             execution.onConfirmedSwings(step.newConfirmedSwings || []);
         }
@@ -505,7 +524,7 @@ function createRunner(symbol) {
 
     function initFromHistory(data) {
         // Fix 1（11L.3 P0）：requireFutures → 初始化 futures-only fail-closed。
-        // 任何 timeframe（5m/1h/4h/1d/1w/1M）或 exchangeInfo 出现非 futures 源
+        // 任一 live timeframe（5m/1h/4h/1d）或 exchangeInfo 出现非 futures 源
         // → 初始化失败（throw），不启动该 symbol（不 warmup、不建 engine、不留 interval）。
         if (CONFIG.requireFutures) {
             var purity = dataSource.checkFuturesPurity(data);
@@ -550,13 +569,18 @@ function createRunner(symbol) {
         }
         // Fix 1 (P0)：runnerData 保存组装后的 HTF 引用（fetchHtfIncrement 增量更新同一对象）
         var structureCandles = { '1d': data['1d'], '4h': data['4h'], '1h': data['1h'] };
-        var calendarCandles = { '1d': data['1d'], '1w': data['1w'], '1M': data['1M'] };
-        runnerData = { raw: data, structureCandles: structureCandles, calendarCandles: calendarCandles };
+        runnerData = { raw: data, structureCandles: structureCandles };
+        analysisReady = dataSource.analysisHistoryReady(data);
+        if (!analysisReady) {
+            var historyStatus = dataSource.analysisHistoryStatus(data);
+            log(symbol + ' INSUFFICIENT_ANALYSIS_HISTORY: closed4h=' + historyStatus.available4hBars +
+                '/' + historyStatus.required4hBars + ' closed5m=' + historyStatus.available5mBars +
+                '/' + historyStatus.required5mBars + '（禁止新 live Entry）');
+        }
         var candles5m = (data['5m'] || []).slice();
         log(symbol + ' 初始历史 ' + candles5m.length + ' 根 5m（' + fmt(candles5m[0].closeTime) + ' → ' + fmt(candles5m[candles5m.length - 1].closeTime) + '）');
-        // 持久化历史（幂等：跳过已存在的 openTime），然后限制为与
-        // fetchInitial 完全相同的 30d + 5m loader warmup 窗口。旧安装积累的
-        // 更早 candles 不再让 restart bootstrap 随运行时间无限增长。
+        // 持久化历史（幂等：跳过已存在的 openTime），并压缩到 production
+        // 明确要求的 723 根 closed 5m；旧安装的 30d 存量不会继续进入 bootstrap。
         var prepared = prepareBootstrapCandles(existing, candles5m, bootstrapRetentionBars);
         var all = prepared.candles;
         var prunedBars = prepared.prunedBars;
@@ -585,8 +609,6 @@ function createRunner(symbol) {
             exchangeInfo: data.exchangeInfo,
             contextCandles5m: all,
             structureCandles: structureCandles,
-            calendarCandles: calendarCandles,
-            fetcher: dataSource.makeFetcher(calendarCandles),
             thresholds: require('../config/thresholds')
         }, {
             snapshotInterval: CONFIG.snapshotInterval,
@@ -702,7 +724,7 @@ function createRunner(symbol) {
                     steps.forEach(handleEqFvgCountStep);
                     return eqAlerts.flush().then(function () { return opp; });
                 }).then(function (opp) {
-                    if (!rangeAlerts) return opp;
+                    if (!rangeAlerts || !scanAdmitted) return opp;
                     rangeAlerts.onCandle(c, {
                         notificationsEnabled: !!(CONFIG.rangeDetector && CONFIG.rangeDetector.notifyOnConfirm),
                         recordEvents: true
@@ -710,7 +732,7 @@ function createRunner(symbol) {
                     persistence.saveJson(rangeStateFile, rangeAlerts.getDetector().getState());
                     return rangeAlerts.flush().then(function () { return opp; });
                 }).then(function (opp) {
-                    if (opp && opp.tier === 'HIGH_QUALITY') {
+                    if (scanAdmitted && opp && opp.tier === 'HIGH_QUALITY') {
                         return handleHigh(opp);
                     }
                     return null;
@@ -755,7 +777,9 @@ function createRunner(symbol) {
     function doTick() {
         // Update/refresh 4H before retrying pending notifications so delivery-time
         // context always reflects the latest fully closed native 4H known now.
-        return dataSource.fetchHtfIncrement(symbol, runnerData.structureCandles, runnerData.calendarCandles, CONFIG.requireFutures).then(function (htf) {
+        return dataSource.fetchHtfIncrement(symbol, runnerData.structureCandles, null, CONFIG.requireFutures, {
+            evaluationTime: Date.now(), scheduler: htfBoundaryScheduler
+        }).then(function (htf) {
             (htf.issues || []).forEach(function (iss) {
                 if (iss.kind === 'DEGRADED') {
                     log(symbol + ' HTF DATA_SOURCE_DEGRADED: ' + iss.tf + ' 返回 ' + iss.source +
@@ -764,6 +788,13 @@ function createRunner(symbol) {
                     log(symbol + ' HTF_NETWORK_ERROR: ' + iss.tf + ' ' + (iss.error || 'network') + '（保留旧 HTF snapshot，stale 状态）');
                 }
             });
+            if (!analysisReady && dataSource.analysisHistoryReady({
+                '4h': runnerData.structureCandles['4h'],
+                '5m': persistedCandles
+            })) {
+                analysisReady = true;
+                log(symbol + ' ANALYSIS_HISTORY_READY: closed4h>=' + dataSource.MIN_ANALYSIS_4H_BARS);
+            }
             return refresh4hBias().then(function () { return eqAlerts.flush(); }).then(function () {
                 // 11L.5（P1-2）：HTF 更新异常 → 本轮暂停 5m 推进。
                 // Near Draw/Liquidity/Snapshot 依赖 HTF context，stale HTF 下不应发 HIGH；
@@ -783,17 +814,13 @@ function createRunner(symbol) {
             }
             var newCandles = res.candles;
             if (newCandles.length === 0) return; // NO_NEW_BAR（正常）
-            // Fix 4（P1）：5m 连续性检查（前一根 openTime + 5m === 当前 openTime）
-            if (lastOpenTime !== null && newCandles[0].openTime !== lastOpenTime + BAR_MS) {
+            var gapDetected = lastOpenTime !== null && newCandles[0].openTime !== lastOpenTime + BAR_MS;
+            if (gapDetected) {
                 log(symbol + ' DATA_GAP: 期望 openTime=' + (lastOpenTime + BAR_MS) + ' 实际=' + newCandles[0].openTime + '（暂停推进，补历史...）');
-                return dataSource.backfill5m(symbol, lastCloseTime).then(function (backfill) {
-                    var merged = (backfill || []).filter(function (c) {
-                        return c.closed && c.closeTime > lastCloseTime && c.openTime < newCandles[0].openTime;
-                    }).sort(function (a, b) { return a.openTime - b.openTime; });
-                    var full = merged.concat(newCandles);
-                    if (full.length === 0) return;
-                    log(symbol + ' 补历史 ' + merged.length + ' 根，等待 continuity 验证...');
-                    return processCandles(full); // 内部严格验证：不通过 → DATA_GAP_UNRESOLVED 不推进
+                return dataSource.recover5mGap(symbol, lastOpenTime, lastCloseTime, newCandles).then(function (recovery) {
+                    if (recovery.candles.length === 0) return;
+                    log(symbol + ' 补历史 ' + recovery.backfilledBars + ' 根，等待 continuity 验证...');
+                    return processCandles(recovery.candles); // 内部严格验证：不通过 → DATA_GAP_UNRESOLVED 不推进
                 });
             }
             return processCandles(newCandles);
@@ -838,12 +865,21 @@ function createRunner(symbol) {
         tick: tick,
         startLoop: startLoop,
         stopLoop: stopLoop,
+        setScanAdmitted: function (value) { scanAdmitted = value === true; },
+        isScanAdmitted: function () { return scanAdmitted; },
+        hasActiveExecutionLifecycle: function () { return !!execution && execution.hasActiveLifecycle(); },
+        isExecutionReady: function () { return !!execution && analysisReady &&
+            dataSource.executionRulesReady(executionSymbolRules) && execution.isExecutionReady(); },
         getEqFvgCountSnapshot: function () { return eqAlerts.snapshot(); }
     };
 }
 
-// ---------- 主流程（Phase 11L.2：top10 动态监控 + 每日刷新） ----------
+// ---------- 主流程（DYNAMIC_CONTRACT_UNIVERSE_V1：每日冻结 Top10） ----------
 function main() {
+    if (CONFIG.symbolsMode === 'dynamic' &&
+            !dynamicContractUniverseV1.configMatchesContract(CONFIG.dynamicUniverse)) {
+        throw new Error('DYNAMIC_UNIVERSE_CONFIG_MISMATCH');
+    }
     persistence.ensureDir(CONFIG.dataDir);
     log('=== Live Opportunity Radar 启动 ===');
     log('STRUCTURAL_SWING_MODE=' + structuralSwingMode() +
@@ -859,7 +895,9 @@ function main() {
     log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED
         ? 'ENABLED（钉钉只推 PRIORITY_HIGH = HIGH + 48 窗口内 Significant Liquidity；STANDARD_HIGH 只落日志）'
         : 'DISABLED（全部 HIGH 照常推钉钉，仅记录 notifyPriority 字段）'));
-    log('symbolsMode=' + CONFIG.symbolsMode + ' pollMs=' + CONFIG.pollMs + ' warmupDays=' + CONFIG.warmupDays);
+    log('symbolsMode=' + CONFIG.symbolsMode + ' pollMs=' + CONFIG.pollMs +
+        ' production5mBars=' + dataSource.MIN_ANALYSIS_5M_BARS +
+        ' production4hBars=' + dataSource.MIN_ANALYSIS_4H_BARS);
     if (!CONFIG.dingtalk.webhook || CONFIG.dingtalk.webhook.indexOf('YOUR_') !== -1) {
         log('⚠️ 未配置钉钉 webhook（config/live.json 或 DINGTALK_WEBHOOK）——机会将只记录日志不推送');
     }
@@ -872,26 +910,44 @@ function main() {
         log('钉钉安全模式：自定义关键词「' + (CONFIG.dingtalk.keyword || '检测') + '」（secret 未配置，消息必须包含该关键词）');
     }
 
-    var runners = {}; // sym -> { runner, interval }
+    var runners = {}; // sym -> { runner }
+    var startingSymbols = {}; // guards queued bootstrap before runners[sym] exists
     var startSequence = Promise.resolve(); // 串行启动（避免并发拉历史压代理）
-    var refreshDate = null; // 上次名单刷新日期（YYYY-MM-DD，UTC）
+    var scanUniverse = {};
+    var universeTimer = null;
+    var universeSequence = Promise.resolve();
+    var productionBootstrap = dataSource.createProductionBootstrapService();
+    var universeFile = path.join(CONFIG.dataDir, 'dynamic-contract-universe-v1.json');
+    var universe = dynamicContractUniverseV1.createService({
+        snapshotFile: universeFile,
+        concurrency: CONFIG.dynamicUniverse && CONFIG.dynamicUniverse.concurrency,
+        requestIntervalMs: CONFIG.dynamicUniverse && CONFIG.dynamicUniverse.requestIntervalMs,
+        retryIntervalMs: CONFIG.dynamicUniverse && CONFIG.dynamicUniverse.retryIntervalMs
+    });
 
     function startSymbol(sym) {
+        if (runners[sym] || startingSymbols[sym]) return startSequence;
+        startingSymbols[sym] = true;
         startSequence = startSequence.then(function () {
             log(sym + ' 加入监控：拉取初始历史（可能命中本地缓存）...');
-            return dataSource.fetchInitial(sym, CONFIG.warmupDays).then(function (data) {
-                var r = createRunner(sym);
+            return productionBootstrap.prepare(sym, Date.now()).then(function (data) {
+                var r = createRunner(sym, { scanAdmitted: !!scanUniverse[sym] });
                 // Fix 1（11L.3 P0）：initFromHistory 内部 purity fail-closed（throw）——
                 // 必须初始化成功后才启动轮询循环，失败不留半启动状态
                 return r.initFromHistory(data).then(function () {
                     r.startLoop(); // 11L.5：setTimeout 串行链（tick 完成后再调度下一轮，无重入）
                     runners[sym] = { runner: r };
+                    r.setScanAdmitted(!!scanUniverse[sym]);
                     r.tick(); // 立即先跑一轮
-                    log(sym + ' 监控就绪');
+                    log(sym + ' 监控就绪 SCAN_ADMITTED=' + r.isScanAdmitted() +
+                        ' EXECUTION_READY=' + r.isExecutionReady());
                 });
             });
         }).catch(function (e) {
+            productionBootstrap.forget(sym);
             log(sym + ' 启动失败: ' + (e && e.message || e) + '（跳过，下轮刷新重试）');
+        }).then(function () {
+            delete startingSymbols[sym];
         });
         return startSequence;
     }
@@ -900,59 +956,83 @@ function main() {
         if (!runners[sym]) return;
         runners[sym].runner.stopLoop(); // 11L.5：清掉 setTimeout 链
         delete runners[sym];
-        log(sym + ' 移出监控（状态文件保留，重回 top' + (CONFIG.topSymbols.count || 10) + ' 可恢复）');
+        productionBootstrap.forget(sym);
+        log(sym + ' 移出 runtime（无 active execution lifecycle；状态文件保留）');
     }
 
-    function ensureSymbols(list) {
-        var want = {};
-        list.forEach(function (s) { want[s] = true; });
-        Object.keys(runners).forEach(function (sym) { if (!want[sym]) stopSymbol(sym); });
-        list.forEach(function (sym) { if (!runners[sym]) startSymbol(sym); });
+    function activeLifecycleSymbols() {
+        var active = dynamicContractUniverseV1.discoverActiveLifecycleSymbols(CONFIG.dataDir);
+        Object.keys(runners).forEach(function (symbol) {
+            if (runners[symbol].runner.hasActiveExecutionLifecycle() && active.indexOf(symbol) === -1) active.push(symbol);
+        });
+        return active.sort();
+    }
+
+    function ensureRuntimeSymbols(list) {
+        var nextScan = {};
+        (list || []).forEach(function (symbol) { nextScan[symbol] = true; });
+        scanUniverse = nextScan;
+        Object.keys(runners).forEach(function (symbol) {
+            runners[symbol].runner.setScanAdmitted(!!scanUniverse[symbol]);
+        });
+        var runtime = dynamicContractUniverseV1.runtimeSymbols(Object.keys(scanUniverse), activeLifecycleSymbols());
+        var want = {}; runtime.forEach(function (symbol) { want[symbol] = true; });
+        Object.keys(runners).forEach(function (symbol) {
+            if (!want[symbol]) stopSymbol(symbol);
+        });
+        runtime.forEach(function (symbol) { if (!runners[symbol]) startSymbol(symbol); });
         return startSequence;
     }
 
-    function refreshTop() {
-        return binanceRest.fetchTopVolumeSymbols(CONFIG.topSymbols.count).then(function (list) {
-            // Fix 1 + 11L.5（P1-1）：Top 名单 futures-only 且 source 必须显式 === 'futures'
-            // （undefined 视为来源不明，拒绝刷新，保留现有监控）
-            if (CONFIG.requireFutures && list.some(function (x) { return x.source !== 'futures'; })) {
-                log('DATA_SOURCE_DEGRADED: Top 名单来源非 futures/无 source（' + (list[0].source || 'undefined') + '）——拒绝刷新，保留现有监控');
-                return;
-            }
-            var syms = list.map(function (x) { return x.symbol; });
-            refreshDate = new Date().toISOString().slice(0, 10);
-            log('Top' + syms.length + ' 名单刷新（' + refreshDate + '）: ' + syms.join(', '));
-            log('  成交量榜首: ' + (list[0] ? list[0].symbol + ' ' + Math.round(list[0].quoteVolume) : '-'));
-            return ensureSymbols(syms);
-        }).catch(function (e) {
-            log('Top 名单刷新失败: ' + (e && e.message || e) + '（保留现有监控）');
+    function logUniverseSnapshot(snapshot, status) {
+        log('UNIVERSE_REFRESH=PASS VERSION=' + snapshot.version + ' TOP_N=' + snapshot.topN +
+            ' WINDOW=6x4H_CLOSED GENERATED_AT=' + new Date(snapshot.generatedAt).toISOString() +
+            ' STATUS=' + status);
+        snapshot.symbols.forEach(function (row) {
+            log('UNIVERSE_RANK ' + row.rank + ' ' + row.symbol + ' quoteVolume24h=' + row.quoteVolume24h);
         });
     }
 
-    function checkDailyRefresh() {
-        if (CONFIG.symbolsMode !== 'top10') return;
-        var now = new Date();
-        var today = now.toISOString().slice(0, 10);
-        if (refreshDate === today) return; // 今天已刷新
-        if (now.getUTCHours() < CONFIG.topSymbols.refreshHourUTC) return; // 未到刷新时刻
-        refreshTop();
+    function applyUniverseResult(result) {
+        if (result.status === 'REFRESH_FAILED') {
+            log('UNIVERSE_REFRESH=FAIL reason=' + (result.error && result.error.message || 'unknown') +
+                (result.ready ? '（保留 previous valid universe）' : ' UNIVERSE_NOT_READY（禁止新 live trade）'));
+        }
+        if (result.snapshot) {
+            if (result.status === 'REFRESHED' || result.status === 'RESTORED') logUniverseSnapshot(result.snapshot, result.status);
+            return ensureRuntimeSymbols(dynamicContractUniverseV1.snapshotSymbols(result.snapshot));
+        }
+        return ensureRuntimeSymbols([]);
     }
 
-    if (CONFIG.symbolsMode === 'top10') {
-        refreshTop().then(function () {
-            // 11L.2 fix（2026-08-19）：top10 分支补"全部就绪"确认日志（与 fixed 分支一致）
+    function maintainUniverse() {
+        universeSequence = universeSequence.then(function () {
+            return universe.refreshIfDue(Date.now()).then(function (result) {
+                if (result.status === 'REFRESHED' || result.status === 'REFRESH_FAILED') return applyUniverseResult(result);
+                // A symbol retained only for execution management is evicted as
+                // soon as its persisted/runtime lifecycle becomes terminal-clean.
+                return ensureRuntimeSymbols(dynamicContractUniverseV1.snapshotSymbols(result.snapshot));
+            });
+        }).catch(function (error) {
+            log('UNIVERSE_MAINTENANCE_ERROR ' + (error && error.message || error));
+        });
+        return universeSequence;
+    }
+
+    if (CONFIG.symbolsMode === 'dynamic') {
+        universe.initialize(Date.now()).then(applyUniverseResult).then(function () {
             log('=== 全部 symbol 就绪，开始轮询（Ctrl+C 停止） ===');
-            log('=== 每日 ' + CONFIG.topSymbols.refreshHourUTC + ':00 UTC 自动刷新 Top' + CONFIG.topSymbols.count + ' ===');
-            setInterval(checkDailyRefresh, CONFIG.topSymbols.refreshIntervalMs);
+            log('=== 每日 00:05 UTC 自动刷新 Dynamic Top10（6x4H closed quoteAssetVolume） ===');
+            universeTimer = setInterval(maintainUniverse,
+                CONFIG.dynamicUniverse && CONFIG.dynamicUniverse.refreshCheckIntervalMs || 60000);
         });
     } else if (CONFIG.symbolsMode === 'fixed') {
-        // Fix 4（11L.3）：第一版 fixed 模式 —— 只监控 symbols 列表（默认 BTCUSDT），
-        // 等验证通过后再切 top10
-        ensureSymbols(CONFIG.symbols || []).then(function () {
+        // Compatibility-only local mode. Production config uses dynamic V1.
+        ensureRuntimeSymbols(CONFIG.symbols || []).then(function () {
             log('=== 全部 symbol 就绪，开始轮询（Ctrl+C 停止） ===');
         });
     } else {
-        throw new Error('未知 symbolsMode=' + CONFIG.symbolsMode + '（可选 top10 / fixed）');
+        throw new Error('未知 symbolsMode=' + CONFIG.symbolsMode + '（可选 dynamic / fixed）');
     }
 }
 

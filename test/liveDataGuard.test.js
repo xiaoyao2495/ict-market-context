@@ -156,17 +156,16 @@ test('fetchHtfIncrement: requireFutures + spot HTF → 不 append + DEGRADED', f
             return Promise.resolve([makeBar(3600000, 3600000, 'spot-mirror')]);
         }
     });
-    var structure = { '1h': [], '4h': [] };
-    var calendar = { '1d': [], '1w': [], '1M': [] };
-    return ds.fetchHtfIncrement('BTCUSDT', structure, calendar, true).then(function (res) {
+    var structure = { '1h': [makeBar(0, 3600000)], '4h': [makeBar(0, 14400000)], '1d': [makeBar(0, 86400000)] };
+    return ds.fetchHtfIncrement('BTCUSDT', structure, null, true, { evaluationTime: 2 * 86400000 }).then(function (res) {
         assert.strictEqual(res.ok, false);
-        assert.strictEqual(res.issues.length, 5); // 5 个 timeframe 都请求并返回 spot
+        assert.strictEqual(res.issues.length, 3); // live 仅保留 1h/4h/1d
         assert.strictEqual(res.issues[0].kind, 'DEGRADED');
         assert.strictEqual(res.issues[0].tf, '1h');
         // spot 未 append：所有 timeframe 数组仍为空
-        assert.strictEqual(structure['1h'].length, 0);
-        assert.strictEqual(structure['4h'].length, 0);
-        assert.strictEqual(calendar['1d'].length, 0);
+        assert.strictEqual(structure['1h'].length, 1);
+        assert.strictEqual(structure['4h'].length, 1);
+        assert.strictEqual(structure['1d'].length, 1);
     });
 });
 
@@ -176,13 +175,12 @@ test('fetchHtfIncrement: requireFutures + 无 source（来源不明）→ 拒绝
             return Promise.resolve([{ openTime: 3600000, closeTime: 7199999, close: 1 }]); // 无 source
         }
     });
-    var structure = { '1h': [], '4h': [] };
-    var calendar = { '1d': [], '1w': [], '1M': [] };
-    return ds.fetchHtfIncrement('BTCUSDT', structure, calendar, true).then(function (res) {
+    var structure = { '1h': [makeBar(0, 3600000)], '4h': [makeBar(0, 14400000)], '1d': [makeBar(0, 86400000)] };
+    return ds.fetchHtfIncrement('BTCUSDT', structure, null, true, { evaluationTime: 2 * 86400000 }).then(function (res) {
         assert.strictEqual(res.ok, false);
         assert.strictEqual(res.issues[0].kind, 'DEGRADED');
         assert.strictEqual(res.issues[0].source, 'undefined', 'source 缺失 → 明确标记 undefined');
-        assert.strictEqual(structure['1h'].length, 0, '来源不明的 HTF 不 append');
+        assert.strictEqual(structure['1h'].length, 1, '来源不明的 HTF 不 append');
     });
 });
 
@@ -192,11 +190,10 @@ test('fetchHtfIncrement: requireFutures=false + spot → 照旧 append（兼容�
             return Promise.resolve([makeBar(3600000, 3600000, 'spot-mirror')]);
         }
     });
-    var structure = { '1h': [], '4h': [] };
-    var calendar = { '1d': [], '1w': [], '1M': [] };
-    return ds.fetchHtfIncrement('BTCUSDT', structure, calendar, false).then(function (res) {
+    var structure = { '1h': [makeBar(0, 3600000)], '4h': [makeBar(0, 14400000)], '1d': [makeBar(0, 86400000)] };
+    return ds.fetchHtfIncrement('BTCUSDT', structure, null, false, { evaluationTime: 2 * 86400000 }).then(function (res) {
         assert.strictEqual(res.ok, true);
-        assert.strictEqual(structure['1h'].length, 1);
+        assert.strictEqual(structure['1h'].length, 2);
     });
 });
 
@@ -206,11 +203,10 @@ test('fetchHtfIncrement: futures 正常 → append 且无 issue', function () {
             return Promise.resolve([makeBar(3600000, 3600000)]);
         }
     });
-    var structure = { '1h': [], '4h': [] };
-    var calendar = { '1d': [], '1w': [], '1M': [] };
-    return ds.fetchHtfIncrement('BTCUSDT', structure, calendar, true).then(function (res) {
+    var structure = { '1h': [makeBar(0, 3600000)], '4h': [makeBar(0, 14400000)], '1d': [makeBar(0, 86400000)] };
+    return ds.fetchHtfIncrement('BTCUSDT', structure, null, true, { evaluationTime: 2 * 86400000 }).then(function (res) {
         assert.strictEqual(res.ok, true);
-        assert.strictEqual(structure['1h'].length, 1);
+        assert.strictEqual(structure['1h'].length, 2);
     });
 });
 
@@ -220,32 +216,31 @@ test('fetchHtfIncrement: 网络失败 → NETWORK_ERROR（不吞错）', functio
             return Promise.reject(new Error('ECONNREFUSED'));
         }
     });
-    var structure = { '1h': [], '4h': [] };
-    var calendar = { '1d': [], '1w': [], '1M': [] };
-    return ds.fetchHtfIncrement('BTCUSDT', structure, calendar, true).then(function (res) {
+    var structure = { '1h': [makeBar(0, 3600000)], '4h': [makeBar(0, 14400000)], '1d': [makeBar(0, 86400000)] };
+    return ds.fetchHtfIncrement('BTCUSDT', structure, null, true, { evaluationTime: 2 * 86400000 }).then(function (res) {
         assert.strictEqual(res.ok, false);
-        assert.strictEqual(res.issues.length, 5);
+        assert.strictEqual(res.issues.length, 3);
         assert.strictEqual(res.issues[0].kind, 'NETWORK_ERROR');
         assert.ok(res.issues[0].error.indexOf('ECONNREFUSED') !== -1);
-        assert.strictEqual(structure['1h'].length, 0); // 失败不 append
+        assert.strictEqual(structure['1h'].length, 1); // 失败不 append
     });
 });
 
-test('fetchHtfIncrement: 幂等去重（同 openTime 不重复 append）', function () {
+test('fetchHtfIncrement: 同一 boundary 在 retry interval 内不重复请求', function () {
     var calls = 0;
     var ds = loadDataSourceWithMock({
         loadHistory: function () {
             calls++;
-            return Promise.resolve([makeBar(3600000, 3600000)]);
+            return Promise.resolve([]);
         }
     });
-    var structure = { '1h': [], '4h': [] };
-    var calendar = { '1d': [], '1w': [], '1M': [] };
-    return ds.fetchHtfIncrement('BTCUSDT', structure, calendar, true).then(function () {
-        return ds.fetchHtfIncrement('BTCUSDT', structure, calendar, true);
+    var scheduler = ds.createHtfBoundaryScheduler({ retryIntervalMs: 60000 });
+    var structure = { '1h': [makeBar(0, 3600000)], '4h': [makeBar(0, 14400000)], '1d': [makeBar(0, 86400000)] };
+    return ds.fetchHtfIncrement('BTCUSDT', structure, null, true, { evaluationTime: 2 * 86400000, scheduler: scheduler }).then(function () {
+        return ds.fetchHtfIncrement('BTCUSDT', structure, null, true, { evaluationTime: 2 * 86400000 + 30000, scheduler: scheduler });
     }).then(function () {
-        assert.strictEqual(structure['1h'].length, 1); // 第二次同 openTime 不重复
-        assert.strictEqual(calls, 10); // 5 tf × 2 轮
+        assert.strictEqual(structure['1h'].length, 1);
+        assert.strictEqual(calls, 3);
     });
 });
 

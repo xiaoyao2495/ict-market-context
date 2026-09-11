@@ -4,6 +4,7 @@ var crypto = require('crypto');
 var rules = require('./executionRulesV1');
 var repositoryModule = require('./executionRepositoryV1');
 var streamModule = require('./userDataStreamV1');
+var rateLimitGovernor = require('../data/binanceRateLimitGovernorV1');
 
 var OPEN_ORDER_STATUSES = ['NEW', 'PARTIALLY_FILLED', 'PENDING_NEW'];
 function clone(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
@@ -44,6 +45,9 @@ function createService(options) {
     var observe = opts.observe || function () {};
     var alert = opts.alert || function () { return Promise.resolve(); };
     var streamFactory = opts.streamFactory || streamModule.createStream;
+    var getNewTradeAdmission = opts.getNewTradeAdmission || function () {
+        return { admitted: true, reasonCode: null };
+    };
     var stream = null;
     var pollTimer = null;
     var queue = Promise.resolve();
@@ -81,6 +85,14 @@ function createService(options) {
         return positionZero && noOpen && noUnknown && noPending && (trade.status === 'CLOSED' || trade.status === 'CANCELED' || trade.status === 'NO_TRADE' || trade.status === 'SHADOW_ORDER');
     }
     function releaseIfFree(trade) { if (slotFree()) repository.release(); }
+    function holdForRateLimit(trade, error) {
+        trade.status = 'RECONCILING';
+        trade.reasonCode = 'DATA_SOURCE_BLOCKED';
+        saveTrade(trade);
+        return emitOnce('DATA_SOURCE_BLOCKED', trade, { critical: true,
+            reasonCode: 'DATA_SOURCE_BLOCKED', detail: error && error.message,
+            blockedUntil: error && error.blockedUntil }).then(function () { return trade; });
+    }
 
     function submitProtection(trade) {
         if (!live || num(trade.positionQty) === 0) return Promise.resolve(trade);
@@ -93,7 +105,9 @@ function createService(options) {
                 });
             };
             return attempt().catch(function (firstError) {
+                if (rateLimitGovernor.isRateLimitError(firstError)) return holdForRateLimit(trade, firstError);
                 return attempt().catch(function (secondError) {
+                    if (rateLimitGovernor.isRateLimitError(secondError)) return holdForRateLimit(trade, secondError);
                     var code = secondError.code || firstError.code || 'PROTECTION_FAILED';
                     if (role === 'TP') {
                         emit('PROTECTION_FAILED', trade, { critical: true, reasonCode: code, detail: 'TP; SL remains priority' });
@@ -112,6 +126,7 @@ function createService(options) {
         return ensure('SL').then(function () {
             if (!isOpen(trade.slOrder)) return trade;
             return ensure('TP').then(function () {
+                if (trade.reasonCode === 'DATA_SOURCE_BLOCKED') return trade;
                 trade.status = isOpen(trade.tpOrder) ? 'PROTECTED' : 'PROTECTION_ERROR'; saveTrade(trade);
                 if (trade.status === 'PROTECTED') return emitOnce('POSITION_PROTECTED', trade).then(function () { return trade; });
                 return trade;
@@ -134,10 +149,16 @@ function createService(options) {
         var trade = repository.activeTrade();
         if (!live || !trade) return Promise.resolve(trade);
         trade.status = 'RECONCILING'; saveTrade(trade);
-        var entryQuery = trade.entryOrder ? client.queryOrder(symbol, trade.entryOrder.exchangeOrderId, trade.entryOrder.clientOrderId).catch(function () { return null; }) : Promise.resolve(null);
+        var entryQuery = trade.entryOrder ? client.queryOrder(symbol, trade.entryOrder.exchangeOrderId, trade.entryOrder.clientOrderId).catch(function (error) {
+            if (rateLimitGovernor.isRateLimitError(error)) throw error;
+            return null;
+        }) : Promise.resolve(null);
         function algoQuery(local) {
             if (!local || !client.queryAlgoOrder) return Promise.resolve(null);
-            return client.queryAlgoOrder(symbol, local.exchangeOrderId, local.clientOrderId).catch(function () { return null; });
+            return client.queryAlgoOrder(symbol, local.exchangeOrderId, local.clientOrderId).catch(function (error) {
+                if (rateLimitGovernor.isRateLimitError(error)) throw error;
+                return null;
+            });
         }
         return Promise.all([client.getPositionRisk(symbol), client.getOpenOrders(symbol), client.getOpenAlgoOrders(symbol), entryQuery,
             algoQuery(trade.slOrder), algoQuery(trade.tpOrder)]).then(function (values) {
@@ -204,6 +225,9 @@ function createService(options) {
                 if (trade.status === 'CLOSED') emitOnce('TRADE_CLOSED', trade);
                 releaseIfFree(trade); return trade;
             });
+        }).catch(function (error) {
+            if (rateLimitGovernor.isRateLimitError(error)) return holdForRateLimit(trade, error);
+            throw error;
         });
     }
 
@@ -234,6 +258,12 @@ function createService(options) {
 
     function consumeSignal(event, alreadyConsumed) {
         if (!event || event.ordinal !== 1) return Promise.resolve({ status: 'IGNORED' });
+        var admission = getNewTradeAdmission();
+        if (admission === false || (admission && admission.admitted === false)) {
+            var deniedReason = admission && admission.reasonCode || 'SYMBOL_NOT_IN_SCAN_UNIVERSE';
+            emit('NO_TRADE', null, { reasonCode: deniedReason });
+            return Promise.resolve({ status: 'NO_TRADE', reasonCode: deniedReason });
+        }
         if (!alreadyConsumed && !repository.consumeEq(event.liquidityId, { watchId: event.watchId, fvgId: event.rawFvg.id,
             decisionTime: event.rawFvg.confirmedAt })) {
             emit('NO_TRADE', null, { reasonCode: 'EQ_ALREADY_CONSUMED' });
@@ -268,6 +298,7 @@ function createService(options) {
                 : trade.entryOrder.status === 'FILLED' ? 'FILLED' : 'ENTRY_PENDING'; saveTrade(trade);
             return emitOnce('ENTRY_SUBMITTED', trade).then(function () { return trade; });
         }).catch(function (error) {
+            if (rateLimitGovernor.isRateLimitError(error)) return holdForRateLimit(trade, error);
             trade.status = 'EXECUTION_ERROR'; trade.reasonCode = error.code || 'EXCHANGE_REJECTED'; saveTrade(trade);
             return emit(error.code === 'ORDER_STATE_UNKNOWN' ? 'ORDER_STATE_UNKNOWN' : 'EXCHANGE_REJECTED', trade,
                 { critical: true, reasonCode: trade.reasonCode }).then(function () { return trade; });
@@ -314,7 +345,10 @@ function createService(options) {
             if (String(config.marginType || '').toUpperCase() !== 'CROSSED') throw Object.assign(new Error('MARGIN_MODE_NOT_CROSS'), { code: 'MARGIN_MODE_INVALID' });
             if (Number(config.leverage) !== 10) return client.setLeverage(symbol, 10);
         }).then(function () { accountReady = true; return startupOrphanReconcile(); }).catch(function (error) {
-            accountReady = false; return emit('EXCHANGE_REJECTED', null, { critical: true,
+            accountReady = false;
+            var active = repository.activeTrade();
+            if (active && rateLimitGovernor.isRateLimitError(error)) return holdForRateLimit(active, error).then(function () { return false; });
+            return emit('EXCHANGE_REJECTED', null, { critical: true,
                 reasonCode: error.code || 'ACCOUNT_MODE_INVALID', detail: error.message }).then(function () { return false; });
         });
     }
@@ -332,6 +366,12 @@ function createService(options) {
     function stop() { if (pollTimer) clearInterval(pollTimer); pollTimer = null; return stream ? stream.stop() : Promise.resolve(); }
     function onFirstMatchingFvg(event) {
         if (!event || event.ordinal !== 1) return Promise.resolve({ status: 'IGNORED' });
+        var admission = getNewTradeAdmission();
+        if (admission === false || (admission && admission.admitted === false)) {
+            var deniedReason = admission && admission.reasonCode || 'SYMBOL_NOT_IN_SCAN_UNIVERSE';
+            emit('NO_TRADE', null, { reasonCode: deniedReason });
+            return Promise.resolve({ status: 'NO_TRADE', reasonCode: deniedReason });
+        }
         // Persist the one-shot consumption synchronously at the WATCH boundary.
         // Exchange work remains queued and cannot block or roll back WATCH.
         var consumed = repository.consumeEq(event.liquidityId, { watchId: event.watchId,
@@ -344,7 +384,10 @@ function createService(options) {
     }
     return { start: start, stop: stop, onFirstMatchingFvg: onFirstMatchingFvg,
         onConfirmedSwings: onConfirmedSwings, reconcile: function () { return enqueue(reconcile); },
-        getSnapshot: repository.snapshot, isSlotFree: slotFree, _repository: repository };
+        getSnapshot: repository.snapshot, isSlotFree: slotFree,
+        hasActiveLifecycle: function () { return !slotFree(); },
+        isExecutionReady: function () { return !live || accountReady; },
+        _repository: repository };
 }
 
 module.exports = { VERSION: rules.VERSION, createService: createService, tradeIdFor: tradeIdFor,

@@ -1,8 +1,8 @@
 'use strict';
 
 var crypto = require('crypto');
-var axios = require('axios');
 var network = require('../config/network');
+var binanceHttp = require('../data/binanceHttpTransportV1');
 
 function queryString(params) {
     return Object.keys(params).filter(function (key) { return params[key] !== undefined && params[key] !== null; })
@@ -64,7 +64,8 @@ function createClient(options) {
     var apiKey = opts.apiKey || process.env.BINANCE_FUTURES_API_KEY || '';
     var secret = opts.secret || process.env.BINANCE_FUTURES_API_SECRET || '';
     var enabled = opts.liveTradingEnabled === true;
-    var transport = opts.transport || axios;
+    var transport = opts.transport;
+    var governor = opts.governor;
     var baseUrl = opts.baseUrl || network.baseUrl;
     var clockOffset = 0;
 
@@ -83,7 +84,9 @@ function createClient(options) {
         }
         var cfg = Object.assign(proxyConfig(), { method: method, url: baseUrl + path + (encoded ? '?' + encoded : ''), timeout: 10000,
             headers: apiKey ? { 'X-MBX-APIKEY': apiKey } : {} });
-        return Promise.resolve(transport.request(cfg)).then(function (response) { return response.data; }).catch(function (error) {
+        return binanceHttp.request(cfg, { transport: transport, governor: governor,
+            meta: { endpoint: path, category: mutating ? 'EXECUTION_MUTATION' : 'EXECUTION_REST' } })
+            .then(function (response) { return response.data; }).catch(function (error) {
             var data = error && error.response && error.response.data || {};
             error.executionOperation = operationName(method, path, values);
             error.executionEndpoint = path;

@@ -419,10 +419,11 @@ test('Prompt 序列化 structuralState/protectedSwings/structuralEvents 且过�
     assert.ok(prompt.indexOf('Classify each supplied pivot') < 0, '旧 pivot reclassification 指令应删除');
 });
 
-test('Live 默认配置固定监控 BTCUSDT / ZECUSDT / PROMUSDT，不启用 top10', function () {
+test('Live 默认配置使用正式 Dynamic Contract Universe V1', function () {
     var liveConfig = require('../config/live.json');
-    assert.strictEqual(liveConfig.symbolsMode, 'fixed');
-    assert.deepStrictEqual(liveConfig.symbols, ['BTCUSDT', 'ZECUSDT', 'PROMUSDT']);
+    assert.strictEqual(liveConfig.symbolsMode, 'dynamic');
+    assert.strictEqual(liveConfig.dynamicUniverse.version, 'DYNAMIC_CONTRACT_UNIVERSE_V1');
+    assert.strictEqual(liveConfig.dynamicUniverse.topN, 10);
 });
 
 test('allowedDrawTargets 只包含 time-local INTACT liquidity', function () {
