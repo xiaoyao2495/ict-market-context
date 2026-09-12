@@ -1,5 +1,7 @@
 'use strict';
 
+var factRenderer = require('../bias/4hBiasFactRendererV1');
+
 function attach(event, bias) {
     return Object.assign({}, event, { current4hBias: bias || null });
 }
@@ -16,12 +18,13 @@ function lines(bias) {
     }
     var icon = bias.semantic.direction === 'BULLISH' ? '🟢 ' :
         bias.semantic.direction === 'BEARISH' ? '🔴 ' : '⚪ ';
+    output.push('Semantic Decision:');
     output.push('方向: ' + icon + bias.semantic.direction);
     output.push('力度: ' + bias.semantic.strength);
     output.push('置信: ' + bias.semantic.confidence);
-    output.push('解读: ' + bias.semantic.summary);
-    if (bias.semantic.conflicts && bias.semantic.conflicts.trim() && bias.semantic.conflicts.trim().toUpperCase() !== 'NONE') {
-        output.push('冲突: ' + bias.semantic.conflicts);
+    if (bias.facts) {
+        output.push('Deterministic Facts:');
+        Array.prototype.push.apply(output, factRenderer.lines(bias.facts));
     }
     return output;
 }

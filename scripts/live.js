@@ -36,6 +36,7 @@ var eqFvgCountWatchV1 = require('../live/eqFvgCountWatchV1');
 var eqFvgCountWatchAlertServiceV1 = require('../live/eqFvgCountWatchAlertServiceV1');
 var eqFvgCountWatchNotificationV1 = require('../notify/eqFvgCountWatchNotificationV1');
 var fourHourBiasV3 = require('../live/4hBiasV3');
+var fourHourBiasDecisionStoreV1 = require('../bias/4hBiasDecisionStoreV1');
 var notificationMarketContext = require('../notify/4hBiasContext');
 var productionEqualLiquidityV1 = require('../liquidity/productionEqualLiquidityV1');
 var rangeDetectorV1 = require('../range/rangeDetectorV1');
@@ -293,11 +294,17 @@ function createRunner(symbol, options) {
     var runnerData = null; // { raw, structureCandles }；live HTF 增量共用同一对象
     var current4hBias = fourHourBiasV3.createService({
         symbol: symbol,
+        decisionStore: fourHourBiasDecisionStoreV1.createStore({
+            directory: path.join(CONFIG.dataDir, '4h-bias-decisions-v1')
+        }),
         getFourHourCandles: function () {
             return runnerData && runnerData.structureCandles && runnerData.structureCandles['4h'] || [];
         },
         observe: function (record) {
             log(symbol + ' 4H_BIAS_CREATED ' + JSON.stringify(record));
+        },
+        observeDecision: function (record) {
+            log(symbol + ' ' + record.event + ' ' + JSON.stringify(record));
         }
     });
     var delivered = {}; // Fix 3（11L.3）：oppId -> anchorIndex（钉钉确认投递成功才写入；持久化跨重启）

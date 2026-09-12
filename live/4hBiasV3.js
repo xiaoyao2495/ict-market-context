@@ -3,6 +3,8 @@
 var deepseekClient = require('../ai/deepseekClient');
 var factBuilder = require('../bias/directionalContext/4hBiasFactsV3');
 var semanticContract = require('../bias/4hBiasSemanticV3');
+var decisionStoreV1 = require('../bias/4hBiasDecisionStoreV1');
+var path = require('path');
 
 var VERSION = '4H_BIAS_V3';
 
@@ -53,6 +55,13 @@ function createService(options) {
     var buildFacts = opts.buildFacts || factBuilder.build;
     var now = opts.now || Date.now;
     var observe = opts.observe || function () {};
+    var observeDecision = opts.observeDecision || function () {};
+    var promptHash = opts.promptHash || semanticContract.PROMPT_HASH;
+    var promptVersion = opts.promptVersion || semanticContract.VERSION;
+    var modelId = opts.modelId || deepseekClient.getModel();
+    var decisionStore = opts.decisionStore || decisionStoreV1.createStore({
+        directory: opts.decisionStorePath || path.join(__dirname, '..', '.live-state', '4h-bias-decisions-v1')
+    });
     var current = null;
     var lastProcessedClosed4hCloseTime = null;
     var inFlight = new Map();
@@ -66,11 +75,21 @@ function createService(options) {
         }).slice().sort(function (a, b) { return b.closeTime - a.closeTime; })[0] || null;
     }
 
-    function identity(closedAt) {
-        return [symbol, closedAt, VERSION, factBuilder.VERSION, semanticContract.PROMPT_HASH].join('|');
+    function identity(latest, facts) {
+        return decisionStoreV1.buildIdentity({
+            symbol: symbol,
+            openTime: latest.openTime,
+            closeTime: latest.closeTime,
+            factsVersion: factBuilder.VERSION,
+            facts: facts,
+            promptHash: promptHash,
+            promptVersion: promptVersion,
+            modelId: modelId
+        });
     }
 
-    function snapshot(closedAt, status, facts, semantic, error, generatedAt) {
+    function snapshot(closedAt, status, facts, semantic, error, generatedAt, provenance) {
+        var source = provenance || {};
         return deepFreeze({
             version: VERSION,
             symbol: symbol,
@@ -81,8 +100,12 @@ function createService(options) {
             semantic: semantic ? clone(semantic) : null,
             facts: facts ? clone(facts) : null,
             factSetVersion: factBuilder.VERSION,
-            promptHash: semanticContract.PROMPT_HASH,
-            model: semanticContract.MODEL,
+            factsHash: source.factsHash || null,
+            decisionKey: source.decisionKey || null,
+            decisionSource: source.decisionSource || null,
+            promptHash: promptHash,
+            promptVersion: promptVersion,
+            model: modelId,
             error: error ? clone(error) : null
         });
     }
@@ -102,10 +125,13 @@ function createService(options) {
             direction: next.semantic && next.semantic.direction || null,
             strength: next.semantic && next.semantic.strength || null,
             confidence: next.semantic && next.semantic.confidence || null,
-            summary: next.semantic && next.semantic.summary || null,
-            conflicts: next.semantic && next.semantic.conflicts || null,
             facts: clone(next.facts),
+            factsHash: next.factsHash,
+            decisionKey: next.decisionKey,
+            decisionSource: next.decisionSource,
             promptHash: next.promptHash,
+            promptVersion: next.promptVersion,
+            modelId: next.model,
             buildDurationMs: durations.buildDurationMs,
             llmDurationMs: durations.llmDurationMs
         });
@@ -126,9 +152,6 @@ function createService(options) {
             return Promise.resolve(publish(noClosed, { buildDurationMs: 0, llmDurationMs: 0 }));
         }
         if (lastProcessedClosed4hCloseTime === latest.closeTime && current) return Promise.resolve(current);
-        var key = identity(latest.closeTime);
-        if (inFlight.has(key)) return inFlight.get(key);
-
         var buildStarted = now();
         var factSet;
         stats.biasBuildCount += 1;
@@ -141,6 +164,33 @@ function createService(options) {
         }
         var buildDuration = now() - buildStarted;
         var input = semanticContract.buildInput(factSet);
+        var decisionIdentity;
+        try {
+            decisionIdentity = identity(latest, factSet.facts);
+        } catch (error) {
+            var invalidIdentity = snapshot(latest.closeTime, 'UNAVAILABLE', factSet.facts, null,
+                errorView('DECISION_IDENTITY', error), now());
+            return Promise.resolve(publish(invalidIdentity, { buildDurationMs: buildDuration, llmDurationMs: 0 }));
+        }
+        var key = decisionIdentity.decisionKey;
+        if (inFlight.has(key)) return inFlight.get(key);
+        var cache;
+        try {
+            cache = decisionStore.lookup(decisionIdentity);
+        } catch (error) {
+            observeDecisionEvent(error.code === 'BIAS_DECISION_STORE_CORRUPT' ?
+                '4H_BIAS_DECISION_STORE_CORRUPT' : '4H_BIAS_DECISION_STORE_ERROR', decisionIdentity, null, null);
+            var corrupt = snapshot(latest.closeTime, 'UNAVAILABLE', factSet.facts, null,
+                errorView('DECISION_STORE', error), now(), provenance(decisionIdentity, null));
+            return Promise.resolve(publish(corrupt, { buildDurationMs: buildDuration, llmDurationMs: 0 }));
+        }
+        if (cache.status === 'HIT') {
+            observeDecisionEvent('4H_BIAS_DECISION_CACHE_HIT', decisionIdentity, cache.record.decision, 'FROZEN_STORE');
+            return Promise.resolve(publish(snapshot(latest.closeTime, 'AVAILABLE', cache.record.facts,
+                cache.record.decision, null, now(), provenance(decisionIdentity, 'FROZEN_STORE')),
+            { buildDurationMs: buildDuration, llmDurationMs: 0 }));
+        }
+        observeDecisionEvent('4H_BIAS_DECISION_CACHE_MISS', decisionIdentity, null, null);
         var llmStarted = now();
         stats.llmCallCount += 1;
         // Invoke inside the promise chain: configuration/client failures such as
@@ -149,12 +199,32 @@ function createService(options) {
             return requestSemantic(clone(input));
         }).then(function (semantic) {
             semantic = semanticContract.validateOutput(clone(semantic));
-            return publish(snapshot(latest.closeTime, 'AVAILABLE', factSet.facts, semantic, null, now()), {
+            var candidate = {
+                direction: semantic.direction,
+                strength: semantic.strength,
+                confidence: semantic.confidence
+            };
+            var frozen;
+            try {
+                frozen = decisionStore.freeze(decisionIdentity, candidate, now());
+            } catch (error) {
+                error.biasFailureStage = 'DECISION_STORE';
+                throw error;
+            }
+            var source = frozen.created ? 'LLM_FRESH' : 'FROZEN_STORE';
+            observeDecisionEvent(frozen.created ? '4H_BIAS_DECISION_FROZEN' : '4H_BIAS_DECISION_CACHE_HIT',
+                decisionIdentity, frozen.record.decision, source);
+            return publish(snapshot(latest.closeTime, 'AVAILABLE', frozen.record.facts, frozen.record.decision,
+                null, now(), provenance(decisionIdentity, source)), {
                 buildDurationMs: buildDuration,
                 llmDurationMs: now() - llmStarted
             });
         }).catch(function (error) {
-            return publish(snapshot(latest.closeTime, 'PARTIAL', factSet.facts, null, errorView('SEMANTIC', error), now()), {
+            var storeFailure = error.biasFailureStage === 'DECISION_STORE';
+            if (storeFailure) observeDecisionEvent('4H_BIAS_DECISION_STORE_ERROR', decisionIdentity, null, null);
+            return publish(snapshot(latest.closeTime, storeFailure ? 'UNAVAILABLE' : 'PARTIAL', factSet.facts,
+                null, errorView(storeFailure ? 'DECISION_STORE' : 'SEMANTIC', error), now(),
+                provenance(decisionIdentity, null)), {
                 buildDurationMs: buildDuration,
                 llmDurationMs: now() - llmStarted
             });
@@ -163,6 +233,29 @@ function createService(options) {
         });
         inFlight.set(key, pending);
         return pending;
+    }
+
+    function provenance(decisionIdentity, source) {
+        return {
+            factsHash: decisionIdentity.factsHash,
+            decisionKey: decisionIdentity.decisionKey,
+            decisionSource: source
+        };
+    }
+
+    function observeDecisionEvent(event, decisionIdentity, decision, source) {
+        observeDecision({
+            event: event,
+            symbol: symbol,
+            fourHourCloseTime: decisionIdentity.decisionKeyFields.candle.closeTime,
+            factsHash: decisionIdentity.factsHash.slice(0, 12),
+            promptHash: promptHash.slice(0, 12),
+            modelId: modelId,
+            decisionSource: source || null,
+            direction: decision && decision.direction || null,
+            strength: decision && decision.strength || null,
+            confidence: decision && decision.confidence || null
+        });
     }
 
     return {

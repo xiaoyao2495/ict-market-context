@@ -54,7 +54,9 @@ var SYSTEM_PROMPT = [
     '}'
 ].join('\n');
 
-var PROMPT_HASH = crypto.createHash('sha256').update(SYSTEM_PROMPT + '\n').digest('hex');
+var USER_PROMPT_PREFIX = 'Compress the supplied deterministic facts into the current 4H Bias.\n\n';
+var PROMPT_TEMPLATE = SYSTEM_PROMPT + '\n---USER---\n' + USER_PROMPT_PREFIX + '{{JSON_INPUT_PRETTY_2}}';
+var PROMPT_HASH = crypto.createHash('sha256').update(PROMPT_TEMPLATE).digest('hex');
 
 function exactKeys(value, expected, code) {
     if (!value || typeof value !== 'object' || Array.isArray(value) ||
@@ -92,7 +94,7 @@ function buildInput(factSet) {
 
 function buildUserPrompt(input) {
     validateInput(input);
-    return 'Compress the supplied deterministic facts into the current 4H Bias.\n\n' + JSON.stringify(input, null, 2);
+    return USER_PROMPT_PREFIX + JSON.stringify(input, null, 2);
 }
 
 function validateOutput(output) {
@@ -117,6 +119,8 @@ module.exports = {
     INPUT_FIELDS: INPUT_FIELDS,
     FACT_FIELDS: FACT_FIELDS,
     SYSTEM_PROMPT: SYSTEM_PROMPT,
+    USER_PROMPT_PREFIX: USER_PROMPT_PREFIX,
+    PROMPT_TEMPLATE: PROMPT_TEMPLATE,
     buildInput: buildInput,
     buildUserPrompt: buildUserPrompt,
     validateInput: validateInput,
