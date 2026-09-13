@@ -92,6 +92,42 @@ test('02 restart reuses first durable RAYSOL decision and makes zero second-proc
     assert.equal(a.decisionKey, b.decisionKey); assert.equal(b.decisionSource, 'FROZEN_STORE');
 });
 
+test('02a durable freeze opens the temporary file read-write for fsync and transitions MISS to HIT', function (t) {
+    var directory = tempDirectory(t), expected = identity(), openedTemporary = [], temporaryHandles = new Set();
+    var originalOpenSync = fs.openSync, originalFsyncSync = fs.fsyncSync, originalCloseSync = fs.closeSync;
+    fs.openSync = function (file, flags, mode) {
+        var handle = originalOpenSync.call(fs, file, flags, mode);
+        if (flags === 'r+' && path.dirname(String(file)) === directory && /\.tmp$/.test(path.basename(String(file)))) {
+            openedTemporary.push({ flags: flags, handle: handle });
+            temporaryHandles.add(handle);
+        }
+        return handle;
+    };
+    var temporaryFsyncCount = 0;
+    fs.fsyncSync = function (handle) {
+        if (temporaryHandles.has(handle)) temporaryFsyncCount += 1;
+        return originalFsyncSync.call(fs, handle);
+    };
+    fs.closeSync = function (handle) {
+        temporaryHandles.delete(handle);
+        return originalCloseSync.call(fs, handle);
+    };
+    try {
+        var disk = storeV1.createStore({ directory: directory });
+        assert.equal(disk.lookup(expected).status, 'MISS');
+        var frozen = disk.freeze(expected,
+            { direction: 'BEARISH', strength: 'STRONG', confidence: 'HIGH' }, 1);
+        assert.equal(frozen.created, true);
+        assert.equal(disk.lookup(expected).status, 'HIT');
+    } finally {
+        fs.openSync = originalOpenSync;
+        fs.fsyncSync = originalFsyncSync;
+        fs.closeSync = originalCloseSync;
+    }
+    assert.deepEqual(openedTemporary.map(function (item) { return item.flags; }), ['r+']);
+    assert.equal(temporaryFsyncCount, 1);
+});
+
 test('03 twenty simultaneous same-key refreshes produce one LLM call and one official decision', async function (t) {
     var resolve, calls = 0, directory = tempDirectory(t);
     var instance = service({ decisionStore: storeV1.createStore({ directory: directory }), requestSemantic: function () {

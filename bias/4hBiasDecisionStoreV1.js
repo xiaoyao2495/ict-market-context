@@ -196,7 +196,7 @@ function createStore(options) {
             fs.mkdirSync(directory, { recursive: true });
             temporary = path.join(directory, '.' + expected.decisionKey + '.' + process.pid + '.' + crypto.randomBytes(8).toString('hex') + '.tmp');
             fs.writeFileSync(temporary, stableSerialize(record) + '\n', { flag: 'wx', mode: 0o600 });
-            var handle = fs.openSync(temporary, 'r');
+            var handle = fs.openSync(temporary, 'r+');
             try { fs.fsyncSync(handle); } finally { fs.closeSync(handle); }
             try {
                 // link is an atomic create-if-absent operation. It never replaces
