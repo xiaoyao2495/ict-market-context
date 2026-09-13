@@ -1,0 +1,12 @@
+'use strict';
+var test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),path=require('path');
+var root=path.join(__dirname,'..','research-output','same-process-wick-localization-v1');
+var impact=JSON.parse(fs.readFileSync(path.join(root,'replay-impact.json'),'utf8'));
+var expected={RAYSOLUSDT:[83,40],BTCUSDT:[70,40],ETHUSDT:[72,37],DOGEUSDT:[73,43],LSKUSDT:[112,64]};
+test('01 replay compares exact fixed report window',function(){assert.equal(impact.window.start,Date.parse('2026-09-05T16:00:00.000Z'));assert.equal(impact.window.endExclusive,Date.parse('2026-09-12T16:00:00.000Z'));});
+test('02 old/new process count is identical and localization changes match frozen population',function(){Object.keys(expected).forEach(function(s){var x=impact.symbols[s].historicalExtreme;assert.equal(x.oldCount,expected[s][0]);assert.equal(x.newCount,expected[s][0]);assert.equal(x.changedPriceOrTime,expected[s][1]);assert.equal(x.unmatchedProcessesOld,0);assert.equal(x.unmatchedProcessesNew,0);});});
+test('03 current ordinary pivot is unchanged in every shared EQ',function(){Object.keys(expected).forEach(function(s){assert.equal(impact.symbols[s].equalLiquidity.currentPointChanged,0);});});
+test('04 raw FVG population is byte-semantically unaffected',function(){Object.keys(expected).forEach(function(s){var x=impact.symbols[s].rawFvg;assert.equal(x.oldCount,x.newCount);assert.equal(x.changed,false);});});
+test('05 WATCH and entry-trigger diffs are descriptive and reconcile',function(){Object.keys(expected).forEach(function(s){['watch','entryCandidate'].forEach(function(k){var x=impact.symbols[s][k];assert.equal(x.oldCount,x.same+x.removed);assert.equal(x.newCount,x.same+x.added);});});});
+test('06 current pipeline has no FIRST_TOUCH stage and trade admission was not fabricated',function(){Object.keys(expected).forEach(function(s){assert.equal(impact.symbols[s].firstTouch.status,'NOT_APPLICABLE_CURRENT_EQ_FVG_COUNT_WATCH_V1');assert.equal(impact.symbols[s].tradeAdmission.status,'NOT_EVALUATED_REQUIRES_FROZEN_4H_BIAS_AND_ACCOUNT_RULES');});});
+test('07 unavailable real trade case remains unmodified and uninferred',function(){assert.equal(impact.realTradeCase001.status,'SOURCE_NOT_AVAILABLE_NO_INFERENCE');assert.equal(impact.realTradeCase001.historicalExecutionRewritten,false);});

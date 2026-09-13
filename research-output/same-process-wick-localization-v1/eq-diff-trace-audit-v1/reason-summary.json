@@ -1,0 +1,50 @@
+{
+  "totalDiffCases": 180,
+  "explainedCases": 180,
+  "unexplainedCases": 0,
+  "distribution": {
+    "ANCHOR_PRICE_ENTERED_EQ_TOLERANCE": {
+      "count": 0,
+      "percentage": 0
+    },
+    "ANCHOR_PRICE_LEFT_EQ_TOLERANCE": {
+      "count": 56,
+      "percentage": 0.3111111111111111
+    },
+    "ANCHOR_OCCURRENCE_ENTERED_36H_WINDOW": {
+      "count": 0,
+      "percentage": 0
+    },
+    "ANCHOR_OCCURRENCE_LEFT_36H_WINDOW": {
+      "count": 0,
+      "percentage": 0
+    },
+    "ACTIVE_STATUS_CHANGED_DUE_TO_NEW_CANONICAL_PRICE": {
+      "count": 49,
+      "percentage": 0.2722222222222222
+    },
+    "PAIRING_PRIORITY_CHANGED": {
+      "count": 0,
+      "percentage": 0
+    },
+    "PAIRING_SWITCHED_TO_DIFFERENT_PROCESS": {
+      "count": 16,
+      "percentage": 0.08888888888888889
+    },
+    "MULTIPLE_CAUSAL_EFFECTS": {
+      "count": 59,
+      "percentage": 0.3277777777777778
+    },
+    "UNEXPLAINED_DIFFERENCE": {
+      "count": 0,
+      "percentage": 0
+    }
+  },
+  "mechanismDistribution": {
+    "SAME_PROCESS_CANONICAL_ANCHOR_PRICE_REANCHORED": 52,
+    "SAME_PROCESS_CANONICAL_ANCHOR_OCCURRENCE_REANCHORED": 52,
+    "ANCHOR_PRICE_LEFT_EQ_TOLERANCE": 59,
+    "ACTIVE_STATUS_CHANGED_DUE_TO_NEW_CANONICAL_PRICE": 69,
+    "ANCHOR_PRICE_ENTERED_EQ_TOLERANCE": 9
+  }
+}

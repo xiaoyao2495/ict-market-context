@@ -22,6 +22,7 @@ function fromLiquidity(liquidity) {
         asOf: liquidity.confirmedAt,
         currentSource: 'ORDINARY_CAUSAL_2X2',
         historicalSource: HISTORICAL_SOURCE,
+        historicalExtremeLocalization: dynamicD.HISTORICAL_EXTREME_LOCALIZATION,
         historicalLookbackBars: dynamicD.LOOKBACK_BARS,
         historicalLookbackTime: '36H',
         currentPivot: clone(metadata.currentPivot),

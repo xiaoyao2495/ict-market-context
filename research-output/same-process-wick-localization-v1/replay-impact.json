@@ -1,0 +1,273 @@
+{
+  "task": "SAME_PROCESS_WICK_LOCALIZATION_V1_REPLAY_IMPACT",
+  "window": {
+    "start": 1788624000000,
+    "endExclusive": 1789228800000
+  },
+  "symbols": {
+    "RAYSOLUSDT": {
+      "historicalExtreme": {
+        "oldCount": 83,
+        "newCount": 83,
+        "unchangedPriceAndTime": 43,
+        "changedPriceOrTime": 40,
+        "changedPct": 0.4819277108433735,
+        "unmatchedProcessesOld": 0,
+        "unmatchedProcessesNew": 0
+      },
+      "equalLiquidity": {
+        "oldCount": 43,
+        "newCount": 46,
+        "exactSame": 13,
+        "added": 12,
+        "removed": 9,
+        "historicalPartnerChangedOnly": 21,
+        "currentPointChanged": 0
+      },
+      "watch": {
+        "oldCount": 43,
+        "newCount": 46,
+        "same": 34,
+        "added": 12,
+        "removed": 9
+      },
+      "rawFvg": {
+        "oldCount": 562,
+        "newCount": 562,
+        "changed": false
+      },
+      "matchingFvgNotification": {
+        "oldCount": 54,
+        "newCount": 61,
+        "same": 46,
+        "added": 15,
+        "removed": 8
+      },
+      "firstTouch": {
+        "status": "NOT_APPLICABLE_CURRENT_EQ_FVG_COUNT_WATCH_V1"
+      },
+      "entryCandidate": {
+        "oldCount": 35,
+        "newCount": 39,
+        "same": 30,
+        "added": 9,
+        "removed": 5
+      },
+      "tradeAdmission": {
+        "status": "NOT_EVALUATED_REQUIRES_FROZEN_4H_BIAS_AND_ACCOUNT_RULES"
+      }
+    },
+    "BTCUSDT": {
+      "historicalExtreme": {
+        "oldCount": 70,
+        "newCount": 70,
+        "unchangedPriceAndTime": 30,
+        "changedPriceOrTime": 40,
+        "changedPct": 0.5714285714285714,
+        "unmatchedProcessesOld": 0,
+        "unmatchedProcessesNew": 0
+      },
+      "equalLiquidity": {
+        "oldCount": 29,
+        "newCount": 22,
+        "exactSame": 5,
+        "added": 9,
+        "removed": 16,
+        "historicalPartnerChangedOnly": 8,
+        "currentPointChanged": 0
+      },
+      "watch": {
+        "oldCount": 29,
+        "newCount": 22,
+        "same": 13,
+        "added": 9,
+        "removed": 16
+      },
+      "rawFvg": {
+        "oldCount": 681,
+        "newCount": 681,
+        "changed": false
+      },
+      "matchingFvgNotification": {
+        "oldCount": 45,
+        "newCount": 28,
+        "same": 16,
+        "added": 12,
+        "removed": 29
+      },
+      "firstTouch": {
+        "status": "NOT_APPLICABLE_CURRENT_EQ_FVG_COUNT_WATCH_V1"
+      },
+      "entryCandidate": {
+        "oldCount": 24,
+        "newCount": 18,
+        "same": 9,
+        "added": 9,
+        "removed": 15
+      },
+      "tradeAdmission": {
+        "status": "NOT_EVALUATED_REQUIRES_FROZEN_4H_BIAS_AND_ACCOUNT_RULES"
+      }
+    },
+    "ETHUSDT": {
+      "historicalExtreme": {
+        "oldCount": 72,
+        "newCount": 72,
+        "unchangedPriceAndTime": 35,
+        "changedPriceOrTime": 37,
+        "changedPct": 0.5138888888888888,
+        "unmatchedProcessesOld": 0,
+        "unmatchedProcessesNew": 0
+      },
+      "equalLiquidity": {
+        "oldCount": 27,
+        "newCount": 29,
+        "exactSame": 13,
+        "added": 8,
+        "removed": 6,
+        "historicalPartnerChangedOnly": 8,
+        "currentPointChanged": 0
+      },
+      "watch": {
+        "oldCount": 27,
+        "newCount": 29,
+        "same": 21,
+        "added": 8,
+        "removed": 6
+      },
+      "rawFvg": {
+        "oldCount": 604,
+        "newCount": 604,
+        "changed": false
+      },
+      "matchingFvgNotification": {
+        "oldCount": 34,
+        "newCount": 38,
+        "same": 28,
+        "added": 10,
+        "removed": 6
+      },
+      "firstTouch": {
+        "status": "NOT_APPLICABLE_CURRENT_EQ_FVG_COUNT_WATCH_V1"
+      },
+      "entryCandidate": {
+        "oldCount": 21,
+        "newCount": 24,
+        "same": 17,
+        "added": 7,
+        "removed": 4
+      },
+      "tradeAdmission": {
+        "status": "NOT_EVALUATED_REQUIRES_FROZEN_4H_BIAS_AND_ACCOUNT_RULES"
+      }
+    },
+    "DOGEUSDT": {
+      "historicalExtreme": {
+        "oldCount": 73,
+        "newCount": 73,
+        "unchangedPriceAndTime": 30,
+        "changedPriceOrTime": 43,
+        "changedPct": 0.589041095890411,
+        "unmatchedProcessesOld": 0,
+        "unmatchedProcessesNew": 0
+      },
+      "equalLiquidity": {
+        "oldCount": 40,
+        "newCount": 44,
+        "exactSame": 18,
+        "added": 18,
+        "removed": 14,
+        "historicalPartnerChangedOnly": 8,
+        "currentPointChanged": 0
+      },
+      "watch": {
+        "oldCount": 40,
+        "newCount": 44,
+        "same": 26,
+        "added": 18,
+        "removed": 14
+      },
+      "rawFvg": {
+        "oldCount": 546,
+        "newCount": 546,
+        "changed": false
+      },
+      "matchingFvgNotification": {
+        "oldCount": 54,
+        "newCount": 69,
+        "same": 37,
+        "added": 32,
+        "removed": 17
+      },
+      "firstTouch": {
+        "status": "NOT_APPLICABLE_CURRENT_EQ_FVG_COUNT_WATCH_V1"
+      },
+      "entryCandidate": {
+        "oldCount": 29,
+        "newCount": 37,
+        "same": 20,
+        "added": 17,
+        "removed": 9
+      },
+      "tradeAdmission": {
+        "status": "NOT_EVALUATED_REQUIRES_FROZEN_4H_BIAS_AND_ACCOUNT_RULES"
+      }
+    },
+    "LSKUSDT": {
+      "historicalExtreme": {
+        "oldCount": 112,
+        "newCount": 112,
+        "unchangedPriceAndTime": 48,
+        "changedPriceOrTime": 64,
+        "changedPct": 0.5714285714285714,
+        "unmatchedProcessesOld": 0,
+        "unmatchedProcessesNew": 0
+      },
+      "equalLiquidity": {
+        "oldCount": 73,
+        "newCount": 71,
+        "exactSame": 39,
+        "added": 9,
+        "removed": 11,
+        "historicalPartnerChangedOnly": 23,
+        "currentPointChanged": 0
+      },
+      "watch": {
+        "oldCount": 73,
+        "newCount": 71,
+        "same": 62,
+        "added": 9,
+        "removed": 11
+      },
+      "rawFvg": {
+        "oldCount": 517,
+        "newCount": 517,
+        "changed": false
+      },
+      "matchingFvgNotification": {
+        "oldCount": 104,
+        "newCount": 98,
+        "same": 84,
+        "added": 14,
+        "removed": 20
+      },
+      "firstTouch": {
+        "status": "NOT_APPLICABLE_CURRENT_EQ_FVG_COUNT_WATCH_V1"
+      },
+      "entryCandidate": {
+        "oldCount": 60,
+        "newCount": 58,
+        "same": 50,
+        "added": 8,
+        "removed": 10
+      },
+      "tradeAdmission": {
+        "status": "NOT_EVALUATED_REQUIRES_FROZEN_4H_BIAS_AND_ACCOUNT_RULES"
+      }
+    }
+  },
+  "realTradeCase001": {
+    "status": "SOURCE_NOT_AVAILABLE_NO_INFERENCE",
+    "historicalExecutionRewritten": false
+  }
+}

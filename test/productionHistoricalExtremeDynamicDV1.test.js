@@ -198,7 +198,7 @@ test('A12 determinism: identical series -> identical point set (id/price/sequenc
     assert.deepStrictEqual(run(), run());
 });
 
-test('A13 id is deterministic and embeds type+occurredAt+confirmedAt', function () {
+test('A13 localized id is deterministic, versioned, and embeds canonical occurredAt+confirmedAt', function () {
     var s = dynamicD.createState({});
     var candles = [];
     for (var i = 0; i < 289; i++) candles.push(c(i, 100));
@@ -210,7 +210,8 @@ test('A13 id is deterministic and embeds type+occurredAt+confirmedAt', function 
         if (r.dynamicDPoints.length) point = r.dynamicDPoints[0];
     }
     assert.ok(point);
-    var seg = ['DYND', 'UNKNOWN', '5m', 'HIGH', String(289 * BAR), String(290 * BAR + BAR - 1)].join(':');
+    var seg = ['DYNDW', dynamicD.LOCALIZATION_VERSION, 'UNKNOWN', '5m', 'HIGH',
+        String(289 * BAR), String(290 * BAR + BAR - 1)].join(':');
     assert.strictEqual(point.id, seg);
 });
 
@@ -578,7 +579,7 @@ test('A14 volatility READY exactly at 288 returns (candle 288), not at 287', fun
     assert.strictEqual(s.volatilityReady, true);  // 288 returns
 });
 
-test('A15 LOW detection id mirrors HIGH scheme (type+occurredAt+confirmedAt)', function () {
+test('A15 LOW localized id mirrors HIGH scheme', function () {
     var s = dynamicD.createState({});
     var candles = [];
     for (var i = 0; i < 289; i++) candles.push(c(i, 100));
@@ -590,7 +591,8 @@ test('A15 LOW detection id mirrors HIGH scheme (type+occurredAt+confirmedAt)', f
         if (r.dynamicDPoints.length) point = r.dynamicDPoints[0];
     }
     assert.ok(point);
-    var seg = ['DYND', 'UNKNOWN', '5m', 'LOW', String(289 * BAR), String(290 * BAR + BAR - 1)].join(':');
+    var seg = ['DYNDW', dynamicD.LOCALIZATION_VERSION, 'UNKNOWN', '5m', 'LOW',
+        String(289 * BAR), String(290 * BAR + BAR - 1)].join(':');
     assert.strictEqual(point.id, seg);
 });
 

@@ -9,7 +9,8 @@
  * observation with all matching partners. There is no persistent EQ identity,
  * cluster, member evolution, repricing, ranking, score, or primary partner.
  *
- * The historical-anchor source is the CC CLOSE-based Dynamic D
+ * The historical-anchor source is CLOSE-detected Dynamic D with canonical
+ * SAME_PROCESS_WICK_V1 extreme localization
  * (liquidity/causalDynamicDHistoricalExtremes.js), which fully replaces the
  * legacy ATR50 ZigZag. Anchor lifecycle is ACTIVE -> INACTIVE (terminal):
  * invalidation comes from an ordinary causal 2/2 strict cross (wick-to-wick),
@@ -127,12 +128,21 @@ function buildEvent(state, pivot, partners, tolerance) {
         var barsBetween = pivot.metadata.index - point.occurredBarIndex;
         return {
             id: point.id,
+            processId: point.processId,
             source: point.source,
             side: point.pointSide,
             price: point.price,
             occurredAt: point.occurredAt,
             confirmedAt: point.confirmedAt,
             occurredBarIndex: point.occurredBarIndex,
+            selectorOpenTime: point.selectorOccurredAt,
+            selectorPrice: point.selectorPrice,
+            selectorWickPrice: point.selectorWickPrice,
+            localizedExtremeOpenTime: point.localizedExtremeOpenTime,
+            localizedExtremePrice: point.localizedExtremePrice,
+            localizationMode: point.localizationMode,
+            processStartBarIndex: point.processStartBarIndex,
+            processEndBarIndex: point.processEndBarIndex,
             barsBetween: barsBetween,
             hoursBetween: barsBetween * 5 / 60,
             unviolated: true,
@@ -174,6 +184,7 @@ function buildEvent(state, pivot, partners, tolerance) {
                 sourceIndex: pivot.metadata.index
             },
             historicalSource: dynamicD.VERSION,
+            historicalExtremeLocalization: dynamicD.HISTORICAL_EXTREME_LOCALIZATION,
             historicalLookbackBars: LOOKBACK_BARS,
             historicalLookbackTime: LOOKBACK_TIME,
             historicalAnchorMustRemainActive: true,

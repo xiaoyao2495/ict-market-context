@@ -1,0 +1,52 @@
+{
+  "RAYSOLUSDT": {
+    "exactSame": 13,
+    "partnerChanged": 21,
+    "sameProcessReanchored": 15,
+    "pairingSwitched": 6,
+    "added": 12,
+    "removed": 9,
+    "oldEq": 43,
+    "newEq": 46
+  },
+  "BTCUSDT": {
+    "exactSame": 5,
+    "partnerChanged": 8,
+    "sameProcessReanchored": 5,
+    "pairingSwitched": 3,
+    "added": 9,
+    "removed": 16,
+    "oldEq": 29,
+    "newEq": 22
+  },
+  "ETHUSDT": {
+    "exactSame": 13,
+    "partnerChanged": 8,
+    "sameProcessReanchored": 7,
+    "pairingSwitched": 1,
+    "added": 8,
+    "removed": 6,
+    "oldEq": 27,
+    "newEq": 29
+  },
+  "DOGEUSDT": {
+    "exactSame": 18,
+    "partnerChanged": 8,
+    "sameProcessReanchored": 7,
+    "pairingSwitched": 1,
+    "added": 18,
+    "removed": 14,
+    "oldEq": 40,
+    "newEq": 44
+  },
+  "LSKUSDT": {
+    "exactSame": 39,
+    "partnerChanged": 23,
+    "sameProcessReanchored": 18,
+    "pairingSwitched": 5,
+    "added": 9,
+    "removed": 11,
+    "oldEq": 73,
+    "newEq": 71
+  }
+}

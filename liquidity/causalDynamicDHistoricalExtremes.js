@@ -26,10 +26,10 @@
  *     confirmed at candle C, the new DOWN_RUN extreme is initialized from
  *     C.close; after a LOW confirmed, the new UP_RUN extreme is C.close.
  *
- * CRITICAL INVARIANT (selectorPrice != businessPrice):
+ * CRITICAL INVARIANT (close detection != wick localization):
  *   - The detection SELECTOR is candle CLOSE (extreme is chosen by close).
- *   - After confirmation, the stored business PRICE is the REAL WICK of the
- *     selected candle: HIGH -> candle.high, LOW -> candle.low.
+ *   - After confirmation, the stored business PRICE is the most extreme wick
+ *     inside that exact confirmed candidate process segment.
  *   - selectorPrice (close) is stored but MUST NEVER be used for EQ comparison
  *     or invalidation. Only price (wick) is ever compared.
  *
@@ -53,6 +53,8 @@
  */
 
 var VERSION = 'CAUSAL_DYNAMIC_D_V1';
+var LOCALIZATION_VERSION = 'SAME_PROCESS_WICK_V1';
+var HISTORICAL_EXTREME_LOCALIZATION = LOCALIZATION_VERSION;
 
 var LOOKBACK = 288;            // 24h of 5m close-to-close returns (FROZEN)
 var K = 1.0;                   // FROZEN
@@ -148,6 +150,9 @@ function createState(options) {
         newExtremeCount: 0,
         reversalConfirmCount: 0,
         sameCandlePotentialReversalCount: 0,
+        // Inclusive exact candidate-process start. After a confirmation, the
+        // confirmation candle is also the next run's frozen initialization.
+        processStartIndex: 0,
         // ---- Anchor lifecycle / output ----
         confirmedPoints: [],
         recentSurvivalPoints: [],          // ACTIVE + INACTIVE within bar window
@@ -278,30 +283,70 @@ function makeConfirmed(state, candle, index, side) {
     };
 }
 
-function pointId(state, side, det) {
-    return ['DYND', state.symbol, state.timeframe, side, det.occurredAt, det.confirmationCloseTime].join(':');
+function processId(state, side, det) {
+    return ['DYNDPROC', state.symbol, state.timeframe, side, det.occurredAt,
+        det.confirmationCloseTime].join(':');
+}
+
+function pointId(state, side, det, localized) {
+    return ['DYNDW', LOCALIZATION_VERSION, state.symbol, state.timeframe, side,
+        localized.openTime, det.confirmationCloseTime].join(':');
+}
+
+/**
+ * Frozen SAME_PROCESS_WICK_V1 localization. The range is inclusive. Strict
+ * comparison preserves the validated research tie behaviour: the earliest
+ * equal wick wins for both LOW and HIGH.
+ */
+function chooseSameProcessWickExtreme(candles, startIndex, endIndex, side) {
+    if (!Array.isArray(candles) || startIndex < 0 || endIndex < startIndex ||
+            endIndex >= candles.length || (side !== 'HIGH' && side !== 'LOW')) {
+        throw new Error(LOCALIZATION_VERSION + ' invalid confirmed process segment');
+    }
+    var bestIndex = startIndex;
+    var bestPrice = side === 'HIGH' ? numeric(candles[startIndex].high) : numeric(candles[startIndex].low);
+    for (var i = startIndex + 1; i <= endIndex; i++) {
+        var price = side === 'HIGH' ? numeric(candles[i].high) : numeric(candles[i].low);
+        if ((side === 'HIGH' && price > bestPrice) || (side === 'LOW' && price < bestPrice)) {
+            bestIndex = i;
+            bestPrice = price;
+        }
+    }
+    return { index: bestIndex, openTime: candles[bestIndex].openTime, price: bestPrice };
 }
 
 /**
  * Build an anchor point from a confirmed extreme detection.
- * selectorPrice = close; price (business) = REAL WICK of the extreme candle.
+ * selectorPrice remains the close-based detector provenance. Canonical
+ * price/occurredAt are localized from the exact confirmed process segment.
  */
-function buildPoint(state, det) {
+function buildPoint(state, det, fiveMinuteCandles, processStartIndex) {
     var side = det.pointSide;
-    var wick = side === 'HIGH' ? numeric(det.extremeCandle.high) : numeric(det.extremeCandle.low);
+    var selectorWick = side === 'HIGH' ? numeric(det.extremeCandle.high) : numeric(det.extremeCandle.low);
+    var localized = chooseSameProcessWickExtreme(
+        fiveMinuteCandles, processStartIndex, det.confirmationIndex, side);
     return {
-        id: pointId(state, side, det),
+        id: pointId(state, side, det, localized),
+        processId: processId(state, side, det),
         source: VERSION,
         symbol: state.symbol,
         timeframe: state.timeframe,
         pointSide: side,
         type: side === 'HIGH' ? 'DYNAMIC_D_HIGH' : 'DYNAMIC_D_LOW',
         selectorPrice: det.selectorPrice,      // close (selector) — NEVER for EQ
-        price: wick,                          // REAL WICK (business price)
-        priceSource: 'CLOSE_SELECTOR_WICK_BUSINESS',
-        occurredAt: det.occurredAt,
+        selectorOccurredAt: det.occurredAt,
+        selectorOccurredBarIndex: det.occurrenceIndex,
+        selectorWickPrice: selectorWick,
+        price: localized.price,
+        priceSource: 'SAME_PROCESS_WICK_EXTREME',
+        localizationMode: LOCALIZATION_VERSION,
+        localizedExtremeOpenTime: localized.openTime,
+        localizedExtremePrice: localized.price,
+        processStartBarIndex: processStartIndex,
+        processEndBarIndex: det.confirmationIndex,
+        occurredAt: localized.openTime,
         confirmedAt: det.confirmationCloseTime,
-        occurredBarIndex: det.occurrenceIndex,
+        occurredBarIndex: localized.index,
         confirmationBarIndex: det.confirmationIndex,
         thetaAtExtreme: det.thetaAtExtreme,
         sigma5mAtExtreme: det.sigma5mAtExtreme,
@@ -395,14 +440,17 @@ function step(state, candle, index, fiveMinuteCandles) {
     var detections = detectStep(state, candle, index);
     var dynamicDPoints = [];
     detections.forEach(function (det) {
-        var point = buildPoint(state, det);
+        var point = buildPoint(state, det, fiveMinuteCandles, state.processStartIndex);
         if (registerPoint(state, point)) dynamicDPoints.push(point);
+        state.processStartIndex = det.confirmationIndex;
     });
     return { dynamicDPoints: dynamicDPoints };
 }
 
 module.exports = {
     VERSION: VERSION,
+    LOCALIZATION_VERSION: LOCALIZATION_VERSION,
+    HISTORICAL_EXTREME_LOCALIZATION: HISTORICAL_EXTREME_LOCALIZATION,
     LOOKBACK: LOOKBACK,
     K: K,
     THETA_FLOOR: THETA_FLOOR,
@@ -422,5 +470,6 @@ module.exports = {
     strictCrosses: strictCrosses,
     wasEligibleAtCandidateOccurrence: wasEligibleAtCandidateOccurrence,
     eligibleHistoricalPoints: eligibleHistoricalPoints,
+    chooseSameProcessWickExtreme: chooseSameProcessWickExtreme,
     step: step
 };
