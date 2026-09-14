@@ -113,10 +113,28 @@ function buildEntryPlan(event, context) {
             finite(event.eqSourceContext.currentPivot.price) ? Number(event.eqSourceContext.currentPivot.price) : null,
         eqOccurredAt: times.occurredAt,
         eqConfirmedAt: times.confirmedAt,
+        eqHistoricalPartners: event.eqSourceContext && event.eqSourceContext.historicalPartners || [],
+        eqCurrentPoint: event.eqSourceContext && event.eqSourceContext.currentPivot || null,
         fvgId: event.rawFvg.id,
         fvgIndex: event.rawFvg.k3Index,
+        fvgLow: event.rawFvg.low,
+        fvgHigh: event.rawFvg.high,
+        fvgMidpoint: rawEntry,
         fvgConfirmedAt: decisionTime,
         decisionTime: decisionTime,
+        eqFvgSemantic: event.eqFvgSemantic ? {
+            version: event.eqFvgSemantic.semanticVersion,
+            association: event.eqFvgSemantic.decision && event.eqFvgSemantic.decision.association,
+            confidence: event.eqFvgSemantic.decision && event.eqFvgSemantic.decision.confidence,
+            primaryReason: event.eqFvgSemantic.decision && event.eqFvgSemantic.decision.primaryReason,
+            evidence: event.eqFvgSemantic.decision && event.eqFvgSemantic.decision.evidence || [],
+            counterEvidence: event.eqFvgSemantic.decision && event.eqFvgSemantic.decision.counterEvidence || [],
+            factsHash: event.eqFvgSemantic.factsHash,
+            promptHash: event.eqFvgSemantic.promptHash,
+            decisionKey: event.eqFvgSemantic.decisionKey,
+            gateResult: event.eqFvgSemantic.gateResult,
+            gateReason: event.eqFvgSemantic.gateReason
+        } : null,
         liveTradingEnabled: context.liveTradingEnabled === true
     };
     if (!finite(base.eqPrice)) return { ok: false, reasonCode: 'INVALID_STOP_GEOMETRY', plan: base };
@@ -132,6 +150,7 @@ function buildEntryPlan(event, context) {
         targetDynamicDId: target.id, targetConfirmedAt: target.confirmedAt,
         htfDirection: context.bias.semantic.direction, htfStrength: context.bias.semantic.strength,
         htfConfidence: context.bias.semantic.confidence, htfSnapshotAt: context.bias.closedAt,
+        htfFactsHash: context.bias.factsHash || null, htfDecisionKey: context.bias.decisionKey || null,
         targetNotional: sized.targetNotional, requestedQty: sized.requestedQty
     });
     return geo.ok ? { ok: true, plan: base } : { ok: false, reasonCode: geo.reasonCode, plan: base };

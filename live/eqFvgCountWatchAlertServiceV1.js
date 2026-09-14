@@ -60,7 +60,17 @@ function createService(options) {
         }, Promise.resolve()).then(snapshot);
     }
 
-    return { onStep: onStep, flush: flush, snapshot: snapshot, getMachine: function () { return machine; } };
+    function annotateSemantic(event, semantic) {
+        var key = notificationKey(event);
+        var item = pending.filter(function (candidate) { return candidate.notificationKey === key; })[0];
+        if (!item) return false;
+        item.event.eqFvgSemantic = clone(semantic);
+        persist(snapshot());
+        return true;
+    }
+
+    return { onStep: onStep, flush: flush, snapshot: snapshot, annotateSemantic: annotateSemantic,
+        getMachine: function () { return machine; } };
 }
 
 module.exports = { notificationKey: notificationKey, createService: createService };

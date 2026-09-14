@@ -44,6 +44,7 @@ function createService(options) {
     var getContext = opts.getContext || function () { return {}; };
     var observe = opts.observe || function () {};
     var alert = opts.alert || function () { return Promise.resolve(); };
+    var archiveTrade = opts.archiveTrade || function () {};
     var streamFactory = opts.streamFactory || streamModule.createStream;
     var getNewTradeAdmission = opts.getNewTradeAdmission || function () {
         return { admitted: true, reasonCode: null };
@@ -65,12 +66,22 @@ function createService(options) {
         });
         return queue;
     }
-    function saveTrade(trade) { trade.updatedAt = Date.now(); repository.updateTrade(trade); }
+    function saveTrade(trade) {
+        trade.updatedAt = Date.now(); repository.updateTrade(trade);
+        if (trade.tradeCaseId) {
+            try { archiveTrade(clone(trade)); }
+            catch (error) { observe({ type: 'REAL_TRADE_CASE_ARCHIVE_ERROR', symbol: symbol,
+                tradeId: trade.tradeId, critical: true, reasonCode: 'REAL_TRADE_CASE_ARCHIVE_ERROR', detail: error.message }); }
+        }
+    }
     function emitOnce(type, trade, extra) {
         if (!trade) return emit(type, trade, extra);
         trade.alertedEvents = trade.alertedEvents || {};
         if (trade.alertedEvents[type]) return Promise.resolve();
-        trade.alertedEvents[type] = Date.now(); saveTrade(trade);
+        trade.alertedEvents[type] = Date.now();
+        trade.lifecycleTimestamps = trade.lifecycleTimestamps || {};
+        trade.lifecycleTimestamps[type] = trade.alertedEvents[type];
+        saveTrade(trade);
         return emit(type, trade, extra);
     }
     function slotFree() {
@@ -293,6 +304,7 @@ function createService(options) {
             return emit('EXCHANGE_REJECTED', trade, { critical: true, reasonCode: trade.reasonCode }).then(function () { return trade; }); }
         return client.submitEntry(trade.plan).then(function (response) {
             trade.entryOrder = orderRecord(trade, 'ENTRY', response);
+            trade.tradeCaseId = 'REAL_TRADE_CASE_' + trade.tradeId;
             if (trade.entryOrder.status === 'REJECTED') throw Object.assign(new Error('ENTRY_REJECTED'), { code: 'EXCHANGE_REJECTED' });
             trade.status = trade.entryOrder.status === 'PARTIALLY_FILLED' ? 'PARTIALLY_FILLED'
                 : trade.entryOrder.status === 'FILLED' ? 'FILLED' : 'ENTRY_PENDING'; saveTrade(trade);

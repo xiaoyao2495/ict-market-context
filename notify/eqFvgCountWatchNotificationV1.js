@@ -64,7 +64,19 @@ function build(event, options) {
         'FVG Low: ' + price(event.rawFvg.low),
         'FVG High: ' + price(event.rawFvg.high),
         'FVG确认: ' + time(event.rawFvg.confirmedAt),
-        '',
+        ''
+    );
+    if (event.eqFvgSemantic) {
+        var semantic = event.eqFvgSemantic;
+        lines.push('EQ→FVG Semantic: ' + (semantic.decision ?
+            semantic.decision.association + ' / ' + semantic.decision.confidence : 'UNAVAILABLE'));
+        lines.push('Reason: ' + (semantic.decision ? semantic.decision.primaryReason :
+            (semantic.errorCode || 'EQ_FVG_SEMANTIC_UNAVAILABLE')));
+        lines.push('Semantic Gate: ' + semantic.gateResult);
+        if (semantic.gateResult === 'BLOCK') lines.push('Gate reason: ' + semantic.gateReason);
+        lines.push('Semantic Version: ' + semantic.semanticVersion, '');
+    }
+    lines.push(
         '状态: ' + status,
         '',
         '仅为市场结构监测，不是自动交易指令。'

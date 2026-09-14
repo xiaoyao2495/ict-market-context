@@ -45,14 +45,21 @@ var rangeNotificationV1 = require('../notify/rangeNotificationV1');
 var executionRepositoryV1 = require('../execution/executionRepositoryV1');
 var binanceExecutionClientV1 = require('../execution/binanceExecutionClientV1');
 var realOrderExecutionV1 = require('../execution/realOrderExecutionV1');
+var executionRulesV1 = require('../execution/executionRulesV1');
+var realTradeCaseArchiveV1 = require('../execution/realTradeCaseArchiveV1');
 var executionNotificationV1 = require('../notify/executionNotificationV1');
 var dynamicContractUniverseV1 = require('../live/dynamicContractUniverseV1');
+var eqFvgAssociationSemanticV1 = require('../live/eqFvgAssociationSemanticV1');
+var eqFvgAssociationDecisionStoreV1 = require('../semantic/eqFvgAssociationDecisionStoreV1');
+var eqFvgAssociationCaseArchiveV1 = require('../semantic/eqFvgAssociationCaseArchiveV1');
+var loadEqFvgSemanticConfig = require('../config/eqFvgSemanticV1');
 
 var CONFIG = require('../config/live.json');
 var EQ_PRODUCTION_MODEL = productionEqualLiquidityV1.VERSION;
 var EQ_NOTIFICATION_MODEL = eqFvgCountWatchV1.VERSION;
 var DISPLACEMENT_PRODUCTION_MODE = 'CANONICAL_A_C2_V1';
 var LIVE_TRADING_ENABLED = process.env.LIVE_TRADING_ENABLED === 'true';
+var EQ_FVG_SEMANTIC_CONFIG = loadEqFvgSemanticConfig();
 
 // Phase 11L.15：B 口径 Live Shadow Prioritization 开关（thresholds.notify.prioritization.enabled）。
 //   true  → 钉钉只推 PRIORITY_HIGH（HIGH + 48 窗口内 Significant Liquidity），STANDARD_HIGH 只落日志
@@ -287,6 +294,9 @@ function createRunner(symbol, options) {
     var rangeStateFile = path.join(dir, 'range-detector-state.json');
     var executionStateFile = path.join(dir, 'real-order-execution-v1.json');
     var executionEventsFile = path.join(dir, 'real-order-execution-v1.jsonl');
+    var realTradeCaseDirectory = path.join(dir, 'real-trade-cases-v1');
+    var semanticStoreDirectory = path.join(CONFIG.dataDir, 'eq-fvg-association-semantic-v1');
+    var semanticCaseDirectory = path.join(dir, 'eq-fvg-association-cases-v1');
     var engine = null;
     var lastCloseTime = 0;
     var lastOpenTime = null;
@@ -322,6 +332,8 @@ function createRunner(symbol, options) {
     var rangeAlerts = null;
     var rangeStateRestored = false;
     var execution = null;
+    var semanticService = null;
+    var pendingSemanticEvents = [];
     var executionSymbolRules = null;
     var scanAdmitted = runnerOptions.scanAdmitted !== false;
     var analysisReady = false;
@@ -364,6 +376,7 @@ function createRunner(symbol, options) {
             initial: persistence.loadJson(executionStateFile, {}),
             persist: function (snapshot) { persistence.saveJson(executionStateFile, snapshot); }
         });
+        var tradeArchive = realTradeCaseArchiveV1.createArchive({ directory: realTradeCaseDirectory });
         return realOrderExecutionV1.createService({
             symbol: symbol,
             liveTradingEnabled: LIVE_TRADING_ENABLED,
@@ -377,8 +390,68 @@ function createRunner(symbol, options) {
                 return { admitted: true, reasonCode: null };
             },
             observe: recordExecutionEvent,
+            archiveTrade: tradeArchive.append,
             alert: sendExecutionAlert
         });
+    }
+
+    function semanticExecutionPreview(event) {
+        var ctx = Object.assign({}, executionContext(event.rawFvg.confirmedAt), {
+            tradeId: realOrderExecutionV1.tradeIdFor(event), liveTradingEnabled: LIVE_TRADING_ENABLED
+        });
+        var direction = event.liquidityType === 'EQL' ? 'LONG' : 'SHORT';
+        var bias = executionRulesV1.biasGate(direction, ctx.bias, ctx.expected4hClosedAt);
+        var built = executionRulesV1.buildEntryPlan(event, ctx);
+        return { fourHourBias: ctx.bias, fourHourGateResult: bias.ok ? 'PASS' : 'BLOCK:' + bias.reasonCode,
+            initialRR: built.plan && built.plan.initialRR,
+            rrGateResult: built.reasonCode === 'TRADE_SPACE_INSUFFICIENT' ? 'BLOCK' : (built.ok ? 'PASS' : 'NOT_REACHED'),
+            executionEligible: built.ok === true };
+    }
+
+    function createSemanticService() {
+        var archive = eqFvgAssociationCaseArchiveV1.createArchive({ directory: semanticCaseDirectory });
+        return eqFvgAssociationSemanticV1.createService({
+            config: EQ_FVG_SEMANTIC_CONFIG,
+            store: eqFvgAssociationDecisionStoreV1.createStore({ directory: semanticStoreDirectory }),
+            observe: function (record) { log(symbol + ' ' + record.event + ' ' + JSON.stringify(record)); },
+            notify: function (event, result) {
+                if (!eqAlerts.annotateSemantic(event, result)) {
+                    throw Object.assign(new Error('EQ_FVG_NOTIFICATION_OUTBOX_MISSING'), { code: 'EQ_FVG_NOTIFICATION_OUTBOX_MISSING' });
+                }
+            },
+            archive: archive.write,
+            getExecutionPreview: semanticExecutionPreview
+        });
+    }
+
+    function processPendingSemanticEvents() {
+        var events = pendingSemanticEvents.splice(0);
+        return events.reduce(function (chain, event) {
+            return chain.then(function () {
+                return semanticService.evaluate(event, { state: engine.getState(), candles: engine.getWindowSnapshot() });
+            }).then(function (result) {
+                if (!result.executionAllowed || !execution) return result;
+                var enriched = Object.assign({}, event, { eqFvgSemantic: result });
+                return execution.onFirstMatchingFvg(enriched);
+            });
+        }, Promise.resolve());
+    }
+
+    function recoverPendingSemanticOutbox() {
+        var pending = eqAlerts.snapshot().pending.filter(function (item) {
+            return item.event && item.event.ordinal === 1 && !item.event.eqFvgSemantic;
+        });
+        return pending.reduce(function (chain, item) {
+            return chain.then(function () {
+                return semanticService.evaluate(item.event, {
+                    state: engine.getState(), candles: engine.getWindowSnapshot()
+                }).then(function (result) {
+                    log(symbol + ' EQ_FVG_SEMANTIC_RESTART_RECOVERY decisionKey=' +
+                        (result.decisionKey || '-').slice(0, 12) +
+                        ' gate=' + result.gateResult + '（historical outbox observation only; no retroactive Entry）');
+                });
+            });
+        }, Promise.resolve());
     }
 
     function saveRangeAlertState(snapshot) {
@@ -466,11 +539,12 @@ function createRunner(symbol, options) {
             log(symbol + ' EQ_FVG_COUNT_WATCH OPEN id=' + watch.watchId +
                 ' liquidity=' + watch.liquidityType + ' expected=' + watch.expectedDirection);
         });
-        // Execution is a downstream, error-contained consumer. WATCH has already
-        // advanced and persisted before any trading gate or exchange call occurs.
+        // WATCH has already advanced and persisted. Semantic facts need the rest
+        // of this completed bar (structure/displacement/FVG provenance), so #1 is
+        // consumed only after engine.onBar has fully completed.
         if (execution) {
             (result.notifications || []).forEach(function (event) {
-                if (event.ordinal === 1 && scanAdmitted) execution.onFirstMatchingFvg(event);
+                if (event.ordinal === 1 && scanAdmitted) pendingSemanticEvents.push(event);
             });
             execution.onConfirmedSwings(step.newConfirmedSwings || []);
         }
@@ -668,6 +742,7 @@ function createRunner(symbol, options) {
             // the EQ/raw-FVG boundary, before unrelated downstream engines run.
             engine.setEqFvgCountStepHandler(handleEqFvgCountStep);
             execution = createExecutionService();
+            semanticService = createSemanticService();
             // Execution rules are fetched afresh from Futures exchangeInfo instead
             // of trusting the long-lived historical-loader cache.
             return binanceRest.getExchangeInfo(symbol).then(function (info) {
@@ -676,6 +751,8 @@ function createRunner(symbol, options) {
             });
         }).then(function () {
             return execution.start();
+        }).then(function () {
+            return recoverPendingSemanticOutbox();
         }).then(function () {
             // Retry a pre-restart confirmation outbox only after deterministic
             // candle replay has restored the current Range lifecycle.
@@ -729,7 +806,7 @@ function createRunner(symbol, options) {
                 return engine.onBar(c, engine.getWindowLength()).then(function (opp) {
                     var steps = engine.drainEqFvgCountSteps();
                     steps.forEach(handleEqFvgCountStep);
-                    return eqAlerts.flush().then(function () { return opp; });
+                    return processPendingSemanticEvents().then(function () { return eqAlerts.flush(); }).then(function () { return opp; });
                 }).then(function (opp) {
                     if (!rangeAlerts || !scanAdmitted) return opp;
                     rangeAlerts.onCandle(c, {
@@ -899,6 +976,10 @@ function main() {
         '（new fully closed native 4H -> deterministic Direction/Strength facts -> one semantic compression）');
     log('REAL_ORDER_EXECUTION_V1=' + (LIVE_TRADING_ENABLED ? 'LIVE' : 'SHADOW') +
         '（only literal LIVE_TRADING_ENABLED=true permits mutating Binance requests）');
+    log('EQ_FVG_ASSOCIATION_SEMANTIC_V1=' + (EQ_FVG_SEMANTIC_CONFIG.enabled ? 'ENABLED' : 'DISABLED') +
+        ' liveGate=' + EQ_FVG_SEMANTIC_CONFIG.liveGateEnabled +
+        ' failClosed=' + EQ_FVG_SEMANTIC_CONFIG.failClosed +
+        ' requiredConfidence=' + EQ_FVG_SEMANTIC_CONFIG.requiredConfidence);
     log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED
         ? 'ENABLED（钉钉只推 PRIORITY_HIGH = HIGH + 48 窗口内 Significant Liquidity；STANDARD_HIGH 只落日志）'
         : 'DISABLED（全部 HIGH 照常推钉钉，仅记录 notifyPriority 字段）'));
