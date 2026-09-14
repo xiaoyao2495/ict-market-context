@@ -35,6 +35,25 @@ function orderRecord(trade, role, response) {
     };
 }
 
+/**
+ * HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1 §57.
+ *
+ * Deterministic provenance for the order-submission notification. Every value is
+ * copied from the frozen entry plan; nothing is recomputed, and Entry / SL / TP /
+ * RR are read exactly as the execution rules produced them.
+ */
+function planNotificationExtra(plan) {
+    if (!plan) return {};
+    return {
+        entryPrice: plan.entryPrice,
+        stopPrice: plan.stopPrice,
+        targetPrice: plan.targetPrice,
+        initialRR: plan.initialRR,
+        tpAnchorSignificance: plan.targetAnchorSignificance || null,
+        eqHistoricalAnchorSignificance: plan.eqHistoricalAnchorSignificance || []
+    };
+}
+
 function createService(options) {
     var opts = options || {};
     var symbol = opts.symbol;
@@ -290,6 +309,10 @@ function createService(options) {
         var built = rules.buildEntryPlan(event, context);
         var trade = { tradeId: context.tradeId, symbol: symbol, status: built.ok ? 'PLANNED' : 'NO_TRADE',
             reasonCode: built.reasonCode || null, plan: built.plan, positionQty: 0,
+            // §58. First-class frozen semantic provenance for the real-trade case
+            // archive. Copied from the plan; absent plan ⇒ empty/null, never invented.
+            EQ_HISTORICAL_ANCHOR_SIGNIFICANCE: built.ok ? (built.plan.eqHistoricalAnchorSignificance || []) : [],
+            TP_ANCHOR_SIGNIFICANCE: built.ok ? (built.plan.targetAnchorSignificance || null) : null,
             entryOrder: null, slOrder: null, tpOrder: null, createdAt: Date.now(), updatedAt: Date.now() };
         repository.putTrade(trade);
         if (!built.ok) { emit('NO_TRADE', trade, { reasonCode: built.reasonCode }); repository.release(); return Promise.resolve(trade); }
@@ -308,7 +331,8 @@ function createService(options) {
             if (trade.entryOrder.status === 'REJECTED') throw Object.assign(new Error('ENTRY_REJECTED'), { code: 'EXCHANGE_REJECTED' });
             trade.status = trade.entryOrder.status === 'PARTIALLY_FILLED' ? 'PARTIALLY_FILLED'
                 : trade.entryOrder.status === 'FILLED' ? 'FILLED' : 'ENTRY_PENDING'; saveTrade(trade);
-            return emitOnce('ENTRY_SUBMITTED', trade).then(function () { return trade; });
+            return emitOnce('ENTRY_SUBMITTED', trade, planNotificationExtra(trade.plan))
+                .then(function () { return trade; });
         }).catch(function (error) {
             if (rateLimitGovernor.isRateLimitError(error)) return holdForRateLimit(trade, error);
             trade.status = 'EXECUTION_ERROR'; trade.reasonCode = error.code || 'EXCHANGE_REJECTED'; saveTrade(trade);

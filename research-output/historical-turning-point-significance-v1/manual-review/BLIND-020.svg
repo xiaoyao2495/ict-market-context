@@ -1,0 +1,202 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-max-displayed-open-time="1785137400000" data-confirmation-candle-open-time="1785137400000" data-future-bars="0" data-label-leak="none">
+<rect width="100%" height="100%" fill="#10151d"/>
+<text x="82" y="38" fill="#eef3f8" font-family="sans-serif" font-size="20" font-weight="600">BTCUSDT · 5m · BLIND-020 · SWING_HIGH</text>
+<text x="82" y="62" fill="#9aa9b8" font-family="sans-serif" font-size="13">CONFIRMED AT 2026-07-27 15:34 UTC+8 · right edge is the confirmation candle</text>
+<text x="82" y="82" fill="#9aa9b8" font-family="sans-serif" font-size="13">Judge ONLY the intrinsic significance of the marked turning point. No labels, no verdicts, no future bars are shown.</text>
+<line x1="82" y1="96.00" x2="1252" y2="96.00" stroke="#27313d" stroke-width="1"/>
+<text x="74" y="100.00" text-anchor="end" fill="#9aa9b8" font-family="monospace" font-size="12">65790.54</text>
+<line x1="82" y1="222.50" x2="1252" y2="222.50" stroke="#27313d" stroke-width="1"/>
+<text x="74" y="226.50" text-anchor="end" fill="#9aa9b8" font-family="monospace" font-size="12">65543.89</text>
+<line x1="82" y1="349.00" x2="1252" y2="349.00" stroke="#27313d" stroke-width="1"/>
+<text x="74" y="353.00" text-anchor="end" fill="#9aa9b8" font-family="monospace" font-size="12">65297.25</text>
+<line x1="82" y1="475.50" x2="1252" y2="475.50" stroke="#27313d" stroke-width="1"/>
+<text x="74" y="479.50" text-anchor="end" fill="#9aa9b8" font-family="monospace" font-size="12">65050.60</text>
+<line x1="82" y1="602.00" x2="1252" y2="602.00" stroke="#27313d" stroke-width="1"/>
+<text x="74" y="606.00" text-anchor="end" fill="#9aa9b8" font-family="monospace" font-size="12">64803.96</text>
+<g data-candle-open-time="1785110700000"><line x1="88.50" y1="366.57" x2="88.50" y2="420.83" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="84.47" y="371.18" width="8.06" height="35.13" fill="#e05d68"/></g>
+<g data-candle-open-time="1785111000000"><line x1="101.50" y1="391.18" x2="101.50" y2="422.98" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="97.47" y="400.37" width="8.06" height="6.00" fill="#38b68b"/></g>
+<g data-candle-open-time="1785111300000"><line x1="114.50" y1="400.31" x2="114.50" y2="468.68" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="110.47" y="400.37" width="8.06" height="43.85" fill="#e05d68"/></g>
+<g data-candle-open-time="1785111600000"><line x1="127.50" y1="422.37" x2="127.50" y2="455.09" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="123.47" y="434.98" width="8.06" height="9.28" fill="#38b68b"/></g>
+<g data-candle-open-time="1785111900000"><line x1="140.50" y1="381.95" x2="140.50" y2="436.83" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="136.47" y="417.91" width="8.06" height="17.13" fill="#38b68b"/></g>
+<g data-candle-open-time="1785112200000"><line x1="153.50" y1="400.47" x2="153.50" y2="438.27" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="149.47" y="417.03" width="8.06" height="1.00" fill="#38b68b"/></g>
+<g data-candle-open-time="1785112500000"><line x1="166.50" y1="416.98" x2="166.50" y2="460.32" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="162.47" y="417.03" width="8.06" height="33.39" fill="#e05d68"/></g>
+<g data-candle-open-time="1785112800000"><line x1="179.50" y1="430.22" x2="179.50" y2="456.32" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="175.47" y="434.68" width="8.06" height="15.75" fill="#38b68b"/></g>
+<g data-candle-open-time="1785113100000"><line x1="192.50" y1="418.06" x2="192.50" y2="449.09" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="188.47" y="430.68" width="8.06" height="4.05" fill="#38b68b"/></g>
+<g data-candle-open-time="1785113400000"><line x1="205.50" y1="418.57" x2="205.50" y2="469.14" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="201.47" y="430.63" width="8.06" height="25.75" fill="#e05d68"/></g>
+<g data-candle-open-time="1785113700000"><line x1="218.50" y1="447.04" x2="218.50" y2="484.53" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="214.47" y="447.09" width="8.06" height="9.28" fill="#38b68b"/></g>
+<g data-candle-open-time="1785114000000"><line x1="231.50" y1="414.16" x2="231.50" y2="455.81" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="227.47" y="424.27" width="8.06" height="22.82" fill="#38b68b"/></g>
+<g data-candle-open-time="1785114300000"><line x1="244.50" y1="409.70" x2="244.50" y2="438.42" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="240.47" y="417.34" width="8.06" height="6.92" fill="#38b68b"/></g>
+<g data-candle-open-time="1785114600000"><line x1="257.50" y1="417.34" x2="257.50" y2="493.50" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="253.47" y="417.34" width="8.06" height="69.91" fill="#e05d68"/></g>
+<g data-candle-open-time="1785114900000"><line x1="270.50" y1="472.32" x2="270.50" y2="524.38" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="266.47" y="472.32" width="8.06" height="14.92" fill="#38b68b"/></g>
+<g data-candle-open-time="1785115200000"><line x1="283.50" y1="472.32" x2="283.50" y2="500.89" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="279.47" y="472.37" width="8.06" height="6.51" fill="#e05d68"/></g>
+<g data-candle-open-time="1785115500000"><line x1="296.50" y1="478.89" x2="296.50" y2="508.58" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="292.47" y="478.94" width="8.06" height="25.95" fill="#e05d68"/></g>
+<g data-candle-open-time="1785115800000"><line x1="309.50" y1="470.17" x2="309.50" y2="520.02" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="305.47" y="494.99" width="8.06" height="9.90" fill="#38b68b"/></g>
+<g data-candle-open-time="1785116100000"><line x1="322.50" y1="467.14" x2="322.50" y2="567.10" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="318.47" y="470.63" width="8.06" height="24.36" fill="#38b68b"/></g>
+<g data-candle-open-time="1785116400000"><line x1="335.50" y1="453.35" x2="335.50" y2="476.07" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="331.47" y="467.40" width="8.06" height="3.23" fill="#38b68b"/></g>
+<g data-candle-open-time="1785116700000"><line x1="348.50" y1="424.83" x2="348.50" y2="476.02" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="344.47" y="427.60" width="8.06" height="39.75" fill="#38b68b"/></g>
+<g data-candle-open-time="1785117000000"><line x1="361.50" y1="410.47" x2="361.50" y2="439.91" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="357.47" y="427.60" width="8.06" height="5.80" fill="#e05d68"/></g>
+<g data-candle-open-time="1785117300000"><line x1="374.50" y1="400.57" x2="374.50" y2="433.45" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="370.47" y="409.24" width="8.06" height="24.21" fill="#38b68b"/></g>
+<g data-candle-open-time="1785117600000"><line x1="387.50" y1="401.49" x2="387.50" y2="433.60" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="383.47" y="409.19" width="8.06" height="24.41" fill="#e05d68"/></g>
+<g data-candle-open-time="1785117900000"><line x1="400.50" y1="406.06" x2="400.50" y2="434.42" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="396.47" y="406.06" width="8.06" height="27.49" fill="#38b68b"/></g>
+<g data-candle-open-time="1785118200000"><line x1="413.50" y1="401.54" x2="413.50" y2="423.80" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="409.47" y="406.06" width="8.06" height="7.28" fill="#e05d68"/></g>
+<g data-candle-open-time="1785118500000"><line x1="426.50" y1="401.54" x2="426.50" y2="439.91" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="422.47" y="401.54" width="8.06" height="11.75" fill="#38b68b"/></g>
+<g data-candle-open-time="1785118800000"><line x1="439.50" y1="388.77" x2="439.50" y2="430.16" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="435.47" y="401.54" width="8.06" height="21.75" fill="#e05d68"/></g>
+<g data-candle-open-time="1785119100000"><line x1="452.50" y1="407.14" x2="452.50" y2="424.01" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="448.47" y="421.19" width="8.06" height="2.05" fill="#38b68b"/></g>
+<g data-candle-open-time="1785119400000"><line x1="465.50" y1="421.14" x2="465.50" y2="456.32" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="461.47" y="421.14" width="8.06" height="22.52" fill="#e05d68"/></g>
+<g data-candle-open-time="1785119700000"><line x1="478.50" y1="380.93" x2="478.50" y2="447.04" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="474.47" y="386.21" width="8.06" height="57.24" fill="#38b68b"/></g>
+<g data-candle-open-time="1785120000000"><line x1="491.50" y1="370.98" x2="491.50" y2="395.08" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="487.47" y="386.21" width="8.06" height="5.95" fill="#e05d68"/></g>
+<g data-candle-open-time="1785120300000"><line x1="504.50" y1="378.67" x2="504.50" y2="405.14" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="500.47" y="392.16" width="8.06" height="12.98" fill="#e05d68"/></g>
+<g data-candle-open-time="1785120600000"><line x1="517.50" y1="405.08" x2="517.50" y2="450.68" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="513.47" y="405.08" width="8.06" height="23.44" fill="#e05d68"/></g>
+<g data-candle-open-time="1785120900000"><line x1="530.50" y1="409.24" x2="530.50" y2="429.29" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="526.47" y="426.73" width="8.06" height="1.80" fill="#38b68b"/></g>
+<g data-candle-open-time="1785121200000"><line x1="543.50" y1="362.57" x2="543.50" y2="427.86" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="539.47" y="426.78" width="8.06" height="1.03" fill="#e05d68"/></g>
+<g data-candle-open-time="1785121500000"><line x1="556.50" y1="385.29" x2="556.50" y2="427.86" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="552.47" y="412.42" width="8.06" height="15.39" fill="#38b68b"/></g>
+<g data-candle-open-time="1785121800000"><line x1="569.50" y1="369.80" x2="569.50" y2="421.80" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="565.47" y="369.80" width="8.06" height="42.67" fill="#38b68b"/></g>
+<g data-candle-open-time="1785122100000"><line x1="582.50" y1="360.41" x2="582.50" y2="376.72" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="578.47" y="369.13" width="8.06" height="1.00" fill="#38b68b"/></g>
+<g data-candle-open-time="1785122400000"><line x1="595.50" y1="339.64" x2="595.50" y2="382.41" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="591.47" y="355.23" width="8.06" height="13.95" fill="#38b68b"/></g>
+<g data-candle-open-time="1785122700000"><line x1="608.50" y1="339.64" x2="608.50" y2="358.67" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="604.47" y="352.36" width="8.06" height="2.92" fill="#38b68b"/></g>
+<g data-candle-open-time="1785123000000"><line x1="621.50" y1="352.31" x2="621.50" y2="384.77" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="617.47" y="352.31" width="8.06" height="18.77" fill="#e05d68"/></g>
+<g data-candle-open-time="1785123300000"><line x1="634.50" y1="351.03" x2="634.50" y2="371.08" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="630.47" y="368.05" width="8.06" height="3.03" fill="#38b68b"/></g>
+<g data-candle-open-time="1785123600000"><line x1="647.50" y1="329.28" x2="647.50" y2="370.62" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="643.47" y="334.20" width="8.06" height="33.90" fill="#38b68b"/></g>
+<g data-candle-open-time="1785123900000"><line x1="660.50" y1="325.02" x2="660.50" y2="353.33" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="656.47" y="334.15" width="8.06" height="19.18" fill="#e05d68"/></g>
+<g data-candle-open-time="1785124200000"><line x1="673.50" y1="351.08" x2="673.50" y2="365.59" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="669.47" y="353.28" width="8.06" height="4.77" fill="#e05d68"/></g>
+<g data-candle-open-time="1785124500000"><line x1="686.50" y1="357.44" x2="686.50" y2="378.82" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="682.47" y="358.05" width="8.06" height="9.28" fill="#e05d68"/></g>
+<g data-candle-open-time="1785124800000"><line x1="699.50" y1="338.67" x2="699.50" y2="373.70" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="695.47" y="342.72" width="8.06" height="24.62" fill="#38b68b"/></g>
+<g data-candle-open-time="1785125100000"><line x1="712.50" y1="322.82" x2="712.50" y2="372.62" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="708.47" y="342.72" width="8.06" height="28.62" fill="#e05d68"/></g>
+<g data-candle-open-time="1785125400000"><line x1="725.50" y1="351.44" x2="725.50" y2="390.31" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="721.47" y="351.49" width="8.06" height="19.80" fill="#38b68b"/></g>
+<g data-candle-open-time="1785125700000"><line x1="738.50" y1="308.05" x2="738.50" y2="357.54" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="734.47" y="320.66" width="8.06" height="30.77" fill="#38b68b"/></g>
+<g data-candle-open-time="1785126000000"><line x1="751.50" y1="252.91" x2="751.50" y2="320.71" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="747.47" y="316.77" width="8.06" height="3.95" fill="#38b68b"/></g>
+<g data-candle-open-time="1785126300000"><line x1="764.50" y1="310.97" x2="764.50" y2="367.49" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="760.47" y="316.82" width="8.06" height="33.59" fill="#e05d68"/></g>
+<g data-candle-open-time="1785126600000"><line x1="777.50" y1="348.15" x2="777.50" y2="390.67" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="773.47" y="350.41" width="8.06" height="10.36" fill="#e05d68"/></g>
+<g data-candle-open-time="1785126900000"><line x1="790.50" y1="314.30" x2="790.50" y2="360.77" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="786.47" y="331.18" width="8.06" height="29.54" fill="#38b68b"/></g>
+<g data-candle-open-time="1785127200000"><line x1="803.50" y1="290.45" x2="803.50" y2="336.15" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="799.47" y="313.74" width="8.06" height="17.39" fill="#38b68b"/></g>
+<g data-candle-open-time="1785127500000"><line x1="816.50" y1="313.74" x2="816.50" y2="345.08" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="812.47" y="313.74" width="8.06" height="17.90" fill="#e05d68"/></g>
+<g data-candle-open-time="1785127800000"><line x1="829.50" y1="331.59" x2="829.50" y2="353.90" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="825.47" y="331.59" width="8.06" height="17.75" fill="#e05d68"/></g>
+<g data-candle-open-time="1785128100000"><line x1="842.50" y1="349.33" x2="842.50" y2="371.85" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="838.47" y="349.33" width="8.06" height="20.21" fill="#e05d68"/></g>
+<g data-candle-open-time="1785128400000"><line x1="855.50" y1="350.97" x2="855.50" y2="372.72" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="851.47" y="369.54" width="8.06" height="1.33" fill="#e05d68"/></g>
+<g data-candle-open-time="1785128700000"><line x1="868.50" y1="348.26" x2="868.50" y2="370.87" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="864.47" y="351.28" width="8.06" height="19.54" fill="#38b68b"/></g>
+<g data-candle-open-time="1785129000000"><line x1="881.50" y1="312.92" x2="881.50" y2="351.28" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="877.47" y="327.02" width="8.06" height="24.26" fill="#38b68b"/></g>
+<g data-candle-open-time="1785129300000"><line x1="894.50" y1="315.23" x2="894.50" y2="340.56" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="890.47" y="325.79" width="8.06" height="1.18" fill="#38b68b"/></g>
+<g data-candle-open-time="1785129600000"><line x1="907.50" y1="288.30" x2="907.50" y2="325.79" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="903.47" y="306.51" width="8.06" height="19.23" fill="#38b68b"/></g>
+<g data-candle-open-time="1785129900000"><line x1="920.50" y1="302.46" x2="920.50" y2="316.25" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="916.47" y="303.74" width="8.06" height="2.77" fill="#38b68b"/></g>
+<g data-candle-open-time="1785130200000"><line x1="933.50" y1="296.30" x2="933.50" y2="316.51" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="929.47" y="303.69" width="8.06" height="4.97" fill="#e05d68"/></g>
+<g data-candle-open-time="1785130500000"><line x1="946.50" y1="301.43" x2="946.50" y2="328.31" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="942.47" y="308.71" width="8.06" height="8.10" fill="#e05d68"/></g>
+<g data-candle-open-time="1785130800000"><line x1="959.50" y1="308.71" x2="959.50" y2="330.36" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="955.47" y="316.61" width="8.06" height="1.00" fill="#38b68b"/></g>
+<g data-candle-open-time="1785131100000"><line x1="972.50" y1="314.15" x2="972.50" y2="336.72" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="968.47" y="316.61" width="8.06" height="11.23" fill="#e05d68"/></g>
+<g data-candle-open-time="1785131400000"><line x1="985.50" y1="311.69" x2="985.50" y2="336.72" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="981.47" y="314.56" width="8.06" height="13.28" fill="#38b68b"/></g>
+<g data-candle-open-time="1785131700000"><line x1="998.50" y1="261.32" x2="998.50" y2="316.66" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="994.47" y="278.71" width="8.06" height="35.85" fill="#38b68b"/></g>
+<g data-candle-open-time="1785132000000"><line x1="1011.50" y1="228.81" x2="1011.50" y2="284.20" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="1007.47" y="240.40" width="8.06" height="38.36" fill="#38b68b"/></g>
+<g data-candle-open-time="1785132300000"><line x1="1024.50" y1="130.90" x2="1024.50" y2="262.45" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="1020.47" y="230.34" width="8.06" height="10.05" fill="#38b68b"/></g>
+<g data-candle-open-time="1785132600000"><line x1="1037.50" y1="176.49" x2="1037.50" y2="230.40" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="1033.47" y="208.65" width="8.06" height="21.69" fill="#38b68b"/></g>
+<g data-candle-open-time="1785132900000"><line x1="1050.50" y1="185.42" x2="1050.50" y2="230.96" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="1046.47" y="208.65" width="8.06" height="11.80" fill="#e05d68"/></g>
+<g data-candle-open-time="1785133200000"><line x1="1063.50" y1="218.60" x2="1063.50" y2="254.35" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="1059.47" y="220.45" width="8.06" height="18.52" fill="#e05d68"/></g>
+<g data-candle-open-time="1785133500000"><line x1="1076.50" y1="238.96" x2="1076.50" y2="282.09" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="1072.47" y="238.96" width="8.06" height="24.16" fill="#e05d68"/></g>
+<g data-candle-open-time="1785133800000"><line x1="1089.50" y1="232.24" x2="1089.50" y2="276.30" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="1085.47" y="234.35" width="8.06" height="28.77" fill="#38b68b"/></g>
+<g data-candle-open-time="1785134100000"><line x1="1102.50" y1="216.80" x2="1102.50" y2="255.17" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="1098.47" y="234.35" width="8.06" height="18.52" fill="#e05d68"/></g>
+<g data-candle-open-time="1785134400000"><line x1="1115.50" y1="236.40" x2="1115.50" y2="263.68" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="1111.47" y="243.88" width="8.06" height="8.98" fill="#38b68b"/></g>
+<g data-candle-open-time="1785134700000"><line x1="1128.50" y1="240.81" x2="1128.50" y2="290.10" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="1124.47" y="243.88" width="8.06" height="39.49" fill="#e05d68"/></g>
+<g data-candle-open-time="1785135000000"><line x1="1141.50" y1="283.33" x2="1141.50" y2="304.05" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="1137.47" y="283.33" width="8.06" height="14.41" fill="#e05d68"/></g>
+<g data-candle-open-time="1785135300000"><line x1="1154.50" y1="285.38" x2="1154.50" y2="307.84" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="1150.47" y="297.74" width="8.06" height="4.72" fill="#e05d68"/></g>
+<g data-candle-open-time="1785135600000"><line x1="1167.50" y1="292.56" x2="1167.50" y2="324.00" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="1163.47" y="296.35" width="8.06" height="6.10" fill="#38b68b"/></g>
+<g data-candle-open-time="1785135900000"><line x1="1180.50" y1="286.92" x2="1180.50" y2="340.56" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="1176.47" y="296.40" width="8.06" height="2.56" fill="#e05d68"/></g>
+<g data-candle-open-time="1785136200000"><line x1="1193.50" y1="293.89" x2="1193.50" y2="318.92" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="1189.47" y="296.76" width="8.06" height="2.21" fill="#38b68b"/></g>
+<g data-candle-open-time="1785136500000"><line x1="1206.50" y1="291.53" x2="1206.50" y2="312.71" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="1202.47" y="292.71" width="8.06" height="4.05" fill="#38b68b"/></g>
+<g data-candle-open-time="1785136800000"><line x1="1219.50" y1="285.89" x2="1219.50" y2="296.81" stroke="#38b68b" stroke-width="1.4"/>
+<rect x="1215.47" y="287.94" width="8.06" height="4.82" fill="#38b68b"/></g>
+<g data-candle-open-time="1785137100000"><line x1="1232.50" y1="285.38" x2="1232.50" y2="306.15" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="1228.47" y="287.99" width="8.06" height="18.16" fill="#e05d68"/></g>
+<g data-candle-open-time="1785137400000"><line x1="1245.50" y1="306.10" x2="1245.50" y2="368.16" stroke="#e05d68" stroke-width="1.4"/>
+<rect x="1241.47" y="306.10" width="8.06" height="39.44" fill="#e05d68"/></g>
+<line x1="1245.50" y1="96" x2="1245.50" y2="602" stroke="#c3cad3" stroke-width="2" stroke-dasharray="6 5"/>
+<circle cx="1024.50" cy="130.90" r="6" fill="#57a6ff" stroke="#f7fafc" stroke-width="2"/>
+<line x1="1024.50" y1="139.90" x2="1024.50" y2="610" stroke="#57a6ff" stroke-width="1.5" stroke-dasharray="4 4"/>
+<text x="82" y="638" fill="#57a6ff" font-family="sans-serif" font-size="15" font-weight="600">MARKED TURNING POINT · 2026-07-27 14:05 UTC+8 · 65722.5</text>
+<text x="82" y="664" fill="#8594a4" font-family="sans-serif" font-size="13">Detection is already confirmed and frozen. Your task is significance only — never re-place, move or re-price the point.</text>
+<text x="1252" y="702" text-anchor="end" fill="#8594a4" font-family="sans-serif" font-size="12">candle labels use open time · pre-confirmation data only</text>
+</svg>

@@ -1,0 +1,72 @@
+{
+  "semanticVersion": "HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1",
+  "generatedAt": "2026-09-14T14:15:43.526Z",
+  "symbol": "BTCUSDT",
+  "source": {
+    "role": "PRIMARY_SOURCE",
+    "venue": "Binance USDⓈ-M Futures (fapi.binance.com)",
+    "cache": "data-cache/BTCUSDT_5m_20636_20697.json",
+    "cacheSha256": "4be395f34dc319c94a98fd0c5c3f01724f8ab7c8e67b2062b25c135b94d47342",
+    "candleCount": 17580,
+    "firstOpenTimeUtc": "2026-07-02T23:00:00.000Z",
+    "lastCloseTimeUtc": "2026-09-01T23:59:59.999Z",
+    "purityNote": "Every candle is source=futures and continuous 5m. No spot-mirror bar enters this population."
+  },
+  "population": {
+    "dynamicDCandidates": 560,
+    "productionEqEvents": 281,
+    "confirmedSwings": 4883,
+    "bySide": {
+      "HIGH": 280,
+      "LOW": 280
+    }
+  },
+  "semantic": {
+    "decisionsJoinedFrom": ".live-state/turning-point-significance-v1",
+    "labelled": 558,
+    "unlabelled": 2,
+    "labelDistribution": {
+      "SIGNIFICANT": 0,
+      "VALID": 429,
+      "WEAK": 129,
+      "UNCLEAR": 0
+    },
+    "confidenceDistribution": {
+      "HIGH": 0,
+      "MEDIUM": 558,
+      "LOW": 0
+    },
+    "confidenceLabelCross": {
+      "WEAK/MEDIUM": 129,
+      "VALID/MEDIUM": 429
+    },
+    "sideCross": {
+      "HIGH WEAK/MEDIUM": 88,
+      "LOW VALID/MEDIUM": 238,
+      "HIGH VALID/MEDIUM": 191,
+      "LOW WEAK/MEDIUM": 41
+    },
+    "highConfidence": 0,
+    "significantHigh": 0,
+    "validHigh": 0,
+    "highQualified": 0,
+    "highQualifiedRatio": 0,
+    "eligibleAnchors": 0,
+    "blockedAnchors": 558
+  },
+  "reviewPackage": {
+    "sampleSize": 40,
+    "reviewSeed": "HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1|REVIEW_4004",
+    "charts": 40,
+    "chartLeftBars": 72,
+    "futureBarsInCharts": 0
+  },
+  "sampleSizeNote": "Population meets the >=100 candidate floor for a descriptive audit.",
+  "anomalyFlags": {
+    "singleLabelPopulation": null,
+    "zeroHighConfidence": true,
+    "zeroEligibleAnchors": true,
+    "note": "These flags are REPORTED ONLY. No prompt, schema, threshold or gate is modified in response."
+  },
+  "strategyConclusion": "NOT_DRAWN — this package describes population shape and semantic agreement only."
+}

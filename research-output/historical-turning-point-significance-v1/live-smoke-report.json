@@ -1,0 +1,318 @@
+{
+  "semanticVersion": "HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1",
+  "promptVersion": "HISTORICAL_TURNING_POINT_SIGNIFICANCE_PROMPT_V1",
+  "promptSha256": "e1962266a20c67182dc11859d0b68f1b166dd3beddb591727f4a92ce5cf917e0",
+  "schemaSha256": "43cde0b84a26136472b3f2353ffc4fc7e8eefe07363d18a2c5e3e126276caa50",
+  "generatedAt": "2026-09-14T14:13:45.066Z",
+  "symbol": "BTCUSDT",
+  "model": "deepseek-v4-flash",
+  "transport": "FROZEN_STORE_ONLY",
+  "modelCallsMade": 0,
+  "liveTradingEnabled": false,
+  "sourceCache": "data-cache/BTCUSDT_5m_20636_20697.json",
+  "sourceCacheSha256": "4be395f34dc319c94a98fd0c5c3f01724f8ab7c8e67b2062b25c135b94d47342",
+  "decisionStore": ".live-state/turning-point-significance-v1",
+  "populationCandidates": 560,
+  "resolvedDecisions": 558,
+  "realEqObservations": 281,
+  "restoredFrozenDecisions": 558,
+  "labelCounts": {
+    "SIGNIFICANT": 0,
+    "VALID": 429,
+    "WEAK": 129,
+    "UNCLEAR": 0
+  },
+  "confidenceLabelCross": {
+    "WEAK/MEDIUM": 129,
+    "VALID/MEDIUM": 429
+  },
+  "highConfidence": 0,
+  "sideCross": {
+    "HIGH": {
+      "WEAK/MEDIUM": 88,
+      "VALID/MEDIUM": 191
+    },
+    "LOW": {
+      "VALID/MEDIUM": 238,
+      "WEAK/MEDIUM": 41
+    }
+  },
+  "counterEvidenceEmpty": 0,
+  "realEligibleCount": 0,
+  "realBlockedCount": 558,
+  "eqImpact": {
+    "legacyEqObservations": 281,
+    "filteredEqObservations": 0,
+    "legacyPartnersTotal": 313,
+    "filteredPartnersTotal": 0
+  },
+  "tpImpact": {
+    "activeOpposite": 3,
+    "eligibleOpposite": 0
+  },
+  "control": {
+    "eqCase": {
+      "eventId": "EQX1:BTCUSDT:5m:EQL:[BTCUSDT|LOW|1783330500000|1783331399999]",
+      "pivotId": "BTCUSDT:5m:SWING_LOW:1783330500000",
+      "near": {
+        "id": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1783285500000:1783286399999",
+        "barsBetween": 150,
+        "price": 62580
+      },
+      "far": {
+        "id": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1783274100000:1783277699999",
+        "barsBetween": 188,
+        "price": 62564.4
+      },
+      "legacyUniverseSize": 2,
+      "controlUniverseSize": 1,
+      "nearExcluded": true,
+      "farIncluded": true,
+      "legacyPartners": [
+        "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1783274100000:1783277699999",
+        "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1783285500000:1783286399999"
+      ],
+      "controlPartners": [
+        "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1783274100000:1783277699999"
+      ],
+      "legacyCurrentPivot": {
+        "id": "BTCUSDT:5m:SWING_LOW:1783330500000",
+        "source": "ORDINARY_CAUSAL_2X2",
+        "side": "LOW",
+        "price": 62610,
+        "occurredAt": 1783330500000,
+        "confirmedAt": 1783331399999,
+        "sourceIndex": 991
+      },
+      "controlCurrentPivot": {
+        "id": "BTCUSDT:5m:SWING_LOW:1783330500000",
+        "source": "ORDINARY_CAUSAL_2X2",
+        "side": "LOW",
+        "price": 62610,
+        "occurredAt": 1783330500000,
+        "confirmedAt": 1783331399999,
+        "sourceIndex": 991
+      },
+      "legacyTolerance": 50.07256977039371,
+      "controlTolerance": 50.07256977039371,
+      "controlPartnersExcludeNear": true
+    },
+    "tpCase": {
+      "entry": 77997.34999999999,
+      "gap": 799.1000000000058,
+      "blockedNearest": {
+        "id": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788271500000:1788275099999",
+        "price": 78396.9,
+        "distance": 399.5500000000029
+      },
+      "selected": {
+        "id": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788242100000:1788243899999",
+        "price": 79196,
+        "distance": 1198.6500000000087
+      },
+      "selectedIsNearestEligible": true
+    }
+  },
+  "noEqFallback": {
+    "legacyUniverse": 2,
+    "narrowedUniverse": 0,
+    "emitted": null,
+    "eventsAdded": 0,
+    "threw": false
+  },
+  "noTpFallback": {
+    "legacyTarget": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788271500000:1788275099999",
+    "filteredTarget": null,
+    "legacyOk": true,
+    "legacyEntry": 77997.3,
+    "legacyStop": 77797.6,
+    "legacyTp": 78396.9,
+    "legacyRR": 2.0010015022533656,
+    "ok": false,
+    "reasonCode": "NO_VALID_DYNAMIC_D_TARGET",
+    "hasTarget": false,
+    "hasSignificance": false,
+    "legacyHasTarget": true
+  },
+  "dingTalk": {
+    "transport": "HTTP_MOCK",
+    "realWebhookSmoke": "NOT_AVAILABLE"
+  },
+  "registryStats": {
+    "requests": 120,
+    "hits": 558,
+    "misses": 120,
+    "hydrations": 0,
+    "eligible": 0,
+    "blocked": 558
+  },
+  "serviceStats": {
+    "llmCalls": 0,
+    "cacheHits": 0,
+    "cacheMisses": 0,
+    "queued": 2,
+    "hydrated": 2,
+    "failed": 0
+  },
+  "checks": [
+    {
+      "id": "LIVE_TRADING_DISABLED",
+      "name": "LIVE_TRADING_ENABLED is not true (no order can reach the exchange)",
+      "pass": true,
+      "detail": "LIVE_TRADING_ENABLED=undefined",
+      "scope": "REAL"
+    },
+    {
+      "id": "SMOKE_DATA_SOURCE_PURITY",
+      "name": "every candle is Binance USDⓈ-M Futures (no spot mirror in the smoke path)",
+      "pass": true,
+      "detail": "candles=17580 nonFutures=0 cache=data-cache/BTCUSDT_5m_20636_20697.json",
+      "scope": "REAL"
+    },
+    {
+      "id": "RESTORE_FROM_FROZEN_STORE",
+      "name": "the synchronous eligibility view is rebuilt from the immutable decision store",
+      "pass": true,
+      "detail": "restored=558 frozenDecisionFiles=558",
+      "scope": "REAL"
+    },
+    {
+      "id": "REAL_POPULATION_FULLY_RESOLVED",
+      "name": "every candidate either has a frozen semantic decision or is fail-closed (never silently dropped)",
+      "pass": true,
+      "detail": "resolved=558 failClosed=2 / 560（fail-closed 者无冻结决策，按契约 INELIGIBLE，从不重试或重掷）",
+      "scope": "REAL"
+    },
+    {
+      "id": "REAL_ELIGIBLE_SAMPLE",
+      "name": "at least one real frozen candidate is ANCHOR_ELIGIBLE=true",
+      "pass": false,
+      "detail": "**0 of 558** real candidates are eligible (SIGNIFICANT_HIGH=0, VALID_HIGH=0, HIGH_CONFIDENCE=0) — the canary gate (SIGNIFICANT|VALID)+HIGH is never satisfied by the frozen population",
+      "scope": "REAL"
+    },
+    {
+      "id": "REAL_BLOCKED_SAMPLE",
+      "name": "at least one real frozen candidate is ANCHOR_ELIGIBLE=false",
+      "pass": true,
+      "detail": "558 blocked; first=DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1783113000000:1783119899999 -> WEAK/MEDIUM",
+      "scope": "REAL"
+    },
+    {
+      "id": "CONTROL_EQ_ANCHOR_FILTER_LIVE_SANITY",
+      "name": "CONTROL: the nearer-but-blocked anchor never enters the EQ partner universe; the farther eligible one does",
+      "pass": true,
+      "detail": "event=EQX1:BTCUSDT:5m:EQL:[BTCUSDT|LOW|1783330500000|1783331399999] pivot=BTCUSDT:5m:SWING_LOW:1783330500000 | legacyUniverse=2 -> controlUniverse=1 | blocked(nearer bars=150) excluded=true | eligible(farther bars=188) included=true | emittedPartners=1",
+      "scope": "CONTROL"
+    },
+    {
+      "id": "CONTROL_TP_ANCHOR_FILTER_LIVE_SANITY",
+      "name": "CONTROL: the blocked nearest opposite extreme is never the TP; the next eligible active anchor is selected",
+      "pass": true,
+      "detail": "entry=77997.34999999999 | blocked nearest DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788271500000:1788275099999 (d=399.5500000000029) skipped | selected DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788242100000:1788243899999 (d=1198.6500000000087) == nearest eligible = true",
+      "scope": "CONTROL"
+    },
+    {
+      "id": "CURRENT_POINT_2L2R_UNCHANGED",
+      "name": "the EQ Current Point (causal 2L/2R) is byte-identical with and without the significance filter",
+      "pass": true,
+      "detail": "legacy={\"id\":\"BTCUSDT:5m:SWING_LOW:1783330500000\",\"source\":\"ORDINARY_CAUSAL_2X2\",\"side\":\"LOW\",\"price\":62610,\"occurredAt\":1783330500000,\"confirmedAt\":1783331399999,\"sourceIndex\":991} control={\"id\":\"BTCUSDT:5m:SWING_LOW:1783330500000\",\"source\":\"ORDINARY_CAUSAL_2X2\",\"side\":\"LOW\",\"price\":62610,\"occurredAt\":1783330500000,\"confirmedAt\":1783331399999,\"sourceIndex\":991}",
+      "scope": "REAL"
+    },
+    {
+      "id": "EQ_TOLERANCE_UNCHANGED",
+      "name": "the ATR x 0.7 EQ tolerance is byte-identical with and without the significance filter",
+      "pass": true,
+      "detail": "legacyTolerance=50.07256977039371 controlTolerance=50.07256977039371 atrPeriod=14 lookbackBars=432",
+      "scope": "REAL"
+    },
+    {
+      "id": "NO_ELIGIBLE_EQ_FALLBACK",
+      "name": "with no eligible historical partner no EQ is emitted, no pair is invented, and the pipeline continues",
+      "pass": true,
+      "detail": "legacy=2 narrowed=0 emitted=null eventsAdded=0 threw=false",
+      "scope": "REAL"
+    },
+    {
+      "id": "NO_ELIGIBLE_TP_FALLBACK",
+      "name": "with no eligible TP target the existing no-target semantics apply and no blocked extreme is substituted",
+      "pass": true,
+      "detail": "legacyTarget=DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788271500000:1788275099999 (plan ok=true reason=undefined entry=77997.3 stop=77797.6 tp=78396.9 rr=2.0010015022533656) | filteredTarget=null -> NO_VALID_DYNAMIC_D_TARGET (no targetDynamicDId=true)",
+      "scope": "REAL"
+    },
+    {
+      "id": "SEMANTIC_CASE_ARCHIVE",
+      "name": "blocked and candidate semantic cases are archived create-only with the frozen provenance",
+      "pass": true,
+      "detail": "block=TURNING_SIGNIFICANCE_BLOCK_CASE_d4c72d8d5656d443e3b6580668afaf64d5cf4a7e2ebbf4bbabb81828e137d8d2.json candidate=TURNING_SIGNIFICANCE_CANDIDATE_CASE_CONTROL_DECISION_KEY.json",
+      "scope": "REAL"
+    },
+    {
+      "id": "REAL_TRADE_CASE_ARCHIVE",
+      "name": "EQ_HISTORICAL_ANCHOR_SIGNIFICANCE / TP_ANCHOR_SIGNIFICANCE survive into the real-trade case archive",
+      "pass": true,
+      "detail": "file=REAL_TRADE_CASE_SMOKE_PROBE_1.jsonl eqAnchors=1 tpAnchor=SIGNIFICANT/HIGH",
+      "scope": "REAL"
+    },
+    {
+      "id": "NOTIFICATION_EQ_RENDER",
+      "name": "the EQ notification renders the frozen anchor significance and the applied universe filter",
+      "pass": true,
+      "detail": "lines=30 hasSignificance=true hasFilter=true",
+      "scope": "REAL"
+    },
+    {
+      "id": "NOTIFICATION_TP_RENDER",
+      "name": "the order notification renders the selected TP anchor significance and the EQ anchor qualification count",
+      "pass": true,
+      "detail": "hasTpAnchor=true hasEqCount=true",
+      "scope": "REAL"
+    },
+    {
+      "id": "DINGTALK_TRANSPORT_TEST",
+      "name": "the DingTalk transport posts the rendered significance payload over HTTP (mock)",
+      "pass": true,
+      "detail": "mock transport received 30 lines",
+      "scope": "REAL"
+    },
+    {
+      "id": "EXISTING_LIFECYCLE_MUTATIONS",
+      "name": "no existing ENTRY_PENDING / position / SL / TP record is retroactively modified",
+      "pass": true,
+      "detail": "existingTrade identical=true clientCalls=0",
+      "scope": "REAL"
+    },
+    {
+      "id": "REAL_ORDERS_SENT_AND_ACCOUNT_MUTATIONS",
+      "name": "REAL_ORDERS_SENT=0 and ACCOUNT_MUTATIONS=0 during the smoke",
+      "pass": true,
+      "detail": "clientCalls=0 (client is a counting stub; no exchange transport exists in this process)",
+      "scope": "REAL"
+    },
+    {
+      "id": "PIPELINE_REACHED_EXECUTION_NOTIFICATION",
+      "name": "the production execution path carried the frozen significance into the trade record and the notification",
+      "pass": true,
+      "detail": "status=SHADOW_ORDER EQ_HISTORICAL_ANCHOR_SIGNIFICANCE=0 TP_ANCHOR_SIGNIFICANCE=SIGNIFICANT/HIGH",
+      "scope": "REAL"
+    },
+    {
+      "id": "NO_MODEL_REROLL",
+      "name": "zero model calls: every real eligibility answer came from an already-frozen decision",
+      "pass": true,
+      "detail": "transportAttempts=0 llmCalls=0 cacheHits=0 cacheMisses=0",
+      "scope": "REAL"
+    },
+    {
+      "id": "CORE_PIPELINE_CONTINUES_ON_SEMANTIC_FAILURE",
+      "name": "a semantic failure marks the anchor INELIGIBLE and the pipeline continues without pausing",
+      "pass": true,
+      "detail": "status=UNAVAILABLE eligible=false errorCode=TURNING_SIGNIFICANCE_SEMANTIC_UNAVAILABLE registryEligible=false",
+      "scope": "REAL"
+    }
+  ],
+  "verdict": "FAIL",
+  "durationMs": 10212,
+  "realOrdersSent": 0,
+  "accountMutations": 0,
+  "strategyConclusion": "NOT_DRAWN — 本报告只陈述生产路径的 gate 结果与宇宙规模变化。"
+}

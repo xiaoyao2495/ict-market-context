@@ -74,12 +74,23 @@ function tradeThrough(point, candles, decisionTime) {
     });
 }
 
-function selectTarget(direction, entry, points, candles, decisionTime) {
+/**
+ * Nearest ACTIVE opposite-side historical target.
+ *
+ * HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1 narrows exactly one thing: the
+ * eligible anchor universe. ACTIVE semantics, strict-cross/trade-through
+ * semantics, the opposite-side requirement, the profitability-side requirement,
+ * the nearest ordering and the single-target rule are all unchanged. A weak
+ * candidate is never replaced by an automatic fallback — it leaves the universe
+ * and the existing selector continues with the next eligible anchor.
+ */
+function selectTarget(direction, entry, points, candles, decisionTime, anchorEligibility) {
     var side = direction === 'LONG' ? 'HIGH' : 'LOW';
     var eligible = (points || []).filter(function (point) {
         if (!point || point.state !== 'ACTIVE' || point.pointSide !== side || !finite(point.price) ||
             !finite(point.confirmedAt) || point.confirmedAt > decisionTime) return false;
         if (direction === 'LONG' ? point.price <= entry : point.price >= entry) return false;
+        if (anchorEligibility && anchorEligibility.isEligible(point, 'TP_TARGET_CANDIDATE') !== true) return false;
         return !tradeThrough(point, candles, decisionTime);
     });
     eligible.sort(function (a, b) {
@@ -96,11 +107,33 @@ function sourceTimes(event) {
         confirmedAt: pivot.confirmedAt !== undefined ? pivot.confirmedAt : event.eqConfirmedAt };
 }
 
+/**
+ * Frozen semantic provenance for one historical anchor. Read-only: the entry
+ * plan records what the semantic layer decided, it never re-decides or re-rolls.
+ */
+function anchorSignificance(anchorEligibility, point) {
+    if (!anchorEligibility || !point || typeof anchorEligibility.significanceOf !== 'function') return null;
+    var record = anchorEligibility.significanceOf(point);
+    if (!record) return null;
+    return {
+        turningPointId: record.turningPointId, processId: record.processId,
+        price: record.price, side: record.side, confirmedAt: record.confirmedAt,
+        significance: record.significance, confidence: record.confidence,
+        primaryReason: record.primaryReason,
+        evidence: record.evidence || [], counterEvidence: record.counterEvidence || [],
+        eligible: record.eligible === true, gateReason: record.gateReason || null,
+        errorCode: record.errorCode || null,
+        factsHash: record.factsHash, promptHash: record.promptHash,
+        decisionKey: record.decisionKey, semanticVersion: record.semanticVersion
+    };
+}
+
 function buildEntryPlan(event, context) {
     var direction = event.liquidityType === 'EQL' ? 'LONG' : 'SHORT';
     var decisionTime = event.rawFvg.confirmedAt;
     var rawEntry = (Number(event.rawFvg.low) + Number(event.rawFvg.high)) / 2;
-    var target = selectTarget(direction, rawEntry, context.dynamicDPoints, context.candles, decisionTime);
+    var anchorEligibility = context.anchorEligibility || null;
+    var target = selectTarget(direction, rawEntry, context.dynamicDPoints, context.candles, decisionTime, anchorEligibility);
     var times = sourceTimes(event);
     var base = {
         tradeId: context.tradeId,
@@ -115,6 +148,12 @@ function buildEntryPlan(event, context) {
         eqConfirmedAt: times.confirmedAt,
         eqHistoricalPartners: event.eqSourceContext && event.eqSourceContext.historicalPartners || [],
         eqCurrentPoint: event.eqSourceContext && event.eqSourceContext.currentPivot || null,
+        // HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1 provenance. The Current Point
+        // (causal 2L/2R) is deliberately NOT significance filtered: significance
+        // applies to the Historical Partner side only.
+        eqHistoricalAnchorSignificance: ((event.eqSourceContext && event.eqSourceContext.historicalPartners) || [])
+            .map(function (partner) { return anchorSignificance(anchorEligibility, partner); })
+            .filter(function (record) { return !!record; }),
         fvgId: event.rawFvg.id,
         fvgIndex: event.rawFvg.k3Index,
         fvgLow: event.rawFvg.low,
@@ -148,6 +187,8 @@ function buildEntryPlan(event, context) {
         entryPrice: sized.entryPrice, stopPrice: sized.stopPrice, targetPrice: sized.targetPrice,
         initialRiskPrice: geo.risk, initialRewardPrice: geo.reward, initialRR: geo.rr,
         targetDynamicDId: target.id, targetConfirmedAt: target.confirmedAt,
+        targetAnchorSignificance: anchorSignificance(anchorEligibility, target),
+        targetAnchorPrice: target.price,
         htfDirection: context.bias.semantic.direction, htfStrength: context.bias.semantic.strength,
         htfConfidence: context.bias.semantic.confidence, htfSnapshotAt: context.bias.closedAt,
         htfFactsHash: context.bias.factsHash || null, htfDecisionKey: context.bias.decisionKey || null,

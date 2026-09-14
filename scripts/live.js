@@ -53,6 +53,11 @@ var eqFvgAssociationSemanticV1 = require('../live/eqFvgAssociationSemanticV1');
 var eqFvgAssociationDecisionStoreV1 = require('../semantic/eqFvgAssociationDecisionStoreV1');
 var eqFvgAssociationCaseArchiveV1 = require('../semantic/eqFvgAssociationCaseArchiveV1');
 var loadEqFvgSemanticConfig = require('../config/eqFvgSemanticV1');
+var turningPointSignificanceSemanticV1 = require('../live/turningPointSignificanceSemanticV1');
+var turningPointSignificanceDecisionStoreV1 = require('../semantic/turningPointSignificanceDecisionStoreV1');
+var turningPointSignificanceCaseArchiveV1 = require('../semantic/turningPointSignificanceCaseArchiveV1');
+var loadTurningSignificanceConfig = require('../config/turningPointSignificanceV1');
+var historicalAnchorEligibilityV1 = require('../liquidity/historicalAnchorEligibilityV1');
 
 var CONFIG = require('../config/live.json');
 var EQ_PRODUCTION_MODEL = productionEqualLiquidityV1.VERSION;
@@ -60,6 +65,11 @@ var EQ_NOTIFICATION_MODEL = eqFvgCountWatchV1.VERSION;
 var DISPLACEMENT_PRODUCTION_MODE = 'CANONICAL_A_C2_V1';
 var LIVE_TRADING_ENABLED = process.env.LIVE_TRADING_ENABLED === 'true';
 var EQ_FVG_SEMANTIC_CONFIG = loadEqFvgSemanticConfig();
+// HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1. Two independent switches: the live
+// filter narrows the anchor universe, the semantic switch controls evaluation.
+// LIVE_FILTER=false is the emergency rollback and restores the legacy Dynamic-D
+// universe while semantic decisions may keep being collected as research data.
+var TURNING_SIGNIFICANCE_CONFIG = loadTurningSignificanceConfig();
 
 // Phase 11L.15：B 口径 Live Shadow Prioritization 开关（thresholds.notify.prioritization.enabled）。
 //   true  → 钉钉只推 PRIORITY_HIGH（HIGH + 48 窗口内 Significant Liquidity），STANDARD_HIGH 只落日志
@@ -297,6 +307,8 @@ function createRunner(symbol, options) {
     var realTradeCaseDirectory = path.join(dir, 'real-trade-cases-v1');
     var semanticStoreDirectory = path.join(CONFIG.dataDir, 'eq-fvg-association-semantic-v1');
     var semanticCaseDirectory = path.join(dir, 'eq-fvg-association-cases-v1');
+    var turningStoreDirectory = path.join(CONFIG.dataDir, 'turning-point-significance-v1');
+    var turningCaseDirectory = path.join(dir, 'turning-point-significance-cases-v1');
     var engine = null;
     var lastCloseTime = 0;
     var lastOpenTime = null;
@@ -333,6 +345,8 @@ function createRunner(symbol, options) {
     var rangeStateRestored = false;
     var execution = null;
     var semanticService = null;
+    var turningSignificance = null;
+    var hydratedTurningPointCount = 0;
     var pendingSemanticEvents = [];
     var executionSymbolRules = null;
     var scanAdmitted = runnerOptions.scanAdmitted !== false;
@@ -350,7 +364,11 @@ function createRunner(symbol, options) {
             expected4hClosedAt: latest ? latest.closeTime : null,
             dynamicDPoints: points,
             candles: engine ? engine.getWindowSnapshot() : [],
-            symbolRules: executionSymbolRules || (runnerData && runnerData.raw && runnerData.raw.exchangeInfo)
+            symbolRules: executionSymbolRules || (runnerData && runnerData.raw && runnerData.raw.exchangeInfo),
+            // HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1: narrows the historical
+            // anchor universe for TP selection only. Never affects the Current
+            // Point, the Entry, the SL or the RR rule.
+            anchorEligibility: turningSignificance ? turningSignificance.registry : undefined
         };
     }
 
@@ -424,8 +442,73 @@ function createRunner(symbol, options) {
         });
     }
 
-    function processPendingSemanticEvents() {
-        var events = pendingSemanticEvents.splice(0);
+    /**
+     * HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1.
+     *
+     * The semantic layer answers one question per already-confirmed Dynamic-D
+     * turning point: at confirmedAt, was it independent and meaningful enough to
+     * be preserved as a historical anchor? The resulting eligibility registry is
+     * consulted synchronously by EQ historical-partner selection and by TP target
+     * selection.
+     *
+     * Non-blocking by construction: hydration is fire-and-forget and strictly
+     * serial. A DeepSeek outage can only make new anchors INELIGIBLE; it can never
+     * pause the 5m pipeline, symbol polling, FVG monitoring, or the protection of
+     * an existing position.
+     */
+    function createTurningSignificance() {
+        // SEMANTIC=false: no facts are built, no model is called, no frozen
+        // decision is created. The legacy Dynamic-D anchor universe stays exactly
+        // as it was (LIVE_FILTER=true is rejected by the config loader).
+        if (TURNING_SIGNIFICANCE_CONFIG.semanticEnabled !== true) {
+            log(symbol + ' TURNING_SIGNIFICANCE_SEMANTIC_DISABLED —— no facts / no model call / no frozen decision' +
+                '（legacy Dynamic-D historical anchor universe unchanged）');
+            return null;
+        }
+        var caseArchive = turningPointSignificanceCaseArchiveV1.createArchive({ directory: turningCaseDirectory });
+        var store = turningPointSignificanceDecisionStoreV1.createStore({ directory: turningStoreDirectory });
+        var service = turningPointSignificanceSemanticV1.createService({
+            config: TURNING_SIGNIFICANCE_CONFIG,
+            store: store,
+            observe: function (record) { log(symbol + ' ' + record.event + ' ' + JSON.stringify(record)); },
+            archive: caseArchive.write,
+            sourceProvider: function () {
+                return engine ? { state: engine.getState(), candles: engine.getWindowSnapshot() } : null;
+            },
+            candidateContext: function () { return null; }
+        });
+        var registry = historicalAnchorEligibilityV1.createRegistry({
+            config: TURNING_SIGNIFICANCE_CONFIG,
+            observe: function (record) { log(symbol + ' ' + record.event + ' ' + JSON.stringify(record)); },
+            eligibilityOf: service.eligibilityOf,
+            enqueue: function (point) { return service.enqueue(point); },
+            archiveBlock: function (record, context) {
+                caseArchive.write({
+                    semanticTask: turningPointSignificanceSemanticV1.VERSION,
+                    symbol: record.symbol, turningPointId: record.turningPointId,
+                    processId: record.processId, side: record.side, price: record.price,
+                    confirmedAt: record.confirmedAt, significance: record.significance,
+                    confidence: record.confidence, primaryReason: record.primaryReason,
+                    evidence: record.evidence, counterEvidence: record.counterEvidence,
+                    eligible: false, gateReason: record.gateReason, errorCode: record.errorCode,
+                    factsHash: record.factsHash, promptHash: record.promptHash,
+                    decisionKey: record.decisionKey, semanticVersion: record.semanticVersion,
+                    candidateContext: record.candidateContext || [context],
+                    evaluationTime: Date.now()
+                });
+            }
+        });
+        var restored = service.restoreEligibility();
+        if (restored) log(symbol + ' TURNING_SIGNIFICANCE_RESTORED decisions=' + restored +
+            '（frozen store replayed; no model re-query）');
+        if (TURNING_SIGNIFICANCE_CONFIG.liveFilterEnabled !== true) {
+            log(symbol + ' TURNING_SIGNIFICANCE_LIVE_FILTER_DISABLED —— 恢复 legacy Dynamic-D historical anchor universe' +
+                '（semantic shadow collection continues=' + TURNING_SIGNIFICANCE_CONFIG.semanticEnabled + '）');
+        }
+        return { service: service, registry: registry };
+    }
+
+    function processPendingSemanticEvents() {        var events = pendingSemanticEvents.splice(0);
         return events.reduce(function (chain, event) {
             return chain.then(function () {
                 return semanticService.evaluate(event, { state: engine.getState(), candles: engine.getWindowSnapshot() });
@@ -504,7 +587,28 @@ function createRunner(symbol, options) {
         persistence.saveJson(eqStateFile, snapshot);
     }
 
+    /**
+     * HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1 §55–§57.
+     *
+     * Read-only projection of an already-frozen decision onto the notification
+     * event. It never re-decides, never re-queries the model, never re-orders and
+     * never rewrites a price: a null entry simply means "no frozen decision for
+     * that anchor yet", which the presentation layer renders as UNAVAILABLE.
+     */
+    function attachAnchorSignificance(event) {
+        if (!event || !event.eqSourceContext || event.eqSourceContext.status !== 'AVAILABLE') return event;
+        var partners = event.eqSourceContext.historicalPartners || [];
+        var registry = turningSignificance ? turningSignificance.registry : null;
+        event.anchorUniverseFilter = !TURNING_SIGNIFICANCE_CONFIG.semanticEnabled ? 'NOT_CONFIGURED'
+            : TURNING_SIGNIFICANCE_CONFIG.liveFilterEnabled === true ? 'APPLIED' : 'DISABLED';
+        event.eqHistoricalAnchorSignificance = partners.map(function (partner) {
+            return registry ? registry.significanceOf(partner) : null;
+        });
+        return event;
+    }
+
     function sendEqFvgNotification(event, key) {
+        attachAnchorSignificance(event);
         var contextualEvent = notificationMarketContext.attach(event, current4hBias.getCurrent());
         var message = eqFvgCountWatchNotificationV1.build(contextualEvent, {
             formatPrice: fmtPrice,
@@ -535,6 +639,16 @@ function createRunner(symbol, options) {
             newEqualLiquidity: step.newEqualLiquidity || [],
             rawFvg: step.rawFvg
         });
+        // Pre-hydrate only the turning points confirmed just now. Serial and
+        // fire-and-forget: this never delays the completed-candle path, and a
+        // semantic failure can only leave the new anchor ineligible.
+        if (turningSignificance && engine) {
+            var confirmedPoints = engine.getState().productionEq.dynamicD.confirmedPoints;
+            if (confirmedPoints.length > hydratedTurningPointCount) {
+                turningSignificance.registry.ensure(confirmedPoints.slice(hydratedTurningPointCount));
+                hydratedTurningPointCount = confirmedPoints.length;
+            }
+        }
         result.opened.forEach(function (watch) {
             log(symbol + ' EQ_FVG_COUNT_WATCH OPEN id=' + watch.watchId +
                 ' liquidity=' + watch.liquidityType + ' expected=' + watch.expectedDirection);
@@ -743,6 +857,14 @@ function createRunner(symbol, options) {
             engine.setEqFvgCountStepHandler(handleEqFvgCountStep);
             execution = createExecutionService();
             semanticService = createSemanticService();
+            // HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1. Created after bootstrap so
+            // the frozen decision store is replayed once and the synchronous EQ
+            // eligibility view is warm before the first live EQ is evaluated.
+            turningSignificance = createTurningSignificance();
+            hydratedTurningPointCount = engine.getState().productionEq.dynamicD.confirmedPoints.length;
+            productionEqualLiquidityV1.setAnchorEligibility(engine.getState().productionEq,
+                (TURNING_SIGNIFICANCE_CONFIG.liveFilterEnabled === true && turningSignificance)
+                    ? turningSignificance.registry : null);
             // Execution rules are fetched afresh from Futures exchangeInfo instead
             // of trusting the long-lived historical-loader cache.
             return binanceRest.getExchangeInfo(symbol).then(function (info) {

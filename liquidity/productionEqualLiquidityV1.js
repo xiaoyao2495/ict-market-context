@@ -34,6 +34,11 @@ function createState(options) {
         symbol: opts.symbol || 'UNKNOWN',
         timeframe: opts.timeframe || '5m',
         dynamicD: dynamicD.createState(opts),
+        // HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1 seam. When present, it narrows
+        // the historical-anchor candidate universe BEFORE the existing
+        // deterministic matching runs. When absent the legacy Dynamic-D universe
+        // is used unchanged (rollback contract).
+        anchorEligibility: opts.anchorEligibility || null,
         evaluatedPivotKeys: {},
         emittedEventIds: {},
         events: [],
@@ -41,6 +46,16 @@ function createState(options) {
         fiveMinuteAtrSeedSum: 0,
         fiveMinuteAtrValue: null
     };
+}
+
+/**
+ * Attach/replace the anchor eligibility filter after construction (used by the
+ * live wiring, where the semantic service is created only once bootstrap is
+ * complete). Pass null to restore the legacy Dynamic-D anchor universe.
+ */
+function setAnchorEligibility(state, anchorEligibility) {
+    state.anchorEligibility = anchorEligibility || null;
+    return state.anchorEligibility;
 }
 
 function updateFiveMinuteAtr(state, candle, previousCandle, index) {
@@ -107,15 +122,32 @@ function wasEligibleAtCandidateOccurrence(anchor, candidateOccurredAt, candidate
     );
 }
 
+/**
+ * The historical-anchor candidate universe for one ordinary 2/2 pivot.
+ *
+ * HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1 adds exactly one narrowing step:
+ * when an anchor eligibility filter is configured, only
+ * LLM_QUALIFIED_HISTORICAL_ANCHOR candidates remain. Everything else about the
+ * universe — 36H/432-bar window, ACTIVE-only lifecycle, same-side requirement,
+ * ordering — is unchanged, and the deterministic matcher below is untouched.
+ *
+ * A blocked candidate is never replaced by a weaker fallback: it simply leaves
+ * the universe, and the existing matcher continues with the remaining eligible
+ * anchors (spec §45).
+ */
 function eligibleHistoricalPoints(state, pivot) {
     var side = pointSideOf(pivot);
     var occurredAt = pivotOccurredAt(pivot);
     var sourceIndex = pivot.metadata && pivot.metadata.index;
     if (!side || typeof occurredAt !== 'number' || typeof pivot.confirmedAt !== 'number' ||
             typeof sourceIndex !== 'number') return [];
-    return state.dynamicD.recentSurvivalPoints.filter(function (point) {
+    var eligible = state.dynamicD.recentSurvivalPoints.filter(function (point) {
         return point.pointSide === side &&
             wasEligibleAtCandidateOccurrence(point, occurredAt, sourceIndex);
+    });
+    if (!state.anchorEligibility) return eligible;
+    return eligible.filter(function (point) {
+        return state.anchorEligibility.isEligible(point, 'EQ_PARTNER_CANDIDATE') === true;
     });
 }
 
@@ -269,6 +301,7 @@ module.exports = {
     LOOKBACK_TIME: LOOKBACK_TIME,
     FIVE_MINUTE_ATR_PERIOD: FIVE_MINUTE_ATR_PERIOD,
     createState: createState,
+    setAnchorEligibility: setAnchorEligibility,
     updateFiveMinuteAtr: updateFiveMinuteAtr,
     pivotKey: pivotKey,
     wasEligibleAtCandidateOccurrence: wasEligibleAtCandidateOccurrence,

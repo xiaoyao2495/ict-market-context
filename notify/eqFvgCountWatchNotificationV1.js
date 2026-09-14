@@ -20,12 +20,46 @@ function sourceLine(label, source, time, price) {
     return label + ': ' + value;
 }
 
+/**
+ * HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1 §55–§56.
+ *
+ * Renders the frozen significance of one EQ historical anchor. Purely
+ * presentational: every value shown is copied verbatim from an immutable
+ * decision that was already frozen at (or before) the anchor's confirmedAt.
+ * Nothing here re-decides, re-orders, or re-prices anything.
+ */
+function turningSignificanceLines(record) {
+    if (!record) {
+        return ['  Turning Significance: UNAVAILABLE（no frozen decision; fail-closed → 不作为 anchor）'];
+    }
+    var lines = ['  Turning Significance: ' + (record.significance || '-') + ' / ' + (record.confidence || '-'),
+        '  Turning Reason: ' + (record.primaryReason || '-')];
+    if (record.eligible === true) {
+        lines.push('  Turning Status: LLM_QUALIFIED_HISTORICAL_ANCHOR');
+    } else {
+        lines.push('  Turning Status: ' + (record.gateReason || record.errorCode || 'NOT_ELIGIBLE'));
+    }
+    lines.push('  Turning Semantic Version: ' + (record.semanticVersion || '-'));
+    return lines;
+}
+
+function anchorUniverseLine(filter) {
+    if (filter === 'APPLIED') return 'Anchor Universe Filter: APPLIED（historical anchor universe 已按语义结果收窄）';
+    if (filter === 'DISABLED') return 'Anchor Universe Filter: DISABLED（legacy Dynamic-D universe；语义结果仅作 shadow 记录）';
+    return null;
+}
+
 function sourceContextLines(event, time, price) {
     var context = event.eqSourceContext;
     if (!context || context.status !== 'AVAILABLE') {
         return ['EQ Source Context: UNAVAILABLE', 'EQ确认: ' + time(event.eqConfirmedAt)];
     }
     var partners = eqSourceContextV1.historicalPartnersForDisplay(context);
+    var significance = event.eqHistoricalAnchorSignificance || [];
+    var byId = {};
+    significance.forEach(function (record) {
+        if (record && record.turningPointId != null) byId[String(record.turningPointId)] = record;
+    });
     var lines = [
         'EQ Source Context:',
         sourceLine('Current Point', context.currentPivot, time, price),
@@ -33,7 +67,10 @@ function sourceContextLines(event, time, price) {
     ];
     partners.forEach(function (partner, index) {
         lines.push(sourceLine('Partner #' + (index + 1), partner, time, price));
+        lines = lines.concat(turningSignificanceLines(byId[String(partner.id)] || null));
     });
+    var universe = anchorUniverseLine(event.anchorUniverseFilter);
+    if (universe) lines.push(universe);
     lines.push('EQ确认: ' + time(event.eqConfirmedAt));
     return lines;
 }
@@ -87,5 +124,7 @@ function build(event, options) {
 module.exports = {
     build: build,
     sourceContextLines: sourceContextLines,
+    turningSignificanceLines: turningSignificanceLines,
+    anchorUniverseLine: anchorUniverseLine,
     biasLines: biasContext.lines
 };

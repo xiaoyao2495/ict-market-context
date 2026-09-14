@@ -1,0 +1,59 @@
+{
+  "semanticVersion": "HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1",
+  "promptVersion": "HISTORICAL_TURNING_POINT_SIGNIFICANCE_PROMPT_V1",
+  "model": "deepseek-v4-flash",
+  "responseModelAlias": "deepseek-flash",
+  "temperature": 0,
+  "maxTokens": 4096,
+  "promptSha256": "e1962266a20c67182dc11859d0b68f1b166dd3beddb591727f4a92ce5cf917e0",
+  "schemaSha256": "43cde0b84a26136472b3f2353ffc4fc7e8eefe07363d18a2c5e3e126276caa50",
+  "outputKeys": [
+    "confidence",
+    "counterEvidence",
+    "evidence",
+    "primaryReason",
+    "significance"
+  ],
+  "significance": [
+    "SIGNIFICANT",
+    "VALID",
+    "WEAK",
+    "UNCLEAR"
+  ],
+  "confidence": [
+    "HIGH",
+    "MEDIUM",
+    "LOW"
+  ],
+  "primaryReason": [
+    "INDEPENDENT_DIRECTIONAL_TURN",
+    "STRONG_REVERSAL_WITH_STRUCTURAL_CHANGE",
+    "EFFICIENT_REVERSAL_FROM_EXTREME",
+    "STRUCTURALLY_MEANINGFUL_CONTROL_POINT",
+    "VALID_LOCAL_TURN_WITH_CLEAR_REVERSAL",
+    "LOCAL_REVERSAL_WITH_LIMITED_SIGNIFICANCE",
+    "WEAK_OR_CHOPPY_REVERSAL",
+    "INCOMING_PROCESS_NOT_DISTINCT",
+    "REVERSAL_NOT_INDEPENDENT_ENOUGH",
+    "CONFLICTING_EVIDENCE",
+    "INSUFFICIENT_PROVENANCE",
+    "OTHER"
+  ],
+  "gateRule": "(SIGNIFICANT|VALID) + HIGH => LLM_QUALIFIED_HISTORICAL_ANCHOR",
+  "detectionOwnership": "UNCHANGED — Dynamic-D + SAME_PROCESS_WICK_V1 remain deterministic and frozen.",
+  "llmForbidden": [
+    "discover turning points",
+    "create turning points",
+    "move turning points",
+    "modify prices, times or wicks",
+    "change Dynamic-D process / theta / wick",
+    "change 2L/2R",
+    "decide Entry / SL / TP / sizing / orders"
+  ],
+  "failClosed": true,
+  "requiredConfidence": "HIGH",
+  "allowedLabels": [
+    "SIGNIFICANT",
+    "VALID"
+  ]
+}
