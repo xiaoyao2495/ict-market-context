@@ -8,7 +8,7 @@
  *
  *   isEligible(point)   -> true only when a frozen semantic decision for that
  *                          exact turning point already says
- *                          (SIGNIFICANT|VALID) + HIGH
+ *                          (SIGNIFICANT|VALID) + MEDIUM_OR_HIGH
  *   filter(points)      -> the eligible anchor universe, order preserved
  *
  * The EQ partner matcher and the TP selector call these while running inside the

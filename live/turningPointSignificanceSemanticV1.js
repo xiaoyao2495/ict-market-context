@@ -169,7 +169,7 @@ function createService(options) {
     }
 
     function available(candidate, identity, record, source, duration) {
-        var gate = contract.evaluateGate(record.decision);
+        var gate = contract.evaluateGate(record.decision, config);
         var result = {
             status: 'AVAILABLE',
             semanticVersion: contract.VERSION,
@@ -185,7 +185,7 @@ function createService(options) {
             normalizedModelIdentity: record.normalizedModelIdentity,
             usage: clone(record.usage || {}),
             semanticCallDurationMs: duration || 0,
-            // The canary gate: only (SIGNIFICANT|VALID) + HIGH qualifies.
+            // The canary gate: (SIGNIFICANT|VALID) at MEDIUM-or-higher confidence.
             eligible: gate.result === 'PASS',
             gateResult: gate.result,
             gateReason: gate.reason,
@@ -335,7 +335,7 @@ function createService(options) {
         if (typeof store.listDecisionRecords !== 'function') return 0;
         var restored = 0;
         store.listDecisionRecords().forEach(function (record) {
-            var gate = contract.evaluateGate(record.decision);
+            var gate = contract.evaluateGate(record.decision, config);
             resolved[record.turningPointId] = {
                 status: 'AVAILABLE',
                 semanticVersion: contract.VERSION,

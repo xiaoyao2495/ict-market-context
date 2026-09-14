@@ -16,9 +16,10 @@
  * Emergency rollback is therefore: LIVE_FILTER=false (+ keep SEMANTIC=true if
  * research data must not be lost). No code change is required to roll back.
  *
- * failClosed and requiredConfidence are deliberately NOT free: the V1 canary is
- * only ever allowed to qualify anchors on HIGH confidence, and a semantic
- * failure must never fall open.
+ * The V1 canary admits only SIGNIFICANT / VALID decisions whose confidence is
+ * at least the configured minimum. Confidence is ordered LOW < MEDIUM < HIGH;
+ * this is a threshold, not exact equality. A semantic failure must never fall
+ * open.
  */
 
 function bool(name, fallback) {
@@ -32,9 +33,9 @@ function loadConfig(env) {
         if (source[name] === undefined) return fallback;
         return source[name] === 'true';
     }
-    var requiredConfidence = source.TURNING_SIGNIFICANCE_REQUIRED_CONFIDENCE || 'HIGH';
-    if (requiredConfidence !== 'HIGH') {
-        throw new Error('TURNING_SIGNIFICANCE_REQUIRED_CONFIDENCE_MUST_BE_HIGH_FOR_V1');
+    var minimumConfidence = source.TURNING_SIGNIFICANCE_MINIMUM_CONFIDENCE || 'MEDIUM';
+    if (['LOW', 'MEDIUM', 'HIGH'].indexOf(minimumConfidence) < 0) {
+        throw new Error('TURNING_SIGNIFICANCE_MINIMUM_CONFIDENCE_INVALID');
     }
     var failClosed = flag('TURNING_SIGNIFICANCE_FAIL_CLOSED', true);
     if (!failClosed) throw new Error('TURNING_SIGNIFICANCE_FAIL_CLOSED_MUST_BE_TRUE_FOR_V1');
@@ -55,7 +56,7 @@ function loadConfig(env) {
         semanticEnabled: semanticEnabled,
         liveFilterEnabled: liveFilterEnabled,
         failClosed: failClosed,
-        requiredConfidence: requiredConfidence,
+        minimumConfidence: minimumConfidence,
         allowedLabels: Object.freeze(allowedLabels)
     });
 }

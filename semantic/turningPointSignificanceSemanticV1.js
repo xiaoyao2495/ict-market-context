@@ -173,20 +173,28 @@ function validateModelIdentity(requested, response) {
 
 /**
  * LIVE_PHASE = LOW_NOTIONAL_SEMANTIC_CANARY.
- * Only (SIGNIFICANT||VALID) + HIGH qualifies a raw Dynamic-D extreme as an
- * LLM_QUALIFIED_HISTORICAL_ANCHOR. Everything else blocks, including a semantic
- * service failure. Blocking never removes the raw candidate.
+ * The deterministic live policy qualifies an allowed semantic label at or above
+ * the configured minimum confidence. Confidence ordering is LOW < MEDIUM < HIGH.
+ * Everything else blocks, including a semantic service failure. Blocking never
+ * removes the raw candidate.
  */
-function evaluateGate(decision) {
+function evaluateGate(decision, policy) {
     try { decision = validateDecision(decision); }
     catch (error) { return { result: 'BLOCK', reason: 'TURNING_SIGNIFICANCE_SEMANTIC_INVALID' }; }
-    // A WEAK / UNCLEAR label is a hard block regardless of confidence, and it is
-    // reported as such: the label is the primary discriminator.
-    if (decision.significance === 'WEAK' || decision.significance === 'UNCLEAR') {
+    var config = policy || {};
+    var allowedLabels = config.allowedLabels || ['SIGNIFICANT', 'VALID'];
+    var minimumConfidence = config.minimumConfidence || 'MEDIUM';
+    var confidenceRank = { LOW: 0, MEDIUM: 1, HIGH: 2 };
+    if (!Array.isArray(allowedLabels) || confidenceRank[minimumConfidence] === undefined) {
+        return { result: 'BLOCK', reason: 'TURNING_SIGNIFICANCE_POLICY_INVALID' };
+    }
+    // A label outside the allow-list is a hard block regardless of confidence,
+    // and is reported first because label is the primary discriminator.
+    if (allowedLabels.indexOf(decision.significance) < 0) {
         return { result: 'BLOCK', reason: 'TURNING_SIGNIFICANCE_' + decision.significance };
     }
-    if (decision.confidence !== 'HIGH') {
-        return { result: 'BLOCK', reason: 'TURNING_SIGNIFICANCE_CONFIDENCE_NOT_HIGH' };
+    if (confidenceRank[decision.confidence] < confidenceRank[minimumConfidence]) {
+        return { result: 'BLOCK', reason: 'TURNING_SIGNIFICANCE_CONFIDENCE_BELOW_MINIMUM' };
     }
     return { result: 'PASS', reason: null };
 }

@@ -31,18 +31,18 @@ check('2. VALID + HIGH is eligible', function () {
     assert.strictEqual(contract.evaluateGate(decision('VALID', 'HIGH')).result, 'PASS');
 });
 
-check('3. SIGNIFICANT + MEDIUM is blocked', function () {
+check('3. SIGNIFICANT + MEDIUM is eligible', function () {
     var gate = contract.evaluateGate(decision('SIGNIFICANT', 'MEDIUM'));
-    assert.strictEqual(gate.result, 'BLOCK');
-    assert.strictEqual(gate.reason, 'TURNING_SIGNIFICANCE_CONFIDENCE_NOT_HIGH');
+    assert.strictEqual(gate.result, 'PASS');
+    assert.strictEqual(gate.reason, null);
 });
 
 check('4. SIGNIFICANT + LOW is blocked', function () {
     assert.strictEqual(contract.evaluateGate(decision('SIGNIFICANT', 'LOW')).result, 'BLOCK');
 });
 
-check('5. VALID + MEDIUM is blocked', function () {
-    assert.strictEqual(contract.evaluateGate(decision('VALID', 'MEDIUM')).result, 'BLOCK');
+check('5. VALID + MEDIUM is eligible', function () {
+    assert.strictEqual(contract.evaluateGate(decision('VALID', 'MEDIUM')).result, 'PASS');
 });
 
 check('6. VALID + LOW is blocked', function () {
@@ -69,6 +69,23 @@ check('9. an unavailable / non-schema decision is blocked as SEMANTIC_INVALID', 
     assert.strictEqual(contract.evaluateGate(null).result, 'BLOCK');
     assert.strictEqual(contract.evaluateGate(null).reason, 'TURNING_SIGNIFICANCE_SEMANTIC_INVALID');
     assert.strictEqual(contract.evaluateGate({ significance: 'SIGNIFICANT' }).result, 'BLOCK');
+});
+
+check('9b. confidence is an ordered minimum threshold, not exact equality', function () {
+    var mediumPolicy = { allowedLabels: ['SIGNIFICANT', 'VALID'], minimumConfidence: 'MEDIUM' };
+    assert.strictEqual(contract.evaluateGate(decision('VALID', 'MEDIUM'), mediumPolicy).result, 'PASS');
+    assert.strictEqual(contract.evaluateGate(decision('VALID', 'HIGH'), mediumPolicy).result, 'PASS');
+    var low = contract.evaluateGate(decision('VALID', 'LOW'), mediumPolicy);
+    assert.strictEqual(low.result, 'BLOCK');
+    assert.strictEqual(low.reason, 'TURNING_SIGNIFICANCE_CONFIDENCE_BELOW_MINIMUM');
+});
+
+check('9c. an invalid deterministic policy fails closed', function () {
+    var gate = contract.evaluateGate(decision('VALID', 'HIGH'), {
+        allowedLabels: ['SIGNIFICANT', 'VALID'], minimumConfidence: 'CERTAIN'
+    });
+    assert.strictEqual(gate.result, 'BLOCK');
+    assert.strictEqual(gate.reason, 'TURNING_SIGNIFICANCE_POLICY_INVALID');
 });
 
 check('10. schema rejects every out-of-contract shape', function () {

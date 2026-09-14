@@ -49,7 +49,7 @@ function rawResponse(decision) {
 }
 var CONFIG = Object.freeze({
     semanticEnabled: true, liveFilterEnabled: true, failClosed: true,
-    requiredConfidence: 'HIGH', allowedLabels: Object.freeze(['SIGNIFICANT', 'VALID'])
+    minimumConfidence: 'MEDIUM', allowedLabels: Object.freeze(['SIGNIFICANT', 'VALID'])
 });
 
 function makeService(store, options) {
@@ -411,8 +411,8 @@ checks.push(check('14. the config refuses a live filter without semantic evaluat
         loadConfig({ TURNING_SIGNIFICANCE_FAIL_CLOSED: 'false' });
     }, function (error) { return /FAIL_CLOSED_MUST_BE_TRUE/.test(error.message); });
     assert.throws(function () {
-        loadConfig({ TURNING_SIGNIFICANCE_REQUIRED_CONFIDENCE: 'MEDIUM' });
-    }, function (error) { return /REQUIRED_CONFIDENCE_MUST_BE_HIGH/.test(error.message); });
+        loadConfig({ TURNING_SIGNIFICANCE_MINIMUM_CONFIDENCE: 'CERTAIN' });
+    }, function (error) { return /MINIMUM_CONFIDENCE_INVALID/.test(error.message); });
     assert.throws(function () {
         loadConfig({ TURNING_SIGNIFICANCE_ALLOWED_LABELS: 'SIGNIFICANT' });
     }, function (error) { return /ALLOWED_LABELS_MUST_BE/.test(error.message); });
@@ -423,6 +423,8 @@ checks.push(check('14. the config refuses a live filter without semantic evaluat
     assert.strictEqual(defaults.semanticEnabled, true);
     assert.strictEqual(defaults.liveFilterEnabled, true);
     assert.strictEqual(defaults.failClosed, true);
+    assert.strictEqual(defaults.minimumConfidence, 'MEDIUM');
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(defaults, 'requiredConfidence'), false);
 }));
 
 checks.reduce(function (chain, next) { return chain.then(function () { return next; }); }, Promise.resolve())

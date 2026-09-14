@@ -10,8 +10,8 @@
  *
  * What CI CAN and MUST exercise is the gate MACHINERY around it: that a resolved
  * decision persists RAW before PARSE, that a re-run is a cache HIT with zero extra
- * transport calls, that the gate is `(SIGNIFICANT|VALID) + HIGH`, that a failure
- * is fail-closed, and that nothing is ever sent to an exchange. `--dry-run` drives
+ * transport calls, that the gate is `(SIGNIFICANT|VALID) + MEDIUM_OR_HIGH`, that
+ * a failure is fail-closed, and that nothing is ever sent to an exchange. `--dry-run` drives
  * exactly that path with a deterministic synthetic transport and a throwaway
  * store. This test runs it as a subprocess and asserts the report.
  */
@@ -94,7 +94,7 @@ check('a re-run is a cache HIT with ZERO extra transport calls and an identical 
     assert.match(gate.detail, /extra transport calls=0/);
 });
 
-check('the canary gate is exactly (SIGNIFICANT|VALID) + HIGH, and it is fail-closed', function () {
+check('the canary gate is exactly (SIGNIFICANT|VALID) + MEDIUM_OR_HIGH, and it is fail-closed', function () {
     var consistent = report.gates.filter(function (g) { return g.gate === 'GATE_CONSISTENT'; })[0];
     var failClosed = report.gates.filter(function (g) { return g.gate === 'FAIL_CLOSED'; })[0];
     assert.strictEqual(consistent.pass, true, consistent.detail);
@@ -102,7 +102,7 @@ check('the canary gate is exactly (SIGNIFICANT|VALID) + HIGH, and it is fail-clo
     report.results.forEach(function (result) {
         var expected = result.significance !== null
             && (result.significance === 'SIGNIFICANT' || result.significance === 'VALID')
-            && result.confidence === 'HIGH';
+            && (result.confidence === 'MEDIUM' || result.confidence === 'HIGH');
         assert.strictEqual(result.eligible, expected, 'gate mismatch for ' + result.turningPointId);
         if (result.eligible) assert.strictEqual(result.gateReason, null);
     });

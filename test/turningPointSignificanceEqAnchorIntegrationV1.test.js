@@ -24,7 +24,7 @@ function at(index) { return T0 + index * fixtures.BAR_MS; }
 
 var CONFIG = Object.freeze({
     semanticEnabled: true, liveFilterEnabled: true, failClosed: true,
-    requiredConfidence: 'HIGH', allowedLabels: Object.freeze(['SIGNIFICANT', 'VALID'])
+    minimumConfidence: 'MEDIUM', allowedLabels: Object.freeze(['SIGNIFICANT', 'VALID'])
 });
 
 function result(significance, confidence, eligible) {
