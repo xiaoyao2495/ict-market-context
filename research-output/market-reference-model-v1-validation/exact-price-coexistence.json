@@ -1,0 +1,775 @@
+{
+  "autoMerged": false,
+  "crossSourceExactPriceGroups": 62,
+  "groups": [
+    {
+      "count": 2,
+      "price": 76000.3,
+      "referenceIds": [
+        "MRV1:2f97b4555ea1f858c30566fbf97b0b96846a270b8c79fa990594d63292b2cafe",
+        "MRV1:8aad6798d926b837c52c57d672c7c2cc1811b9a6701855c099c455f61983f418"
+      ],
+      "sourceTypes": [
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76350.1,
+      "referenceIds": [
+        "MRV1:d1cc5e1a0972ac6718977026498a51ae0a3ff2a025c20b052794afc329aab0e4",
+        "MRV1:fd3eab22c8c92e6aa149b10cbd15f754c431261974ae08af456bc4a83741d738"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 76402.9,
+      "referenceIds": [
+        "MRV1:4a6351919746560fe1cfea28ab6d80854c8cadebf4ac7f28c8d8401a8f2af272",
+        "MRV1:76a66c5fca12c376d033f188e41bd9550abd1339cb7ead8a1412e6880c5231e0",
+        "MRV1:f29753f9097f96d9ca68de8e0c3938b71a35727041304690c5780d719476b20b"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 76458.9,
+      "referenceIds": [
+        "MRV1:37257b0efbac0abe24c3cb25630f86495fedd4e25c1d926e99cf72f82eea2667",
+        "MRV1:469680729e770e6687ea35c913522f401e7ecf4537c136c3ae66623e458b91b9",
+        "MRV1:9fca9cd5300f5c1bd4db9e630f429fa3feabd5c81c123ecc49dde18d4f0fdab0"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76514.6,
+      "referenceIds": [
+        "MRV1:3b98e1963b1860df05b526c2c6384d53a34c18b82ecbb338505af465b2b7c2f5",
+        "MRV1:bae17ab9423b11101785e97ce47c3916fd2a0985f0791ee44ca0e915d457d41b"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76596.1,
+      "referenceIds": [
+        "MRV1:b628e82e284c68be847d641278e209f46c3a5a14a3e4656ba0f14767b70b2f83",
+        "MRV1:f4c93ccf45d1ebb91d35f22c7cb92bf36d87eb83e5080abd778952125ffd49f3"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76634.3,
+      "referenceIds": [
+        "MRV1:6439adbe618cc974d79799590ce8f3b6378adfc5b45f85728d0b14b6e17df5c7",
+        "MRV1:6ca480f2844c67d6b9d9731266342d7ab4fb57dd788509ee14c927b819acd95e"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76667,
+      "referenceIds": [
+        "MRV1:83a6a125037f0555e18800eef99bdf7753ee030054524a02f2f9546b3b90b119",
+        "MRV1:a26680aef337abdb235985d47e2dbf7da0cf89ff5859c767f792a3cb247a2ceb"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76699.1,
+      "referenceIds": [
+        "MRV1:1e1d7fd9d537a07fc6045bdf5b59d03619389dc7abbf993b918eab67902bce35",
+        "MRV1:bccdd508c375ac3da0aa972f0dfb22c39e18600e91ed4437329ca7520d237ff8"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 76760,
+      "referenceIds": [
+        "MRV1:1d63c20fc07a653a8cdc7de97fa79a6e380a1c3074a52cc487f4256333f5a8ac",
+        "MRV1:fd04104752179c6a9a2549f7d818e9cb2f59e1b2301ee18cd5daa8abb9fe9950",
+        "MRV1:fe95f7b22154e0ed3fcc4d7975bff69d1593fcf14222f106085c731d2e5eb77e"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76834.4,
+      "referenceIds": [
+        "MRV1:5e54d29fce567e4e2cdb61081d06288031815b2bff41060916e36e2c64cc1fd1",
+        "MRV1:c2654599e7963b6c277e66a4912d0cab1b19d86925f143c2d0ff7066c7e70b5f"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76837.8,
+      "referenceIds": [
+        "MRV1:11eb700bb3e0e9a9fc7c96ae640fb91dd1fb1041852e1568ff9e17c70a7f5f60",
+        "MRV1:1f1cea45296914e8ee89eabb7690097974a3882ae04d51114edf6f7dcf6f340c"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76942.6,
+      "referenceIds": [
+        "MRV1:c610c2ab77fc4474389cf4e07db104c22a82fd3cace24d9dc2e52bb6262650b2",
+        "MRV1:eaf46ed7f1a74515aa2fe54e0f4af3d8fbe128b32ce8bc066aae5908d2cc5d24"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76953.4,
+      "referenceIds": [
+        "MRV1:2d146f78aeca3a9bc4b45187b89d71441d617fbb4d0a5420bb62a191d154618a",
+        "MRV1:c9898cfe12d169b723366836d0ed26207ae310fb32ed17528b719ae16ecc826f"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 76988,
+      "referenceIds": [
+        "MRV1:9d05c80cf6b501f8d536bea77b091fce25298243e76f30e9fcf905683f767d35",
+        "MRV1:fef9c8323acc69121eb0d8c34fa179fc6717a7cac4375cd58009d86c19c10303"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 77025.1,
+      "referenceIds": [
+        "MRV1:353304ada76e77111b9ae96f1500f02c463f1756cb49bfdb22dc39a314bb8d81",
+        "MRV1:6418ed43c5a4987d9f3351cb7d3cf2cb969aea88e2ab088e43173c9cd704ca42",
+        "MRV1:83876f1559f7a5fa8878584281303ed195d7269aa4cef98a51ad03a0b89f7a3d"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77059.4,
+      "referenceIds": [
+        "MRV1:a4d1e71cefbaaffdf56e48cf970b76eac5e0f08bef98058a9ee12a9e07de352e",
+        "MRV1:f1bbc8586e03c6d5cdede50273a3c488b2eac96d7970877676a6725ea3997785"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77211.4,
+      "referenceIds": [
+        "MRV1:b5981e9d1bb83a265fe1f01057fb3d5af61f16d7588338e9ee8feb18cb87f27f",
+        "MRV1:b829adc9577ab5852ff6c6f0540a0263231a24a551e74fd7600ea5501183b74e"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77263.3,
+      "referenceIds": [
+        "MRV1:122b97a6c4f88d338c745c5b8ee939d48c6abb6fcfac0202b04a5c2003b53f0b",
+        "MRV1:3b89d04c16885c81ef55797f1458a7ea25f1f0912400c42b7bd3c537e5755e0a"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77316,
+      "referenceIds": [
+        "MRV1:9aac058eaa5edbf5d3efb3e177d89792a35bfa28b89737b456c139ec21e458f8",
+        "MRV1:a433b7f946beeb1670deaca0b1730bcd75528c6b279f9a41ea223a065d506d46"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77321,
+      "referenceIds": [
+        "MRV1:717416be258453311a737cc3d7a5dfc48337fda7b0008c6487a9e7d5f90c69ab",
+        "MRV1:7abb0b65dc7e27baa992e87b1a174dc83f34c4b8f16ba2c333c442608f1b671f"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77334.5,
+      "referenceIds": [
+        "MRV1:43af1e2399467af448a99b11eb51bbf5aba190a6b247004be1b1918e97d40cbe",
+        "MRV1:d193986631fb08191364182d0892e2bad8242c31701a313604b6868f2db716cf"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77393.9,
+      "referenceIds": [
+        "MRV1:cce93a1f91b9ebbd678020fa8a7773c39a5adc54797cf48eb04154a334648ece",
+        "MRV1:e80e36f19bcee2be225f912db1ad3d856119408c4f9df358ba55f59ba98a4e49"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 77427.4,
+      "referenceIds": [
+        "MRV1:2ede147a4ff30f724b071e6bec23f0d03dae94b3a9c25af7b276ccd1159fe7ed",
+        "MRV1:72d14213ffef7a8d2d8d2ee22ab0bac489be027d6c714ab7158b0e4e248d0395",
+        "MRV1:a980c98a35af5415e4b447cb004bd4426b8b6e3911137f3938d896f7b2c59a3e"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77441.6,
+      "referenceIds": [
+        "MRV1:af537bed41aeea34b72342fef6b9de940dacff153ad576889631f3061d0eebcd",
+        "MRV1:e3bd7aeed8c3dbdb59f61a6c1022b55fdbfa8d336a6112f19b6cbb761ab9e936"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77457.8,
+      "referenceIds": [
+        "MRV1:575a4fce4c04cf10f4d22763bca50483ecffd7943fa901e4da0e744e1042f852",
+        "MRV1:650daf2080181e84247271a5da13899521575a65717ab24344fed203d5d6b61a"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77469.3,
+      "referenceIds": [
+        "MRV1:0c835184d4251a7cfb25d2ad1321271079b9a811357c28d9c17f06a2b54bbf97",
+        "MRV1:90edb83a2b55c7fff719d497d6eb8b6e6d60822b7566a3fbbd8b4b4fe3bb2e18"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 77477.4,
+      "referenceIds": [
+        "MRV1:6138d2eb5373b91a7a80bd8e1577240ae7fb41faed42d8f07463fe53af331abd",
+        "MRV1:8ae58a0575e030bd8fdfd3294ac5b6cd7f7facbd5d6bbe31a2783a62737912b1",
+        "MRV1:c1efa39cdf9d545d2aded07f843f25d4af6694159f2c27131ddd4c6c27979196"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77495.3,
+      "referenceIds": [
+        "MRV1:387c2b0345a178ba7910d5d49b3e429ec75d600b8d64197c29c9039bc23e581d",
+        "MRV1:9a108170d1b84f4f90b2f58de2256f2839d4ac8ee21d907e3e2853501e2ff937"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77518.6,
+      "referenceIds": [
+        "MRV1:87fd210cf365839bfeea780fba472648a7bace1ebdea576adede9d9a3606d92e",
+        "MRV1:f2a018826cc043d9f7d6870f78a5e1c391885724bcf3c7c40917f2c9e24251ae"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77561.2,
+      "referenceIds": [
+        "MRV1:3c984c44e92adab3ab0452e3ad0e3ce5319d0d1dd3f6d51d5a1a5d3555c05fe0",
+        "MRV1:560b8b989f2b93348e4d78c2f8cb4557f515bb143e0d9db885f6b48e3ea48d2c"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 77600.1,
+      "referenceIds": [
+        "MRV1:8412c0736aa2b65a8cb1e9054f8e41b2f0d4a0f178b4d13cfc08e54fc60ac6a1",
+        "MRV1:f51aa1083422e639d67434da33565a80b867140eeff6dcc0b665e48a209b5801",
+        "MRV1:fbb97c1604d18619add58f6705e640b2aa76504814da0dce1500da70055d3192"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77651.4,
+      "referenceIds": [
+        "MRV1:e084bd6d017222064f280895022d27df9a367aea4d646b951d2242f98d2564c2",
+        "MRV1:f89f35365ff89bb0048c6e71a9b305850fed4eddbba001f6ea185a25cad1b895"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77653.2,
+      "referenceIds": [
+        "MRV1:6e98acaa50ed37146d0604fb51256b16c6bf6de1a791981385d0fcc0930e3086",
+        "MRV1:976699731f6a680e82730a47d2044fcc290dd8afc2eac948438109d46a9d1885"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 77706.1,
+      "referenceIds": [
+        "MRV1:5b6bee055ae5f7ea4781718df0239fef238fa97ed12642a08115f60be3591bf0",
+        "MRV1:a8e994ceaafcf1bab6df756040f22a88f52d78b39f0e5c77cf9284db74751ea9",
+        "MRV1:d3583a1ef882bbddf3d85226654c9e16391a7b65551834a64555db5b8e90c2a8"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77840.7,
+      "referenceIds": [
+        "MRV1:37b9476ac0cfbc0bbdb6dab86411b69c6ae0fadf42a720a87477a0db791faca8",
+        "MRV1:f02ad273bbb0c925b8a09bf07bc638e7f11a21dfe0d01f9cbde050c3975b7d22"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77864.7,
+      "referenceIds": [
+        "MRV1:0bd0fe7072edb1a5ac615d9d94bb1b173f9cc1c126c0632892d7c00cd5464703",
+        "MRV1:103c8bb807be3ba03cac67295c643e4d21db5e423d088e90b5041c68ce029d03"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77912.2,
+      "referenceIds": [
+        "MRV1:6f2902ef3fc7dd956600cd4158d48b3292c51ec520d68d6c0a2bdb7be919d6a4",
+        "MRV1:d737ce48ed6a12d14774edf2f7f34f81c220b2b5808e01440bf1a23029c07e64"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77924.1,
+      "referenceIds": [
+        "MRV1:398d94184b59b625204ac6c5e2a02944b876b4de7e7921aa48e2dcd73bf92af4",
+        "MRV1:97d5b78d68c0e085f3ba5174116de3ea8c411a4aa6ee6a0b160ad46e1adab064"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 77963,
+      "referenceIds": [
+        "MRV1:81ad92feadea92ad1ece506989e81311e9eb155770a7b317f6cbcb67587aab45",
+        "MRV1:9531e2fde052a0ffa2b14167cf58b048d6108aaa1fa186ae81a66104c96b745f"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78020,
+      "referenceIds": [
+        "MRV1:449e366544e59f408aad5ff276d7d115b31994c5183def1f45609338e8720e04",
+        "MRV1:64dbfef95c08cd7648964aad5827e98180ffafa7b1ff5032799ae5a6c1497f49"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78025.5,
+      "referenceIds": [
+        "MRV1:1c8831e7eca54b25d45ec3d5deb51b2519b11a57ec65674c7fea8780c4bd089c",
+        "MRV1:4cf60e83126d8f618e04feb2b9ec495aae79b1ecea9209532db43335b4f1313a"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78048.3,
+      "referenceIds": [
+        "MRV1:01b6ab768c05353500185c694e2e0922ccd3affda630266cf0711c1c6b3f9ee8",
+        "MRV1:82a1fde7cdf936f8be43b5a6dba10ec5883ecbc411b1a684ca159c05a38b4505"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78115.4,
+      "referenceIds": [
+        "MRV1:56ff4b8bc1e0918e36eb754b97b167bd6ab40925171dc0fea46388237e72b2ac",
+        "MRV1:c0adc5ec6791b32099e789d60d2c6e932d1e2466974fe5b86732e4a9c3886097"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78163.7,
+      "referenceIds": [
+        "MRV1:b92372d066d87afa71e8ac32c509be0a2164e0274181171c2bbd3fd48075742e",
+        "MRV1:c9ef8c4867f09cc9f2b7504fc9d449792dfbd2fdd59e5ef0f9092d14230d1c77"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78343.8,
+      "referenceIds": [
+        "MRV1:4adfcbc918760ada3f66fde39f1eee64f7cbedcc11ee81ab22db6be20d7cd431",
+        "MRV1:75aa10d3b08b19bd8936534807cf7a479ae7df1c1640aa500707e7e828998b97"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78482.6,
+      "referenceIds": [
+        "MRV1:16be7c4d272a0425b8b87e9462cff698948a0833c98856d8607d94a9b583f297",
+        "MRV1:b1c5b8f3be255a86d6a492b625aa02cfcab4954a8d34e1b4ddedc2e86089a5a9"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78502,
+      "referenceIds": [
+        "MRV1:74562c5f5d9b689bcfbc8995b8f401deba846d3b4c53f2c8da94b6895e312ade",
+        "MRV1:9e6e4c0b68b978f596054e9b83d599fff0fbd6a2d188f305d79d62e6b367a22c"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 78543.9,
+      "referenceIds": [
+        "MRV1:3b737cafe490c33c7bea7160cb01584c708161d5391e5bfd71332fa9b8b3c209",
+        "MRV1:3fcbeab8a4d0dd2accf9f9a193e343f9b194a05564b63440e88e68b24dfe9ed7",
+        "MRV1:8ec61ae7d713fc9e0d694c252fc04f9c1b8d723a8126ad8040abbeb435480d2a"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78623.2,
+      "referenceIds": [
+        "MRV1:2d7e191404a6a1f45dacd0f373d3a971b2c980fb465e8a09069d290427241859",
+        "MRV1:ba65cb926984189c9c4c104a4ff65739811785a45bc13a3a3659826d8d32effe"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 78690.3,
+      "referenceIds": [
+        "MRV1:24e6c92b8bd4b4a258bbdb402f76caef31e66eb6a386906d38255c327ad74444",
+        "MRV1:2e76165ec1a652bd54819d26e0e0920066a6e3096478ab4e4d5a5e58d363c918",
+        "MRV1:543b8c410244fa19db567f1d74b9321458805a21cf73157b70e8803c2d864bfa"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78802,
+      "referenceIds": [
+        "MRV1:3c2d0b08ee7168aaab329eb675797dcd3093c8696112ad08a857115f1cc46ca3",
+        "MRV1:966d1ef0f9cbf6b3ec334de2ba8b7b6bb85245f937a9014ec435e05c379f4e2f"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 78845,
+      "referenceIds": [
+        "MRV1:23218514f093c70460512dc93fd934b89908b49e459d4be3cfe0b4b19c1f2f9d",
+        "MRV1:71ced3101809dc31ef4f97459e8dac7c230ea21182a93ad97243028b92d3621b",
+        "MRV1:e4451932833c6b1cc052a5b3c9d5bd0da558388db77e4c49c102bfa3b8d7d8c8"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78899,
+      "referenceIds": [
+        "MRV1:213ee9353bf4135c46be2719a5fcc532bc428fdb964f2bcca128dc758a89d0e3",
+        "MRV1:f4e3a84e4702858fe5bdcc39fc8d8f1e6d4306deabb03888f5dad83e9e0dd2a5"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 78942.1,
+      "referenceIds": [
+        "MRV1:65968a94e60c1732fe1fe2f6acebbdbb5bc0b53125e301edb44ca9abad3d8d8d",
+        "MRV1:cd02b062e26dd44a07a47d5e32fb5e3e77bffa244ed0b4dd30049c329d5e65cc"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 79343.7,
+      "referenceIds": [
+        "MRV1:3217215a14fe6d8e29a7e31f831b6b349f563cbc9c0b69f535f57991a39fc5ed",
+        "MRV1:fe3b107579dfa341c5b284e21c5a09d5919b6e9943e171d6469834bb50ddfbcf"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 79380,
+      "referenceIds": [
+        "MRV1:65fc2dcaa0849cde8762853e7232a9217b721b1daea6f5f744f999b98cab9e00",
+        "MRV1:db14a64fd3a28b84be0a269ca9cdb992969d4dc0881aa992bea448565e0271a8"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 79476,
+      "referenceIds": [
+        "MRV1:73648bd8a0dab3f38e49150798eff9da7ee475f40ded7ba89313ed7a82f70405",
+        "MRV1:f9d2172a2b9cf4e40250e305a3f0a5df56fc6fb279bfe45060e83949929814a4"
+      ],
+      "sourceTypes": [
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 79570.9,
+      "referenceIds": [
+        "MRV1:c392d6aeb35f2198b53df13e5f8d3b711c3c0e10349983296d6738d7fc180977",
+        "MRV1:dd0fc2ce7b895adab7ca050d00418b62eb897299b2c2beb6eea89e5fbc0dbd30"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 2,
+      "price": 79648.1,
+      "referenceIds": [
+        "MRV1:2b05df79fa7a6c031e042146aada07949e8cd5eab0092a4ea7f741f7115d2d0d",
+        "MRV1:a564f2416540c517e1724108941bd4a5b96ce21e9abf1f6dd788e8d5bfc95076"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 79737.3,
+      "referenceIds": [
+        "MRV1:74ebd25cc8fa2608f37db1b0ba55f38cf94ed118e4854fead7844b796b467c16",
+        "MRV1:9897163e8e669a1d456786239793081e0bc329537b64e20ca285562b1815646c",
+        "MRV1:f6b6b6dfee0919135860b09a237cbe086ca3821b9fb69fcfaf063956f671a87b"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    },
+    {
+      "count": 3,
+      "price": 79859.8,
+      "referenceIds": [
+        "MRV1:23c05013d672ca49f124a38c6ad74e18a07c9bc9ffd4bf86667ce0afd2bb5381",
+        "MRV1:c08ce703a48ba4be7acccc2996afcaefdd72738114d279282e931fb57d90d8b2",
+        "MRV1:e8dcb02aa9d498e32e4ae00bd27b79869c2bc4ce80029e6666b37e7eeb79e0e7"
+      ],
+      "sourceTypes": [
+        "DYNAMIC_D_HISTORICAL_EXTREME",
+        "PREVIOUS_DAY_EXTREME",
+        "STRUCTURAL_SWING"
+      ]
+    }
+  ],
+  "referencesInCrossSourceExactGroups": 137,
+  "status": "PASS"
+}

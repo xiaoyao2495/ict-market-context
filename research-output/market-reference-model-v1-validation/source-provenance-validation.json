@@ -1,0 +1,49 @@
+{
+  "rows": [
+    {
+      "count": 582,
+      "missingFields": 0,
+      "requiredFields": [
+        "sourceNativeId",
+        "pivotId",
+        "pivotSide",
+        "wickPrice",
+        "pivotGeometry",
+        "detectorVersion",
+        "roleAtReferenceConfirmation"
+      ],
+      "sourceType": "STRUCTURAL_SWING",
+      "status": "PASS"
+    },
+    {
+      "count": 60,
+      "missingFields": 0,
+      "requiredFields": [
+        "sourceNativeId",
+        "candidateId",
+        "processId",
+        "pointSide",
+        "dynamicDVersion",
+        "closeProcess",
+        "wickLocalization"
+      ],
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME",
+      "status": "PASS"
+    },
+    {
+      "count": 12,
+      "missingFields": 0,
+      "requiredFields": [
+        "sourceNativeId",
+        "calendarType",
+        "boundaryConvention",
+        "periodStart",
+        "periodEndExclusive",
+        "sourceCandleOpenTime"
+      ],
+      "sourceType": "PREVIOUS_DAY_EXTREME",
+      "status": "PASS"
+    }
+  ],
+  "status": "PASS"
+}

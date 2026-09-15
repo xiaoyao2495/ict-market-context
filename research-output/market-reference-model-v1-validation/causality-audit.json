@@ -1,0 +1,309 @@
+{
+  "causalityViolations": 0,
+  "futureLeak": false,
+  "querySamples": 60,
+  "querySamplesPassed": 60,
+  "rows": [
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:13488055cde2d53c75f96d6796532a5f9d372a00695aa26c7b825717dccf7f0b"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:34d2d82a744be33ebbac2292fe8e0cb1796a4c6b604ab489d43a26daa578eb13"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:8298c757e414d12921a47b45feccd8e1e6f3649282ec5650bc999823d10aace4"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:ced992f0dfeb69bbe894d25514c0f943bbbd743d591ee457025fbd46ecce6e63"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:2fdc9e2b7b387114ceab64ceea2fff4a1c0b0dc47a8dc9a8b62adc0ef5666cd6"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:7c07c5721303a8ce53485ee7b1552a10d58ba44d53c93ac81a6873b50065a537"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:73648bd8a0dab3f38e49150798eff9da7ee475f40ded7ba89313ed7a82f70405"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:e4451932833c6b1cc052a5b3c9d5bd0da558388db77e4c49c102bfa3b8d7d8c8"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:2e76165ec1a652bd54819d26e0e0920066a6e3096478ab4e4d5a5e58d363c918"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:85e27d31d98653a21a294804fdb6f2b4087cd06cb9b22ea986faf4bb7b98cb5b"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:db3b627abc8a6fa87d306b9f0520cf9b87a436dd34a82f0f716625bc24e2510f"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:13f191d810fc691cfd31e7ff221934c3723a849b130b359bc8a6a15b2546ab80"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:f3d358c9757a05b91bf0f4648d685748b0f098ba510ce2eb3d7de976d2c7d3e4"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:6c648c694452cb4e0667a7fc01c35cf83c800fc330124ff9cfd74036360b1ef5"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:d2f266c8571ca6e934114184ac6cf5a19f18bf46518786a799ff1d08b1cf8e1d"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:fc9dc9d3ed036e008064672ae28d69b34fdef74d3991d12f904f4b08aef28656"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:e17f787362809636ca297b1d38e0a0bfdc0b81a57a74fb7f277774215362eb8d"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:a3a65bb8e6b8528780c1ba2a7931d38d702b485ee7c6781b8d7f2e8c86eb4283"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:a4b57b6da5a14631c75076c52f7bcfcde4b39c3317762b88061d64ffb129c8b5"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:89cd4dd9ef93bbcadfb3a5fced2af487ba4496022c27478a72b6e98d5ecaeb8d"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:df18858fb857b0f88178379180071737c23f306836336efdaa8916b8fdfd9a5b"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:806f1989e92fde62afcb62f929b1921ec9f95f74a2f8dc8dc8f995d3ea6d7e78"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:235435c3263d4408be451f8e489efdf3b8331c71792f611e63b30d04f844b2f8"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:3f64907407c91848d6de2029027d804d3203c6dcc5f6f68527e788dd378b0f80"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:f1d4beb9919339ed34d1c03ea98e8f3900b97bb30fe894fe4cec75793453b23d"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:6e9374ca4075d50f908c9b3b04285c17560fd0a8720dc1a3f2775e1ca8f4bf5e"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:8a94cae18b563f1d3544dbc33b7ac57341adfea831784df771b495a35db894d7"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:d9ae02d189513db1ab17b3cbd53320816ca265729da4648e03313a84344a5aa2"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:ba5b7e9489226c5971b0a4a61fc2aa16d91d97a1ea8c7a01515b176989a48bc3"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:aa30b164b073cd518287df82492aa70aa1256f40cf6be85c551469f6c1e01add"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:5ed295a2a83a6193d87e0d8373152ab42393f463c8eb013f17af99e80206a9b6"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:0686f9b6c640c920c54725040d1012adc65f659585444ce49039b960bf3ff54d"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:f61df8cf266a0080335b0df0e175600e2457fbfdc465952c898c26b783bf6b5a"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:a97ff90fcc3ec5c86a06e1ae5e1b80a5bb9c9d3a69630b1e602b68d44255a391"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:c77a20c0ac1522f18de9b473b29ed86025a1f46a3e6b4f8b6a25014a7e326407"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:a970cb6b583c78e30e1d83f6f79c81335b2210ecd0f53b7a84be42f4cf4f51ef"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:4a57e0ccc15985d99d6dfae1411722de85a132e6f6ff4c8b954df0792eaf3dd4"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:39155b1b6629aed7461cd0483e9605ead4a938c4a109b06b5f73ce47e9923709"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:dcdc2afac815ce984f64b44ce5ba19a7c1ce3231111108c4ee45569e0b81cf72"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:8412c0736aa2b65a8cb1e9054f8e41b2f0d4a0f178b4d13cfc08e54fc60ac6a1"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:3c6d453d714625c93b9666b3a063189c2030affbb52c568340f833efb7ac303b"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:65b196d74aa4981d8f4311b52b50bdd76ebbf702b40fc51f38c79894adf273e4"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:ce409c0d0c9f9b12d9e2d8cd3a3ed95416fc66d2254ba4eda5b66d7480fb44a1"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:6d264141e209fd60ce0b41594ce5b3ef1c860710e36a3f970e890d046461b09f"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:7ec9e046c12ea348d69d31f062993f9ff09c0c0cab1289e120221b703f66e353"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:5888646f9b801586c1e1116b274e47a33f3d936c97a83badea290fa5b0d8a691"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:1f8cf3ebc260b3aa017b535b714e65794446c305d067d5b65322c8fb08efbb12"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:d1ca3cc5823d5cb6a51f1055f56ef95015cbe1fe1e75406d510e7f8bc9a7a1ac"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:9aa2744d5aae6156144745ae934f0388243f56fe7b33f5ce1e5824c08e5782c4"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:69de88f4f24544fd19b4be70ec1e436df83cdb72fada7ee905427280fe2c857e"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:e42e6a014e17ffd340d221c437b34d456a9990bc17957ce2b0c3f1f9a26f901f"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:94e2e520300d3adb31ff64c224bdd2f410ece2b3ab54944762f58844a281c44c"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:b21967748e44bf7a99e84a06eabe514b2e9fccceb49d10afb442ce52f584f2c6"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:c8969b69315cc4958b917a1461d1bc9fec6694ac2311f1962a1d5044210e17bf"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:1503a918cce5de97ee30ec6c1d03add7086c82720e8bedba3439e01a8ef1b17f"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:741dfc98a19ad674b218e38c368d8c6aad14238d5fd94c19c50442437a379f2c"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:bf04768232669ba2c468da38f7204bc4ef124f3f4e475c94cc2a226c5f049424"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:3ecd33782314be796f9749a68b9896b021b17e5f64648971a23d27369a140e51"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:2f35a6508489d62dfc0d399e7f40608248bd4e6dbb3fc4920a0d41c86d35b1d4"
+    },
+    {
+      "absentBeforeConfirmation": true,
+      "presentAtConfirmation": true,
+      "referenceId": "MRV1:e5ca18364c6d3db3e238ec4b8ebcfbf2fb5125841c072acde3b396209ecd10d5"
+    }
+  ],
+  "status": "PASS"
+}

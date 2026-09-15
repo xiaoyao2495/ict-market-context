@@ -1,0 +1,7 @@
+{
+  "checked": 52,
+  "futureLeak": false,
+  "method": "compare each sampled immutable reference built in its confirmedAt prefix with the same reference after all later source facts are appended",
+  "passed": 52,
+  "status": "PASS"
+}

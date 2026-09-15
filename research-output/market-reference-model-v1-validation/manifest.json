@@ -1,0 +1,73 @@
+{
+  "autoCluster": false,
+  "autoExactPriceMerge": false,
+  "autoNearMerge": false,
+  "detectorsRerun": false,
+  "eqUsed": false,
+  "files": [
+    {
+      "path": "REPORT.md",
+      "sha256": "abb56f2e86e92809af50836522e343cbd0d4707843e7843dee108fa595169f92"
+    },
+    {
+      "path": "causality-audit.json",
+      "sha256": "2bf1cc1aaa685ef2cadc5ad1eacb1fd6f2c3df37f1d2de2b46649634c72484d3"
+    },
+    {
+      "path": "exact-price-coexistence.json",
+      "sha256": "666243fcb66dfc4b81fbea22864a9e45bdfd84f354b72524bf269196c5531df7"
+    },
+    {
+      "path": "future-append-invariance.json",
+      "sha256": "51b9dfbb8546adda49a7f774e629ac4231eedd7dea2c85d5a281d3ea07cab2a2"
+    },
+    {
+      "path": "population-parity.json",
+      "sha256": "5382ad8999919e20365443aacdbebc4703c326809977f35bcefba9cf68ccf5f2"
+    },
+    {
+      "path": "prefix-parity.json",
+      "sha256": "f914f9b5c0c48e973e0c388bc6eab9306ea655c5fb3c875845987231a164b20d"
+    },
+    {
+      "path": "registry-invariants.json",
+      "sha256": "5dfc29d3c7504ee1fd89047ced2bd827ff1c38a2073b2d8a67cb3b7f99aacd36"
+    },
+    {
+      "path": "source-provenance-validation.json",
+      "sha256": "c6cff576820ad5f1be58c401cbf86434b15dd9718674dd51f89c1d5025645056"
+    }
+  ],
+  "fixture": {
+    "derivedFrom": "MARKET_REFERENCE_SOURCE_AUDIT_V1",
+    "path": "research/market-reference-model-v1-validation/fixtures/marketReferenceSourceAuditBaselineV1.json",
+    "sha256": "0a36c1e0ac718ce9b082f1434e0a518371152e6aeee07b3e76266d57d0e53587",
+    "sourceArtifactHash": "d7ec3456bf99e67b34f3116c62186154ffc0a44769309b2f2199b5a0c3d215f3"
+  },
+  "headAtStart": "8329d9d7aeca3286cde002d01caa8405b42f82f0",
+  "identityFixtureLevel": "FULL",
+  "interactionImplemented": false,
+  "lifecycleImplemented": false,
+  "modelVersion": "MARKET_REFERENCE_V1",
+  "newLlmCalls": 0,
+  "newMarketDataFetched": false,
+  "newThresholds": 0,
+  "productionBehaviorChanged": false,
+  "productionCodeChanged": false,
+  "productionConsumersMigrated": false,
+  "referenceScore": false,
+  "significanceGate": false,
+  "sourceTypes": [
+    "STRUCTURAL_SWING",
+    "DYNAMIC_D_HISTORICAL_EXTREME",
+    "PREVIOUS_DAY_EXTREME"
+  ],
+  "status": "PASS",
+  "task": "IMPLEMENT_MARKET_REFERENCE_MODEL_V1",
+  "window": {
+    "endExclusive": 1789430400000,
+    "interval": "5m",
+    "start": 1788825600000,
+    "symbol": "BTCUSDT"
+  }
+}

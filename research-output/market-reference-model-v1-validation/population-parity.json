@@ -1,0 +1,26 @@
+{
+  "counts": {
+    "DYNAMIC_D_HISTORICAL_EXTREME": 60,
+    "PREVIOUS_DAY_EXTREME": 12,
+    "STRUCTURAL_SWING": 582
+  },
+  "dataContinuity": {
+    "barCount": 2016,
+    "originalSourceArtifactHash": "d7ec3456bf99e67b34f3116c62186154ffc0a44769309b2f2199b5a0c3d215f3",
+    "source": "FROZEN_MARKET_REFERENCE_SOURCE_AUDIT_BASELINE_FIXTURE_V1",
+    "status": "PASS"
+  },
+  "duplicateNativeReference": 0,
+  "extra": 0,
+  "identityFields": [
+    "sourceType",
+    "side",
+    "price",
+    "occurredAt",
+    "confirmedAt",
+    "sourceNativeId"
+  ],
+  "missing": 0,
+  "rawTotal": 654,
+  "status": "PASS"
+}

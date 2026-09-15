@@ -1,0 +1,319 @@
+{
+  "checked": 52,
+  "passed": 52,
+  "rows": [
+    {
+      "confirmedAt": 1788912299999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1788875400000:1788912299999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788923399999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788919800000:1788923399999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788926699999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1788924300000:1788926699999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788932099999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788930900000:1788932099999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788934499999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1788932700000:1788934499999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788946199999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788942900000:1788946199999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788953699999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1788951600000:1788953699999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788961199999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788960600000:1788961199999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788964199999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1788963600000:1788964199999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788965099999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788964500000:1788965099999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788967799999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1788967200000:1788967799999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788979199999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1788971400000:1788979199999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788995399999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1788992100000:1788995399999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1789004099999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1789002300000:1789004099999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1789008599999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1789004100000:1789008599999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1789021499999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1789009200000:1789021499999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1789040399999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1789038000000:1789040399999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1789042199999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1789040100000:1789042199999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1789048199999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:LOW:1789044300000:1789048199999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1789056299999,
+      "matched": true,
+      "sourceNativeId": "DYNDW:SAME_PROCESS_WICK_V1:BTCUSDT:5m:HIGH:1789052100000:1789056299999",
+      "sourceType": "DYNAMIC_D_HISTORICAL_EXTREME"
+    },
+    {
+      "confirmedAt": 1788912000000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDH:1788825600000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1788912000000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDL:1788825600000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1788998400000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDH:1788912000000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1788998400000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDL:1788912000000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1789084800000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDH:1788998400000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1789084800000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDL:1788998400000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1789171200000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDH:1789084800000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1789171200000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDL:1789084800000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1789257600000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDH:1789171200000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1789257600000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDL:1789171200000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1789344000000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDH:1789257600000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1789344000000,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:MARKET_REFERENCE:PDL:1789257600000",
+      "sourceType": "PREVIOUS_DAY_EXTREME"
+    },
+    {
+      "confirmedAt": 1788827399999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:HIGH:1788826500000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788827699999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788826800000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788831299999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:HIGH:1788830400000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788832799999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788831900000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788833399999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:HIGH:1788832500000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788834299999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788833400000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788834899999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:HIGH:1788834000000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788837299999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788836400000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788838499999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788837600000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788839399999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:HIGH:1788838500000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788839999999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788839100000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788842399999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788841500000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788842699999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:HIGH:1788841800000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788844499999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788843600000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788845699999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:HIGH:1788844800000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788848399999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788847500000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788848999999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:HIGH:1788848100000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788849299999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788848400000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788850799999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:HIGH:1788849900000",
+      "sourceType": "STRUCTURAL_SWING"
+    },
+    {
+      "confirmedAt": 1788851399999,
+      "matched": true,
+      "sourceNativeId": "BTCUSDT:5m:STRUCTURAL_SWING:LOW:1788850500000",
+      "sourceType": "STRUCTURAL_SWING"
+    }
+  ],
+  "status": "PASS"
+}

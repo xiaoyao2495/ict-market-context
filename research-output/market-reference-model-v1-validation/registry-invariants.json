@@ -1,0 +1,10 @@
+{
+  "appendOnly": true,
+  "deterministicOrdering": true,
+  "duplicateSameIdHandling": "IDEMPOTENT",
+  "exactPriceIndexPreservesMultiplicity": true,
+  "lifecycleImplemented": false,
+  "referenceCount": 654,
+  "serializationRoundTrip": true,
+  "status": "PASS"
+}
