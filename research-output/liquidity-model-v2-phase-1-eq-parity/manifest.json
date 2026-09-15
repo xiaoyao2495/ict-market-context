@@ -1,0 +1,46 @@
+{
+  "task": "LIQUIDITY_MODEL_V2_PHASE_1_EQ_PARITY",
+  "generatedAt": "2026-09-15T00:51:09.237Z",
+  "baseline": "158f813fcb59fecd5de819aed167080c36403175",
+  "head": "158f813fcb59fecd5de819aed167080c36403175",
+  "modelVersion": "LIQUIDITY_LOCATION_V2",
+  "sourceAdapterVersion": "EQ_LIQUIDITY_LOCATION_SOURCE_V2",
+  "registryVersion": "LIQUIDITY_LOCATION_REGISTRY_V2",
+  "code": [
+    {
+      "file": "liquidity/liquidityLocationCandidateV2.js",
+      "sha256": "54b0b1ff53071f5ed37dd859ec49539163f048ee208ce2a89a9d2aaff7c6f344"
+    },
+    {
+      "file": "liquidity/eqLiquidityLocationSourceV2.js",
+      "sha256": "b8edc9269906816c73d5f3233f3f51a25dc53e5435aecd7346dcf3927d020822"
+    },
+    {
+      "file": "liquidity/liquidityLocationRegistryV2.js",
+      "sha256": "df4fdf3f3a494a2d61046f354e3dc4a8bc0c24fa5abbaf5708cc77745a6d6d9e"
+    },
+    {
+      "file": "research/liquidity-model-v2-phase-1-eq-parity/eqParityAuditV2.js",
+      "sha256": "dddc5f6204c0892801cae8a835c646367168a6acb52822f27b9da23c24223cc5"
+    },
+    {
+      "file": "test/liquidityLocationModelV2Phase1.test.js",
+      "sha256": "06304248be24d4db3e6d96c2fc8f32f096d8d1738e53a1d3ba9a69f2ea9f9911"
+    }
+  ],
+  "artifacts": [
+    {
+      "file": "REPORT.md",
+      "sha256": "17875f0daed63c57da52c3bae11d7b57c85d563196c4b1b59706c1c0c02db545"
+    },
+    {
+      "file": "parity-summary.json",
+      "sha256": "d8d6d1a1e37ff014238b6e4bac8ece20afbcf23c20053fd2ab9df91cbdfc50dd"
+    },
+    {
+      "file": "invariant-checks.json",
+      "sha256": "f6756da79ada2ebb69884c7ef981693c18d19a843c127fbe94da66dc8b0aa3f6"
+    }
+  ],
+  "verdict": "PASS"
+}

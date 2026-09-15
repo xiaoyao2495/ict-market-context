@@ -1,0 +1,111 @@
+{
+  "task": "LIQUIDITY_MODEL_V2_PHASE_1_EQ_PARITY",
+  "modelVersion": "LIQUIDITY_LOCATION_V2",
+  "sourceAdapterVersion": "EQ_LIQUIDITY_LOCATION_SOURCE_V2",
+  "registryVersion": "LIQUIDITY_LOCATION_REGISTRY_V2",
+  "generatedAt": "2026-09-15T00:51:09.237Z",
+  "baseline": "158f813fcb59fecd5de819aed167080c36403175",
+  "head": "158f813fcb59fecd5de819aed167080c36403175",
+  "symbol": "BTCUSDT",
+  "source": {
+    "cache": "BTCUSDT_5m_20636_20697.json",
+    "candleCount": 17580,
+    "nonFuturesCandles": 0,
+    "firstOpenTimeUtc": "2026-07-02T23:00:00.000Z",
+    "lastCloseTimeUtc": "2026-09-01T23:59:59.999Z"
+  },
+  "oldEqCount": 281,
+  "v2LocationCount": 281,
+  "mappingRate": 1,
+  "missing": 0,
+  "extra": 0,
+  "duplicates": 0,
+  "rejections": [],
+  "rejectionCount": 0,
+  "sideCross": {
+    "EQH/BUY_SIDE": 149,
+    "EQL/SELL_SIDE": 132
+  },
+  "sideMapping": {
+    "EQH": "BUY_SIDE",
+    "EQL": "SELL_SIDE",
+    "buySideIsNotLong": true,
+    "sellSideIsNotShort": true
+  },
+  "priceBand": {
+    "derivation": "PRODUCTION_EQ_TOLERANCE_LOSSLESS_PROJECTION",
+    "withBand": 281,
+    "withoutBand": 0,
+    "note": "lossless re-projection of the already-applied production tolerance (5m Wilder ATR14 x thresholds.equalLiquidity.priceStrongMaxATR); no new threshold"
+  },
+  "causality": {
+    "candidateViolations": 0,
+    "provenanceViolations": 0,
+    "notYetConfirmed": 0
+  },
+  "prefixParity": {
+    "prefixBars": 10548,
+    "prefixEq": 171,
+    "identityOrderEqual": true,
+    "immutableCoreEqual": true,
+    "candidatesByteIdentical": true,
+    "mutableLifecycleDivergence": 7,
+    "lifecycleDivergenceSample": [
+      {
+        "id": "EQX1:BTCUSDT:5m:EQH:[BTCUSDT|HIGH|1784645100000|1784645999999]",
+        "field": "status",
+        "truncated": "ACTIVE",
+        "full": "BROKEN"
+      },
+      {
+        "id": "EQX1:BTCUSDT:5m:EQH:[BTCUSDT|HIGH|1784738100000|1784738999999]",
+        "field": "status",
+        "truncated": "ACTIVE",
+        "full": "BROKEN"
+      },
+      {
+        "id": "EQX1:BTCUSDT:5m:EQH:[BTCUSDT|HIGH|1784877300000|1784878199999]",
+        "field": "status",
+        "truncated": "ACTIVE",
+        "full": "BROKEN"
+      },
+      {
+        "id": "EQX1:BTCUSDT:5m:EQH:[BTCUSDT|HIGH|1785159900000|1785160799999]",
+        "field": "status",
+        "truncated": "ACTIVE",
+        "full": "BROKEN"
+      },
+      {
+        "id": "EQX1:BTCUSDT:5m:EQL:[BTCUSDT|LOW|1785936900000|1785937799999]",
+        "field": "status",
+        "truncated": "ACTIVE",
+        "full": "BROKEN"
+      }
+    ]
+  },
+  "futureLeak": {
+    "appendedBars": 300,
+    "identityOrderEqual": true,
+    "immutableCoreEqual": true,
+    "candidatesUnchanged": true,
+    "mutableLifecycleDivergence": 0,
+    "leak": false
+  },
+  "shadow": {
+    "productionEqByteIdentical": true,
+    "summary": {
+      "considered": 281,
+      "adapted": 281,
+      "rejected": 0,
+      "registered": 281,
+      "duplicates": 0,
+      "failed": false
+    }
+  },
+  "newLlmCalls": 0,
+  "semanticModulesLoaded": 0,
+  "newThresholds": 0,
+  "productionConsumersMigrated": [],
+  "verdict": "PASS",
+  "durationMs": 15011
+}

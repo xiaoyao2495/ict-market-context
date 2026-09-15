@@ -1,0 +1,428 @@
+{
+  "task": "LIQUIDITY_MODEL_V2_PHASE_1_EQ_PARITY",
+  "generatedAt": "2026-09-15T00:51:09.237Z",
+  "checks": [
+    {
+      "check": "EQ_TO_LOCATION_MAPPING_100_PERCENT",
+      "pass": true,
+      "detail": "emitted=281 adapted=281 rejected=0"
+    },
+    {
+      "check": "MISSING_ZERO",
+      "pass": true,
+      "detail": "missing=0"
+    },
+    {
+      "check": "EXTRA_ZERO",
+      "pass": true,
+      "detail": "extra=0"
+    },
+    {
+      "check": "DUPLICATES_ZERO",
+      "pass": true,
+      "detail": "duplicates=0 registryDuplicates=0"
+    },
+    {
+      "check": "IDENTITY_PARITY",
+      "pass": true,
+      "detail": "idMismatch=0 provenanceMismatch=0"
+    },
+    {
+      "check": "SIDE_MAPPING_PARITY",
+      "pass": true,
+      "detail": "sideMismatch=0"
+    },
+    {
+      "check": "REFERENCE_PRICE_PARITY",
+      "pass": true,
+      "detail": "priceMismatch=0"
+    },
+    {
+      "check": "OCCURRED_AT_PARITY",
+      "pass": true,
+      "detail": "occurredAtMismatch=0"
+    },
+    {
+      "check": "CONFIRMED_AT_PARITY",
+      "pass": true,
+      "detail": "confirmedAtMismatch=0"
+    },
+    {
+      "check": "HISTORICAL_PARTNER_PARITY",
+      "pass": true,
+      "detail": "partnerMismatch=0"
+    },
+    {
+      "check": "CURRENT_POINT_PARITY",
+      "pass": true,
+      "detail": "currentPointMismatch=0"
+    },
+    {
+      "check": "PROVENANCE_PARITY",
+      "pass": true,
+      "detail": "provenanceMismatch=0"
+    },
+    {
+      "check": "ORDERING_PARITY",
+      "pass": true,
+      "detail": "orderingMismatch=0"
+    },
+    {
+      "check": "PRICE_BAND_LOSSLESS_PROJECTION",
+      "pass": true,
+      "detail": "bandMismatch=0; derivation=PRODUCTION_EQ_TOLERANCE_LOSSLESS_PROJECTION"
+    },
+    {
+      "check": "CAUSALITY_PASS",
+      "pass": true,
+      "detail": "candidateViolations=0 provenanceViolations=0"
+    },
+    {
+      "check": "PREFIX_PARITY_PASS",
+      "pass": true,
+      "detail": "identityOrder=true immutableCore=true candidatesByteIdentical=true prefixBars=10548 prefixEq=171 mutableLifecycleDivergence=7 (expected)"
+    },
+    {
+      "check": "FUTURE_LEAK_FALSE",
+      "pass": true,
+      "detail": "identityOrder=true immutableCore=true candidatesUnchanged=true appendedBars=300 mutableLifecycleDivergence=0 (expected)"
+    },
+    {
+      "check": "OUTCOME_CONTAMINATION_FALSE",
+      "pass": true,
+      "detail": "forbiddenKeys=0"
+    },
+    {
+      "check": "NEW_LLM_CALLS_ZERO",
+      "pass": true,
+      "detail": "llmCalls=0 semanticModulesLoaded=0"
+    },
+    {
+      "check": "NEW_THRESHOLDS_ZERO",
+      "pass": true,
+      "detail": "adapterConfigDependencies=0"
+    },
+    {
+      "check": "SHADOW_DOES_NOT_PERTURB_PRODUCTION",
+      "pass": true,
+      "detail": "eqByteIdentical=true shadowRegistered=281"
+    },
+    {
+      "check": "SHADOW_INGEST_SUCCEEDED",
+      "pass": true,
+      "detail": "{\"considered\":281,\"adapted\":281,\"rejected\":0,\"registered\":281,\"duplicates\":0,\"failed\":false}"
+    },
+    {
+      "check": "PRODUCTION_BEHAVIOR_CHANGED_FALSE",
+      "pass": true,
+      "detail": "modifiedTrackedFiles=0"
+    },
+    {
+      "check": "PRODUCTION_CONSUMERS_MIGRATED_FALSE",
+      "pass": true,
+      "detail": "no production consumer requires any V2 module (verified below)"
+    },
+    {
+      "check": "DATA_SOURCE_PURITY",
+      "pass": true,
+      "detail": "nonFuturesCandles=0 candles=17580"
+    },
+    {
+      "check": "REGISTRY_RESTART_SAFE",
+      "pass": true,
+      "detail": "toJSON/fromJSON round-trip preserves size, order and content"
+    },
+    {
+      "check": "FROZEN_CONSTANTS_UNCHANGED",
+      "pass": true,
+      "detail": "all match"
+    }
+  ],
+  "failedChecks": [],
+  "frozenConstants": [
+    {
+      "name": "dynamic_d_lookback_returns",
+      "actual": 288,
+      "expected": 288,
+      "pass": true
+    },
+    {
+      "name": "dynamic_d_k",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "name": "dynamic_d_theta_floor",
+      "actual": 0.003,
+      "expected": 0.003,
+      "pass": true
+    },
+    {
+      "name": "dynamic_d_lookback_bars_36h",
+      "actual": 432,
+      "expected": 432,
+      "pass": true
+    },
+    {
+      "name": "dynamic_d_five_days_ms",
+      "actual": 432000000,
+      "expected": 432000000,
+      "pass": true
+    },
+    {
+      "name": "dynamic_d_localization",
+      "actual": "SAME_PROCESS_WICK_V1",
+      "expected": "SAME_PROCESS_WICK_V1",
+      "pass": true
+    },
+    {
+      "name": "eq_production_model",
+      "actual": "DYNAMIC_D_36H_CROSS_SOURCE_V1",
+      "expected": "DYNAMIC_D_36H_CROSS_SOURCE_V1",
+      "pass": true
+    },
+    {
+      "name": "eq_lookback_bars",
+      "actual": 432,
+      "expected": 432,
+      "pass": true
+    },
+    {
+      "name": "eq_lookback_time",
+      "actual": "36H",
+      "expected": "36H",
+      "pass": true
+    },
+    {
+      "name": "eq_atr_period",
+      "actual": 14,
+      "expected": 14,
+      "pass": true
+    },
+    {
+      "name": "eq_tolerance_multiplier",
+      "actual": 0.7,
+      "expected": 0.7,
+      "pass": true
+    },
+    {
+      "name": "eq_tolerance_atr_period",
+      "actual": 14,
+      "expected": 14,
+      "pass": true
+    },
+    {
+      "name": "eq_source_context_version",
+      "actual": "EQ_SOURCE_CONTEXT_V1",
+      "expected": "EQ_SOURCE_CONTEXT_V1",
+      "pass": true
+    }
+  ],
+  "productionFiles": [
+    {
+      "file": "structure/pivotDetector.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "5da48b7ff115b23196177cdc76377e204b386520fcb7f0ac38e6448d8869e7a8",
+      "baselineSha256": "5da48b7ff115b23196177cdc76377e204b386520fcb7f0ac38e6448d8869e7a8"
+    },
+    {
+      "file": "structure/standardCausalSwingSegmentation.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "33f2b3dad20514844f3ad9855e08c138c115e2bdf480fcf781c11c62060526e2",
+      "baselineSha256": "33f2b3dad20514844f3ad9855e08c138c115e2bdf480fcf781c11c62060526e2"
+    },
+    {
+      "file": "structure/structuralProvenance5m.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "cf3a1e8834bc7de5e73246ef6301973848bf423829f80f85f7f0eaad79fc6f62",
+      "baselineSha256": "cf3a1e8834bc7de5e73246ef6301973848bf423829f80f85f7f0eaad79fc6f62"
+    },
+    {
+      "file": "liquidity/causalDynamicDHistoricalExtremes.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "6664d9dc8159f91e96eb1af1462a3b84b58f890573e787da18b61914f4c6edaa",
+      "baselineSha256": "6664d9dc8159f91e96eb1af1462a3b84b58f890573e787da18b61914f4c6edaa"
+    },
+    {
+      "file": "liquidity/productionEqualLiquidityV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "dc0f0698022292411428f295d068a747be2821fade9ee9b19e898ff60259668e",
+      "baselineSha256": "dc0f0698022292411428f295d068a747be2821fade9ee9b19e898ff60259668e"
+    },
+    {
+      "file": "liquidity/swingLiquidity.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "76cccada77af3de5263da9cfe3c7568a5e4f4eeb3afc0ce75ecfd5bdc8befa90",
+      "baselineSha256": "76cccada77af3de5263da9cfe3c7568a5e4f4eeb3afc0ce75ecfd5bdc8befa90"
+    },
+    {
+      "file": "liquidity/liquidityLifecycle.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "5f38c389461d3ac7c11b0865e67970c9953682ee6ec7ccfba88593148d274ee1",
+      "baselineSha256": "5f38c389461d3ac7c11b0865e67970c9953682ee6ec7ccfba88593148d274ee1"
+    },
+    {
+      "file": "liquidity/liquidityRegistry.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "ea56f690114e5ab23e789a973e8f057c026f34813b2f15db3c2b41b0a274898f",
+      "baselineSha256": "ea56f690114e5ab23e789a973e8f057c026f34813b2f15db3c2b41b0a274898f"
+    },
+    {
+      "file": "liquidity/equalLiquidity.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "c23425f7d27ae07b2bab83ba396927cf7dea13b6e436227aadb95d32545d18e1",
+      "baselineSha256": "c23425f7d27ae07b2bab83ba396927cf7dea13b6e436227aadb95d32545d18e1"
+    },
+    {
+      "file": "config/thresholds.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "b11678fde6f5462b2408ad3d3442b11a5930552dfd6fd640177d3556e3324096",
+      "baselineSha256": "b11678fde6f5462b2408ad3d3442b11a5930552dfd6fd640177d3556e3324096"
+    },
+    {
+      "file": "config/turningPointSignificanceV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "3d1f5ab3ecee7f86fa3578094c154f12e5e4fc6292074403c4a8787b57f8cb64",
+      "baselineSha256": "3d1f5ab3ecee7f86fa3578094c154f12e5e4fc6292074403c4a8787b57f8cb64"
+    },
+    {
+      "file": "config/eqFvgSemanticV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "3550cc947954d1650ae575767821fcb556d0120955855c99e1eca0715b6e0608",
+      "baselineSha256": "3550cc947954d1650ae575767821fcb556d0120955855c99e1eca0715b6e0608"
+    },
+    {
+      "file": "semantic/turningPointSignificanceSemanticV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "7e8abcf12135a52eabf7c2c157a4b1a30b4221740fd6aaedff682a6ffd7df5ed",
+      "baselineSha256": "7e8abcf12135a52eabf7c2c157a4b1a30b4221740fd6aaedff682a6ffd7df5ed"
+    },
+    {
+      "file": "semantic/eqFvgAssociationSemanticV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "cf9ccb17e946ca97c901f9f17928c2bbf0f9c449c75b5cda3b43ae0e3d8ae590",
+      "baselineSha256": "cf9ccb17e946ca97c901f9f17928c2bbf0f9c449c75b5cda3b43ae0e3d8ae590"
+    },
+    {
+      "file": "execution/executionRulesV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "136c504008df34d11b6a95b9047b62452c8926a43f110be984bebe590da130b4",
+      "baselineSha256": "136c504008df34d11b6a95b9047b62452c8926a43f110be984bebe590da130b4"
+    },
+    {
+      "file": "execution/realOrderExecutionV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "680d59c39553a3f9aff72607e03bea8a54810c67924ce449f05c8f12a2373968",
+      "baselineSha256": "680d59c39553a3f9aff72607e03bea8a54810c67924ce449f05c8f12a2373968"
+    },
+    {
+      "file": "entry/entryGate.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "d852d36c0cbcf2a7c422b7d92fce7482a580096468bf52f8487ffdc95f61ae76",
+      "baselineSha256": "d852d36c0cbcf2a7c422b7d92fce7482a580096468bf52f8487ffdc95f61ae76"
+    },
+    {
+      "file": "notify/eqFvgCountWatchNotificationV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "b3e5631c8ed94e3cd9f989e6d3b3d546f614498075a61ea740a3cf453c71ab0e",
+      "baselineSha256": "b3e5631c8ed94e3cd9f989e6d3b3d546f614498075a61ea740a3cf453c71ab0e"
+    },
+    {
+      "file": "notify/executionNotificationV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "9503b57bb67bd275e677073445f0a6c583c07ef417e6d898d4b37b6bbcbc753f",
+      "baselineSha256": "9503b57bb67bd275e677073445f0a6c583c07ef417e6d898d4b37b6bbcbc753f"
+    },
+    {
+      "file": "notify/dingTalk.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "30e15559e3762fb4aba7c0ba76830f9dea9a20afa5e42011d3cb86b46718b73e",
+      "baselineSha256": "30e15559e3762fb4aba7c0ba76830f9dea9a20afa5e42011d3cb86b46718b73e"
+    },
+    {
+      "file": "live/eqSourceContextV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "677a18ce93fc259593d364c8c782b27f101cdf38c6a5782d169357207f6b9183",
+      "baselineSha256": "677a18ce93fc259593d364c8c782b27f101cdf38c6a5782d169357207f6b9183"
+    },
+    {
+      "file": "live/eqFvgCountWatchV1.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "80a1be5756fe4b9bd54414c2f024bc385dad607130a56eea3f694c7f6cc7a5e3",
+      "baselineSha256": "80a1be5756fe4b9bd54414c2f024bc385dad607130a56eea3f694c7f6cc7a5e3"
+    },
+    {
+      "file": "replay/replayState.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "d5f9107f6c97813f5d307dfb99733f85edca99b45a7f3c832f69d48e7ce021c9",
+      "baselineSha256": "d5f9107f6c97813f5d307dfb99733f85edca99b45a7f3c832f69d48e7ce021c9"
+    },
+    {
+      "file": "replay/replayEngine.js",
+      "exists": true,
+      "unchanged": true,
+      "diskSha256": "7256c62ead72b89319d889f3d4421cc94e0e83e6340e3986de190fc2c35fb302",
+      "baselineSha256": "7256c62ead72b89319d889f3d4421cc94e0e83e6340e3986de190fc2c35fb302"
+    }
+  ],
+  "modifiedTrackedFiles": [],
+  "v2Consumers": [
+    "research/liquidity-model-v2-phase-1-eq-parity/eqParityAuditV2.js",
+    "test/liquidityLocationModelV2Phase1.test.js"
+  ],
+  "forbiddenKeyHits": [],
+  "outcomeContaminationScan": {
+    "forbiddenKeys": [
+      "entry",
+      "entryPrice",
+      "fill",
+      "fillPrice",
+      "stop",
+      "stopLoss",
+      "sl",
+      "takeProfit",
+      "tp",
+      "rr",
+      "rMultiple",
+      "pnl",
+      "outcome",
+      "result",
+      "tradeId",
+      "mfe",
+      "mae",
+      "sweepResult",
+      "interaction",
+      "response",
+      "status"
+    ],
+    "hits": 0
+  },
+  "shadowFailureIsolation": {
+    "adapterIsTotal": true,
+    "note": "adapt() converts internal failure into a typed rejection; shadowAttach() catches even a throwing registry. Proven by test/liquidityLocationModelV2Phase1.test.js."
+  }
+}
