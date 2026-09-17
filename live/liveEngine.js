@@ -27,7 +27,6 @@ var nearStaleness = require('../stats/nearStaleness');
 var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
 var structuralProvenance5m = require('../structure/structuralProvenance5m');
-var eqFvgCountWatchV1 = require('./eqFvgCountWatchV1');
 var thresholds = require('../config/thresholds');
 
 /**
@@ -56,8 +55,6 @@ function createLiveEngine(data, options) {
     // 投递确认（钉钉 errcode=0）与去重（delivered）由 scripts/live.js 负责：
     //   钉钉失败 → 机会保留 pending，下轮重试；确认成功才记 delivered（跨重启持久化）。
     var window = []; // 全局 index 对齐的已收盘 5m 序列（window.length === 最后 index + 1）
-    var eqFvgCountSteps = [];
-    var eqFvgCountStepHandler = null;
 
     var fullData = {
         symbol: symbol,
@@ -80,21 +77,11 @@ function createLiveEngine(data, options) {
         var evaluationTime = candle.closeTime;
 
         // ---- 1. 增量 liquidity（全局 slice 语义） ----
-        var eqCountBefore = state.productionEq.events.length;
+        // TWO_BAR_PRODUCTION_REPLACEMENT_V1: the confirmed-swing registry is still
+        // maintained here because unrelated structural provenance consumes it, but
+        // the retired EQ -> WATCH -> raw-FVG step stream is no longer emitted. The
+        // production NEW ENTRY path is the Two-Bar pipeline in scripts/live.js.
         var newConfirmedSwings = replayState.incrementalLiquidity(state, window, i, data.exchangeInfo, evaluationTime);
-        var newEqualLiquidity = state.productionEq.events.slice(eqCountBefore);
-        var currentRawFvg = eqFvgCountWatchV1.rawFvgAt(window, i, symbol);
-        var eqFvgCountStep = {
-            evaluationTime: evaluationTime,
-            newEqualLiquidity: JSON.parse(JSON.stringify(newEqualLiquidity)),
-            newConfirmedSwings: JSON.parse(JSON.stringify(newConfirmedSwings || [])),
-            rawFvg: currentRawFvg ? JSON.parse(JSON.stringify(currentRawFvg)) : null
-        };
-        // This branch is deliberately completed before snapshot/displacement/AMD
-        // work. The EQ notification lifecycle has no semantic or operational
-        // prerequisite beyond causal EQ confirmation and the latest raw FVG.
-        if (eqFvgCountStepHandler) eqFvgCountStepHandler(eqFvgCountStep);
-        else eqFvgCountSteps.push(eqFvgCountStep);
 
         // ---- 2. 慢变量快照（每 snapshotInterval 根） ----
         var doSnapshot = (i === baseIndex) || (i - (state.lastSnapshotIndex !== undefined ? state.lastSnapshotIndex : baseIndex - snapshotInterval)) >= snapshotInterval;
@@ -280,14 +267,6 @@ function createLiveEngine(data, options) {
         getState: getState,
         getWindowLength: getWindowLength,
         getWindowSnapshot: function () { return JSON.parse(JSON.stringify(window)); },
-        drainEqFvgCountSteps: function () {
-            var out = eqFvgCountSteps.slice();
-            eqFvgCountSteps = [];
-            return out;
-        },
-        setEqFvgCountStepHandler: function (handler) {
-            eqFvgCountStepHandler = typeof handler === 'function' ? handler : null;
-        },
         symbol: symbol
     };
     engine.eqProductionModel = state.eqProductionModel;

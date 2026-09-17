@@ -28,6 +28,21 @@ function buildProtectionParams(plan, role) {
         workingType: 'MARK_PRICE', closePosition: 'true',
         clientAlgoId: clientId(plan.symbol, plan.tradeId, role) };
 }
+
+/**
+ * TWO_BAR_PRODUCTION_REPLACEMENT_V1 §7: breakout opening entry.
+ * A conditional STOP_MARKET that OPENS a position (not reduce-only, no
+ * closePosition), triggered on CONTRACT_PRICE because the Two-Bar extreme comes
+ * from futures trade prices. It reuses the same conditional-order channel as the
+ * protective orders and the same client-id / mutation-guard plumbing.
+ */
+function buildBreakoutEntryParams(plan) {
+    return { algoType: 'CONDITIONAL', symbol: plan.symbol,
+        side: plan.direction === 'LONG' ? 'BUY' : 'SELL', positionSide: 'BOTH',
+        type: 'STOP_MARKET', quantity: plan.requestedQty,
+        triggerPrice: plan.entryTrigger, workingType: plan.entryWorkingType || 'CONTRACT_PRICE',
+        clientAlgoId: clientId(plan.symbol, plan.setupId + ':ENTRY', 'ENTRY') };
+}
 function validateSmokeOrder(order) {
     if (!order || order.side !== 'BUY' || order.type !== 'LIMIT' || order.timeInForce !== 'GTC' ||
         !order.symbol || !Number.isFinite(Number(order.quantity)) || Number(order.quantity) <= 0 ||
@@ -161,6 +176,11 @@ function createClient(options) {
         },
         submitProtection: function (plan, role) { var p = buildProtectionParams(plan, role); return idempotentPost('/fapi/v1/algoOrder', p,
             function () { return queryAlgo(plan.symbol, null, p.clientAlgoId); }); },
+        placeBreakoutEntry: function (plan) {
+            var p = buildBreakoutEntryParams(plan);
+            return idempotentPost('/fapi/v1/algoOrder', p,
+                function () { return queryAlgo(plan.symbol, null, p.clientAlgoId); });
+        },
         cancelEntry: function (symbol, clientOrderId) { return request('DELETE', '/fapi/v1/order', { symbol: symbol, origClientOrderId: clientOrderId }, true, true); },
         cancelSmokeOrder: function (symbol, clientOrderId) {
             if (!/^IMC_SMOKE_/.test(String(clientOrderId || ''))) {
@@ -194,5 +214,6 @@ function createClient(options) {
 
 module.exports = { createClient: createClient, clientId: clientId,
     buildEntryParams: buildEntryParams, buildProtectionParams: buildProtectionParams,
+    buildBreakoutEntryParams: buildBreakoutEntryParams,
     validateSmokeOrder: validateSmokeOrder, operationName: operationName,
     sanitizedParams: sanitizedParams };

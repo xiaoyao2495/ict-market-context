@@ -92,7 +92,29 @@ test('30 available notification separates frozen semantic decision from determin
 test('31 PARTIAL and UNAVAILABLE are fail-open presentation states', function () {assert.deepEqual(context.lines({status:'PARTIAL'}),['📊 4H Bias','语义解析暂不可用']);assert.deepEqual(context.lines({status:'UNAVAILABLE'}),['📊 4H Bias','暂不可用']);});
 test('32 EQ notification uses notification-time current snapshot', function () {var event={symbol:'BTCUSDT',liquidityType:'EQL',liquidityPrice:100,expectedDirection:'BULLISH',eqConfirmedAt:1,eqSourceContext:null,ordinal:1,rawFvg:{direction:'BULLISH',low:101,high:102,confirmedAt:2},watchStatusAfterEvent:'OPEN'},old=context.attach(event,{status:'AVAILABLE',semantic:decision('BEARISH')}),latest=context.attach(event,{status:'AVAILABLE',semantic:decision('BULLISH')});assert.match(eqNotification.build(latest),/BULLISH/);assert.notEqual(eqNotification.build(old),eqNotification.build(latest));});
 test('33 Range notification carries common 4H Bias', function () {var event=context.attach({symbol:'BTCUSDT',lower:1,upper:2,midpoint:1.5,widthPct:1,visualStartAt:1,confirmedAt:2},{status:'AVAILABLE',semantic:decision()});assert.match(rangeNotification.buildRangeConfirmationMessage(event),/📊 4H Bias/);});
-test('34 every active DingTalk emitter attaches current authoritative Bias', function () {var source=fs.readFileSync(path.join(__dirname,'../scripts/live.js'),'utf8');['sendRangeConfirmation','sendEqFvgNotification'].forEach(function(name){var start=source.indexOf('function '+name),end=source.indexOf('\n    function ',start+20),body=source.slice(start,end<0?source.length:end);assert.match(body,/notificationMarketContext\.attach\(event, current4hBias\.getCurrent\(\)\)/);});});
+test('34 the live entry gate is direction-only and the surviving emitter attaches the current Bias', function () {
+    var source=fs.readFileSync(path.join(__dirname,'../scripts/live.js'),'utf8');
+    // The remaining DingTalk emitter still attaches the authoritative 4H snapshot.
+    var start=source.indexOf('function sendRangeConfirmation'),end=source.indexOf('\n    function ',start+20);
+    assert.match(source.slice(start,end<0?source.length:end),/notificationMarketContext\.attach\(event, current4hBias\.getCurrent\(\)\)/);
+    // The retired EQ-FVG emitter is no longer part of the live call graph.
+    assert.strictEqual(source.indexOf('sendEqFvgNotification')>=0,false);
+    // TWO_BAR_PRODUCTION_REPLACEMENT_V1 §33: DIRECTION ONLY admission. Strength and
+    // confidence are recorded on the plan but can never gate an entry.
+    var entryRules=require('../execution/breakoutEntryRulesV1');
+    function gate(direction,d,strength,confidence){
+        return entryRules.htfDirectionGate(direction,{status:'AVAILABLE',closedAt:1,expectedClosedAt:1,
+            semantic:{direction:d,strength:strength,confidence:confidence}});
+    }
+    assert.strictEqual(gate('LONG','BULLISH','WEAK','LOW').ok,true);
+    assert.strictEqual(gate('SHORT','BEARISH','WEAK','LOW').ok,true);
+    assert.strictEqual(gate('LONG','BEARISH','WEAK','LOW').reasonCode,'HTF_NOT_ALIGNED');
+    assert.strictEqual(gate('SHORT','BULLISH','WEAK','LOW').reasonCode,'HTF_NOT_ALIGNED');
+    assert.strictEqual(gate('LONG','BULLISH','STRONG','HIGH').ok,true);
+    assert.strictEqual(gate('LONG','NO_PRIORITY','STRONG','HIGH').reasonCode,'HTF_NEUTRAL');
+    var live=source;
+    assert.doesNotMatch(live,/HTF_STRENGTH_REQUIRED\s*=\s*true|HTF_CONFIDENCE_REQUIRED\s*=\s*true/);
+});
 test('35 WATCH control output is independent of Bias payload', function () {function run(extra){var m=watchModel.createStateMachine(),eq=Object.assign({id:'EQ',symbol:'BTCUSDT',type:'EQL',price:100,confirmedAt:10,metadata:{}},extra||{});m.step({newEqualLiquidity:[eq],rawFvg:{id:'F1',direction:'BULLISH',confirmedAt:10,low:101,high:102}});m.step({newEqualLiquidity:[],rawFvg:{id:'F2',direction:'BULLISH',confirmedAt:11,low:102,high:103}});return m.getAll();}assert.deepEqual(run(),run({current4hBias:{status:'AVAILABLE'}}));});
 test('36 restored WATCH discards historical frozen V2 context', function () {var eq={id:'EQ',symbol:'BTCUSDT',type:'EQL',price:100,confirmedAt:10,metadata:{}},m=watchModel.createStateMachine();m.step({newEqualLiquidity:[eq],rawFvg:null});var saved=m.getAll()[0];saved.researchContext4hV2={direction:'BEARISH'};var restored=watchModel.createStateMachine({watches:[saved]}).getAll()[0];assert.equal(Object.prototype.hasOwnProperty.call(restored,'researchContext4hV2'),false);});
 test('37 active V3 runtime has no legacy runtime imports or raw-candle semantic payload', function () {var files=['../scripts/live.js','../live/4hBiasV3.js','../bias/4hBiasSemanticV3.js','../notify/4hBiasContext.js'];var source=files.map(function(f){return fs.readFileSync(path.join(__dirname,f),'utf8');}).join('\n');assert.doesNotMatch(source,/dailyBiasService|eq4hDirectionalContextV2|rawOhlc32|recentCandles|bars6|bars12|Kalman/);});

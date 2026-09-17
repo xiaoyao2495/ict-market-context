@@ -1,0 +1,4257 @@
+{
+  "task": "TWO_BAR_REVERSAL_CONTEXT_AUDIT_V1",
+  "onlyPattern": "TWO_BAR_REVERSAL",
+  "candidateCount": 84,
+  "clearCount": 27,
+  "results": [
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789557000000|1789557599999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 3,
+      "endIndex": 4,
+      "k1": {
+        "openTime": 1789557000000,
+        "open": 75904.5,
+        "high": 75928.4,
+        "low": 75877.8,
+        "close": 75877.8,
+        "volume": 159.952,
+        "quoteAssetVolume": 12140974.638,
+        "closeTime": 1789557299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789557300000,
+        "open": 75877.8,
+        "high": 75928.9,
+        "low": 75828.8,
+        "close": 75928.9,
+        "volume": 301.814,
+        "quoteAssetVolume": 22898920.7295,
+        "closeTime": 1789557599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789557599999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar (close 75877.8, open 75904.5, body 26.7, bodyRatio 0.528, closeLocation 0).",
+              "K2 is a clear bullish directional bar (close 75928.9, open 75877.8, body 51.1, bodyRatio 0.510, closeLocation 1).",
+              "K2 rapidly and visibly negates K1 bearish control: K2 closes above K1 open and above K1 high.",
+              "K2 recovers all of K1 price progress and more, with a real directional body.",
+              "The two candles are not extremely different in size (K1 range 50.6, K2 range 100.1; both have real bodies)."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bearish directional delivery, K2 shows clear bullish directional delivery, and K2 rapidly and visibly negates K1 bearish control by closing above K1 open and high. The two candles have real directional bodies and are not extremely different in size, matching the bullish TWO_BAR_REVERSAL semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789557300000|1789557899999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 4,
+      "endIndex": 5,
+      "k1": {
+        "openTime": 1789557300000,
+        "open": 75877.8,
+        "high": 75928.9,
+        "low": 75828.8,
+        "close": 75928.9,
+        "volume": 301.814,
+        "quoteAssetVolume": 22898920.7295,
+        "closeTime": 1789557599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789557600000,
+        "open": 75928.8,
+        "high": 75967,
+        "low": 75880,
+        "close": 75883.8,
+        "volume": 161.287,
+        "quoteAssetVolume": 12246888.3365,
+        "closeTime": 1789557899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789557899999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bullish directional bar with close at the high (closeLocation 1.0) and a real body (bodyRatio 0.51).",
+              "K2 is a clear bearish directional bar with close near the low (closeLocation 0.044) and a real body (bodyRatio 0.52).",
+              "K2 rapidly negates K1 bullish progress: K2 closes below K1 open, fully erasing K1's bullish body.",
+              "The two candles are similar in size (ranges 100.1 vs 87.0), consistent with the two-bar reversal shape."
+            ],
+            "conflicts": [
+              "K2's close (75883.8) is only slightly below K1's open (75877.8), so the bearish takeover is visible but not strongly extended.",
+              "K2's upper tail is relatively large (upperTailRatio 0.44), showing some rejection of higher prices rather than pure bearish delivery."
+            ],
+            "reason": "K1 shows bullish directional delivery and K2 shows bearish directional delivery that rapidly negates K1's bullish body, matching the core bearish two-bar reversal semantics. However, the takeover is modest in extent and K2 has a notable upper tail, so the pattern is borderline rather than clear."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789557600000|1789558199999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 5,
+      "endIndex": 6,
+      "k1": {
+        "openTime": 1789557600000,
+        "open": 75928.8,
+        "high": 75967,
+        "low": 75880,
+        "close": 75883.8,
+        "volume": 161.287,
+        "quoteAssetVolume": 12246888.3365,
+        "closeTime": 1789557899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789557900000,
+        "open": 75883.7,
+        "high": 75964.1,
+        "low": 75883.7,
+        "close": 75944.5,
+        "volume": 207.547,
+        "quoteAssetVolume": 15760764.3711,
+        "closeTime": 1789558199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789558199999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with body ratio 0.517 and close near its low (closeLocation 0.044).",
+              "K2 is a clear bullish directional bar with body ratio 0.756 and close near its high (closeLocation 0.756).",
+              "K2 opens near K1 close and rapidly recovers K1 price progress, closing above K1 open.",
+              "The two candles are similar in range (87 vs 80.4) and both have real directional bodies."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bearish control, and K2 immediately delivers a strong bullish takeover, negating K1's bearish progress. The shape matches a bullish two-bar reversal."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789560000000|1789560599999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 13,
+      "endIndex": 14,
+      "k1": {
+        "openTime": 1789560000000,
+        "open": 76210.1,
+        "high": 76275.4,
+        "low": 76158.4,
+        "close": 76256.1,
+        "volume": 579.727,
+        "quoteAssetVolume": 44183725.5114,
+        "closeTime": 1789560299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789560300000,
+        "open": 76256,
+        "high": 76256.1,
+        "low": 76145.4,
+        "close": 76145.4,
+        "volume": 297.896,
+        "quoteAssetVolume": 22693838.5502,
+        "closeTime": 1789560599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789560599999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789561500000|1789562099999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 18,
+      "endIndex": 19,
+      "k1": {
+        "openTime": 1789561500000,
+        "open": 75963.9,
+        "high": 75989,
+        "low": 75867,
+        "close": 75909.9,
+        "volume": 499.317,
+        "quoteAssetVolume": 37902675.4751,
+        "closeTime": 1789561799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789561800000,
+        "open": 75910,
+        "high": 75988,
+        "low": 75751.1,
+        "close": 75986,
+        "volume": 917.853,
+        "quoteAssetVolume": 69638966.2331,
+        "closeTime": 1789562099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789562099999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar (close 75909.9 < open 75963.9, body 54, bodyRatio 0.44).",
+              "K2 is a clear bullish directional bar (close 75986 > open 75910, body 76, bodyRatio 0.32).",
+              "K2 rapidly and visibly negates K1 bearish control: K2 closes above K1 open (75986 > 75963.9) and well above K1 close (75909.9).",
+              "K2 shows strong bullish rejection with a long lower tail (158.9, lowerTailRatio 0.67) and close near the high (closeLocation 0.99).",
+              "The two candles are not extremely different in size (K1 range 122, K2 range 236.9), both have real directional bodies."
+            ],
+            "conflicts": [
+              "K2 bodyRatio (0.32) is somewhat small relative to its range, but the directional delivery and recovery are clear."
+            ],
+            "reason": "K1 delivered bearish control, and K2 immediately produced a strong bullish bar that recovered K1's entire price progress and closed above K1's open, matching the bullish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789561800000|1789562399999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 19,
+      "endIndex": 20,
+      "k1": {
+        "openTime": 1789561800000,
+        "open": 75910,
+        "high": 75988,
+        "low": 75751.1,
+        "close": 75986,
+        "volume": 917.853,
+        "quoteAssetVolume": 69638966.2331,
+        "closeTime": 1789562099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789562100000,
+        "open": 75986,
+        "high": 75986,
+        "low": 75886.5,
+        "close": 75943.5,
+        "volume": 230.11,
+        "quoteAssetVolume": 17475947.3006,
+        "closeTime": 1789562399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789562399999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789562400000|1789562999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 21,
+      "endIndex": 22,
+      "k1": {
+        "openTime": 1789562400000,
+        "open": 75943.5,
+        "high": 75982.1,
+        "low": 75916.1,
+        "close": 75920.4,
+        "volume": 129.708,
+        "quoteAssetVolume": 9851348.543,
+        "closeTime": 1789562699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789562700000,
+        "open": 75920.4,
+        "high": 75991.3,
+        "low": 75889.3,
+        "close": 75988.5,
+        "volume": 125.156,
+        "quoteAssetVolume": 9505224.6045,
+        "closeTime": 1789562999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789562999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a bearish candle with a real directional body (body 23.1, bodyRatio 0.35) and closes near its low (closeLocation 0.065).",
+              "K2 is a bullish candle with a clear directional body (body 68.1, bodyRatio 0.668) and closes near its high (closeLocation 0.973).",
+              "K2 opens at K1 close and rapidly recovers above K1 open, negating K1 bearish control.",
+              "K2 range (102) is larger than K1 range (66), showing a strong bullish takeover.",
+              "Both candles have real directional bodies and are not extremely different in size."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bearish directional delivery, K2 shows clear bullish directional delivery and rapidly negates K1 bearish control by recovering K1 price progress. The two-bar shape matches the bullish TWO_BAR_REVERSAL semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789562700000|1789563299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 22,
+      "endIndex": 23,
+      "k1": {
+        "openTime": 1789562700000,
+        "open": 75920.4,
+        "high": 75991.3,
+        "low": 75889.3,
+        "close": 75988.5,
+        "volume": 125.156,
+        "quoteAssetVolume": 9505224.6045,
+        "closeTime": 1789562999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789563000000,
+        "open": 75988.6,
+        "high": 76037.6,
+        "low": 75921.9,
+        "close": 75922,
+        "volume": 451.159,
+        "quoteAssetVolume": 34284172.0481,
+        "closeTime": 1789563299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789563299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bullish directional bar with body 68.1 and bodyRatio 0.668, closing near its high (closeLocation 0.973).",
+              "K2 is a clear bearish directional bar with body 66.6 and bodyRatio 0.576, closing at its low (closeLocation 0.001).",
+              "K2 rapidly negates K1 bullish progress: K2 opens at 75988.6 (near K1 close 75988.5) and closes at 75922.0, fully erasing K1's body gain.",
+              "The two candles are similar in size (ranges 102.0 vs 115.7; bodies 68.1 vs 66.6), both with real directional bodies.",
+              "K2's large upper tail (49.0, 42.4% of range) shows rejection of higher prices and reinforces bearish takeover."
+            ],
+            "conflicts": [],
+            "reason": "K1 delivered clear bullish control, and K2 immediately delivered clear bearish control, opening near K1's close and closing sharply lower, fully negating K1's bullish price progress. The two candles are comparable in size with real directional bodies, matching the bearish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789565700000|1789566299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 32,
+      "endIndex": 33,
+      "k1": {
+        "openTime": 1789565700000,
+        "open": 75618.4,
+        "high": 75697.9,
+        "low": 75551.1,
+        "close": 75551.1,
+        "volume": 882.464,
+        "quoteAssetVolume": 66732318.3103,
+        "closeTime": 1789565999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789566000000,
+        "open": 75551.1,
+        "high": 75770,
+        "low": 75537.5,
+        "close": 75738,
+        "volume": 726.357,
+        "quoteAssetVolume": 54971437.3107,
+        "closeTime": 1789566299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789566299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar closing at its low (closeLocation 0, lowerTail 0).",
+              "K2 is a clear bullish directional bar with a strong body (bodyRatio 0.804) closing near its high (closeLocation 0.862).",
+              "K2 rapidly negates K1 bearish control: K2 opens at K1 close and closes well above K1 open, fully recovering K1 price progress.",
+              "Both candles have real directional bodies and are not extremely different in size (K1 range 146.8, K2 range 232.5)."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bearish delivery, K2 shows clear bullish delivery and rapidly and visibly negates K1 bearish control, matching the bullish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789566300000|1789566899999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 34,
+      "endIndex": 35,
+      "k1": {
+        "openTime": 1789566300000,
+        "open": 75738,
+        "high": 75895.8,
+        "low": 75605,
+        "close": 75834.9,
+        "volume": 849.319,
+        "quoteAssetVolume": 64349877.771,
+        "closeTime": 1789566599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789566600000,
+        "open": 75834.8,
+        "high": 75910,
+        "low": 75642.8,
+        "close": 75713.9,
+        "volume": 456.504,
+        "quoteAssetVolume": 34587008.8991,
+        "closeTime": 1789566899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789566899999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789568700000|1789569299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 42,
+      "endIndex": 43,
+      "k1": {
+        "openTime": 1789568700000,
+        "open": 75592.6,
+        "high": 75801.4,
+        "low": 75584.6,
+        "close": 75801.1,
+        "volume": 645.32,
+        "quoteAssetVolume": 48873841.7737,
+        "closeTime": 1789568999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789569000000,
+        "open": 75801.2,
+        "high": 75802.2,
+        "low": 75583.7,
+        "close": 75690.1,
+        "volume": 490.994,
+        "quoteAssetVolume": 37170321.8648,
+        "closeTime": 1789569299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789569299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a strong bullish candle with bodyRatio 0.96 and closeLocation 0.999, showing clear bullish directional delivery.",
+              "K2 is a bearish candle with bodyRatio 0.51 and closeLocation 0.487, showing clear bearish directional delivery.",
+              "K2 opens near K1 close and closes below K1 open, rapidly negating K1 bullish progress.",
+              "K1 and K2 have similar ranges (216.8 vs 218.5), so sizes are not extremely different."
+            ],
+            "conflicts": [
+              "K2 body is only about half of K1 body, so the bearish takeover is less forceful than a typical two-bar reversal.",
+              "K2 has a long lower tail (48.7% of range), indicating rejection of lower prices and weakening bearish conviction."
+            ],
+            "reason": "K1 shows clear bullish control and K2 shows clear bearish delivery that quickly negates K1 progress, matching the core two-bar reversal semantics. However, K2's smaller body and prominent lower tail make the bearish takeover less decisive, so the pattern is borderline."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789569300000|1789569899999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 44,
+      "endIndex": 45,
+      "k1": {
+        "openTime": 1789569300000,
+        "open": 75690.1,
+        "high": 75749.6,
+        "low": 75600,
+        "close": 75605.1,
+        "volume": 277.096,
+        "quoteAssetVolume": 20971961.2729,
+        "closeTime": 1789569599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789569600000,
+        "open": 75605.1,
+        "high": 75758.5,
+        "low": 75586.3,
+        "close": 75727.3,
+        "volume": 370.916,
+        "quoteAssetVolume": 28065328.4662,
+        "closeTime": 1789569899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789569899999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.568 and close near its low (closeLocation 0.034).",
+              "K2 is a clear bullish directional bar with bodyRatio 0.710 and close near its high (closeLocation 0.819).",
+              "K2 opens at K1 close and closes above K1 open, fully negating K1 bearish price progress.",
+              "K1 and K2 are similar in size (ranges 149.6 and 172.2), both with real directional bodies."
+            ],
+            "conflicts": [],
+            "reason": "Bearish control in K1 is rapidly taken over by a strong bullish K2 that recovers all of K1's decline, matching the two-bar bullish reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789569600000|1789570199999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 45,
+      "endIndex": 46,
+      "k1": {
+        "openTime": 1789569600000,
+        "open": 75605.1,
+        "high": 75758.5,
+        "low": 75586.3,
+        "close": 75727.3,
+        "volume": 370.916,
+        "quoteAssetVolume": 28065328.4662,
+        "closeTime": 1789569899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789569900000,
+        "open": 75727.2,
+        "high": 75731.8,
+        "low": 75504.9,
+        "close": 75555.1,
+        "volume": 475.484,
+        "quoteAssetVolume": 35946623.9987,
+        "closeTime": 1789570199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789570199999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789571700000|1789572299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 52,
+      "endIndex": 53,
+      "k1": {
+        "openTime": 1789571700000,
+        "open": 75725.1,
+        "high": 75730.4,
+        "low": 75602.6,
+        "close": 75659.7,
+        "volume": 419.037,
+        "quoteAssetVolume": 31703283.6909,
+        "closeTime": 1789571999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789572000000,
+        "open": 75659.7,
+        "high": 75772.5,
+        "low": 75642.4,
+        "close": 75703.8,
+        "volume": 414.363,
+        "quoteAssetVolume": 31378427.6469,
+        "closeTime": 1789572299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789572299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar (close 75659.7 < open 75725.1, body 65.4, bodyRatio 0.51).",
+              "K2 is a bullish directional bar (close 75703.8 > open 75659.7, body 44.1).",
+              "K2 closes above K1 close, visibly negating part of K1's bearish progress.",
+              "K2 low 75642.4 holds above K1 low 75602.6, showing no further bearish continuation."
+            ],
+            "conflicts": [
+              "K2 bodyRatio is only 0.34, a relatively weak directional body.",
+              "K2 has a large upper tail (68.7, 52.8% of range), so the bullish close is not strongly held.",
+              "K2 recovers only about 44 points of K1's 65.4-point bearish body, not a full negation.",
+              "The two candles are similar in range but K2's directional delivery is less decisive than K1's."
+            ],
+            "reason": "The window shows a bearish K1 followed by a bullish K2 that closes above K1's close, which fits the basic bearish-control-to-bullish-takeover sequence. However, K2's small body and dominant upper tail make the bullish takeover weak and incomplete, so the pattern is only borderline."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789572000000|1789572599999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 53,
+      "endIndex": 54,
+      "k1": {
+        "openTime": 1789572000000,
+        "open": 75659.7,
+        "high": 75772.5,
+        "low": 75642.4,
+        "close": 75703.8,
+        "volume": 414.363,
+        "quoteAssetVolume": 31378427.6469,
+        "closeTime": 1789572299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789572300000,
+        "open": 75703.8,
+        "high": 75744.9,
+        "low": 75600,
+        "close": 75607,
+        "volume": 240.623,
+        "quoteAssetVolume": 18210471.6329,
+        "closeTime": 1789572599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789572599999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789572900000|1789573499999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 56,
+      "endIndex": 57,
+      "k1": {
+        "openTime": 1789572900000,
+        "open": 75598.8,
+        "high": 75757.3,
+        "low": 75598.8,
+        "close": 75717.5,
+        "volume": 303.743,
+        "quoteAssetVolume": 22995279.1767,
+        "closeTime": 1789573199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789573200000,
+        "open": 75717.6,
+        "high": 75760,
+        "low": 75688.6,
+        "close": 75692.5,
+        "volume": 183.754,
+        "quoteAssetVolume": 13916302.4435,
+        "closeTime": 1789573499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789573499999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bullish directional bar with bodyRatio 0.749 and close near high (closeLocation 0.749).",
+              "K2 is a bearish bar that closes below K1 open, negating K1 bullish progress.",
+              "K2 shows a bearish directional body (bodyRatio 0.352) and closes near its low (closeLocation 0.055)."
+            ],
+            "conflicts": [
+              "K2 body is notably smaller than K1 body (25.1 vs 118.7), so the two candles are quite different in size.",
+              "K2 range is less than half of K1 range, making the bearish takeover less forceful than a typical two-bar reversal."
+            ],
+            "reason": "K1 is a strong bullish bar and K2 is a bearish bar that closes below K1 open, showing a rapid bearish takeover. However, K2 is much smaller than K1, so the reversal is not clean; the shape is borderline."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789573800000|1789574399999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 59,
+      "endIndex": 60,
+      "k1": {
+        "openTime": 1789573800000,
+        "open": 75788.3,
+        "high": 75877.5,
+        "low": 75783.1,
+        "close": 75816.6,
+        "volume": 484.267,
+        "quoteAssetVolume": 36724588.0059,
+        "closeTime": 1789574099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789574100000,
+        "open": 75816.6,
+        "high": 75816.7,
+        "low": 75700,
+        "close": 75753.7,
+        "volume": 380.584,
+        "quoteAssetVolume": 28831468.0302,
+        "closeTime": 1789574399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789574399999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a bullish candle with a real directional body (body 28.3, bodyRatio 0.30).",
+              "K2 is a bearish candle with a real directional body (body 62.9, bodyRatio 0.54).",
+              "K2 closes below K1 open (75753.7 < 75788.3), negating K1's bullish progress.",
+              "K2's bearish body is larger than K1's bullish body, showing rapid bearish takeover."
+            ],
+            "conflicts": [
+              "K1 has a large upper tail (60.9, 64.5% of range) and closes in the lower half (closeLocation 0.355), so its bullish directional delivery is weak.",
+              "K2 has a large lower tail (53.7, 46.0% of range), indicating rejection of lower prices and weakening the bearish control signal.",
+              "The two candles are quite different in size (K2 body more than double K1 body), which is less typical for a two-bar reversal."
+            ],
+            "reason": "K1 shows weak bullish delivery due to a dominant upper tail and lower-half close, while K2 shows bearish delivery but with a large lower tail. The pattern partially fits the bearish two-bar reversal semantics (bullish control then bearish takeover), but the weak K1 directional body and K2's lower rejection make it borderline."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789574700000|1789575299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 62,
+      "endIndex": 63,
+      "k1": {
+        "openTime": 1789574700000,
+        "open": 75745.4,
+        "high": 75800,
+        "low": 75618.4,
+        "close": 75699.4,
+        "volume": 430.288,
+        "quoteAssetVolume": 32576239.0396,
+        "closeTime": 1789574999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789575000000,
+        "open": 75699.3,
+        "high": 75843.3,
+        "low": 75662.6,
+        "close": 75810.4,
+        "volume": 320.05,
+        "quoteAssetVolume": 24238608.7762,
+        "closeTime": 1789575299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789575299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish candle (open 75745.4, close 75699.4, direction BEARISH).",
+              "K2 is a clear bullish candle (open 75699.3, close 75810.4, direction BULLISH).",
+              "K2 closes well above K1 open (75810.4 > 75745.4), fully negating K1 bearish progress.",
+              "K2 body ratio 0.615 is a real directional body; K1 body ratio 0.253 is smaller but still directional.",
+              "Candle sizes are comparable (ranges 181.6 and 180.7), not extremely different.",
+              "K2 close location 0.818 is near the high, showing strong bullish delivery."
+            ],
+            "conflicts": [
+              "K1 body is relatively small (body ratio 0.253), but it still shows clear bearish directional delivery."
+            ],
+            "reason": "Two consecutive candles show bearish control in K1 followed by a rapid, visible bullish takeover in K2 that recovers K1 price progress and closes strongly higher, matching the TWO_BAR_REVERSAL bullish semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789575300000|1789575899999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 64,
+      "endIndex": 65,
+      "k1": {
+        "openTime": 1789575300000,
+        "open": 75810.5,
+        "high": 75855,
+        "low": 75719.2,
+        "close": 75855,
+        "volume": 314.932,
+        "quoteAssetVolume": 23871123.7195,
+        "closeTime": 1789575599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789575600000,
+        "open": 75854.9,
+        "high": 75859,
+        "low": 75764,
+        "close": 75767.6,
+        "volume": 262.627,
+        "quoteAssetVolume": 19910245.0796,
+        "closeTime": 1789575899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789575899999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789576800000|1789577399999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 69,
+      "endIndex": 70,
+      "k1": {
+        "openTime": 1789576800000,
+        "open": 75715.2,
+        "high": 75715.2,
+        "low": 75647.2,
+        "close": 75654.3,
+        "volume": 205.687,
+        "quoteAssetVolume": 15565231.1077,
+        "closeTime": 1789577099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789577100000,
+        "open": 75654.2,
+        "high": 75804.4,
+        "low": 75650.6,
+        "close": 75725.7,
+        "volume": 240.076,
+        "quoteAssetVolume": 18184268.7326,
+        "closeTime": 1789577399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789577399999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.896 and close near its low (closeLocation 0.104).",
+              "K2 is a bullish directional bar closing above its open and recovering above K1's open.",
+              "K2's close (75725.7) exceeds K1's open (75715.2), visibly negating K1's bearish progress.",
+              "K2 range (153.8) is larger than K1 range (68), showing a rapid bullish takeover."
+            ],
+            "conflicts": [
+              "K2 has a large upper tail (78.7, 51.2% of range) and closes only mid-range (closeLocation 0.488), so bullish directional delivery is not clean.",
+              "K2 body ratio (0.465) is moderate rather than a strong directional body.",
+              "The two candles differ substantially in size, which is less typical for the pattern."
+            ],
+            "reason": "K1 shows clear bearish control and K2 rapidly recovers K1's price progress, but K2's large upper tail and mid-range close make the bullish takeover less decisive, resulting in a borderline two-bar bullish reversal."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789577400000|1789577999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 71,
+      "endIndex": 72,
+      "k1": {
+        "openTime": 1789577400000,
+        "open": 75725.7,
+        "high": 75783.1,
+        "low": 75703,
+        "close": 75766.8,
+        "volume": 132.222,
+        "quoteAssetVolume": 10015403.3196,
+        "closeTime": 1789577699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789577700000,
+        "open": 75766.7,
+        "high": 75787,
+        "low": 75727.7,
+        "close": 75734,
+        "volume": 115.501,
+        "quoteAssetVolume": 8750285.3615,
+        "closeTime": 1789577999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789577999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789577700000|1789578299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 72,
+      "endIndex": 73,
+      "k1": {
+        "openTime": 1789577700000,
+        "open": 75766.7,
+        "high": 75787,
+        "low": 75727.7,
+        "close": 75734,
+        "volume": 115.501,
+        "quoteAssetVolume": 8750285.3615,
+        "closeTime": 1789577999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789578000000,
+        "open": 75734.1,
+        "high": 75760,
+        "low": 75688,
+        "close": 75760,
+        "volume": 166.18,
+        "quoteAssetVolume": 12583564.6827,
+        "closeTime": 1789578299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789578299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "MEDIUM",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar (body 32.7, bodyRatio 0.551, close near low at 0.106 closeLocation).",
+              "K2 is a clear bullish directional bar (body 25.9, close at high, closeLocation 1.0).",
+              "K2 closes at 75760, fully recovering and exceeding K1's open at 75766.7? No, K2 close 75760 is below K1 open 75766.7, but above K1 close 75734, negating most of K1's bearish progress.",
+              "K2 shows strong lower rejection (lowerTailRatio 0.640) and closes at the high, indicating rapid bullish takeover.",
+              "The two candles are not extremely different in size (ranges 59.3 vs 72.0, bodies 32.7 vs 25.9)."
+            ],
+            "conflicts": [
+              "K2 does not fully recover K1's open (75766.7), leaving a small gap of 6.7 points.",
+              "K2 body is slightly smaller than K1 body, though both are real directional bodies."
+            ],
+            "reason": "K1 shows clear bearish delivery and K2 shows clear bullish delivery with a strong close at the high, rapidly negating K1's bearish control. The recovery is nearly complete but falls just short of K1's open, making it a borderline but valid two-bar bullish reversal."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789578000000|1789578599999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 73,
+      "endIndex": 74,
+      "k1": {
+        "openTime": 1789578000000,
+        "open": 75734.1,
+        "high": 75760,
+        "low": 75688,
+        "close": 75760,
+        "volume": 166.18,
+        "quoteAssetVolume": 12583564.6827,
+        "closeTime": 1789578299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789578300000,
+        "open": 75760,
+        "high": 75768.6,
+        "low": 75646.1,
+        "close": 75646.1,
+        "volume": 185.768,
+        "quoteAssetVolume": 14062439.2844,
+        "closeTime": 1789578599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789578599999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789578300000|1789578899999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 74,
+      "endIndex": 75,
+      "k1": {
+        "openTime": 1789578300000,
+        "open": 75760,
+        "high": 75768.6,
+        "low": 75646.1,
+        "close": 75646.1,
+        "volume": 185.768,
+        "quoteAssetVolume": 14062439.2844,
+        "closeTime": 1789578599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789578600000,
+        "open": 75646.2,
+        "high": 75697.3,
+        "low": 75620,
+        "close": 75692,
+        "volume": 496.745,
+        "quoteAssetVolume": 37580986.7297,
+        "closeTime": 1789578899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789578899999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a strong bearish candle with bodyRatio 0.93 and close at the low (closeLocation 0).",
+              "K2 is a bullish candle with bodyRatio 0.59 and close near the high (closeLocation 0.93).",
+              "K2 opens near K1 close and closes above K1 open, fully negating K1 bearish progress.",
+              "K2 has a real directional body and is not extremely different in size from K1."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bearish directional delivery, K2 shows clear bullish directional delivery and rapidly negates K1 bearish control by recovering the entire K1 range, forming a bullish two-bar reversal."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789580700000|1789581299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 82,
+      "endIndex": 83,
+      "k1": {
+        "openTime": 1789580700000,
+        "open": 75431.7,
+        "high": 75517.3,
+        "low": 75312.1,
+        "close": 75340.9,
+        "volume": 1030.611,
+        "quoteAssetVolume": 77721225.7189,
+        "closeTime": 1789580999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789581000000,
+        "open": 75340.9,
+        "high": 75559.6,
+        "low": 75340.9,
+        "close": 75478.1,
+        "volume": 725.411,
+        "quoteAssetVolume": 54722332.5086,
+        "closeTime": 1789581299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789581299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar (close 75340.9 below open 75431.7, body 90.8, bodyRatio 0.44)",
+              "K2 is a clear bullish directional bar (close 75478.1 above open 75340.9, body 137.2, bodyRatio 0.63)",
+              "K2 closes above K1 open, fully negating K1 bearish price progress",
+              "K2 opens at K1 close with no gap and rallies with zero lower tail, showing immediate bullish takeover",
+              "Both candles have real directional bodies and comparable size (90.8 vs 137.2)"
+            ],
+            "conflicts": [
+              "K2 body is somewhat larger than K1 body, but not extremely different"
+            ],
+            "reason": "K1 delivered clear bearish control, and K2 rapidly and visibly reversed it with a strong bullish body that recovered all of K1's decline and closed above K1's open, matching the bullish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789581900000|1789582499999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 86,
+      "endIndex": 87,
+      "k1": {
+        "openTime": 1789581900000,
+        "open": 75823.7,
+        "high": 76540,
+        "low": 75823.7,
+        "close": 76183.2,
+        "volume": 8919.527,
+        "quoteAssetVolume": 680220023.8345,
+        "closeTime": 1789582199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789582200000,
+        "open": 76183.2,
+        "high": 76302.9,
+        "low": 75680.9,
+        "close": 75778.3,
+        "volume": 3892.326,
+        "quoteAssetVolume": 295693223.9481,
+        "closeTime": 1789582499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789582499999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a bullish directional bar with bodyRatio 0.50 and closeLocation 0.50, showing clear bullish delivery.",
+              "K2 is a bearish directional bar with bodyRatio 0.65 and closeLocation 0.16, showing clear bearish delivery.",
+              "K2 closes below K1 open, visibly negating K1 bullish progress.",
+              "K1 and K2 are not extremely different in size (ranges 716.3 vs 622.0)."
+            ],
+            "conflicts": [
+              "K1 has a large upper tail (49.8% of range) and no lower tail, making it less clean as a pure bullish directional bar.",
+              "K2 does not fully recover K1's range; K2 low is above K1 low.",
+              "The two-bar reversal semantics are present but not strongly textbook."
+            ],
+            "reason": "K1 shows bullish directional delivery and K2 shows bearish directional delivery that rapidly negates K1's bullish control by closing below K1 open. However, K1's prominent upper tail and K2's incomplete range recovery make the pattern borderline rather than clear."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789582200000|1789582799999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 87,
+      "endIndex": 88,
+      "k1": {
+        "openTime": 1789582200000,
+        "open": 76183.2,
+        "high": 76302.9,
+        "low": 75680.9,
+        "close": 75778.3,
+        "volume": 3892.326,
+        "quoteAssetVolume": 295693223.9481,
+        "closeTime": 1789582499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789582500000,
+        "open": 75778.2,
+        "high": 76033.7,
+        "low": 75735.2,
+        "close": 75924,
+        "volume": 2050.932,
+        "quoteAssetVolume": 155585188.7224,
+        "closeTime": 1789582799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789582799999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.65 and close near its low (closeLocation 0.157).",
+              "K2 is a bullish directional bar with bodyRatio 0.49 and close in the upper half (closeLocation 0.632).",
+              "K2 opens near K1 close and recovers part of K1's bearish progress, closing above K1 close."
+            ],
+            "conflicts": [
+              "K2 body is notably smaller than K1 body (145.8 vs 404.9), so the bullish takeover is not strongly forceful.",
+              "K2 close only recovers about 36% of K1's bearish body, not a rapid and visible negation of K1 control.",
+              "K2 has a relatively large upper tail (0.368 of range), showing selling pressure near the highs."
+            ],
+            "reason": "The two-bar sequence shows bearish control in K1 followed by a bullish candle in K2, but the bullish candle is much smaller and only partially recovers K1's bearish progress. The rapid bullish takeover is weak, making this a borderline rather than clear two-bar reversal."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789583100000|1789583699999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 90,
+      "endIndex": 91,
+      "k1": {
+        "openTime": 1789583100000,
+        "open": 75877.2,
+        "high": 76015.2,
+        "low": 75613.5,
+        "close": 75983.7,
+        "volume": 1636.494,
+        "quoteAssetVolume": 124042679.9904,
+        "closeTime": 1789583399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789583400000,
+        "open": 75983.7,
+        "high": 76006.2,
+        "low": 75521.8,
+        "close": 75579.6,
+        "volume": 1929.333,
+        "quoteAssetVolume": 146003444.6972,
+        "closeTime": 1789583699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789583699999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a bullish candle with a real directional body (body 106.5, bodyRatio 0.265) and closes near its high (closeLocation 0.922).",
+              "K2 is a bearish candle with a strong directional body (body 404.1, bodyRatio 0.834) and closes near its low (closeLocation 0.119).",
+              "K2 rapidly and visibly negates K1 bullish progress: K2 opens at K1 close (75983.7) and closes at 75579.6, well below K1 open (75877.2).",
+              "The two candles are not extremely different in size (ranges 401.7 vs 484.4), both have real directional bodies, and K2 clearly recovers more than K1's price progress."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bullish directional delivery, K2 shows clear bearish directional delivery, and K2 rapidly and visibly negates K1 bullish control by closing below K1 open. The shape matches a bearish two-bar reversal."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789583400000|1789583999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 91,
+      "endIndex": 92,
+      "k1": {
+        "openTime": 1789583400000,
+        "open": 75983.7,
+        "high": 76006.2,
+        "low": 75521.8,
+        "close": 75579.6,
+        "volume": 1929.333,
+        "quoteAssetVolume": 146003444.6972,
+        "closeTime": 1789583699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789583700000,
+        "open": 75579.4,
+        "high": 75877.7,
+        "low": 75025,
+        "close": 75761.1,
+        "volume": 7442.373,
+        "quoteAssetVolume": 560996790.4343,
+        "closeTime": 1789583999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789583999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.834 and close near its low (closeLocation 0.119).",
+              "K2 is a bullish directional bar closing above its open, with closeLocation 0.863, showing bullish takeover.",
+              "K2 recovers a large portion of K1's bearish progress: K2 close 75761.1 is above K1 open 75983.7? No, but it is well above K1 close 75579.6 and near K1 open.",
+              "K2 has a long lower tail (lowerTailRatio 0.650) indicating strong rejection of lower prices and rapid bullish negation of K1 bearish control."
+            ],
+            "conflicts": [
+              "K2 bodyRatio is relatively small (0.213) compared to K1, but the overall bullish delivery and recovery are clear."
+            ],
+            "reason": "K1 shows clear bearish directional delivery, and K2 shows clear bullish directional delivery that rapidly and visibly negates K1 bearish control, with K2 closing well above K1 close and near K1 open. The two-bar shape matches the bullish TWO_BAR_REVERSAL semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789584000000|1789584599999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 93,
+      "endIndex": 94,
+      "k1": {
+        "openTime": 1789584000000,
+        "open": 75761.1,
+        "high": 76305.4,
+        "low": 75723.1,
+        "close": 75947.5,
+        "volume": 4375.389,
+        "quoteAssetVolume": 332884380.2547,
+        "closeTime": 1789584299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789584300000,
+        "open": 75947.5,
+        "high": 76062.7,
+        "low": 75831.4,
+        "close": 75891.2,
+        "volume": 1182.471,
+        "quoteAssetVolume": 89781122.5531,
+        "closeTime": 1789584599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789584599999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789584600000|1789585199999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 95,
+      "endIndex": 96,
+      "k1": {
+        "openTime": 1789584600000,
+        "open": 75891.2,
+        "high": 75894.7,
+        "low": 75497.3,
+        "close": 75518.3,
+        "volume": 2007.017,
+        "quoteAssetVolume": 151843960.5448,
+        "closeTime": 1789584899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789584900000,
+        "open": 75518.3,
+        "high": 75705.3,
+        "low": 75441,
+        "close": 75600.5,
+        "volume": 1492.762,
+        "quoteAssetVolume": 112774711.0965,
+        "closeTime": 1789585199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789585199999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.938 and close near its low (closeLocation 0.053)",
+              "K2 is a bullish bar that closes above K1 close (75600.5 vs 75518.3), negating part of K1's bearish progress",
+              "K2 recovers roughly 22% of K1's body range, showing a visible bullish takeover attempt"
+            ],
+            "conflicts": [
+              "K2 bodyRatio is only 0.311, a weak directional body relative to K1's 0.938",
+              "K2 has large upper and lower tails (0.397 and 0.292 of range), making it indecisive rather than a clean bullish directional bar",
+              "K2 recovers only a small portion of K1's bearish progress, so the bullish takeover is not strongly visible"
+            ],
+            "reason": "K1 shows clear bearish delivery and K2 is bullish, but K2's small body and large tails make it an indecisive bar rather than a clear bullish directional takeover. The two-bar reversal shape is present only in weak/borderline form."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789585200000|1789585799999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 97,
+      "endIndex": 98,
+      "k1": {
+        "openTime": 1789585200000,
+        "open": 75600.6,
+        "high": 76153.7,
+        "low": 75600.6,
+        "close": 76014.4,
+        "volume": 2794.582,
+        "quoteAssetVolume": 212345792.7063,
+        "closeTime": 1789585499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789585500000,
+        "open": 76014.4,
+        "high": 76045,
+        "low": 75872.3,
+        "close": 75894.8,
+        "volume": 837.137,
+        "quoteAssetVolume": 63591855.7991,
+        "closeTime": 1789585799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789585799999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789586400000|1789586999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 101,
+      "endIndex": 102,
+      "k1": {
+        "openTime": 1789586400000,
+        "open": 75667.4,
+        "high": 75697.7,
+        "low": 75371.1,
+        "close": 75397,
+        "volume": 1501.484,
+        "quoteAssetVolume": 113384879.7825,
+        "closeTime": 1789586699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789586700000,
+        "open": 75397,
+        "high": 75522.9,
+        "low": 75216.9,
+        "close": 75510.5,
+        "volume": 2052.258,
+        "quoteAssetVolume": 154643807.0566,
+        "closeTime": 1789586999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789586999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.828 and close near its low (closeLocation 0.079).",
+              "K2 is a bullish directional bar with close near its high (closeLocation 0.959).",
+              "K2 opens at K1 close and closes above K1 open, visibly negating K1 bearish progress.",
+              "K2 has a large lower tail (0.589 of range), showing downside rejection before the bullish takeover.",
+              "Both candles have real directional bodies and comparable ranges (326.6 vs 306.0)."
+            ],
+            "conflicts": [
+              "K2 bodyRatio is moderate (0.371), not a large bullish body, but the close location and recovery are strong."
+            ],
+            "reason": "K1 delivered clear bearish control, and K2 rapidly reversed with a bullish close that recovered K1's entire range and closed above K1 open, matching the bullish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789588800000|1789589399999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 109,
+      "endIndex": 110,
+      "k1": {
+        "openTime": 1789588800000,
+        "open": 76043.5,
+        "high": 76252.5,
+        "low": 75983.8,
+        "close": 76240.1,
+        "volume": 951.938,
+        "quoteAssetVolume": 72474825.2478,
+        "closeTime": 1789589099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789589100000,
+        "open": 76240.1,
+        "high": 76391.6,
+        "low": 76134.5,
+        "close": 76150,
+        "volume": 1087.519,
+        "quoteAssetVolume": 82951950.9624,
+        "closeTime": 1789589399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789589399999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bullish directional bar with bodyRatio 0.73 and closeLocation 0.95, showing strong bullish delivery.",
+              "K2 is a bearish bar that opens at K1 close and closes below K1 open, negating K1's bullish progress.",
+              "K2 has a real bearish body (bodyRatio 0.35) and a long upper tail (upperTailRatio 0.59), indicating rejection of higher prices."
+            ],
+            "conflicts": [
+              "K2 body is notably smaller than K1 body (90.1 vs 196.6), so the two candles are not similar in size.",
+              "K2 close is only slightly below K1 open, so the bearish takeover is not strongly decisive."
+            ],
+            "reason": "K1 shows clear bullish control and K2 shows a bearish reversal that negates K1's progress, but the size disparity and modest bearish close make the pattern borderline rather than clear."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789589100000|1789589699999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 110,
+      "endIndex": 111,
+      "k1": {
+        "openTime": 1789589100000,
+        "open": 76240.1,
+        "high": 76391.6,
+        "low": 76134.5,
+        "close": 76150,
+        "volume": 1087.519,
+        "quoteAssetVolume": 82951950.9624,
+        "closeTime": 1789589399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789589400000,
+        "open": 76150,
+        "high": 76208.3,
+        "low": 76098.3,
+        "close": 76179.5,
+        "volume": 326.06,
+        "quoteAssetVolume": 24832961.4959,
+        "closeTime": 1789589699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789589699999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish candle with a real directional body (body 90.1, bodyRatio 0.350) and closes near its low (closeLocation 0.060).",
+              "K2 is a bullish candle (open 76150, close 76179.5) that closes above K1's close, showing a bullish takeover.",
+              "K2's close is in the upper part of its range (closeLocation 0.738), indicating bullish delivery.",
+              "K2 recovers part of K1's bearish progress, though not the full range."
+            ],
+            "conflicts": [
+              "K2's body is small (29.5, bodyRatio 0.268) relative to K1's body (90.1), so the bullish takeover is not strongly decisive.",
+              "K2's range (110) is much smaller than K1's range (257.1), making the reversal less convincing.",
+              "K2 does not fully negate K1's bearish control; it only recovers a small portion of K1's decline."
+            ],
+            "reason": "The two-bar sequence shows a bearish candle followed by a bullish candle that closes higher, but the bullish candle is small and does not strongly negate the prior bearish control. The shape is a weak, borderline two-bar bullish reversal."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789589700000|1789590299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 112,
+      "endIndex": 113,
+      "k1": {
+        "openTime": 1789589700000,
+        "open": 76179.5,
+        "high": 76324.9,
+        "low": 76115.9,
+        "close": 76324.9,
+        "volume": 515.611,
+        "quoteAssetVolume": 39302050.8664,
+        "closeTime": 1789589999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789590000000,
+        "open": 76324.9,
+        "high": 76340.3,
+        "low": 76226,
+        "close": 76226,
+        "volume": 491.428,
+        "quoteAssetVolume": 37496977.8437,
+        "closeTime": 1789590299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789590299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789591500000|1789592099999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 118,
+      "endIndex": 119,
+      "k1": {
+        "openTime": 1789591500000,
+        "open": 76090.7,
+        "high": 76170,
+        "low": 76049.1,
+        "close": 76133.9,
+        "volume": 345.059,
+        "quoteAssetVolume": 26267323.884,
+        "closeTime": 1789591799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789591800000,
+        "open": 76133.9,
+        "high": 76139.8,
+        "low": 76028.2,
+        "close": 76100,
+        "volume": 146.5,
+        "quoteAssetVolume": 11145152.904,
+        "closeTime": 1789592099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789592099999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789591800000|1789592399999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 119,
+      "endIndex": 120,
+      "k1": {
+        "openTime": 1789591800000,
+        "open": 76133.9,
+        "high": 76139.8,
+        "low": 76028.2,
+        "close": 76100,
+        "volume": 146.5,
+        "quoteAssetVolume": 11145152.904,
+        "closeTime": 1789592099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789592100000,
+        "open": 76100,
+        "high": 76165.1,
+        "low": 76077.1,
+        "close": 76144.1,
+        "volume": 111.005,
+        "quoteAssetVolume": 8451401.1334,
+        "closeTime": 1789592399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789592399999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is bearish with a real directional body (body 33.9, bodyRatio 0.304).",
+              "K2 is bullish with a real directional body (body 44.1, bodyRatio 0.501).",
+              "K2 closes above K1 open (76144.1 > 76133.9), visibly negating K1 bearish control.",
+              "K2 close is in the upper part of its range (closeLocation 0.761)."
+            ],
+            "conflicts": [
+              "K1 has a very large lower tail (lowerTailRatio 0.643), showing strong lower rejection rather than clean bearish directional delivery.",
+              "K1 body is relatively small compared to its range, weakening the bearish control premise.",
+              "K2 does not fully recover K1's price progress from K1 high (76139.8) to K1 low (76028.2); it only closes slightly above K1 open."
+            ],
+            "reason": "Two consecutive candles show bearish K1 followed by bullish K2 that closes above K1 open, giving a rapid bullish takeover. However, K1's dominant lower tail and small body make the bearish control less clear, and K2's recovery is modest, so the pattern is borderline rather than clear."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789592100000|1789592699999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 120,
+      "endIndex": 121,
+      "k1": {
+        "openTime": 1789592100000,
+        "open": 76100,
+        "high": 76165.1,
+        "low": 76077.1,
+        "close": 76144.1,
+        "volume": 111.005,
+        "quoteAssetVolume": 8451401.1334,
+        "closeTime": 1789592399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789592400000,
+        "open": 76144.1,
+        "high": 76150,
+        "low": 76113.2,
+        "close": 76119.8,
+        "volume": 85.931,
+        "quoteAssetVolume": 6542311.2507,
+        "closeTime": 1789592699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789592699999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789595400000|1789595999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 131,
+      "endIndex": 132,
+      "k1": {
+        "openTime": 1789595400000,
+        "open": 75936.8,
+        "high": 75995.2,
+        "low": 75936.8,
+        "close": 75993.4,
+        "volume": 206.593,
+        "quoteAssetVolume": 15694175.8819,
+        "closeTime": 1789595699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789595700000,
+        "open": 75993.3,
+        "high": 75995.9,
+        "low": 75902.3,
+        "close": 75938.2,
+        "volume": 186.038,
+        "quoteAssetVolume": 14127832.218,
+        "closeTime": 1789595999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789595999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789596600000|1789597199999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 135,
+      "endIndex": 136,
+      "k1": {
+        "openTime": 1789596600000,
+        "open": 75724.3,
+        "high": 75868.1,
+        "low": 75706.8,
+        "close": 75852.5,
+        "volume": 310.442,
+        "quoteAssetVolume": 23527765.0311,
+        "closeTime": 1789596899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789596900000,
+        "open": 75852.5,
+        "high": 75900.6,
+        "low": 75757.6,
+        "close": 75757.6,
+        "volume": 225.431,
+        "quoteAssetVolume": 17098824.3715,
+        "closeTime": 1789597199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789597199999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bullish directional bar with bodyRatio 0.795 and closeLocation 0.903, showing strong bullish delivery.",
+              "K2 is a clear bearish directional bar with bodyRatio 0.664 and closeLocation 0, showing strong bearish delivery.",
+              "K2 closes at 75757.6, fully negating K1's bullish progress and closing below K1's open of 75724.3.",
+              "K1 and K2 are similar in size (ranges 161.3 vs 143.0), both have real directional bodies."
+            ],
+            "conflicts": [
+              "K2's close is only slightly below K1's open, so the bearish takeover is not a dramatic reversal of K1's range.",
+              "K2 has a notable upper tail (0.336 of range), indicating some rejection of higher prices but also some indecision."
+            ],
+            "reason": "K1 shows clear bullish control, and K2 rapidly reverses with a bearish body that closes below K1's open, negating K1's progress. The two-bar bearish reversal shape is present but borderline due to the modest extent of the bearish takeover and K2's upper tail."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789597200000|1789597799999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 137,
+      "endIndex": 138,
+      "k1": {
+        "openTime": 1789597200000,
+        "open": 75757.5,
+        "high": 75763.9,
+        "low": 75646.7,
+        "close": 75661.9,
+        "volume": 272.3,
+        "quoteAssetVolume": 20610362.5052,
+        "closeTime": 1789597499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789597500000,
+        "open": 75661.9,
+        "high": 75757.3,
+        "low": 75661.8,
+        "close": 75720.6,
+        "volume": 123.131,
+        "quoteAssetVolume": 9323697.3649,
+        "closeTime": 1789597799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789597799999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "MEDIUM",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with body 95.6 and bodyRatio 0.8157, closing near its low (closeLocation 0.1297).",
+              "K2 is a clear bullish directional bar with body 58.7 and bodyRatio 0.6147, closing in the upper portion (closeLocation 0.6157).",
+              "K2 opens at K1 close and recovers most of K1's bearish progress, closing above K1's open-to-close midpoint and near K1's open.",
+              "The two candles are not extremely different in size (ranges 117.2 vs 95.5), both have real directional bodies."
+            ],
+            "conflicts": [
+              "K2's body is somewhat smaller than K1's and it does not fully negate K1's range (K2 high 75757.3 vs K1 open 75757.5)."
+            ],
+            "reason": "K1 shows clear bearish directional delivery and K2 shows clear bullish directional delivery that rapidly recovers most of K1's price progress, matching the bullish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789597500000|1789598099999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 138,
+      "endIndex": 139,
+      "k1": {
+        "openTime": 1789597500000,
+        "open": 75661.9,
+        "high": 75757.3,
+        "low": 75661.8,
+        "close": 75720.6,
+        "volume": 123.131,
+        "quoteAssetVolume": 9323697.3649,
+        "closeTime": 1789597799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789597800000,
+        "open": 75720.6,
+        "high": 75720.6,
+        "low": 75655.3,
+        "close": 75655.3,
+        "volume": 149.173,
+        "quoteAssetVolume": 11290743.2721,
+        "closeTime": 1789598099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789598099999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789597800000|1789598399999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 139,
+      "endIndex": 140,
+      "k1": {
+        "openTime": 1789597800000,
+        "open": 75720.6,
+        "high": 75720.6,
+        "low": 75655.3,
+        "close": 75655.3,
+        "volume": 149.173,
+        "quoteAssetVolume": 11290743.2721,
+        "closeTime": 1789598099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789598100000,
+        "open": 75655.1,
+        "high": 75741.6,
+        "low": 75622.7,
+        "close": 75741.6,
+        "volume": 154.857,
+        "quoteAssetVolume": 11716806.3668,
+        "closeTime": 1789598399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789598399999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a full-body bearish candle (bodyRatio 1, close at low) showing clear bearish directional delivery.",
+              "K2 is a bullish candle with a real directional body (bodyRatio 0.7275) closing at its high (closeLocation 1).",
+              "K2 opens near K1 close and rapidly recovers K1's entire price progress, negating bearish control.",
+              "The two candles are not extremely different in size (ranges 65.3 vs 118.9), both have real directional bodies."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bearish control, K2 shows clear bullish takeover and fully recovers K1's decline, matching the bullish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789598400000|1789598999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 141,
+      "endIndex": 142,
+      "k1": {
+        "openTime": 1789598400000,
+        "open": 75741.6,
+        "high": 75782.7,
+        "low": 75686.8,
+        "close": 75782.7,
+        "volume": 112.169,
+        "quoteAssetVolume": 8494974.1074,
+        "closeTime": 1789598699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789598700000,
+        "open": 75782.7,
+        "high": 75793.1,
+        "low": 75688.5,
+        "close": 75688.6,
+        "volume": 116.907,
+        "quoteAssetVolume": 8855382.1625,
+        "closeTime": 1789598999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789598999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789599000000|1789599599999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 143,
+      "endIndex": 144,
+      "k1": {
+        "openTime": 1789599000000,
+        "open": 75688.5,
+        "high": 75688.6,
+        "low": 75610,
+        "close": 75626,
+        "volume": 181.078,
+        "quoteAssetVolume": 13694656.1141,
+        "closeTime": 1789599299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789599300000,
+        "open": 75626,
+        "high": 75650,
+        "low": 75624.7,
+        "close": 75647.1,
+        "volume": 76.551,
+        "quoteAssetVolume": 5789998.8869,
+        "closeTime": 1789599599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789599599999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with body ratio 0.795 and close near its low (closeLocation 0.204).",
+              "K2 is a clear bullish directional bar with body ratio 0.834 and close near its high (closeLocation 0.885).",
+              "K2 opens at K1 close and closes above K1 open, visibly negating K1 bearish progress."
+            ],
+            "conflicts": [
+              "K2 range (25.3) is much smaller than K1 range (78.6), so the two candles are extremely different in size.",
+              "K2 recovers only about 34% of K1's bearish body, which is a weak price-progress recovery."
+            ],
+            "reason": "The two-bar sequence shows bearish control followed by a bullish takeover, but the takeover candle is much smaller than the prior bearish candle and recovers only a small portion of its progress, making the reversal shape borderline rather than clear."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789600800000|1789601399999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 149,
+      "endIndex": 150,
+      "k1": {
+        "openTime": 1789600800000,
+        "open": 76013.7,
+        "high": 76117.5,
+        "low": 76013.7,
+        "close": 76059.4,
+        "volume": 514.248,
+        "quoteAssetVolume": 39124273.6492,
+        "closeTime": 1789601099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789601100000,
+        "open": 76059.5,
+        "high": 76085.4,
+        "low": 76018.5,
+        "close": 76044,
+        "volume": 290.067,
+        "quoteAssetVolume": 22058685.0565,
+        "closeTime": 1789601399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789601399999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789601100000|1789601699999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 150,
+      "endIndex": 151,
+      "k1": {
+        "openTime": 1789601100000,
+        "open": 76059.5,
+        "high": 76085.4,
+        "low": 76018.5,
+        "close": 76044,
+        "volume": 290.067,
+        "quoteAssetVolume": 22058685.0565,
+        "closeTime": 1789601399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789601400000,
+        "open": 76044,
+        "high": 76099.2,
+        "low": 76032.8,
+        "close": 76086.4,
+        "volume": 211.805,
+        "quoteAssetVolume": 16111007.3391,
+        "closeTime": 1789601699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789601699999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is bearish with close below open (76059.5 -> 76044).",
+              "K2 is bullish with close above open (76044 -> 76086.4).",
+              "K2 body (42.4) is larger than K1 body (15.5), showing clear bullish directional delivery.",
+              "K2 closes at 76086.4, above K1 open (76059.5), fully negating K1 bearish progress.",
+              "K2 closeLocation is 0.807, indicating a strong close near the high.",
+              "Both candles have real directional bodies and similar ranges (66.9 vs 66.4)."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows bearish directional delivery, K2 shows clear bullish directional delivery and rapidly negates K1 by closing above K1 open. The two candles are similar in size and both have real bodies, matching the bullish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789602600000|1789603199999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 155,
+      "endIndex": 156,
+      "k1": {
+        "openTime": 1789602600000,
+        "open": 76192.9,
+        "high": 76245.3,
+        "low": 76168.5,
+        "close": 76230.1,
+        "volume": 332.015,
+        "quoteAssetVolume": 25306708.3289,
+        "closeTime": 1789602899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789602900000,
+        "open": 76230,
+        "high": 76235.8,
+        "low": 76153.6,
+        "close": 76174.6,
+        "volume": 231.459,
+        "quoteAssetVolume": 17634253.8981,
+        "closeTime": 1789603199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789603199999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789602900000|1789603499999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 156,
+      "endIndex": 157,
+      "k1": {
+        "openTime": 1789602900000,
+        "open": 76230,
+        "high": 76235.8,
+        "low": 76153.6,
+        "close": 76174.6,
+        "volume": 231.459,
+        "quoteAssetVolume": 17634253.8981,
+        "closeTime": 1789603199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789603200000,
+        "open": 76174.6,
+        "high": 76254.8,
+        "low": 76147.2,
+        "close": 76225.2,
+        "volume": 412.045,
+        "quoteAssetVolume": 31402580.6396,
+        "closeTime": 1789603499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789603499999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar (body 55.4, bodyRatio 0.674, close near low at 0.255 closeLocation)",
+              "K2 is a bullish directional bar (body 50.6, closeLocation 0.725, closes above K1 close)",
+              "K2 recovers most of K1's bearish progress, negating K1 control"
+            ],
+            "conflicts": [
+              "K2 bodyRatio only 0.470 with large upper tail (0.275) and lower tail (0.255), making directional delivery less decisive",
+              "K2 range (107.6) is notably larger than K1 range (82.2), so the two candles are not similar in size",
+              "K2 close (76225.2) does not fully recover K1's open (76230), leaving a small gap"
+            ],
+            "reason": "K1 shows clear bearish delivery and K2 shows bullish delivery that rapidly negates K1's control, matching the core two-bar reversal semantics. However, K2's modest body ratio, large tails, and larger range relative to K1 weaken the clarity, so the pattern is borderline rather than clear."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789604400000|1789604999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 161,
+      "endIndex": 162,
+      "k1": {
+        "openTime": 1789604400000,
+        "open": 76423,
+        "high": 76455.7,
+        "low": 76360.9,
+        "close": 76446.2,
+        "volume": 457.809,
+        "quoteAssetVolume": 34983873.0935,
+        "closeTime": 1789604699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789604700000,
+        "open": 76446.2,
+        "high": 76473,
+        "low": 76337.4,
+        "close": 76376,
+        "volume": 454.236,
+        "quoteAssetVolume": 34702919.7516,
+        "closeTime": 1789604999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789604999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a bullish candle with a real directional body (body 23.2, bodyRatio 0.2447) and closes near its high (closeLocation 0.8998), showing bullish directional delivery.",
+              "K2 is a bearish candle with a real directional body (body 70.2, bodyRatio 0.5177) and closes in the lower part of its range (closeLocation 0.2847), showing bearish directional delivery.",
+              "K2 rapidly negates K1 bullish progress: K2 opens at K1 close (76446.2) and closes at 76376.0, below K1 open (76423.0), fully erasing K1's bullish body.",
+              "K2 is larger than K1 (range 135.6 vs 94.8; body 70.2 vs 23.2), consistent with a rapid bearish takeover."
+            ],
+            "conflicts": [
+              "K1 has a relatively small body compared to its range (bodyRatio 0.2447) and a long lower tail (lowerTailRatio 0.6551), which weakens the 'clear bullish directional delivery' requirement for K1.",
+              "The two candles are quite different in size (K2 body is about 3x K1 body), which is not the typical 'not extremely different in size' condition for a two-bar reversal."
+            ],
+            "reason": "K1 shows some bullish directional delivery and K2 shows clear bearish directional delivery that rapidly negates K1's bullish progress, matching the core bearish two-bar reversal semantics. However, K1's small body and long lower tail make its bullish control less clear, and the large size disparity between the two candles makes the pattern borderline rather than clear."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789604700000|1789605299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 162,
+      "endIndex": 163,
+      "k1": {
+        "openTime": 1789604700000,
+        "open": 76446.2,
+        "high": 76473,
+        "low": 76337.4,
+        "close": 76376,
+        "volume": 454.236,
+        "quoteAssetVolume": 34702919.7516,
+        "closeTime": 1789604999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789605000000,
+        "open": 76376,
+        "high": 76473,
+        "low": 76341,
+        "close": 76405.3,
+        "volume": 444.856,
+        "quoteAssetVolume": 33985599.232,
+        "closeTime": 1789605299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789605299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar (body 70.2, bodyRatio 0.518, close near low at 0.285 closeLocation).",
+              "K2 is a bullish bar (close 76405.3 > open 76376), showing a bullish directional delivery.",
+              "K2 recovers part of K1's bearish progress, closing above K1 close and near the midpoint of K1's range.",
+              "The two candles are similar in size (ranges 135.6 and 132), consistent with the two-bar reversal shape."
+            ],
+            "conflicts": [
+              "K2 body is small (29.3, bodyRatio 0.222) with a dominant upper tail (0.513), so bullish directional delivery is weak.",
+              "K2 closeLocation is only 0.487, not a strong bullish close near the high.",
+              "K2 does not fully negate K1's bearish control; it only partially recovers K1's price progress."
+            ],
+            "reason": "K1 shows clear bearish delivery and K2 shows a bullish close that partially negates K1, but K2's small body and large upper tail make the bullish takeover weak and only borderline."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789605300000|1789605899999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 164,
+      "endIndex": 165,
+      "k1": {
+        "openTime": 1789605300000,
+        "open": 76405.3,
+        "high": 76473,
+        "low": 76355.4,
+        "close": 76445.1,
+        "volume": 351.462,
+        "quoteAssetVolume": 26864788.0197,
+        "closeTime": 1789605599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789605600000,
+        "open": 76445,
+        "high": 76455.4,
+        "low": 76388.6,
+        "close": 76391.3,
+        "volume": 328.675,
+        "quoteAssetVolume": 25119808.5363,
+        "closeTime": 1789605899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789605899999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a bullish candle with a real directional body (bodyRatio 0.34) and closes in the upper part of its range (closeLocation 0.76).",
+              "K2 is a bearish candle with a strong directional body (bodyRatio 0.80) and closes near its low (closeLocation 0.04).",
+              "K2 opens near K1 close and closes below K1 open, visibly negating K1 bullish progress."
+            ],
+            "conflicts": [
+              "K2 range (66.8) is notably smaller than K1 range (117.6), so the two candles are not similar in size.",
+              "K1 has a relatively modest body ratio (0.34) and a large lower tail, making its bullish directional delivery less clear than ideal."
+            ],
+            "reason": "K1 shows bullish directional delivery and K2 shows clear bearish directional delivery that rapidly negates K1 progress, matching the core two-bar reversal semantics. However, the notable size difference and K1's modest body reduce clarity, making it borderline."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789610700000|1789611299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 182,
+      "endIndex": 183,
+      "k1": {
+        "openTime": 1789610700000,
+        "open": 76347.1,
+        "high": 76355.9,
+        "low": 76111,
+        "close": 76117.1,
+        "volume": 948.817,
+        "quoteAssetVolume": 72289150.7958,
+        "closeTime": 1789610999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789611000000,
+        "open": 76117.2,
+        "high": 76186.9,
+        "low": 76072.7,
+        "close": 76180.9,
+        "volume": 681.338,
+        "quoteAssetVolume": 51862064.1002,
+        "closeTime": 1789611299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789611299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.939 and close near its low (closeLocation 0.025)",
+              "K2 is a bullish directional bar closing near its high (closeLocation 0.947)",
+              "K2 recovers above K1 open (76117.2 vs 76117.1), negating K1's bearish progress"
+            ],
+            "conflicts": [
+              "K2 body (63.7) is much smaller than K1 body (230), so the two candles are very different in size",
+              "K2's bullish body is modest relative to its range (bodyRatio 0.558) with a large lower tail (0.390), making the takeover less decisive"
+            ],
+            "reason": "K1 shows clear bearish control and K2 shows a bullish close that recovers K1's open, satisfying the core bearish-control-to-bullish-takeover semantics, but the large size disparity and K2's modest body with prominent lower tail make it only a borderline two-bar reversal."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789611000000|1789611599999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 183,
+      "endIndex": 184,
+      "k1": {
+        "openTime": 1789611000000,
+        "open": 76117.2,
+        "high": 76186.9,
+        "low": 76072.7,
+        "close": 76180.9,
+        "volume": 681.338,
+        "quoteAssetVolume": 51862064.1002,
+        "closeTime": 1789611299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789611300000,
+        "open": 76181,
+        "high": 76181,
+        "low": 76090,
+        "close": 76090,
+        "volume": 352.91,
+        "quoteAssetVolume": 26868112.5631,
+        "closeTime": 1789611599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789611599999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789613100000|1789613699999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 190,
+      "endIndex": 191,
+      "k1": {
+        "openTime": 1789613100000,
+        "open": 76388,
+        "high": 76417,
+        "low": 76325.7,
+        "close": 76407.7,
+        "volume": 314.454,
+        "quoteAssetVolume": 24013412.5456,
+        "closeTime": 1789613399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789613400000,
+        "open": 76407.7,
+        "high": 76456.4,
+        "low": 76296.8,
+        "close": 76326.2,
+        "volume": 510.587,
+        "quoteAssetVolume": 38999508.5098,
+        "closeTime": 1789613699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789613699999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is bullish with a real directional body (bodyRatio 0.216) and closes near its high (closeLocation 0.898).",
+              "K2 is bearish with a real directional body (bodyRatio 0.511) and closes near its low (closeLocation 0.184).",
+              "K2 opens at K1 close and moves below K1 open, visibly negating K1 bullish progress."
+            ],
+            "conflicts": [
+              "K1 body is relatively small compared to K2, so the two candles are somewhat different in size.",
+              "K1 has a large lower tail (lowerTailRatio 0.682), which weakens the clean bullish directional delivery of K1."
+            ],
+            "reason": "K1 shows bullish directional delivery and K2 shows bearish directional delivery that rapidly negates K1's price progress, matching the core bearish two-bar reversal semantics. However, K1's small body and dominant lower tail make the bullish control less clean, so the pattern is borderline."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789613400000|1789613999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 191,
+      "endIndex": 192,
+      "k1": {
+        "openTime": 1789613400000,
+        "open": 76407.7,
+        "high": 76456.4,
+        "low": 76296.8,
+        "close": 76326.2,
+        "volume": 510.587,
+        "quoteAssetVolume": 38999508.5098,
+        "closeTime": 1789613699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789613700000,
+        "open": 76326.2,
+        "high": 76372.9,
+        "low": 76320,
+        "close": 76343.2,
+        "volume": 121.713,
+        "quoteAssetVolume": 9291835.2711,
+        "closeTime": 1789613999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789613999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.51 and closeLocation 0.18, showing bearish delivery.",
+              "K2 is a bullish candle, opening at K1 close and closing above it, providing a bullish directional response.",
+              "K2 recovers part of K1's bearish progress, though only a small portion."
+            ],
+            "conflicts": [
+              "K2 body is very small (bodyRatio 0.32, body 17 vs K1 body 81.5), making the bullish takeover weak and not clearly visible.",
+              "K2 closeLocation is only 0.44, not a strong bullish close.",
+              "The two candles are extremely different in size, violating the typical expectation of comparable real bodies.",
+              "K2 does not rapidly or visibly negate K1 bearish control; the recovery is minimal."
+            ],
+            "reason": "K1 shows clear bearish delivery and K2 is bullish, but K2's very small body and weak close location mean the bullish takeover is not clear or convincing. The shape is borderline at best."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789614000000|1789614599999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 193,
+      "endIndex": 194,
+      "k1": {
+        "openTime": 1789614000000,
+        "open": 76343.2,
+        "high": 76446.5,
+        "low": 76338.2,
+        "close": 76427.5,
+        "volume": 141.993,
+        "quoteAssetVolume": 10846177.3214,
+        "closeTime": 1789614299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789614300000,
+        "open": 76427.6,
+        "high": 76471.7,
+        "low": 76400,
+        "close": 76407.3,
+        "volume": 261.967,
+        "quoteAssetVolume": 20024664.6148,
+        "closeTime": 1789614599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789614599999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789614900000|1789615499999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 196,
+      "endIndex": 197,
+      "k1": {
+        "openTime": 1789614900000,
+        "open": 76405.2,
+        "high": 76430.4,
+        "low": 76380,
+        "close": 76393.2,
+        "volume": 178.522,
+        "quoteAssetVolume": 13639734.2451,
+        "closeTime": 1789615199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789615200000,
+        "open": 76393.1,
+        "high": 76457.4,
+        "low": 76391.8,
+        "close": 76457.4,
+        "volume": 173.87,
+        "quoteAssetVolume": 13287990.5856,
+        "closeTime": 1789615499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789615499999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar (close 76393.2 < open 76405.2, body 12, bearish direction).",
+              "K2 is a clear bullish directional bar (close 76457.4 > open 76393.1, body 64.3, bodyRatio 0.98, closeLocation 1.0).",
+              "K2 rapidly and visibly negates K1 bearish control: K2 closes above K1 open (76457.4 > 76405.2) and above K1 high (76457.4 > 76430.4).",
+              "Both candles have real directional bodies; K2 body is larger but not extremely different in context of the reversal.",
+              "K2 recovers and exceeds K1 price progress, confirming bullish takeover."
+            ],
+            "conflicts": [
+              "K2 body is notably larger than K1 body (64.3 vs 12), but this does not invalidate the rapid bullish takeover semantics."
+            ],
+            "reason": "Two consecutive candles show bearish control in K1 followed by a strong bullish K2 that rapidly negates K1's bearish progress by closing above K1's open and high. This matches the core semantics of a bullish TWO_BAR_REVERSAL."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789619400000|1789619999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 211,
+      "endIndex": 212,
+      "k1": {
+        "openTime": 1789619400000,
+        "open": 76176.2,
+        "high": 76197.3,
+        "low": 76146.8,
+        "close": 76163.3,
+        "volume": 212.853,
+        "quoteAssetVolume": 16212558.9794,
+        "closeTime": 1789619699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789619700000,
+        "open": 76163.4,
+        "high": 76324.8,
+        "low": 76163.3,
+        "close": 76307.8,
+        "volume": 284.18,
+        "quoteAssetVolume": 21667902.2701,
+        "closeTime": 1789619999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789619999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a bearish candle with a real directional body (body 12.9, bodyRatio 0.255) and closes below its open.",
+              "K2 is a strong bullish candle with a dominant directional body (body 144.4, bodyRatio 0.894) and closes near its high (closeLocation 0.895).",
+              "K2 opens essentially at K1 close (76163.4 vs 76163.3) and rapidly negates K1 bearish control by closing well above K1 open and high.",
+              "K2 recovers and exceeds K1 price progress, with a much larger bullish range than K1's bearish range."
+            ],
+            "conflicts": [
+              "K2 is substantially larger than K1 in range and body, so the two candles are not similar in size."
+            ],
+            "reason": "K1 shows clear bearish directional delivery, and K2 shows clear bullish directional delivery that rapidly and visibly negates K1 bearish control. The sequence matches the core semantics of a bullish two-bar reversal."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789620300000|1789620899999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 214,
+      "endIndex": 215,
+      "k1": {
+        "openTime": 1789620300000,
+        "open": 76333,
+        "high": 76458.5,
+        "low": 76300,
+        "close": 76445.5,
+        "volume": 305.817,
+        "quoteAssetVolume": 23359775.1251,
+        "closeTime": 1789620599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789620600000,
+        "open": 76445.5,
+        "high": 76498.5,
+        "low": 76396.7,
+        "close": 76396.7,
+        "volume": 220.759,
+        "quoteAssetVolume": 16880822.2073,
+        "closeTime": 1789620899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789620899999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789620600000|1789621199999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 215,
+      "endIndex": 216,
+      "k1": {
+        "openTime": 1789620600000,
+        "open": 76445.5,
+        "high": 76498.5,
+        "low": 76396.7,
+        "close": 76396.7,
+        "volume": 220.759,
+        "quoteAssetVolume": 16880822.2073,
+        "closeTime": 1789620899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789620900000,
+        "open": 76396.8,
+        "high": 76555,
+        "low": 76396.7,
+        "close": 76504.4,
+        "volume": 283.783,
+        "quoteAssetVolume": 21706717.9351,
+        "closeTime": 1789621199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789621199999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar (close 76396.7, open 76445.5, body 48.8, bodyRatio 0.479, close at low).",
+              "K2 is a clear bullish directional bar (close 76504.4, open 76396.8, body 107.6, bodyRatio 0.680, close in upper part).",
+              "K2 rapidly and visibly negates K1 bearish control: K2 opens near K1 close and closes well above K1 open, fully recovering K1 price progress.",
+              "Both candles have real directional bodies and are not extremely different in size (K2 body ~2.2x K1 body)."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bearish delivery, K2 shows clear bullish delivery and rapidly takes over control by recovering K1's entire range and closing above K1 open. The two-bar shape matches a bullish TWO_BAR_REVERSAL."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789622100000|1789622699999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 220,
+      "endIndex": 221,
+      "k1": {
+        "openTime": 1789622100000,
+        "open": 76437,
+        "high": 76438.6,
+        "low": 76383.6,
+        "close": 76415.5,
+        "volume": 155.372,
+        "quoteAssetVolume": 11871633.4015,
+        "closeTime": 1789622399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789622400000,
+        "open": 76415.5,
+        "high": 76453.8,
+        "low": 76397.9,
+        "close": 76453.8,
+        "volume": 170.13,
+        "quoteAssetVolume": 13001010.7275,
+        "closeTime": 1789622699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789622699999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a bearish candle with a real directional body (body 21.5, bodyRatio 0.39) and closes below its open.",
+              "K2 is a bullish candle with a strong directional body (body 38.3, bodyRatio 0.69) and closes at its high (closeLocation 1).",
+              "K2 opens at K1 close and closes above K1 open, visibly negating K1 bearish control.",
+              "The two candles are similar in range (55 vs 55.9), not extremely different in size.",
+              "K2 recovers K1 price progress and closes above K1 open."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bearish directional delivery, K2 shows clear bullish directional delivery, and K2 rapidly and visibly negates K1 bearish control. The two candles are similar in size and both have real directional bodies, matching the bullish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789623600000|1789624199999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 225,
+      "endIndex": 226,
+      "k1": {
+        "openTime": 1789623600000,
+        "open": 76359.6,
+        "high": 76364.5,
+        "low": 76302,
+        "close": 76320.3,
+        "volume": 188.762,
+        "quoteAssetVolume": 14408803.3096,
+        "closeTime": 1789623899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789623900000,
+        "open": 76320.3,
+        "high": 76364,
+        "low": 76320.3,
+        "close": 76337.4,
+        "volume": 75.588,
+        "quoteAssetVolume": 5770355.4027,
+        "closeTime": 1789624199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789624199999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar (body 39.3, bodyRatio 0.63, close near low at 0.29)",
+              "K2 is a bullish bar closing above its open (76337.4 vs 76320.3)",
+              "K2 opens exactly at K1 close and recovers part of K1's bearish progress"
+            ],
+            "conflicts": [
+              "K2 body is small (17.1, bodyRatio 0.39) and not a strong directional delivery",
+              "K2 close (76337.4) does not clearly negate K1's bearish control; it only recovers a small fraction of K1's range",
+              "K2 has a large upper tail (0.61 of range) and closes in the lower part of its own range (closeLocation 0.39), showing weak bullish conviction",
+              "The two candles differ notably in body size, with K2 much weaker than K1"
+            ],
+            "reason": "K1 shows clear bearish delivery and K2 is bullish, but K2's bullish takeover is weak: small body, large upper tail, close in lower part of its range, and only marginal recovery of K1's bearish progress. The rapid and visible negation of K1 control required for a two-bar reversal is not convincingly present, so this is a borderline rather than clear pattern."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789624200000|1789624799999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 227,
+      "endIndex": 228,
+      "k1": {
+        "openTime": 1789624200000,
+        "open": 76337.4,
+        "high": 76398.4,
+        "low": 76333.8,
+        "close": 76364.7,
+        "volume": 134.151,
+        "quoteAssetVolume": 10245436.2723,
+        "closeTime": 1789624499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789624500000,
+        "open": 76364.7,
+        "high": 76378.3,
+        "low": 76272.2,
+        "close": 76294.3,
+        "volume": 241.203,
+        "quoteAssetVolume": 18405046.4398,
+        "closeTime": 1789624799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789624799999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789624500000|1789625099999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 228,
+      "endIndex": 229,
+      "k1": {
+        "openTime": 1789624500000,
+        "open": 76364.7,
+        "high": 76378.3,
+        "low": 76272.2,
+        "close": 76294.3,
+        "volume": 241.203,
+        "quoteAssetVolume": 18405046.4398,
+        "closeTime": 1789624799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789624800000,
+        "open": 76294.4,
+        "high": 76357.7,
+        "low": 76263.8,
+        "close": 76357.7,
+        "volume": 189.719,
+        "quoteAssetVolume": 14475468.926,
+        "closeTime": 1789625099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789625099999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with body 70.4 and bodyRatio 0.664, closing near its low (closeLocation 0.208).",
+              "K2 is a clear bullish directional bar with body 63.3 and bodyRatio 0.674, closing at its high (closeLocation 1.0).",
+              "K2 opens near K1 close (76294.4 vs 76294.3) and rapidly recovers K1's bearish progress, closing above K1 open (76357.7 > 76364.7? no, but above K1 close and near K1 open).",
+              "The two candles are similar in size (ranges 106.1 and 93.9; bodies 70.4 and 63.3), both have real directional bodies.",
+              "K2 visibly negates K1 bearish control by closing at its high and erasing most of K1's decline."
+            ],
+            "conflicts": [
+              "K2 close (76357.7) does not fully exceed K1 open (76364.7), leaving a small gap, but it clearly recovers K1 price progress."
+            ],
+            "reason": "K1 shows clear bearish delivery, K2 shows clear bullish delivery and rapidly negates K1's bearish control, with similar candle sizes and real bodies. The shape matches a bullish two-bar reversal."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789626000000|1789626599999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 233,
+      "endIndex": 234,
+      "k1": {
+        "openTime": 1789626000000,
+        "open": 76371.3,
+        "high": 76371.3,
+        "low": 76302.5,
+        "close": 76306.6,
+        "volume": 262.461,
+        "quoteAssetVolume": 20031818.4572,
+        "closeTime": 1789626299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789626300000,
+        "open": 76306.7,
+        "high": 76419.7,
+        "low": 76306.6,
+        "close": 76419.7,
+        "volume": 121.261,
+        "quoteAssetVolume": 9258640.1626,
+        "closeTime": 1789626599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789626599999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.94 and close near its low (closeLocation 0.06).",
+              "K2 is a clear bullish directional bar with bodyRatio 0.999 and close at its high (closeLocation 1.0).",
+              "K2 opens essentially at K1 close (76306.7 vs 76306.6) and closes above K1 open (76419.7 > 76371.3), fully negating K1 bearish progress.",
+              "Both candles have real directional bodies and are not extremely different in size (K2 range 113.1 vs K1 range 68.8)."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bearish control, and K2 rapidly and visibly reverses it with a strong bullish body that recovers all of K1's price progress, matching the bullish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789628700000|1789629299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 242,
+      "endIndex": 243,
+      "k1": {
+        "openTime": 1789628700000,
+        "open": 76543.9,
+        "high": 76657.7,
+        "low": 76543.8,
+        "close": 76595.8,
+        "volume": 696.464,
+        "quoteAssetVolume": 53358886.9272,
+        "closeTime": 1789628999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789629000000,
+        "open": 76595.8,
+        "high": 76645.5,
+        "low": 76483.1,
+        "close": 76505.2,
+        "volume": 467.766,
+        "quoteAssetVolume": 35818346.2787,
+        "closeTime": 1789629299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789629299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a bullish directional bar with a real body (bodyRatio 0.456) and closes near its midpoint.",
+              "K2 is a bearish directional bar with a real body (bodyRatio 0.558) and closes near its low (closeLocation 0.136).",
+              "K2 opens at K1 close and moves below K1 open, visibly negating K1 bullish progress."
+            ],
+            "conflicts": [
+              "K1 has a very long upper tail (upperTailRatio 0.543) and almost no lower tail, making it a weak bullish directional bar rather than a clean bullish control bar.",
+              "K2's body is notably larger than K1's body (90.6 vs 51.9), so the two candles are not similar in size.",
+              "K2 does not fully recover K1's range; it closes above K1's low."
+            ],
+            "reason": "The two-bar sequence shows a weak bullish bar followed by a bearish bar that takes over control, but K1's long upper tail and the size disparity reduce the clarity of the reversal semantics. The pattern is present but borderline."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789629600000|1789630199999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 245,
+      "endIndex": 246,
+      "k1": {
+        "openTime": 1789629600000,
+        "open": 76525,
+        "high": 76542.5,
+        "low": 76500,
+        "close": 76534.2,
+        "volume": 193.106,
+        "quoteAssetVolume": 14776235.3582,
+        "closeTime": 1789629899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789629900000,
+        "open": 76534.3,
+        "high": 76543.8,
+        "low": 76470.3,
+        "close": 76487.6,
+        "volume": 351.9,
+        "quoteAssetVolume": 26923364.8474,
+        "closeTime": 1789630199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789630199999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789630500000|1789631099999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 248,
+      "endIndex": 249,
+      "k1": {
+        "openTime": 1789630500000,
+        "open": 76482.7,
+        "high": 76482.7,
+        "low": 76452.5,
+        "close": 76455.5,
+        "volume": 181.587,
+        "quoteAssetVolume": 13885559.0802,
+        "closeTime": 1789630799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789630800000,
+        "open": 76455.6,
+        "high": 76499.1,
+        "low": 76455.5,
+        "close": 76467.7,
+        "volume": 157.014,
+        "quoteAssetVolume": 12007756.2322,
+        "closeTime": 1789631099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789631099999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.90 and close near its low (closeLocation 0.10).",
+              "K2 is a bullish candle that closes above K1 close, showing rapid bullish takeover.",
+              "K2 opens near K1 close and recovers above it, negating K1 bearish control."
+            ],
+            "conflicts": [
+              "K2 body is small (bodyRatio 0.28) with a dominant upper tail (upperTailRatio 0.72), so its bullish directional delivery is weak.",
+              "K2 close is only slightly above K1 close, so the recovery of K1 price progress is minimal.",
+              "The two candles are very different in body size (K1 body 27.2 vs K2 body 12.1), which is atypical for a two-bar reversal."
+            ],
+            "reason": "K1 shows clear bearish delivery and K2 is bullish, but K2's weak body and dominant upper tail make the bullish takeover only borderline."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789631400000|1789631999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 251,
+      "endIndex": 252,
+      "k1": {
+        "openTime": 1789631400000,
+        "open": 76461.8,
+        "high": 76461.8,
+        "low": 76419.4,
+        "close": 76419.5,
+        "volume": 214.499,
+        "quoteAssetVolume": 16395733.1351,
+        "closeTime": 1789631699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789631700000,
+        "open": 76419.4,
+        "high": 76434.9,
+        "low": 76386,
+        "close": 76433.1,
+        "volume": 264.608,
+        "quoteAssetVolume": 20216472.6194,
+        "closeTime": 1789631999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789631999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with bodyRatio 0.9976 and close near its low (closeLocation 0.0024).",
+              "K2 is a bullish bar with close above its open and closeLocation 0.9632, showing bullish directional delivery.",
+              "K2 rapidly negates K1 bearish control: K2 closes at 76433.1, above K1 open 76461.8? No, above K1 close 76419.5 and near K1 open.",
+              "K2 recovers K1 price progress: K2 close 76433.1 is above K1 close 76419.5 and close to K1 open 76461.8.",
+              "Both candles have real directional bodies, and sizes are not extremely different (K1 range 42.4, K2 range 48.9)."
+            ],
+            "conflicts": [
+              "K2 bodyRatio is only 0.280, so its body is not dominant, but the close location and lower rejection still support bullish takeover."
+            ],
+            "reason": "K1 shows clear bearish delivery, and K2 shows clear bullish delivery that rapidly negates K1 control by closing above K1 close and near K1 open, forming a bullish two-bar reversal."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789632000000|1789632599999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 253,
+      "endIndex": 254,
+      "k1": {
+        "openTime": 1789632000000,
+        "open": 76433.1,
+        "high": 76500,
+        "low": 76426.2,
+        "close": 76493.5,
+        "volume": 240.161,
+        "quoteAssetVolume": 18358858.2312,
+        "closeTime": 1789632299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789632300000,
+        "open": 76493.5,
+        "high": 76493.5,
+        "low": 76423,
+        "close": 76426.6,
+        "volume": 163.873,
+        "quoteAssetVolume": 12529518.3912,
+        "closeTime": 1789632599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789632599999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BEARISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bullish directional bar with body 60.4 and bodyRatio 0.818, closing near its high (closeLocation 0.912).",
+              "K2 is a clear bearish directional bar with body 66.9 and bodyRatio 0.949, closing near its low (closeLocation 0.051).",
+              "K2 rapidly negates K1 bullish progress: K2 opens at K1 close and closes below K1 open, fully erasing K1's body.",
+              "The two candles are similar in size (ranges 73.8 and 70.5), both have real directional bodies, and K2 visibly recovers K1 price progress to the downside."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bullish directional delivery, K2 shows clear bearish directional delivery, and K2 rapidly and visibly negates K1 bullish control, matching the bearish two-bar reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789632600000|1789633199999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 255,
+      "endIndex": 256,
+      "k1": {
+        "openTime": 1789632600000,
+        "open": 76426.5,
+        "high": 76466.8,
+        "low": 76375,
+        "close": 76380.7,
+        "volume": 265.729,
+        "quoteAssetVolume": 20308678.1821,
+        "closeTime": 1789632899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789632900000,
+        "open": 76380.6,
+        "high": 76457.3,
+        "low": 76350,
+        "close": 76443,
+        "volume": 260.483,
+        "quoteAssetVolume": 19901608.5043,
+        "closeTime": 1789633199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789633199999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish directional bar with close near its low (closeLocation 0.062) and a real body (bodyRatio 0.499).",
+              "K2 is a clear bullish directional bar with close near its high (closeLocation 0.867) and a real body (bodyRatio 0.582).",
+              "K2 opens near K1 close and closes above K1 open, rapidly negating K1 bearish control.",
+              "K1 and K2 are similar in size (ranges 91.8 and 107.3), both with real directional bodies."
+            ],
+            "conflicts": [],
+            "reason": "Bearish control in K1 is followed by a rapid bullish takeover in K2, with K2 recovering K1's price progress and closing strongly near its high. The two candles are comparable in size and both show clear directional delivery, matching the two-bar bullish reversal semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789633500000|1789634099999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 258,
+      "endIndex": 259,
+      "k1": {
+        "openTime": 1789633500000,
+        "open": 76456.2,
+        "high": 76498.6,
+        "low": 76421,
+        "close": 76421,
+        "volume": 166.64,
+        "quoteAssetVolume": 12741530.1334,
+        "closeTime": 1789633799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789633800000,
+        "open": 76421,
+        "high": 76456.2,
+        "low": 76375.6,
+        "close": 76439.8,
+        "volume": 268.689,
+        "quoteAssetVolume": 20532781.8209,
+        "closeTime": 1789634099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789634099999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is a clear bearish candle closing at its low (closeLocation 0, lowerTail 0).",
+              "K2 is a bullish candle closing in the upper part of its range (closeLocation 0.797).",
+              "K2 recovers above K1's close and reaches K1's open level (76456.2 high vs K1 open 76456.2).",
+              "K2 shows a lower rejection tail (lowerTailRatio 0.563) supporting bullish takeover."
+            ],
+            "conflicts": [
+              "K2 body is small (bodyRatio 0.233) relative to K1 body (bodyRatio 0.454), so the bullish directional delivery is weak.",
+              "K2 does not clearly negate K1's bearish progress; it only recovers to K1's open, not beyond.",
+              "The two candles are somewhat different in size, with K2 having a much smaller real body."
+            ],
+            "reason": "K1 shows bearish control and K2 shows a bullish response with a lower rejection and close in the upper half, but the bullish body is small and the recovery is only to K1's open, making the rapid bullish takeover less convincing. The shape is borderline for a two-bar bullish reversal."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789634100000|1789634699999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 260,
+      "endIndex": 261,
+      "k1": {
+        "openTime": 1789634100000,
+        "open": 76439.9,
+        "high": 76511.5,
+        "low": 76420.6,
+        "close": 76506.6,
+        "volume": 250.333,
+        "quoteAssetVolume": 19146466.61,
+        "closeTime": 1789634399999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789634400000,
+        "open": 76506.6,
+        "high": 76506.6,
+        "low": 76415.7,
+        "close": 76460.1,
+        "volume": 206.346,
+        "quoteAssetVolume": 15776304.8805,
+        "closeTime": 1789634699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789634699999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789634700000|1789635299999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 262,
+      "endIndex": 263,
+      "k1": {
+        "openTime": 1789634700000,
+        "open": 76460,
+        "high": 76467.5,
+        "low": 76437.2,
+        "close": 76448,
+        "volume": 143.269,
+        "quoteAssetVolume": 10953237.3619,
+        "closeTime": 1789634999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789635000000,
+        "open": 76448,
+        "high": 76540.1,
+        "low": 76448,
+        "close": 76540.1,
+        "volume": 285.428,
+        "quoteAssetVolume": 21836953.6099,
+        "closeTime": 1789635299999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789635299999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is a clear bearish candle with a real directional body (body 12, bodyRatio 0.396) and closes near its low (closeLocation 0.356).",
+              "K2 is a strong bullish candle with a full directional body (body 92.1, bodyRatio 1.0) closing at its high (closeLocation 1.0).",
+              "K2 opens at K1 close and rapidly negates K1 bearish control, recovering well beyond K1 open and high.",
+              "Both candles have real directional bodies, and K2 clearly recovers K1 price progress."
+            ],
+            "conflicts": [
+              "K2 is substantially larger than K1, but the size difference is not extreme enough to invalidate the rapid bullish takeover."
+            ],
+            "reason": "K1 shows clear bearish directional delivery, and K2 shows clear bullish directional delivery that rapidly and visibly negates K1 bearish control, matching the TWO_BAR_REVERSAL bullish semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789635600000|1789636199999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 265,
+      "endIndex": 266,
+      "k1": {
+        "openTime": 1789635600000,
+        "open": 76543.4,
+        "high": 76643,
+        "low": 76543.4,
+        "close": 76639.8,
+        "volume": 905.706,
+        "quoteAssetVolume": 69382757.1224,
+        "closeTime": 1789635899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789635900000,
+        "open": 76639.8,
+        "high": 76673.5,
+        "low": 76603.4,
+        "close": 76621.6,
+        "volume": 343.615,
+        "quoteAssetVolume": 26335878.8502,
+        "closeTime": 1789636199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789636199999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789635900000|1789636499999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 266,
+      "endIndex": 267,
+      "k1": {
+        "openTime": 1789635900000,
+        "open": 76639.8,
+        "high": 76673.5,
+        "low": 76603.4,
+        "close": 76621.6,
+        "volume": 343.615,
+        "quoteAssetVolume": 26335878.8502,
+        "closeTime": 1789636199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789636200000,
+        "open": 76621.6,
+        "high": 76697.5,
+        "low": 76621.6,
+        "close": 76656.8,
+        "volume": 282.29,
+        "quoteAssetVolume": 21641679.8282,
+        "closeTime": 1789636499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789636499999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is bearish with close below open (76639.8 -> 76621.6).",
+              "K2 is bullish with close above open (76621.6 -> 76656.8).",
+              "K2 closes above K1 open, negating K1 bearish progress.",
+              "K2 has a real directional body (35.2, bodyRatio 0.46)."
+            ],
+            "conflicts": [
+              "K1 body is small (18.2, bodyRatio 0.26), so bearish directional delivery is weak.",
+              "K1 has a large upper tail (33.7, 48% of range), making it less clearly bearish.",
+              "K2 has a large upper tail (40.7, 54% of range) and closes only mid-range, weakening bullish takeover clarity.",
+              "The two candles are similar in range but K1 lacks strong bearish body control."
+            ],
+            "reason": "K1 is only mildly bearish with a small body and large upper tail, while K2 is bullish and recovers K1's open. The rapid bullish negation is present but weak because K1 does not show clear bearish directional delivery and K2 closes mid-range with a large upper tail. Overall a borderline two-bar bullish reversal shape."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789636200000|1789636799999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 267,
+      "endIndex": 268,
+      "k1": {
+        "openTime": 1789636200000,
+        "open": 76621.6,
+        "high": 76697.5,
+        "low": 76621.6,
+        "close": 76656.8,
+        "volume": 282.29,
+        "quoteAssetVolume": 21641679.8282,
+        "closeTime": 1789636499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789636500000,
+        "open": 76656.7,
+        "high": 76721.6,
+        "low": 76619.2,
+        "close": 76634.2,
+        "volume": 524.73,
+        "quoteAssetVolume": 40231605.4195,
+        "closeTime": 1789636799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789636799999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789636500000|1789637099999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 268,
+      "endIndex": 269,
+      "k1": {
+        "openTime": 1789636500000,
+        "open": 76656.7,
+        "high": 76721.6,
+        "low": 76619.2,
+        "close": 76634.2,
+        "volume": 524.73,
+        "quoteAssetVolume": 40231605.4195,
+        "closeTime": 1789636799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789636800000,
+        "open": 76634.2,
+        "high": 76714.7,
+        "low": 76634,
+        "close": 76659.3,
+        "volume": 412.989,
+        "quoteAssetVolume": 31669623.7697,
+        "closeTime": 1789637099999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789637099999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789639200000|1789639799999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 277,
+      "endIndex": 278,
+      "k1": {
+        "openTime": 1789639200000,
+        "open": 76438.3,
+        "high": 76442,
+        "low": 76288,
+        "close": 76343.2,
+        "volume": 660.506,
+        "quoteAssetVolume": 50426459.1777,
+        "closeTime": 1789639499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789639500000,
+        "open": 76343.3,
+        "high": 76399.5,
+        "low": 76340,
+        "close": 76355.3,
+        "volume": 347.002,
+        "quoteAssetVolume": 26500136.5423,
+        "closeTime": 1789639799999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789639799999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "NOT_PATTERN",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is bearish with a real directional body (bodyRatio 0.62)",
+              "K2 closes above its open (bullish)"
+            ],
+            "conflicts": [
+              "K2 body is very small (bodyRatio 0.20) and not a real directional delivery",
+              "K2 closeLocation is only 0.257, closing near its low rather than recovering K1 progress",
+              "K2 range (59.5) is far smaller than K1 range (154), so it does not visibly negate K1 bearish control",
+              "K2 upper tail dominates (0.74), showing rejection rather than bullish takeover"
+            ],
+            "reason": "K1 shows bearish directional delivery, but K2 lacks a real bullish body and closes near its low, failing to rapidly and visibly negate K1 bearish control. The two-bar bullish reversal semantics are not met."
+          }
+        ],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789640400000|1789640999999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 281,
+      "endIndex": 282,
+      "k1": {
+        "openTime": 1789640400000,
+        "open": 76308.1,
+        "high": 76317.8,
+        "low": 76282,
+        "close": 76299.9,
+        "volume": 412.988,
+        "quoteAssetVolume": 31509901.9961,
+        "closeTime": 1789640699999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789640700000,
+        "open": 76299.8,
+        "high": 76339.7,
+        "low": 76299.8,
+        "close": 76311,
+        "volume": 177.888,
+        "quoteAssetVolume": 13576961.3277,
+        "closeTime": 1789640999999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789640999999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "BORDERLINE",
+            "confidence": "LOW",
+            "supportingFacts": [
+              "K1 is bearish (open 76308.1, close 76299.9) with a real directional body",
+              "K2 is bullish (open 76299.8, close 76311.0) and closes above K1 close, negating K1 progress",
+              "K2 opens near K1 close and recovers K1's bearish price progress"
+            ],
+            "conflicts": [
+              "K1 body is small (bodyRatio 0.229) and not a strong bearish directional delivery",
+              "K2 body is small (bodyRatio 0.281) with a dominant upper tail (0.719), so bullish directional delivery is weak",
+              "K2 closeLocation is only 0.281, closing in the lower part of its range",
+              "Both candles are small and similar in size, lacking a clear control-to-takeover dynamic"
+            ],
+            "reason": "K1 is bearish and K2 is bullish and recovers K1's close, which fits the two-bar reversal directionally, but both bodies are small and K2 has a dominant upper tail with a low close location, making the bullish takeover weak and the shape only borderline."
+          }
+        ],
+        "overall": "BORDERLINE_PATTERN"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BEARISH|1789641300000|1789641899999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BEARISH",
+      "startIndex": 284,
+      "endIndex": 285,
+      "k1": {
+        "openTime": 1789641300000,
+        "open": 76308.7,
+        "high": 76380.3,
+        "low": 76308.7,
+        "close": 76357.4,
+        "volume": 176.888,
+        "quoteAssetVolume": 13506511.4686,
+        "closeTime": 1789641599999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789641600000,
+        "open": 76357.4,
+        "high": 76357.4,
+        "low": 76286.4,
+        "close": 76288.6,
+        "volume": 160.312,
+        "quoteAssetVolume": 12235728.6132,
+        "closeTime": 1789641899999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789641899999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [],
+        "overall": "NONE"
+      }
+    },
+    {
+      "candidateId": "TWO_BAR_REVERSAL|BULLISH|1789641900000|1789642499999",
+      "pattern": "TWO_BAR_REVERSAL",
+      "direction": "BULLISH",
+      "startIndex": 286,
+      "endIndex": 287,
+      "k1": {
+        "openTime": 1789641900000,
+        "open": 76288.7,
+        "high": 76299.8,
+        "low": 76233.7,
+        "close": 76269.7,
+        "volume": 295.009,
+        "quoteAssetVolume": 22498592.9168,
+        "closeTime": 1789642199999,
+        "closed": true,
+        "source": "futures"
+      },
+      "k2": {
+        "openTime": 1789642200000,
+        "open": 76269.6,
+        "high": 76337.9,
+        "low": 76269.6,
+        "close": 76328.8,
+        "volume": 170.477,
+        "quoteAssetVolume": 13009615.0385,
+        "closeTime": 1789642499999,
+        "closed": true,
+        "source": "futures"
+      },
+      "confirmedAt": 1789642499999,
+      "windowBarCount": 2,
+      "status": "OK",
+      "allowedPattern": "TWO_BAR_REVERSAL",
+      "llm": {
+        "matches": [
+          {
+            "pattern": "TWO_BAR_REVERSAL",
+            "direction": "BULLISH",
+            "label": "CLEAR",
+            "confidence": "HIGH",
+            "supportingFacts": [
+              "K1 is bearish with a real directional body (body 19, bodyRatio 0.287) and closes below its open.",
+              "K2 is bullish with a strong directional body (body 59.2, bodyRatio 0.867) and closes near its high (closeLocation 0.867).",
+              "K2 opens essentially at K1 close (76269.6 vs 76269.7) and rapidly negates K1 bearish control by closing above K1 open (76328.8 > 76288.7).",
+              "K2 fully recovers K1 price progress and exceeds K1 high (76337.9 > 76299.8).",
+              "The two candles are not extremely different in size (ranges 66.1 and 68.3), both have real directional bodies."
+            ],
+            "conflicts": [],
+            "reason": "K1 shows clear bearish directional delivery, K2 shows clear bullish directional delivery and rapidly and visibly negates K1 bearish control, matching the bullish TWO_BAR_REVERSAL semantics."
+          }
+        ],
+        "overall": "CLEAR_PATTERN"
+      }
+    }
+  ]
+}

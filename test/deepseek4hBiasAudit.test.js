@@ -423,7 +423,7 @@ test('Live 默认配置使用正式 Dynamic Contract Universe V1', function () {
     var liveConfig = require('../config/live.json');
     assert.strictEqual(liveConfig.symbolsMode, 'dynamic');
     assert.strictEqual(liveConfig.dynamicUniverse.version, 'DYNAMIC_CONTRACT_UNIVERSE_V1');
-    assert.strictEqual(liveConfig.dynamicUniverse.topN, 10);
+    assert.strictEqual(liveConfig.dynamicUniverse.topN, 5);
 });
 
 test('allowedDrawTargets 只包含 time-local INTACT liquidity', function () {

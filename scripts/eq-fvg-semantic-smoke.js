@@ -20,13 +20,19 @@ async function main() {
     if (!dataSource.analysisHistoryReady(data)) throw new Error('SMOKE_PRODUCTION_HISTORY_NOT_READY');
     var engine = liveEngine.createLiveEngine({ symbol: symbol, exchangeInfo: data.exchangeInfo,
         structureCandles: { '1h': data['1h'], '4h': data['4h'], '1d': data['1d'] } });
+    // TWO_BAR_PRODUCTION_REPLACEMENT_V1: the live engine no longer emits the
+    // retired EQ -> WATCH -> raw-FVG step stream, so this research smoke rebuilds
+    // it from the closed-candle window with the retired model's own builder.
     var machine = watchModel.createStateMachine(), candidates = [];
-    engine.setEqFvgCountStepHandler(function (step) {
+    for (var i = 0; i < data['5m'].length; i++) {
+        var eqBefore = engine.getState().productionEq.events.length;
+        await engine.onBar(data['5m'][i], i);
+        var step = watchModel.buildStep(engine.getWindowSnapshot(), i, symbol,
+            engine.getState().productionEq.events.slice(eqBefore), [], data['5m'][i].closeTime);
         var result = machine.step({ evaluationTime: step.evaluationTime,
             newEqualLiquidity: step.newEqualLiquidity || [], rawFvg: step.rawFvg });
         (result.notifications || []).forEach(function (event) { if (event.ordinal === 1) candidates.push(event); });
-    });
-    for (var i = 0; i < data['5m'].length; i++) await engine.onBar(data['5m'][i], i);
+    }
     if (!candidates.length) throw new Error('SMOKE_NO_EQ_FIRST_MATCHING_FVG_IN_PRODUCTION_WINDOW');
     var candidate = candidates[candidates.length - 1];
     var root = path.join(__dirname, '..', '.live-state');

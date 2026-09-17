@@ -32,9 +32,13 @@ var continuityChecker = require('../replay/continuityChecker');
 var liquidityProvenance = require('../stats/liquidityProvenance');
 var alertPrioritization = require('../stats/alertPrioritization');
 var thresholds = require('../config/thresholds');
-var eqFvgCountWatchV1 = require('../live/eqFvgCountWatchV1');
-var eqFvgCountWatchAlertServiceV1 = require('../live/eqFvgCountWatchAlertServiceV1');
-var eqFvgCountWatchNotificationV1 = require('../notify/eqFvgCountWatchNotificationV1');
+// TWO_BAR_PRODUCTION_REPLACEMENT_V1: the old EQ -> WATCH -> FVG -> EQ-FVG
+// semantic -> FVG-midpoint LIMIT chain is no longer reachable from live.js.
+// The modules still exist for research/tests; nothing below requires them.
+var twoBarSetupV1 = require('../strategy/twoBarSetupV1');
+var twoBarLivePipelineV1 = require('../strategy/twoBarLivePipelineV1');
+var breakoutEntryRulesV1 = require('../execution/breakoutEntryRulesV1');
+var breakoutExecutionV1 = require('../execution/breakoutExecutionV1');
 var fourHourBiasV3 = require('../live/4hBiasV3');
 var fourHourBiasDecisionStoreV1 = require('../bias/4hBiasDecisionStoreV1');
 var notificationMarketContext = require('../notify/4hBiasContext');
@@ -44,32 +48,16 @@ var rangeAlertService = require('../live/rangeAlertService');
 var rangeNotificationV1 = require('../notify/rangeNotificationV1');
 var executionRepositoryV1 = require('../execution/executionRepositoryV1');
 var binanceExecutionClientV1 = require('../execution/binanceExecutionClientV1');
-var realOrderExecutionV1 = require('../execution/realOrderExecutionV1');
-var executionRulesV1 = require('../execution/executionRulesV1');
 var realTradeCaseArchiveV1 = require('../execution/realTradeCaseArchiveV1');
 var executionNotificationV1 = require('../notify/executionNotificationV1');
 var dynamicContractUniverseV1 = require('../live/dynamicContractUniverseV1');
-var eqFvgAssociationSemanticV1 = require('../live/eqFvgAssociationSemanticV1');
-var eqFvgAssociationDecisionStoreV1 = require('../semantic/eqFvgAssociationDecisionStoreV1');
-var eqFvgAssociationCaseArchiveV1 = require('../semantic/eqFvgAssociationCaseArchiveV1');
-var loadEqFvgSemanticConfig = require('../config/eqFvgSemanticV1');
-var turningPointSignificanceSemanticV1 = require('../live/turningPointSignificanceSemanticV1');
-var turningPointSignificanceDecisionStoreV1 = require('../semantic/turningPointSignificanceDecisionStoreV1');
-var turningPointSignificanceCaseArchiveV1 = require('../semantic/turningPointSignificanceCaseArchiveV1');
-var loadTurningSignificanceConfig = require('../config/turningPointSignificanceV1');
-var historicalAnchorEligibilityV1 = require('../liquidity/historicalAnchorEligibilityV1');
 
 var CONFIG = require('../config/live.json');
 var EQ_PRODUCTION_MODEL = productionEqualLiquidityV1.VERSION;
-var EQ_NOTIFICATION_MODEL = eqFvgCountWatchV1.VERSION;
 var DISPLACEMENT_PRODUCTION_MODE = 'CANONICAL_A_C2_V1';
 var LIVE_TRADING_ENABLED = process.env.LIVE_TRADING_ENABLED === 'true';
-var EQ_FVG_SEMANTIC_CONFIG = loadEqFvgSemanticConfig();
-// HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1. Two independent switches: the live
-// filter narrows the anchor universe, the semantic switch controls evaluation.
-// LIVE_FILTER=false is the emergency rollback and restores the legacy Dynamic-D
-// universe while semantic decisions may keep being collected as research data.
-var TURNING_SIGNIFICANCE_CONFIG = loadTurningSignificanceConfig();
+// TWO_BAR_PRODUCTION_REPLACEMENT_V1: the production NEW ENTRY source.
+var PRODUCTION_ENTRY_MODEL = twoBarSetupV1.VERSION;
 
 // Phase 11L.15：B 口径 Live Shadow Prioritization 开关（thresholds.notify.prioritization.enabled）。
 //   true  → 钉钉只推 PRIORITY_HIGH（HIGH + 48 窗口内 Significant Liquidity），STANDARD_HIGH 只落日志
@@ -330,45 +318,28 @@ function createRunner(symbol, options) {
         }
     });
     var delivered = {}; // Fix 3（11L.3）：oppId -> anchorIndex（钉钉确认投递成功才写入；持久化跨重启）
-    var savedEqAlertState = persistence.loadJson(eqStateFile, {});
-    var eqAlerts = eqFvgCountWatchAlertServiceV1.createService({
-        watches: savedEqAlertState.watches || [],
-        delivered: savedEqAlertState.delivered || {},
-        pending: savedEqAlertState.pending || [],
-        send: sendEqFvgNotification,
-        persist: saveEqAlertState
-    });
     var bootstrapRetentionBars = dataSource.production5mRetentionBars();
     var htfBoundaryScheduler = dataSource.createHtfBoundaryScheduler({ retryIntervalMs: 60000 });
     var persistedCandles = [];
     var rangeAlerts = null;
     var rangeStateRestored = false;
-    var execution = null;
-    var semanticService = null;
-    var turningSignificance = null;
-    var hydratedTurningPointCount = 0;
-    var pendingSemanticEvents = [];
+    var execution = null;          // breakoutExecutionV1 (new entry / protection lifecycle)
+    var twoBarSetup = null;        // Two-Bar setup service (pattern LLM + context LLM)
+    var twoBarPipeline = null;     // per-closed-bar Two-Bar -> EQ -> breakout plan pipeline
     var executionSymbolRules = null;
     var scanAdmitted = runnerOptions.scanAdmitted !== false;
     var analysisReady = false;
 
     function executionContext(decisionTime) {
-        var state = engine && engine.getState();
-        var points = state && state.productionEq && state.productionEq.dynamicD &&
-            state.productionEq.dynamicD.recentSurvivalPoints || [];
         var fourHour = runnerData && runnerData.structureCandles && runnerData.structureCandles['4h'] || [];
         var latest = fourHour.filter(function (c) { return c.closed === true && c.closeTime <= decisionTime; })
             .sort(function (a, b) { return b.closeTime - a.closeTime; })[0];
         return {
             bias: current4hBias.getCurrent(),
             expected4hClosedAt: latest ? latest.closeTime : null,
-            dynamicDPoints: points,
+            dynamicDPoints: twoBarPipeline ? twoBarPipeline.dynamicDState().recentSurvivalPoints : [],
             candles: engine ? engine.getWindowSnapshot() : [],
-            symbolRules: executionSymbolRules || (runnerData && runnerData.raw && runnerData.raw.exchangeInfo),
-            // HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1: narrows the historical
-            // anchor universe for TP selection only. Never affects the Current
-            // Point, the Entry, the SL or the RR rule.
-            anchorEligibility: turningSignificance ? turningSignificance.registry : undefined
+            symbolRules: executionSymbolRules || (runnerData && runnerData.raw && runnerData.raw.exchangeInfo)
         };
     }
 
@@ -389,18 +360,25 @@ function createRunner(symbol, options) {
         catch (error) { log(symbol + ' EXECUTION_EVENT_WRITE_ERROR: ' + error.message); }
     }
 
+    /**
+     * TWO_BAR_PRODUCTION_REPLACEMENT_V1: the only production order lifecycle.
+     * Entry / SL / TP / reconciliation / restart recovery / halt all live inside
+     * breakoutExecutionV1; live.js never touches order ids.
+     */
     function createExecutionService() {
         var repository = executionRepositoryV1.createRepository({
             initial: persistence.loadJson(executionStateFile, {}),
             persist: function (snapshot) { persistence.saveJson(executionStateFile, snapshot); }
         });
-        var tradeArchive = realTradeCaseArchiveV1.createArchive({ directory: realTradeCaseDirectory });
-        return realOrderExecutionV1.createService({
+        return breakoutExecutionV1.createService({
             symbol: symbol,
             liveTradingEnabled: LIVE_TRADING_ENABLED,
             repository: repository,
             client: binanceExecutionClientV1.createClient({ liveTradingEnabled: LIVE_TRADING_ENABLED }),
-            getContext: executionContext,
+            getMarkPrice: function () {
+                var snapshot = engine ? engine.getWindowSnapshot() : [];
+                return snapshot.length ? snapshot[snapshot.length - 1].close : null;
+            },
             getNewTradeAdmission: function () {
                 if (!scanAdmitted) return { admitted: false, reasonCode: 'SYMBOL_NOT_IN_SCAN_UNIVERSE' };
                 if (!analysisReady) return { admitted: false, reasonCode: 'INSUFFICIENT_ANALYSIS_HISTORY' };
@@ -408,133 +386,44 @@ function createRunner(symbol, options) {
                 return { admitted: true, reasonCode: null };
             },
             observe: recordExecutionEvent,
-            archiveTrade: tradeArchive.append,
             alert: sendExecutionAlert
         });
     }
 
-    function semanticExecutionPreview(event) {
-        var ctx = Object.assign({}, executionContext(event.rawFvg.confirmedAt), {
-            tradeId: realOrderExecutionV1.tradeIdFor(event), liveTradingEnabled: LIVE_TRADING_ENABLED
-        });
-        var direction = event.liquidityType === 'EQL' ? 'LONG' : 'SHORT';
-        var bias = executionRulesV1.biasGate(direction, ctx.bias, ctx.expected4hClosedAt);
-        var built = executionRulesV1.buildEntryPlan(event, ctx);
-        return { fourHourBias: ctx.bias, fourHourGateResult: bias.ok ? 'PASS' : 'BLOCK:' + bias.reasonCode,
-            initialRR: built.plan && built.plan.initialRR,
-            rrGateResult: built.reasonCode === 'TRADE_SPACE_INSUFFICIENT' ? 'BLOCK' : (built.ok ? 'PASS' : 'NOT_REACHED'),
-            executionEligible: built.ok === true };
-    }
-
-    function createSemanticService() {
-        var archive = eqFvgAssociationCaseArchiveV1.createArchive({ directory: semanticCaseDirectory });
-        return eqFvgAssociationSemanticV1.createService({
-            config: EQ_FVG_SEMANTIC_CONFIG,
-            store: eqFvgAssociationDecisionStoreV1.createStore({ directory: semanticStoreDirectory }),
+    /** Per-closed-bar Two-Bar -> EQ -> breakout plan pipeline. */
+    function createTwoBarPipeline() {
+        return twoBarLivePipelineV1.createPipeline({
+            symbol: symbol,
+            setupService: twoBarSetup,
+            execution: execution,
+            liveTradingEnabled: LIVE_TRADING_ENABLED,
             observe: function (record) { log(symbol + ' ' + record.event + ' ' + JSON.stringify(record)); },
-            notify: function (event, result) {
-                if (!eqAlerts.annotateSemantic(event, result)) {
-                    throw Object.assign(new Error('EQ_FVG_NOTIFICATION_OUTBOX_MISSING'), { code: 'EQ_FVG_NOTIFICATION_OUTBOX_MISSING' });
-                }
+            getBias: function () { return current4hBias.getCurrent(); },
+            getExpected4hClosedAt: function () {
+                var snapshot = engine ? engine.getWindowSnapshot() : [];
+                var now = snapshot.length ? snapshot[snapshot.length - 1].closeTime : Date.now();
+                return executionContext(now).expected4hClosedAt;
             },
-            archive: archive.write,
-            getExecutionPreview: semanticExecutionPreview
+            getSymbolRules: function () {
+                return executionSymbolRules || (runnerData && runnerData.raw && runnerData.raw.exchangeInfo);
+            },
+            getCurrentContractPrice: function () {
+                var snapshot = engine ? engine.getWindowSnapshot() : [];
+                return snapshot.length ? snapshot[snapshot.length - 1].close : null;
+            }
         });
     }
 
     /**
-     * HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1.
-     *
-     * The semantic layer answers one question per already-confirmed Dynamic-D
-     * turning point: at confirmedAt, was it independent and meaningful enough to
-     * be preserved as a historical anchor? The resulting eligibility registry is
-     * consulted synchronously by EQ historical-partner selection and by TP target
-     * selection.
-     *
-     * Non-blocking by construction: hydration is fire-and-forget and strictly
-     * serial. A DeepSeek outage can only make new anchors INELIGIBLE; it can never
-     * pause the 5m pipeline, symbol polling, FVG monitoring, or the protection of
-     * an existing position.
+     * TWO_BAR_PRODUCTION_REPLACEMENT_V1: the production setup service. Its only
+     * semantic stages are the Two-Bar pattern LLM and the preceding-leg LLM.
      */
-    function createTurningSignificance() {
-        // SEMANTIC=false: no facts are built, no model is called, no frozen
-        // decision is created. The legacy Dynamic-D anchor universe stays exactly
-        // as it was (LIVE_FILTER=true is rejected by the config loader).
-        if (TURNING_SIGNIFICANCE_CONFIG.semanticEnabled !== true) {
-            log(symbol + ' TURNING_SIGNIFICANCE_SEMANTIC_DISABLED —— no facts / no model call / no frozen decision' +
-                '（legacy Dynamic-D historical anchor universe unchanged）');
-            return null;
-        }
-        var caseArchive = turningPointSignificanceCaseArchiveV1.createArchive({ directory: turningCaseDirectory });
-        var store = turningPointSignificanceDecisionStoreV1.createStore({ directory: turningStoreDirectory });
-        var service = turningPointSignificanceSemanticV1.createService({
-            config: TURNING_SIGNIFICANCE_CONFIG,
-            store: store,
-            observe: function (record) { log(symbol + ' ' + record.event + ' ' + JSON.stringify(record)); },
-            archive: caseArchive.write,
-            sourceProvider: function () {
-                return engine ? { state: engine.getState(), candles: engine.getWindowSnapshot() } : null;
-            },
-            candidateContext: function () { return null; }
+    function createTwoBarSetupService() {
+        return twoBarSetupV1.createService({
+            symbol: symbol,
+            decisionStoreDir: path.join(CONFIG.dataDir, 'two-bar-setup-decisions-v1'),
+            observe: function (record) { log(symbol + ' ' + record.event + ' ' + JSON.stringify(record)); }
         });
-        var registry = historicalAnchorEligibilityV1.createRegistry({
-            config: TURNING_SIGNIFICANCE_CONFIG,
-            observe: function (record) { log(symbol + ' ' + record.event + ' ' + JSON.stringify(record)); },
-            eligibilityOf: service.eligibilityOf,
-            enqueue: function (point) { return service.enqueue(point); },
-            archiveBlock: function (record, context) {
-                caseArchive.write({
-                    semanticTask: turningPointSignificanceSemanticV1.VERSION,
-                    symbol: record.symbol, turningPointId: record.turningPointId,
-                    processId: record.processId, side: record.side, price: record.price,
-                    confirmedAt: record.confirmedAt, significance: record.significance,
-                    confidence: record.confidence, primaryReason: record.primaryReason,
-                    evidence: record.evidence, counterEvidence: record.counterEvidence,
-                    eligible: false, gateReason: record.gateReason, errorCode: record.errorCode,
-                    factsHash: record.factsHash, promptHash: record.promptHash,
-                    decisionKey: record.decisionKey, semanticVersion: record.semanticVersion,
-                    candidateContext: record.candidateContext || [context],
-                    evaluationTime: Date.now()
-                });
-            }
-        });
-        var restored = service.restoreEligibility();
-        if (restored) log(symbol + ' TURNING_SIGNIFICANCE_RESTORED decisions=' + restored +
-            '（frozen store replayed; no model re-query）');
-        if (TURNING_SIGNIFICANCE_CONFIG.liveFilterEnabled !== true) {
-            log(symbol + ' TURNING_SIGNIFICANCE_LIVE_FILTER_DISABLED —— 恢复 legacy Dynamic-D historical anchor universe' +
-                '（semantic shadow collection continues=' + TURNING_SIGNIFICANCE_CONFIG.semanticEnabled + '）');
-        }
-        return { service: service, registry: registry };
-    }
-
-    function processPendingSemanticEvents() {        var events = pendingSemanticEvents.splice(0);
-        return events.reduce(function (chain, event) {
-            return chain.then(function () {
-                return semanticService.evaluate(event, { state: engine.getState(), candles: engine.getWindowSnapshot() });
-            }).then(function (result) {
-                if (!result.executionAllowed || !execution) return result;
-                var enriched = Object.assign({}, event, { eqFvgSemantic: result });
-                return execution.onFirstMatchingFvg(enriched);
-            });
-        }, Promise.resolve());
-    }
-
-    function recoverPendingSemanticOutbox() {
-        var pending = eqAlerts.snapshot().pending.filter(function (item) {
-            return item.event && item.event.ordinal === 1 && !item.event.eqFvgSemantic;
-        });
-        return pending.reduce(function (chain, item) {
-            return chain.then(function () {
-                return semanticService.evaluate(item.event, {
-                    state: engine.getState(), candles: engine.getWindowSnapshot()
-                }).then(function (result) {
-                    log(symbol + ' EQ_FVG_SEMANTIC_RESTART_RECOVERY decisionKey=' +
-                        (result.decisionKey || '-').slice(0, 12) +
-                        ' gate=' + result.gateResult + '（historical outbox observation only; no retroactive Entry）');
-                });
-            });
-        }, Promise.resolve());
     }
 
     function saveRangeAlertState(snapshot) {
@@ -583,10 +472,6 @@ function createRunner(symbol, options) {
         return persistence.loadJson(pushedFile, {});
     }
 
-    function saveEqAlertState(snapshot) {
-        persistence.saveJson(eqStateFile, snapshot);
-    }
-
     /**
      * HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1 §55–§57.
      *
@@ -595,76 +480,6 @@ function createRunner(symbol, options) {
      * never rewrites a price: a null entry simply means "no frozen decision for
      * that anchor yet", which the presentation layer renders as UNAVAILABLE.
      */
-    function attachAnchorSignificance(event) {
-        if (!event || !event.eqSourceContext || event.eqSourceContext.status !== 'AVAILABLE') return event;
-        var partners = event.eqSourceContext.historicalPartners || [];
-        var registry = turningSignificance ? turningSignificance.registry : null;
-        event.anchorUniverseFilter = !TURNING_SIGNIFICANCE_CONFIG.semanticEnabled ? 'NOT_CONFIGURED'
-            : TURNING_SIGNIFICANCE_CONFIG.liveFilterEnabled === true ? 'APPLIED' : 'DISABLED';
-        event.eqHistoricalAnchorSignificance = partners.map(function (partner) {
-            return registry ? registry.significanceOf(partner) : null;
-        });
-        return event;
-    }
-
-    function sendEqFvgNotification(event, key) {
-        attachAnchorSignificance(event);
-        var contextualEvent = notificationMarketContext.attach(event, current4hBias.getCurrent());
-        var message = eqFvgCountWatchNotificationV1.build(contextualEvent, {
-            formatPrice: fmtPrice,
-            formatTime: fmt,
-            keyword: CONFIG.dingtalk.keyword || '检测'
-        });
-        return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, message).then(function (res) {
-            if (!res || res.errcode !== 0) throw new Error('errcode=' + (res ? res.errcode : 'none'));
-            log(symbol + ' EQ FVG #' + event.ordinal + ' 钉钉投递成功 key=' + key);
-            return res;
-        }).catch(function (e) {
-            log(symbol + ' EQ FVG #' + event.ordinal + ' 钉钉投递失败 key=' + key + ': ' + e.message + '（保留 outbox）');
-            return { errcode: -1, errmsg: e.message };
-        });
-    }
-
-    function handleEqFvgCountStep(step) {
-        if (!scanAdmitted) {
-            // Lifecycle-retained symbols do not advance EQ/WATCH/FVG notification
-            // state and cannot create a new trade. Confirmed swings remain wired
-            // only because an already-open Entry may require the existing
-            // structural pending-cancel rule.
-            if (execution) execution.onConfirmedSwings(step.newConfirmedSwings || []);
-            return { opened: [], notifications: [], lifecycleOnly: true };
-        }
-        var result = eqAlerts.onStep({
-            evaluationTime: step.evaluationTime,
-            newEqualLiquidity: step.newEqualLiquidity || [],
-            rawFvg: step.rawFvg
-        });
-        // Pre-hydrate only the turning points confirmed just now. Serial and
-        // fire-and-forget: this never delays the completed-candle path, and a
-        // semantic failure can only leave the new anchor ineligible.
-        if (turningSignificance && engine) {
-            var confirmedPoints = engine.getState().productionEq.dynamicD.confirmedPoints;
-            if (confirmedPoints.length > hydratedTurningPointCount) {
-                turningSignificance.registry.ensure(confirmedPoints.slice(hydratedTurningPointCount));
-                hydratedTurningPointCount = confirmedPoints.length;
-            }
-        }
-        result.opened.forEach(function (watch) {
-            log(symbol + ' EQ_FVG_COUNT_WATCH OPEN id=' + watch.watchId +
-                ' liquidity=' + watch.liquidityType + ' expected=' + watch.expectedDirection);
-        });
-        // WATCH has already advanced and persisted. Semantic facts need the rest
-        // of this completed bar (structure/displacement/FVG provenance), so #1 is
-        // consumed only after engine.onBar has fully completed.
-        if (execution) {
-            (result.notifications || []).forEach(function (event) {
-                if (event.ordinal === 1 && scanAdmitted) pendingSemanticEvents.push(event);
-            });
-            execution.onConfirmedSwings(step.newConfirmedSwings || []);
-        }
-        return result;
-    }
-
     /**
      * 11L.15：两组（PRIORITY/STANDARD）HIGH 都落 shadow 记录（schema 锁定，
      * 见 stats/livePrioritizationAudit.js）—— 3-7 天后用 scripts/livePrioritizationAudit.js
@@ -758,9 +573,9 @@ function createRunner(symbol, options) {
             log(symbol + ' EQ producer migration: ' + persistedEqModel + ' -> ' +
                 EQ_PRODUCTION_MODEL + '（旧 EQ state 忽略，Registry 由 closed candles 确定性重建）');
         }
-        if (!cursor || cursor.eqNotificationModel !== EQ_NOTIFICATION_MODEL) {
-            log(symbol + ' EQ notification cutover -> ' + EQ_NOTIFICATION_MODEL +
-                '（legacy EQ watch files ignored; historical EQ/FVG not backfilled）');
+        if (!cursor || cursor.productionEntryModel !== PRODUCTION_ENTRY_MODEL) {
+            log(symbol + ' PRODUCTION_ENTRY cutover -> ' + PRODUCTION_ENTRY_MODEL +
+                '（legacy EQ watch / FVG state files ignored; historical setups not backfilled）');
         }
         // Fix 1 (P0)：runnerData 保存组装后的 HTF 引用（fetchHtfIncrement 增量更新同一对象）
         var structureCandles = { '1d': data['1d'], '4h': data['4h'], '1h': data['1h'] };
@@ -840,9 +655,6 @@ function createRunner(symbol, options) {
             if (rangeAlerts && !rangeStateRestored) {
                 rangeAlerts.onCandle(c, { notificationsEnabled: false, recordEvents: false });
             }
-            // Deployment/restart bootstrap rebuilds the EQ detector only. Historical
-            // EQ/FVG steps are deliberately discarded and never create/fill WATCHes.
-            engine.drainEqFvgCountSteps();
         }, function (progress) {
             log(symbol + ' [BOOTSTRAP] ' + progress.completed + ' / ' + progress.total +
                 ' ' + progress.progressPct.toFixed(1) + '%' +
@@ -851,20 +663,11 @@ function createRunner(symbol, options) {
                 ' bars/s=' + (progress.barsPerSecond === null ? '-' : progress.barsPerSecond.toFixed(1)));
         });
         return chain.then(function () {
-            // Activate only after bootstrap so historical EQ/FVG steps can never
-            // create Production WATCHes. Live steps are persisted immediately at
-            // the EQ/raw-FVG boundary, before unrelated downstream engines run.
-            engine.setEqFvgCountStepHandler(handleEqFvgCountStep);
+            // TWO_BAR_PRODUCTION_REPLACEMENT_V1. Bootstrap is finished, so the
+            // Two-Bar pipeline starts from the first live bar. The retired
+            // EQ/WATCH/FVG step stream no longer exists in the live engine.
+            twoBarSetup = createTwoBarSetupService();
             execution = createExecutionService();
-            semanticService = createSemanticService();
-            // HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1. Created after bootstrap so
-            // the frozen decision store is replayed once and the synchronous EQ
-            // eligibility view is warm before the first live EQ is evaluated.
-            turningSignificance = createTurningSignificance();
-            hydratedTurningPointCount = engine.getState().productionEq.dynamicD.confirmedPoints.length;
-            productionEqualLiquidityV1.setAnchorEligibility(engine.getState().productionEq,
-                (TURNING_SIGNIFICANCE_CONFIG.liveFilterEnabled === true && turningSignificance)
-                    ? turningSignificance.registry : null);
             // Execution rules are fetched afresh from Futures exchangeInfo instead
             // of trusting the long-lived historical-loader cache.
             return binanceRest.getExchangeInfo(symbol).then(function (info) {
@@ -872,15 +675,20 @@ function createRunner(symbol, options) {
                 return refresh4hBias();
             });
         }).then(function () {
+            // Warm the Two-Bar pipeline's Dynamic-D / ATR over the bootstrapped
+            // window, then bring up the order lifecycle. execution.start() runs
+            // restart recovery (exchange truth) BEFORE any new entry can be
+            // detected, because ticks are still gated on historyLoaded below.
+            var snapshot = engine.getWindowSnapshot();
+            twoBarPipeline = createTwoBarPipeline();
+            twoBarPipeline.warmupThrough(snapshot, snapshot.length - 1);
             return execution.start();
-        }).then(function () {
-            return recoverPendingSemanticOutbox();
         }).then(function () {
             // Retry a pre-restart confirmation outbox only after deterministic
             // candle replay has restored the current Range lifecycle.
             if (rangeAlerts) persistence.saveJson(rangeStateFile, rangeAlerts.getDetector().getState());
             return Promise.all([
-                eqAlerts.flush(),
+                execution.reconcile(),
                 rangeAlerts ? rangeAlerts.flush() : Promise.resolve(null)
             ]);
         }).then(function () {
@@ -888,11 +696,10 @@ function createRunner(symbol, options) {
             lastOpenTime = all[all.length - 1].openTime;
             historyLoaded = true;
             persistence.saveJson(pushedFile, delivered);
-            saveEqAlertState(eqAlerts.snapshot());
             persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: all.length,
                 structureMode: mode, eqProductionModel: EQ_PRODUCTION_MODEL,
                 displacementMode: DISPLACEMENT_PRODUCTION_MODE,
-                eqNotificationModel: EQ_NOTIFICATION_MODEL });
+                productionEntryModel: PRODUCTION_ENTRY_MODEL });
             log(symbol + ' 状态就绪，已推进 ' + all.length + ' 根，去重集合 ' + Object.keys(delivered).length + ' 个已投递机会');
         });
     }
@@ -926,9 +733,14 @@ function createRunner(symbol, options) {
         list.forEach(function (c) {
             chain = chain.then(function () {
                 return engine.onBar(c, engine.getWindowLength()).then(function (opp) {
-                    var steps = engine.drainEqFvgCountSteps();
-                    steps.forEach(handleEqFvgCountStep);
-                    return processPendingSemanticEvents().then(function () { return eqAlerts.flush(); }).then(function () { return opp; });
+                    // TWO_BAR_PRODUCTION_REPLACEMENT_V1: the only NEW ENTRY path.
+                    // Lifecycle-only symbols (dropped out of Top5) never start a new
+                    // setup, but their pending entries / positions keep being managed
+                    // by breakoutExecutionV1's reconcile loop.
+                    if (!scanAdmitted) return opp;
+                    var snapshot = engine.getWindowSnapshot();
+                    return twoBarPipeline.onClosedBar(snapshot, snapshot.length - 1)
+                        .then(function () { return opp; });
                 }).then(function (opp) {
                     if (!rangeAlerts || !scanAdmitted) return opp;
                     rangeAlerts.onCandle(c, {
@@ -960,7 +772,7 @@ function createRunner(symbol, options) {
             persistence.saveJson(stateFile, { lastCloseTime: lastCloseTime, bars: engine.getWindowLength(),
                 structureMode: structuralSwingMode(), eqProductionModel: EQ_PRODUCTION_MODEL,
                 displacementMode: DISPLACEMENT_PRODUCTION_MODE,
-                eqNotificationModel: EQ_NOTIFICATION_MODEL });
+            productionEntryModel: PRODUCTION_ENTRY_MODEL });
         });
     }
 
@@ -1001,7 +813,7 @@ function createRunner(symbol, options) {
                 analysisReady = true;
                 log(symbol + ' ANALYSIS_HISTORY_READY: closed4h>=' + dataSource.MIN_ANALYSIS_4H_BARS);
             }
-            return refresh4hBias().then(function () { return eqAlerts.flush(); }).then(function () {
+            return refresh4hBias().then(function () { return execution.reconcile(); }).then(function () {
                 // 11L.5（P1-2）：HTF 更新异常 → 本轮暂停 5m 推进。
                 // Near Draw/Liquidity/Snapshot 依赖 HTF context，stale HTF 下不应发 HIGH；
                 // 下轮 HTF 恢复后 poll 自动检测 gap → backfill → 连续推进（Live/Replay 状态一致）
@@ -1076,7 +888,12 @@ function createRunner(symbol, options) {
         hasActiveExecutionLifecycle: function () { return !!execution && execution.hasActiveLifecycle(); },
         isExecutionReady: function () { return !!execution && analysisReady &&
             dataSource.executionRulesReady(executionSymbolRules) && execution.isExecutionReady(); },
-        getEqFvgCountSnapshot: function () { return eqAlerts.snapshot(); }
+        // TWO_BAR_PRODUCTION_REPLACEMENT_V1 observability: the retired EQ/WATCH/FVG
+        // snapshot is replaced by the breakout lifecycle snapshot and the Two-Bar
+        // pipeline funnel.
+        getBreakoutExecutionSnapshot: function () { return execution ? execution.getSnapshot() : null; },
+        getTwoBarFunnel: function () { return twoBarPipeline ? twoBarPipeline.funnel() : null; },
+        isExecutionHalted: function () { return execution ? execution.isHalted() : false; }
     };
 }
 
@@ -1092,16 +909,15 @@ function main() {
         '（Swing context source：confirmed 2L/2R pivots + Structural Provenance）');
     log('EQ_PRODUCTION_MODEL=' + EQ_PRODUCTION_MODEL +
         '（current ordinary 2/2 vs prior 36H active Causal Dynamic D anchors）');
-    log('EQ_NOTIFICATION_MODEL=' + EQ_NOTIFICATION_MODEL +
-        '（new EQ confirmation -> accumulated raw 3-candle FVG #1/#2）');
+    log('PRODUCTION_ENTRY_MODEL=' + PRODUCTION_ENTRY_MODEL +
+        '（TOP5 5m Two-Bar -> pattern LLM + preceding-leg LLM -> Dynamic-D EQ -> breakout STOP_MARKET）');
     log('4H_BIAS_MODEL=' + fourHourBiasV3.VERSION +
         '（new fully closed native 4H -> deterministic Direction/Strength facts -> one semantic compression）');
     log('REAL_ORDER_EXECUTION_V1=' + (LIVE_TRADING_ENABLED ? 'LIVE' : 'SHADOW') +
         '（only literal LIVE_TRADING_ENABLED=true permits mutating Binance requests）');
-    log('EQ_FVG_ASSOCIATION_SEMANTIC_V1=' + (EQ_FVG_SEMANTIC_CONFIG.enabled ? 'ENABLED' : 'DISABLED') +
-        ' liveGate=' + EQ_FVG_SEMANTIC_CONFIG.liveGateEnabled +
-        ' failClosed=' + EQ_FVG_SEMANTIC_CONFIG.failClosed +
-        ' requiredConfidence=' + EQ_FVG_SEMANTIC_CONFIG.requiredConfidence);
+    log('ACTIVE_UNIVERSE_TOP_N=' + CONFIG.dynamicUniverse.topN);
+    log('ENTRY_TRIGGER_SOURCE=CONTRACT_PRICE（breakout STOP_MARKET）' +
+        ' PROTECTION_TRIGGER_SOURCE=MARK_PRICE（SL/TP）');
     log('11L.15 Alert Prioritization: ' + (PRIORITIZATION_ENABLED
         ? 'ENABLED（钉钉只推 PRIORITY_HIGH = HIGH + 48 窗口内 Significant Liquidity；STANDARD_HIGH 只落日志）'
         : 'DISABLED（全部 HIGH 照常推钉钉，仅记录 notifyPriority 字段）'));

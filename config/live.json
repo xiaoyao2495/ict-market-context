@@ -19,7 +19,7 @@
   },
   "dynamicUniverse": {
     "version": "DYNAMIC_CONTRACT_UNIVERSE_V1",
-    "topN": 10,
+    "topN": 5,
     "rankTimeframe": "4h",
     "rankClosedBars": 6,
     "refreshHourUTC": 0,

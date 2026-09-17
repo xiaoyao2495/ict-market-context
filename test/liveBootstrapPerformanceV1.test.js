@@ -136,8 +136,47 @@ async function bootstrapTests() {
     assert(maxDelay < 250, 'heartbeat delay must remain below 250ms, got ' + maxDelay);
 }
 
+/**
+ * TWO_BAR_PRODUCTION_REPLACEMENT_V1 §34: the bootstrap no longer has any
+ * semantic / FVG execution dependency. New Entry bootstrap = Two-Bar setup
+ * service + Two-Bar pipeline + breakoutExecutionV1 (+ restart recovery), and it
+ * must not fetch the same exchange metadata twice.
+ */
+function bootstrapWiringTests() {
+    var fs = require('fs');
+    var path = require('path');
+    var source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'live.js'), 'utf8');
+
+    // required new bootstrap components
+    assert(source.indexOf("require('../strategy/twoBarSetupV1')") >= 0, 'Two-Bar setup service');
+    assert(source.indexOf("require('../strategy/twoBarLivePipelineV1')") >= 0, 'Two-Bar pipeline');
+    assert(source.indexOf("require('../execution/breakoutExecutionV1')") >= 0, 'breakoutExecutionV1');
+    assert(source.indexOf('twoBarSetup = createTwoBarSetupService();') >= 0, 'setup service bootstrap');
+    assert(source.indexOf('twoBarPipeline.warmupThrough(') >= 0, 'Dynamic-D / ATR warmup');
+    assert(source.indexOf('return execution.start();') >= 0, 'restart recovery runs at bootstrap');
+    assert(source.indexOf('execution.reconcile()') >= 0, 'reconcile is wired after recovery');
+
+    // retired semantic / FVG bootstrap components are gone
+    ['eqFvgCountWatchAlertServiceV1', 'eqFvgAssociationSemanticV1', 'eqFvgAssociationDecisionStoreV1',
+        'turningPointSignificanceSemanticV1', 'historicalAnchorEligibilityV1', 'realOrderExecutionV1',
+        'loadEqFvgSemanticConfig', 'loadTurningSignificanceConfig', 'recoverPendingSemanticOutbox',
+        'processPendingSemanticEvents', 'handleEqFvgCountStep']
+        .forEach(function (token) {
+            assert.strictEqual(source.indexOf(token) >= 0, false, 'retired bootstrap token: ' + token);
+        });
+
+    // recovery happens before any new entry can be detected
+    assert(source.indexOf('return execution.start();') < source.indexOf('historyLoaded = true;'),
+        'recovery must precede the new-entry detection gate');
+
+    // no duplicated exchangeInfo fetch inside the bootstrap path
+    var exchangeInfoCalls = (source.match(/binanceRest\.getExchangeInfo\(symbol\)/g) || []).length;
+    assert.strictEqual(exchangeInfoCalls, 1, 'bootstrap must fetch exchangeInfo exactly once');
+}
+
 async function main() {
     groupingTests();
+    bootstrapWiringTests();
     await bootstrapTests();
     console.log('liveBootstrapPerformanceV1: PASS');
 }

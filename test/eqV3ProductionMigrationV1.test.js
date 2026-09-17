@@ -38,5 +38,46 @@ test('replacement metadata explicitly rejects persistent identity and member evo
     assert.strictEqual(event.metadata.memberEvolution,false); assert.strictEqual(event.metadata.members,undefined);
 });
 
+// TWO_BAR_PRODUCTION_REPLACEMENT_V1 §32: the production EQ source is no longer a
+// 2L/2R Current Point. A Two-Bar Current Point is matched against the same causal
+// Dynamic-D anchors, and the resulting EQL/EQH is the only new Entry setup.
+test('TwoBarCurrentPoint -> Dynamic-D -> EQ is the production EQ source',function(){
+    var twoBar=require('../strategy/twoBarReversalV1');
+    var BAR=300000;
+    function bar(i,o,h,l,c){return {openTime:i*BAR,closeTime:(i+1)*BAR-1,open:o,high:h,low:l,close:c,closed:true,source:'futures'};}
+    var k1=bar(0,105,106,100,101), k2=bar(1,101,103,99,102.5);
+    var candidate={pattern:'TWO_BAR_REVERSAL',direction:'BULLISH',startIndex:0,endIndex:1,
+        windowBars:[k1,k2],windowFacts:[]};
+    var currentPoint=twoBar.buildCurrentPoint(candidate,{symbol:'BTCUSDT',patternConfidence:'HIGH',contextConfidence:'HIGH'});
+    assert.strictEqual(currentPoint.source,'TWO_BAR_REVERSAL_V1');
+    assert.strictEqual(currentPoint.confirmedAt,k2.closeTime);
+    assert.strictEqual(currentPoint.occurredAt,k2.openTime);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(currentPoint,'currentPivot'),false);
+    // a same-side ACTIVE anchor confirmed before the Two-Bar pairs inside tolerance
+    var partners=twoBar.matchDynamicDPartners({recentSurvivalPoints:[
+        {id:'DYN_LOW_1',pointSide:'LOW',price:98.5,state:'ACTIVE',occurredAt:900,confirmedAt:1000,
+            occurredBarIndex:0,localizedExtremePrice:98.5,localizationMode:'SAME_PROCESS_WICK_V1'},
+        {id:'DYN_HIGH_1',pointSide:'HIGH',price:110,state:'ACTIVE',occurredAt:900,confirmedAt:1000,
+            occurredBarIndex:0,localizedExtremePrice:110,localizationMode:'SAME_PROCESS_WICK_V1'}]},
+        currentPoint,1.5,1);
+    assert.strictEqual(partners.length,1);
+    assert.strictEqual(partners[0].id,'DYN_LOW_1');
+    var setup=twoBar.buildEqSetup(currentPoint,partners,1.5);
+    assert.strictEqual(setup.type,'EQL');
+    assert.strictEqual(setup.direction,'LONG');
+    assert.strictEqual(setup.liquidityType,'EQL');
+    assert.strictEqual(setup.availableAt>=setup.confirmedAt,true);
+    assert.strictEqual(setup.nearestPartnerId,'DYN_LOW_1');
+    // an anchor confirmed AFTER the Two-Bar can never pair, and the retired
+    // Current Point provider is not reachable from the new Entry modules
+    var late=twoBar.matchDynamicDPartners({recentSurvivalPoints:[
+        {id:'TOO_LATE',pointSide:'LOW',price:98.5,state:'ACTIVE',occurredAt:k2.closeTime+1,
+            confirmedAt:k2.closeTime+2,occurredBarIndex:9}]},currentPoint,1.5,1);
+    assert.deepStrictEqual(late,[]);
+    ['strategy/twoBarReversalV1.js','strategy/twoBarSetupV1.js','strategy/twoBarLivePipelineV1.js'].forEach(function(file){
+        assert.strictEqual(/productionEqualLiquidityV1|evaluatePivot/.test(source(file)),false,file);
+    });
+});
+
 console.log('\nEQ V3 historical isolation: '+passed+' passed, '+failed+' failed');
 if(failed) process.exit(1);

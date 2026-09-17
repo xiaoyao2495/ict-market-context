@@ -26,8 +26,8 @@ function candles(symbolIndex, evaluationTime, count, openQuoteVolume) {
 function snapshot(day, symbols) {
     var evaluationTime=Date.parse(day + 'T00:05:00Z');
     return { version: universe.VERSION, dateKey: day, generatedAt: evaluationTime,
-        evaluationTime: evaluationTime, rankingWindow: { timeframe: '4h', closedBars: 6 }, topN: 10,
-        symbols: (symbols || Array.from({length:10},function(_,i){return 'S'+i+'USDT';})).map(function (s,i) {
+        evaluationTime: evaluationTime, rankingWindow: { timeframe: '4h', closedBars: 6 }, topN: 5,
+        symbols: (symbols || Array.from({length:5},function(_,i){return 'S'+i+'USDT';})).map(function (s,i) {
             return { rank:i+1,symbol:s,quoteVolume24h:1000-i,first4hOpenTime:evaluationTime-6*H4,
                 last4hCloseTime:evaluationTime-1,executionRules:{tickSize:0.1,stepSize:0.001,minQty:0.001,minNotional:5} };
         }) };
@@ -38,10 +38,10 @@ async function main() {
     var evalTime = Date.parse('2026-09-11T11:37:00Z');
     var contracts = Array.from({ length: 12 }, function (_, i) { return contract('S' + String(i).padStart(2, '0') + 'USDT'); });
     var built;
-    await test('12 eligible symbols rank by sum of exactly six quoteAssetVolume bars and select Top10', async function () {
+    await test('12 eligible symbols rank by sum of exactly six quoteAssetVolume bars and select Top5', async function () {
         built = await universe.buildSnapshot({ evaluationTime: evalTime, generatedAt: evalTime, getExchangeInfo: function () { return { source: 'futures', symbols: contracts }; },
             getKlines: function (symbol) { var idx=Number(symbol.slice(1,3)); return candles(idx,evalTime); } });
-        assert.strictEqual(built.symbols.length,10); assert.strictEqual(built.symbols[0].symbol,'S11USDT'); assert.strictEqual(built.symbols[9].symbol,'S02USDT');
+        assert.strictEqual(built.symbols.length,5); assert.strictEqual(built.symbols[0].symbol,'S11USDT'); assert.strictEqual(built.symbols[4].symbol,'S07USDT');
         assert.strictEqual(built.symbols[0].quoteVolume24h,6*1200+15);
     });
     await test('base volume does not affect ranking', function () {
@@ -103,7 +103,7 @@ async function main() {
         var calls=0,next=snapshot('2026-09-11');var svc=universe.createService({load:function(){return snapshot('2026-09-10');},save:function(){},buildSnapshot:function(){calls++;return Promise.resolve(next);}});
         var r=await svc.initialize(Date.parse('2026-09-11T00:03:00Z'));assert.strictEqual(r.status,'REFRESHED');assert.strictEqual(calls,1);
     });
-    await test('active lifecycle symbol remains in runtime after dropping from Top10', function () {
+    await test('active lifecycle symbol remains in runtime after dropping from Top5', function () {
         assert.deepStrictEqual(universe.runtimeSymbols(['BTCUSDT'],['ZECUSDT']),['BTCUSDT','ZECUSDT']);
         assert.strictEqual(universe.snapshotHasActiveLifecycle({activeTradeId:'T1',trades:{T1:{status:'PROTECTED',positionQty:2}}}),true);
     });

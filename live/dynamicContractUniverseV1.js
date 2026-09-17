@@ -6,7 +6,10 @@ var binanceRest = require('../data/binanceRest');
 var persistence = require('./persistence');
 
 var VERSION = 'DYNAMIC_CONTRACT_UNIVERSE_V1';
-var TOP_N = 10;
+// TWO_BAR_PRODUCTION_REPLACEMENT_V1 §3: the new-opportunity universe is TOP 5.
+// This only controls NEW setup detection / NEW entries; symbols that already hold
+// a pending order or an open position keep being managed outside this universe.
+var TOP_N = 5;
 var RANK_TIMEFRAME = '4h';
 var RANK_CLOSED_BARS = 6;
 var REFRESH_HOUR_UTC = 0;

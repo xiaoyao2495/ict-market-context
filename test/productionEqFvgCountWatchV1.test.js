@@ -175,7 +175,7 @@ test('new message contains only EQ/FVG count semantics', function () {
     assert.doesNotMatch(message,/Taken|Sweep|Displacement|FIRST_TOUCH|retracement/);
 });
 
-test('live engine emits new EQ and same-close raw FVG in one ordered step', async function () {
+test('TWO_BAR_PRODUCTION_REPLACEMENT_V1: the live engine no longer emits the retired EQ/WATCH/FVG step stream', async function () {
     var original = replayState.incrementalLiquidity;
     var synthetic = eq('EQL','EQ:LIVE',3*BAR-1);
     replayState.incrementalLiquidity = function (state, candles, index, exchangeInfo, evaluationTime) {
@@ -194,20 +194,61 @@ test('live engine emits new EQ and same-close raw FVG in one ordered step', asyn
             {openTime:BAR,closeTime:2*BAR-1,open:96,high:105,low:91,close:100,closed:true,source:'futures'},
             {openTime:2*BAR,closeTime:3*BAR-1,open:101,high:110,low:101,close:108,closed:true,source:'futures'}
         ];
-        for (var i=0;i<candles.length;i++) { await engine.onBar(candles[i],i); engine.drainEqFvgCountSteps(); }
-        // Re-run with a fresh engine, retaining the third step before drain.
-        engine = liveEngine.createLiveEngine({symbol:'BTCUSDT',exchangeInfo:{tickSize:0.1},structureCandles:{'4h':[],'1h':[],'1d':[]},calendarCandles:{'1d':[],'1w':[],'1M':[]},fetcher:function(){return Promise.resolve([]);},thresholds:thresholds});
-        await engine.onBar(candles[0],0); engine.drainEqFvgCountSteps();
-        await engine.onBar(candles[1],1); engine.drainEqFvgCountSteps();
-        await engine.onBar(candles[2],2);
-        var emitted=engine.drainEqFvgCountSteps();
-        assert.equal(emitted.length,1); assert.equal(emitted[0].newEqualLiquidity[0].id,'EQ:LIVE');
-        assert.equal(emitted[0].rawFvg.direction,'BULLISH'); assert.equal(emitted[0].rawFvg.confirmedAt,synthetic.confirmedAt);
-        var machine=watchModel.createStateMachine(), result=machine.step(emitted[0]);
-        assert.equal(result.notifications[0].ordinal,1);
+        for (var i=0;i<candles.length;i++) await engine.onBar(candles[i],i);
+        // the retired handler/stream API is gone from the production engine
+        assert.equal(typeof engine.drainEqFvgCountSteps,'undefined');
+        assert.equal(typeof engine.setEqFvgCountStepHandler,'undefined');
+        // the EQ registry itself still advances (structural provenance depends on it),
+        // but it can no longer create a WATCH or an Entry.
+        assert.equal(engine.getState().productionEq.events.some(function(e){return e.id==='EQ:LIVE';}),true);
     } finally {
         replayState.incrementalLiquidity = original;
     }
+});
+
+test('TWO_BAR_PRODUCTION_REPLACEMENT_V1: Two-Bar context aligned -> Dynamic-D EQ -> breakout planning', async function () {
+    var L=require('../research/reversalPatternSemanticAuditV1');
+    var twoBarSetup=require('../strategy/twoBarSetupV1');
+    var entryRules=require('../execution/breakoutEntryRulesV1');
+    var rows=[], close=105;
+    for (var i=0;i<8;i++){var open=close;close-=0.7;
+        rows.push({openTime:i*BAR,closeTime:(i+1)*BAR-1,open:open,high:open+0.2,low:close-0.3,close:close,closed:true,source:'futures'});}
+    rows.push({openTime:8*BAR,closeTime:9*BAR-1,open:100.6,high:100.8,low:99.2,close:99.4,closed:true,source:'futures'});
+    rows.push({openTime:9*BAR,closeTime:10*BAR-1,open:99.4,high:100.9,low:99.0,close:100.8,closed:true,source:'futures'});
+    for (var j=10;j<20;j++){var prev=rows[j-1].close;
+        rows.push({openTime:j*BAR,closeTime:(j+1)*BAR-1,open:prev,high:prev+0.5,low:prev-0.2,close:prev+0.4,closed:true,source:'futures'});}
+    var k1=rows[8], k2=rows[9];
+    var candidate={pattern:'TWO_BAR_REVERSAL',direction:'BULLISH',startIndex:8,endIndex:9,symbol:'BTCUSDT',
+        windowBars:[k1,k2],windowFacts:[L.candleFacts(k1),L.candleFacts(k2)]};
+    var service=twoBarSetup.createService({symbol:'BTCUSDT',decisionStore:twoBarSetup.createMemoryStore(),
+        requestSemantic:function(systemPrompt){return Promise.resolve(systemPrompt===L.SYSTEM_PROMPT
+            ? {matches:[{pattern:'TWO_BAR_REVERSAL',direction:'BULLISH',label:'CLEAR',confidence:'HIGH',
+                supportingFacts:['t'],conflicts:[],reason:'t'}],overall:'CLEAR_PATTERN'}
+            : {expectedDirection:'BEARISH',detectedDirection:'BEARISH',label:'CLEAR',confidence:'HIGH',
+                estimatedLegBars:6,reason:'t'});}});
+    var dynamicDState={recentSurvivalPoints:[
+        {id:'DYN_LOW_1',pointSide:'LOW',price:98.6,state:'ACTIVE',occurredAt:6*BAR,confirmedAt:6*BAR-1,occurredBarIndex:5},
+        {id:'DYN_HIGH_1',pointSide:'HIGH',price:106.0,state:'ACTIVE',occurredAt:7*BAR,confirmedAt:7*BAR-1,occurredBarIndex:6}]};
+    var result=await service.evaluateCandidate(candidate,{candles:rows,atrValue:1.0,dynamicDState:dynamicDState,currentBarIndex:9});
+    assert.equal(result.status,'SETUP',JSON.stringify(result.reason));
+    assert.equal(result.setup.type,'EQL');
+    assert.equal(result.setup.partners[0].id,'DYN_LOW_1');
+    assert.equal(result.setup.availableAt,k2.closeTime);
+    var built=entryRules.buildBreakoutPlan(result.setup,{
+        symbolRules:{source:'futures',tickSize:0.1,stepSize:0.001,minQty:0.001,maxQty:1000,minNotional:5},
+        bias:{status:'AVAILABLE',closedAt:1000,expectedClosedAt:1000,semantic:{direction:'BULLISH',strength:'WEAK',confidence:'LOW'}},
+        currentContractPrice:100.0,dynamicDPoints:dynamicDState.recentSurvivalPoints,candles:rows});
+    assert.equal(built.ok,true,built.reasonCode);
+    assert.equal(built.plan.entryTrigger,result.setup.twoBarHigh);
+    assert.equal(built.plan.entryWorkingType,'CONTRACT_PRICE');
+    assert.equal(built.plan.initialSL,Math.min(result.setup.twoBarLow,98.6));
+    assert.equal(built.plan.initialTP,106.0);
+    // legacy FVG handler is not wired into the new entry chain
+    var chain=['scripts/live.js','live/liveEngine.js','strategy/twoBarSetupV1.js',
+        'strategy/twoBarLivePipelineV1.js','execution/breakoutEntryRulesV1.js',
+        'execution/breakoutExecutionV1.js'].map(function(file){
+            return fs.readFileSync(path.join(__dirname,'..',file),'utf8');}).join('\n');
+    assert.doesNotMatch(chain,/eqFvgCountWatchV1|eqFvgCountWatchAlertServiceV1|rawFvgAt|setEqFvgCountStepHandler/);
 });
 
 test('removed Taken/displacement/touch-shaped inputs cannot notify without raw FVG', function () {
@@ -219,20 +260,26 @@ test('removed Taken/displacement/touch-shaped inputs cannot notify without raw F
     assert.equal(result.notifications.length,1);
 });
 
-test('live EQ watcher transition precedes and does not depend on legacy downstream event processing', async function () {
-    var originalLiquidity=replayState.incrementalLiquidity, originalEvents=replayState.incrementalEvents;
-    var liquidity=eq('EQL','EQ:INDEPENDENT',BAR-1), captured=[];
+test('retired step builder can still rebuild the historical EQ/WATCH stream for research only', async function () {
+    var originalLiquidity=replayState.incrementalLiquidity;
+    var liquidity=eq('EQL','EQ:INDEPENDENT',BAR-1);
     replayState.incrementalLiquidity=function(state){state.productionEq.events.push(liquidity);return [];};
-    replayState.incrementalEvents=function(){throw new Error('synthetic downstream failure');};
     try {
         var engine=liveEngine.createLiveEngine({symbol:'BTCUSDT',exchangeInfo:{tickSize:0.1},structureCandles:{'4h':[],'1h':[],'1d':[]},calendarCandles:{'1d':[],'1w':[],'1M':[]},fetcher:function(){return Promise.resolve([]);},thresholds:thresholds});
-        var machine=watchModel.createStateMachine();
-        engine.setEqFvgCountStepHandler(function(input){captured.push(machine.step(input));});
-        await assert.rejects(engine.onBar({openTime:0,closeTime:BAR-1,open:100,high:101,low:99,close:100,closed:true,source:'futures'},0),/synthetic downstream failure/);
+        var machine=watchModel.createStateMachine(), captured=[];
+        var eqBefore=engine.getState().productionEq.events.length;
+        await engine.onBar({openTime:0,closeTime:BAR-1,open:100,high:101,low:99,close:100,closed:true,source:'futures'},0);
+        var step=watchModel.buildStep(engine.getWindowSnapshot(),0,'BTCUSDT',
+            engine.getState().productionEq.events.slice(eqBefore),[],BAR-1);
+        captured.push(machine.step({evaluationTime:step.evaluationTime,
+            newEqualLiquidity:step.newEqualLiquidity,rawFvg:step.rawFvg}));
         assert.equal(captured.length,1); assert.equal(captured[0].opened.length,1);
         assert.equal(machine.get(watchModel.watchId(liquidity)).status,'OPEN');
+        // ...but nothing in the production runner installs or consumes that stream
+        var live=fs.readFileSync(path.join(__dirname,'../scripts/live.js'),'utf8');
+        assert.doesNotMatch(live,/setEqFvgCountStepHandler|drainEqFvgCountSteps|eqFvgCountWatchAlertServiceV1|eqFvgAssociationSemanticV1/);
     } finally {
-        replayState.incrementalLiquidity=originalLiquidity; replayState.incrementalEvents=originalEvents;
+        replayState.incrementalLiquidity=originalLiquidity;
     }
 });
 

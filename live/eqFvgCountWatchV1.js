@@ -177,5 +177,22 @@ module.exports = {
     rawFvgAt: rawFvgAt,
     buildWatch: buildWatch,
     consume: consume,
-    createStateMachine: createStateMachine
+    createStateMachine: createStateMachine,
+    /**
+     * RETIRED PRODUCTION STEP (TWO_BAR_PRODUCTION_REPLACEMENT_V1).
+     *
+     * The live engine no longer emits the EQ -> WATCH -> raw-FVG step stream, and
+     * nothing in the production entry chain consumes it. It is kept here - next to
+     * the retired model itself - so the EQ-FVG research / smoke tooling can still
+     * rebuild the exact historical stream from a closed-candle window.
+     */
+    buildStep: function (window, index, symbol, newEqualLiquidity, newConfirmedSwings, evaluationTime) {
+        var rawFvg = rawFvgAt(window, index, symbol);
+        return {
+            evaluationTime: evaluationTime,
+            newEqualLiquidity: JSON.parse(JSON.stringify(newEqualLiquidity || [])),
+            newConfirmedSwings: JSON.parse(JSON.stringify(newConfirmedSwings || [])),
+            rawFvg: rawFvg ? JSON.parse(JSON.stringify(rawFvg)) : null
+        };
+    }
 };
