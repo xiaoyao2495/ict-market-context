@@ -1,0 +1,267 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "classificationLegend": [
+    "DIRECT_PRODUCTION_PATH",
+    "INDIRECT_DEPENDENCY",
+    "RESEARCH_ONLY",
+    "LEGACY_UNUSED",
+    "TEST_ONLY"
+  ],
+  "modules": [
+    {
+      "path": "scripts/live.js",
+      "role": "production runner and single live entry point",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "creates the 4H bias service (317-331), refreshes it per tick (975-981, 1004), feeds the entry gate (362-363) and both DingTalk emitters (566, 612)"
+    },
+    {
+      "path": "live/4hBiasV3.js",
+      "role": "authoritative 4H bias service (VERSION 4H_BIAS_V3)",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at scripts/live.js:38; owns data gate, fact build, decision store, LLM call, publish"
+    },
+    {
+      "path": "bias/directionalContext/4hBiasFactsV3.js",
+      "role": "deterministic fact builder (4H_BIAS_FACT_SET_V3, MIN_WARMUP 120)",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at live/4hBiasV3.js:4"
+    },
+    {
+      "path": "bias/directionalContext/4hDirectionalMetrics.js",
+      "role": "priceDelivery24 + Wilder DMI14/ADX14 + normalizedDirectionalSpread",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at 4hBiasFactsV3.js:5"
+    },
+    {
+      "path": "bias/directionalContext/4hDirectionalLegV1.js",
+      "role": "trueRange + Wilder ATR14",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at 4hBiasFactsV3.js:4 and 4hDirectionalMetrics.js:3"
+    },
+    {
+      "path": "bias/directionalContext/theilSen48.js",
+      "role": "Theil-Sen log-close slope over the last 48 closed 4H bars",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at 4hBiasFactsV3.js:6"
+    },
+    {
+      "path": "ai/dailyBiasContext.js",
+      "role": "causal structure context builder (WINDOW 120, 2L/2R)",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at 4hBiasFactsV3.js:3; supplies structuralState for structureDirection"
+    },
+    {
+      "path": "ai/auditPivots.js",
+      "role": "2L/2R pivot detection with confirmedAt gating",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at ai/dailyBiasContext.js:5"
+    },
+    {
+      "path": "ai/auditMarketFacts.js",
+      "role": "sweep/break market facts over the visible window",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at ai/dailyBiasContext.js:6"
+    },
+    {
+      "path": "ai/auditStructuralProvenance.js",
+      "role": "protected swings, BOS events, structuralState and futureLeakViolations guard",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at ai/dailyBiasContext.js:7; throws on any future leak (line 583-585)"
+    },
+    {
+      "path": "bias/4hBiasSemanticV3.js",
+      "role": "frozen semantic contract: version, MODEL, prompt, input/output schemas, PROMPT_HASH",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at live/4hBiasV3.js:5"
+    },
+    {
+      "path": "ai/deepseekClient.js",
+      "role": "DeepSeek HTTP client (model/base URL from env, JSON mode)",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at live/4hBiasV3.js:3"
+    },
+    {
+      "path": "bias/4hBiasDecisionStoreV1.js",
+      "role": "immutable decision freeze store (4H_BIAS_DECISION_FREEZE_V1)",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at live/4hBiasV3.js:6 and scripts/live.js:39"
+    },
+    {
+      "path": "bias/4hBiasFactRendererV1.js",
+      "role": "deterministic fact line renderer",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at notify/4hBiasContext.js:3"
+    },
+    {
+      "path": "notify/4hBiasContext.js",
+      "role": "attaches the current bias to notification events and renders the bias block",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at scripts/live.js:40; used at 566 and 612"
+    },
+    {
+      "path": "live/dataSource.js",
+      "role": "4H bootstrap/increment fetch, closed-candle filter, HTF scheduler",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at scripts/live.js:27; supplies structureCandles['4h']"
+    },
+    {
+      "path": "data/binanceRest.js",
+      "role": "Binance futures REST (default fapi.binance.com), closed-only klines",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at live/dataSource.js:11"
+    },
+    {
+      "path": "execution/executionRulesV1.js",
+      "role": "entry plan + biasGate",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at scripts/live.js:48; biasGate at 47-57 called from buildEntryPlan line 180"
+    },
+    {
+      "path": "execution/realOrderExecutionV1.js",
+      "role": "real order state machine",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at scripts/live.js:47; consumes buildEntryPlan at line 309"
+    },
+    {
+      "path": "notify/eqFvgCountWatchNotificationV1.js",
+      "role": "EQ/FVG WATCH DingTalk message builder",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "bias block at line 96"
+    },
+    {
+      "path": "notify/rangeNotificationV1.js",
+      "role": "Range confirmation DingTalk message builder",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "bias block at line 40"
+    },
+    {
+      "path": "config/productionHistoryRequirementsV1.js",
+      "role": "single source of truth for required closed bars (4h: 120)",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at live/dataSource.js:14"
+    },
+    {
+      "path": "config/live.json",
+      "role": "runtime config (pollMs, dataDir, symbol mode, dingtalk)",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at scripts/live.js:62"
+    },
+    {
+      "path": "config/loadEnv.js",
+      "role": "loads .env via process.loadEnvFile",
+      "class": "DIRECT_PRODUCTION_PATH",
+      "evidence": "required at scripts/live.js:22"
+    },
+    {
+      "path": "bias/biasEngine.js",
+      "role": "legacy 5m/draw/liquidity/delivery bias engine",
+      "class": "LEGACY_UNUSED",
+      "evidence": "not required by scripts/live.js; reached only through replay/replayEngine.js:34,103 inside live/liveEngine.js:102 snapshot rebuild; its output is never read by the 4H gate or by notification payloads"
+    },
+    {
+      "path": "bias/biasScorer.js",
+      "role": "legacy scorer",
+      "class": "LEGACY_UNUSED",
+      "evidence": "required only by bias/biasEngine.js:37 and test/biasEngine.test.js"
+    },
+    {
+      "path": "bias/biasExplanation.js",
+      "role": "legacy explanation builder",
+      "class": "LEGACY_UNUSED",
+      "evidence": "required only by bias/biasEngine.js:38 and test/biasEngine.test.js"
+    },
+    {
+      "path": "bias/conflictDetector.js",
+      "role": "legacy conflict detector",
+      "class": "LEGACY_UNUSED",
+      "evidence": "required only by bias/biasEngine.js:36 and test/biasEngine.test.js"
+    },
+    {
+      "path": "bias/deliveryBias.js",
+      "role": "legacy delivery bias",
+      "class": "LEGACY_UNUSED",
+      "evidence": "required only by bias/biasEngine.js:35 and test/deliveryBias.test.js"
+    },
+    {
+      "path": "bias/liquidityBias.js",
+      "role": "legacy liquidity bias",
+      "class": "LEGACY_UNUSED",
+      "evidence": "required only by bias/biasEngine.js:32 and test/biasComponents.test.js"
+    },
+    {
+      "path": "bias/locationBias.js",
+      "role": "legacy location bias",
+      "class": "LEGACY_UNUSED",
+      "evidence": "required only by bias/biasEngine.js:34 and test/biasComponents.test.js"
+    },
+    {
+      "path": "bias/structureBias.js",
+      "role": "legacy structure bias",
+      "class": "LEGACY_UNUSED",
+      "evidence": "required only by bias/biasEngine.js:33 and test/biasComponents.test.js"
+    },
+    {
+      "path": "bias/dailyBiasAlignment.js",
+      "role": "legacy daily alignment helper",
+      "class": "LEGACY_UNUSED",
+      "evidence": "zero require() references anywhere in the repository"
+    },
+    {
+      "path": "ai/ictBiasPrompt.js",
+      "role": "legacy research prompt that sends 120 raw OHLC candles to DeepSeek",
+      "class": "RESEARCH_ONLY",
+      "evidence": "required only by scripts/auditDeepSeek4hBias.js and scripts/diagnoseDailyBiasMss.js; not reachable from scripts/live.js"
+    },
+    {
+      "path": "scripts/auditDeepSeek4hBias.js",
+      "role": "offline DeepSeek bias audit harness",
+      "class": "RESEARCH_ONLY",
+      "evidence": "writes outputs/deepseek-4h-bias/<run-id>"
+    },
+    {
+      "path": "scripts/inspectBias.js",
+      "role": "legacy bias inspector CLI",
+      "class": "LEGACY_UNUSED",
+      "evidence": "requires bias/biasEngine at line 29 only"
+    },
+    {
+      "path": "bias/directionalContext/4hDirectionalContextFactsV1.js",
+      "role": "superseded V1 fact builder",
+      "class": "LEGACY_UNUSED",
+      "evidence": "no production require; referenced only by test/4hBiasV3UnifiedProductionRefactor.test.js as a parity reference"
+    },
+    {
+      "path": "notify/watchNotificationPresentationV1.js",
+      "role": "standalone WATCH presentation used by scripts",
+      "class": "LEGACY_UNUSED",
+      "evidence": "not required by scripts/live.js or any live/* notify path; only scripts/, artifacts/ and test/ reference it"
+    },
+    {
+      "path": "research/4hDirectionalContextSemanticContractV1.js",
+      "role": "research semantic contract",
+      "class": "RESEARCH_ONLY",
+      "evidence": "tracked research artifact; not required by production"
+    },
+    {
+      "path": "research/4hDirectionalContextLlmSynthesisV2.js",
+      "role": "research LLM synthesis V2",
+      "class": "RESEARCH_ONLY",
+      "evidence": "tracked research artifact; not required by production"
+    },
+    {
+      "path": "test/4hBiasDecisionFreezeV1.test.js",
+      "role": "decision freeze / store / renderer / gate tests",
+      "class": "TEST_ONLY"
+    },
+    {
+      "path": "test/4hBiasV3UnifiedProductionRefactor.test.js",
+      "role": "V3 fact, semantic, coupling and failure tests",
+      "class": "TEST_ONLY"
+    },
+    {
+      "path": "test/realOrderExecutionV1.test.js",
+      "role": "entry gate tests",
+      "class": "TEST_ONLY"
+    }
+  ]
+}

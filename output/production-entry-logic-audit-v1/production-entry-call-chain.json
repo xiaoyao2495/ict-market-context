@@ -1,0 +1,28 @@
+{
+  "task": "PRODUCTION_ENTRY_LOGIC_AUDIT_V1",
+  "baselineHead": "0bb830d1fc0ef4f8614efb554b914287a6ae0d7a",
+  "productionEntry": "scripts/live.js",
+  "oneLineChain": "5m closed -> 2/2 pivot + swing registry -> EQ (2/2 current point vs ACTIVE Dynamic-D historical anchor) -> WATCH (immediate) -> raw 3-candle FVG -> first matching FVG (ordinal 1) -> EQ/FVG semantic gate -> entry plan (bias gate -> Dynamic-D target -> sizing -> RR) -> LIMIT at FVG midpoint -> fill -> SL/TP protection",
+  "chain": [
+    { "step": 1, "file": "scripts/live.js", "function": "doTick / processCandles", "lines": "983-1013, 907-948", "role": "poll new closed 5m candles and drive the engine one bar at a time" },
+    { "step": 2, "file": "live/liveEngine.js", "function": "onBar", "lines": "74-167", "role": "per closed 5m bar: incremental liquidity, EQ step, snapshot, displacement, AMD, FVG" },
+    { "step": 3, "file": "replay/replayState.js", "function": "incrementalLiquidity", "lines": "107-152", "role": "confirm the 2/2 pivot at index-2, wrap it as swing liquidity, run the EQ step with the newly confirmed swings" },
+    { "step": 4, "file": "structure/pivotDetector.js", "function": "detectPivotHigh / detectPivotLow", "lines": "23-71", "role": "the 2-left / 2-right local pivot test" },
+    { "step": 5, "file": "liquidity/swingLiquidity.js", "function": "buildSwingLiquidity", "lines": "32-100", "role": "wrap a pivot into a SWING_HIGH/SWING_LOW liquidity object with confirmedAt = confirming candle closeTime" },
+    { "step": 6, "file": "liquidity/productionEqualLiquidityV1.js", "function": "step / evaluatePivot", "lines": "234-296", "role": "ordinary 2/2 current point vs ACTIVE same-side Dynamic-D anchors within 432 bars and 5m-ATR14 x 0.7" },
+    { "step": 7, "file": "liquidity/causalDynamicDHistoricalExtremes.js", "function": "step / strictCrosses / isAgeExpired", "lines": "module", "role": "historical anchor lifecycle (ACTIVE/INACTIVE), age expiry, strict-cross invalidation, localized wick extreme" },
+    { "step": 8, "file": "live/liveEngine.js", "function": "onBar -> eqFvgCountStepHandler", "lines": "83-97", "role": "build the per-bar EQ/FVG step {evaluationTime, newEqualLiquidity, newConfirmedSwings, rawFvg}" },
+    { "step": 9, "file": "scripts/live.js", "function": "handleEqFvgCountStep", "lines": "628-666", "role": "feed the step into the WATCH state machine and queue ordinal-1 notifications for the semantic gate" },
+    { "step": 10, "file": "live/eqFvgCountWatchV1.js", "function": "step / buildWatch / consume", "lines": "50-157", "role": "create one WATCH per new EQ event and count raw 3-candle FVGs against it" },
+    { "step": 11, "file": "live/eqFvgCountWatchV1.js", "function": "rawFvgAt", "lines": "12-43", "role": "the production FVG definition: a raw 3-candle gap at the completed bar" },
+    { "step": 12, "file": "live/eqFvgAssociationSemanticV1.js", "function": "evaluate / finalize", "lines": "60-120", "role": "semantic gate on the EQ-FVG association; sets executionAllowed" },
+    { "step": 13, "file": "scripts/live.js", "function": "processPendingSemanticEvents", "lines": "511-521", "role": "if executionAllowed, hand the enriched event to the execution service" },
+    { "step": 14, "file": "execution/realOrderExecutionV1.js", "function": "onFirstMatchingFvg / consumeSignal", "lines": "403-420, 289-342", "role": "admission, one-shot EQ consumption, slot check, entry plan, order submission" },
+    { "step": 15, "file": "execution/executionRulesV1.js", "function": "buildEntryPlan", "lines": "131-198", "role": "the entry plan contract: bias gate, TP target, sizing, RR geometry" },
+    { "step": 16, "file": "execution/executionRulesV1.js", "function": "biasGate", "lines": "47-57", "role": "4H bias gate (AVAILABLE, closedAt match, direction, STRONG, HIGH)" },
+    { "step": 17, "file": "execution/executionRulesV1.js", "function": "selectTarget", "lines": "87-101", "role": "nearest ACTIVE opposite-side Dynamic-D historical point that price has not traded through" },
+    { "step": 18, "file": "execution/executionRulesV1.js", "function": "sizeOrder / geometry", "lines": "29-68", "role": "tick-normalised prices, quantity from target notional, RR >= MIN_INITIAL_RR" },
+    { "step": 19, "file": "execution/binanceExecutionClientV1.js", "function": "submitEntry / submitProtection", "lines": "139, 26-28", "role": "LIMIT entry; STOP_MARKET + TAKE_PROFIT_MARKET algo orders with closePosition on MARK_PRICE" },
+    { "step": 20, "file": "execution/realOrderExecutionV1.js", "function": "reconcile / submitProtection", "lines": "180-262, 127-165", "role": "only after a fill (qty > 0) are SL then TP submitted; a 5s poll plus the user data stream drive reconciliation" }
+  ]
+}

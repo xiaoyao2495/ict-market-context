@@ -1,0 +1,98 @@
+{
+  "task": "PRODUCTION_ENTRY_LOGIC_AUDIT_V1",
+  "CAUSAL_TIMELINE_CONTRACT": [
+    {
+      "object": "5m candle",
+      "occurredAt": "candle.openTime",
+      "confirmedAt": "candle.closeTime",
+      "availableAt": "candle.closeTime",
+      "note": "only closed === true candles are ever stepped into the engine"
+    },
+    {
+      "object": "2/2 pivot",
+      "occurredAt": "pivot candle openTime",
+      "confirmedAt": "candles[index + 2].closeTime",
+      "availableAt": "candles[index + 2].closeTime",
+      "delayBars": 2,
+      "evidence": "structure/pivotDetector.js detectPivots lines 92-111; liquidity/swingLiquidity.js lines 43-53"
+    },
+    {
+      "object": "swing liquidity object (SWING_HIGH / SWING_LOW)",
+      "occurredAt": "pivot candle openTime (sourceOpenTime)",
+      "confirmedAt": "confirming candle closeTime",
+      "createdAt": "confirming candle closeTime",
+      "evidence": "liquidity/swingLiquidity.js lines 60-95"
+    },
+    {
+      "object": "EQ event (EQH / EQL)",
+      "occurredAt": "current point occurredAt (= pivot candle openTime)",
+      "createdAt": "current point confirmedAt (= confirming candle closeTime)",
+      "confirmedAt": "same as createdAt",
+      "availableAt": "same as confirmedAt; published in the same onBar step",
+      "evidence": "liquidity/productionEqualLiquidityV1.js lines 194-198"
+    },
+    {
+      "object": "WATCH",
+      "openedAt": "EQ confirmedAt",
+      "availableAt": "same onBar step as the EQ event",
+      "evidence": "live/eqFvgCountWatchV1.js buildWatch line 63"
+    },
+    {
+      "object": "raw 3-candle FVG",
+      "occurredAt": "k1 openTime (index-2)",
+      "confirmedAt": "k3 closeTime (index)",
+      "availableAt": "k3 closeTime, same bar",
+      "evidence": "live/eqFvgCountWatchV1.js rawFvgAt lines 31-42"
+    },
+    {
+      "object": "matching FVG notification (ordinal 1)",
+      "eventTime": "rawFvg.confirmedAt",
+      "gatedBy": "rawFvg.confirmedAt >= watch.openedAt",
+      "evidence": "live/eqFvgCountWatchV1.js consume line 100"
+    },
+    {
+      "object": "entry plan decisionTime",
+      "value": "event.rawFvg.confirmedAt",
+      "evidence": "execution/executionRulesV1.js buildEntryPlan line 133"
+    },
+    {
+      "object": "Dynamic-D historical anchor",
+      "occurredAt": "anchor occurredAt",
+      "confirmedAt": "anchor confirmedAt",
+      "EQ pairing rule": "anchor.state === 'ACTIVE' AND anchor.confirmedAt <= candidate.occurredAt AND anchor.occurredAt < candidate.occurredAt AND 1 <= barsBetween <= 432",
+      "evidence": "liquidity/productionEqualLiquidityV1.js wasEligibleAtCandidateOccurrence lines 113-123"
+    },
+    {
+      "object": "TP target anchor",
+      "confirmedAt": "<= decisionTime",
+      "extra": "must not have been traded through between its confirmedAt and decisionTime",
+      "evidence": "execution/executionRulesV1.js selectTarget lines 89-95 and tradeThrough lines 70-75"
+    },
+    {
+      "object": "4H bias snapshot",
+      "closedAt": "closeTime of the newest fully closed native 4H candle",
+      "gate": "bias.closedAt must equal the execution context expected4hClosedAt",
+      "evidence": "execution/executionRulesV1.js biasGate lines 47-51; scripts/live.js executionContext lines 355-373"
+    }
+  ],
+  "consumerEvaluationTimeVsDependencyConfirmedAt": [
+    { "consumer": "EQ pairing", "evaluation": "candidate.occurredAt and candidate.confirmedAt", "dependency": "anchor.confirmedAt <= candidate.occurredAt", "verdict": "CAUSAL" },
+    { "consumer": "WATCH FVG counting", "evaluation": "watch.openedAt", "dependency": "rawFvg.confirmedAt >= watch.openedAt", "verdict": "CAUSAL" },
+    { "consumer": "entry plan", "evaluation": "decisionTime = rawFvg.confirmedAt", "dependency": "TP target confirmedAt <= decisionTime; trade-through window ends at decisionTime", "verdict": "CAUSAL" },
+    { "consumer": "4H bias gate", "evaluation": "expected4hClosedAt at plan time", "dependency": "bias.closedAt equality (exact closed-candle match)", "verdict": "CAUSAL" },
+    { "consumer": "entry cancel rule", "evaluation": "trade.plan.decisionTime", "dependency": "new swing confirmedAt > decisionTime", "verdict": "CAUSAL" }
+  ],
+  "suspiciousPoints": [
+    {
+      "point": "the EQ pairing reads anchor state as of NOW (point.state === 'ACTIVE') while the comparison window is measured at the candidate occurrence",
+      "assessment": "documented and deliberate",
+      "evidence": "productionEqualLiquidityV1.js lines 95-123 - the function is explicitly described as a mutation-free backward reconstruction, and age expiry / strict cross are applied later in evaluatePivot"
+    },
+    {
+      "point": "EQ occurredAt is the pivot candle openTime while the EQ only becomes knowable at the confirming close",
+      "assessment": "intentional two-timestamp design (occurredAt vs confirmedAt); all downstream gates use confirmedAt",
+      "evidence": "EQ event carries BOTH fields; WATCH openedAt and entry decisionTime use confirmedAt"
+    }
+  ],
+  "FUTURE_FUNCTION_VIOLATIONS_FOUND": 0
+}

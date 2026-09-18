@@ -1,0 +1,102 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "planId": "4H_BIAS_STANDALONE_V1_PLAN",
+  "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
+  "targetCommand": "node scripts/4h-bias.js <SYMBOL>   (example: node scripts/4h-bias.js BTCUSDT)",
+  "targetOutput": {
+    "symbol": "the requested symbol",
+    "asOf": "the closeTime of the latest fully closed native 4H candle (ISO and epoch ms)",
+    "direction": "BULLISH | BEARISH | NO_PRIORITY",
+    "strength": "STRONG | MODERATE | WEAK",
+    "confidence": "HIGH | MEDIUM | LOW",
+    "deterministicEvidence": "the six frozen facts rendered by 4hBiasFactRendererV1",
+    "semanticReason": "the frozen summary field already stored in the decision record, rendered as-is",
+    "dataStatus": "AVAILABLE | PARTIAL | UNAVAILABLE plus the error stage/code",
+    "modelStoreStatus": "decisionSource (FROZEN_STORE vs LLM_FRESH), factsHash, decisionKey, promptHash, promptVersion, modelId"
+  },
+  "dataFlow": [
+    "Binance futures 4H klines (getFuturesKlinesStrict, limit 122)",
+    "Closed Candle Gate (closed === true && closeTime <= evaluationTime, native 4h shape, gap check)",
+    "Deterministic Facts (4hBiasFactsV3.build)",
+    "Canonical Facts (4hBiasDecisionStoreV1.buildCanonicalFacts)",
+    "Decision Store Lookup (decisionKey)",
+    "DeepSeek only on MISS",
+    "4H Bias snapshot publish",
+    "Console output (and optionally the existing DingTalk bias block)"
+  ],
+  "mustNotDependOn": [
+    "liquidity",
+    "EQ / EQH / EQL",
+    "FVG",
+    "5m pipeline",
+    "entry plan",
+    "execution",
+    "runnerData",
+    "liveEngine snapshot rebuild"
+  ],
+  "moduleDisposition": {
+    "KEEP": [
+      "live/4hBiasV3.js service logic (as a library, with injected data and store)",
+      "bias/directionalContext/4hBiasFactsV3.js",
+      "bias/directionalContext/4hDirectionalMetrics.js",
+      "bias/directionalContext/4hDirectionalLegV1.js",
+      "bias/directionalContext/theilSen48.js",
+      "bias/4hBiasSemanticV3.js",
+      "bias/4hBiasDecisionStoreV1.js",
+      "bias/4hBiasFactRendererV1.js",
+      "notify/4hBiasContext.js (renderer only)",
+      "ai/dailyBiasContext.js + ai/auditPivots.js + ai/auditMarketFacts.js + ai/auditStructuralProvenance.js",
+      "ai/deepseekClient.js"
+    ],
+    "ADAPT": [
+      "live/4hBiasV3.js: accept an explicit evaluationTime and an explicit store path instead of reading a runner closure and CONFIG.dataDir",
+      "live/dataSource.js: expose a small 4h-only fetch helper (bootstrap + one incremental call) without the shared HTF scheduler dependency",
+      "config/productionHistoryRequirementsV1.js: reuse as-is for the 120-bar contract"
+    ],
+    "DECOUPLE": [
+      "the HTF increment call that currently shares ok/not-ok with the whole 5m tick (scripts/live.js:986-1013)",
+      "the decision store directory currently derived from the live CONFIG.dataDir",
+      "the getFourHourCandles closure over runnerData.structureCandles"
+    ],
+    "REMOVE_FROM_BIAS_PATH": [
+      "replay/replayEngine.js (and therefore bias/biasEngine.js and the whole scenario/draw/liquidity snapshot stack)",
+      "live/liveEngine.js",
+      "eqFvgCountWatchV1 and the EQ/FVG watch pipeline",
+      "execution/* and entry/*",
+      "range/*",
+      "dynamic contract universe",
+      "DingTalk (optional output, never a dependency)"
+    ]
+  },
+  "minimumModuleSet": [
+    "live/4hBiasV3.js",
+    "bias/directionalContext/4hBiasFactsV3.js",
+    "bias/directionalContext/4hDirectionalMetrics.js",
+    "bias/directionalContext/4hDirectionalLegV1.js",
+    "bias/directionalContext/theilSen48.js",
+    "ai/dailyBiasContext.js",
+    "ai/auditPivots.js",
+    "ai/auditMarketFacts.js",
+    "ai/auditStructuralProvenance.js",
+    "bias/4hBiasSemanticV3.js",
+    "bias/4hBiasDecisionStoreV1.js",
+    "bias/4hBiasFactRendererV1.js",
+    "ai/deepseekClient.js",
+    "config/loadEnv.js",
+    "config/productionHistoryRequirementsV1.js",
+    "data/binanceRest.js",
+    "notify/4hBiasContext.js"
+  ],
+  "minimumModuleCount": 17,
+  "newCodeRequired": [
+    "a thin CLI entry point scripts/4h-bias.js",
+    "a 4h-only fetch helper (bootstrap + incremental) that does not use the shared HTF scheduler",
+    "console formatting of the snapshot"
+  ],
+  "constraintsForTheFutureImplementation": [
+    "no new facts, no new indicators, no thresholds, no prompt change, no model change",
+    "reuse the frozen fact set, prompt hash and decision store semantics unchanged",
+    "LLM calls only on an explicit MISS; never for display formatting",
+    "no outcome, PnL, win-rate or accuracy output"
+  ]
+}

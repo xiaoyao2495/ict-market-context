@@ -1,0 +1,80 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "rule": "every input used by a bias fact must satisfy knownAt <= biasEvaluationTime",
+  "biasEvaluationTime": "the closeTime of the latest fully closed native 4H candle selected by live/4hBiasV3.js latestFullyClosed (equivalently evaluationTime = latest.closeTime passed in from that selection)",
+  "FACT_CAUSALITY_VIOLATION_COUNT": 0,
+  "checks": [
+    {
+      "check": "closed-candle filter at the service layer",
+      "location": "live/4hBiasV3.js:70-76 latestFullyClosed",
+      "evidence": "c.closed === true && c.closeTime <= evaluationTime; unclosed or future candles are structurally unreachable",
+      "result": "PASS"
+    },
+    {
+      "check": "closed-candle filter at the fact layer",
+      "location": "bias/directionalContext/4hBiasFactsV3.js:14-18 visibleClosed",
+      "evidence": "same predicate re-applied; the fact set is built only from rows that survive it",
+      "result": "PASS"
+    },
+    {
+      "check": "current unfinished 4H candle cannot enter",
+      "location": "live/dataSource.js:314 and the two filters above",
+      "evidence": "an append is refused when closed !== true or closeTime > evaluationTime; test 11 proves exclusion",
+      "result": "PASS"
+    },
+    {
+      "check": "rolling window indices are strictly backward-looking",
+      "location": "metrics.priceDelivery (t, t-24 .. t), theilSen48 (last 48), dmiAdx (recursion from index 14 forward to t), calculateAtrWilder (forward recursion to t)",
+      "evidence": "no index beyond t is read in any formula; all series are computed on the already-filtered visible array",
+      "result": "PASS"
+    },
+    {
+      "check": "pivot right-side confirmation",
+      "location": "ai/auditPivots.js:61-82",
+      "evidence": "a pivot at index i is only admitted when candles[i+right].closeTime <= evaluationTime; the future candle is read but its result is discarded, so no future information enters the fact value",
+      "result": "PASS"
+    },
+    {
+      "check": "structural event confirmation time",
+      "location": "bias/directionalContext/4hBiasFactsV3.js:30-41 structureDirection",
+      "evidence": "any structuralEvent with confirmedAt > evaluationTime throws STRUCTURE_FUTURE_CONFIRMATION, so a leaking upstream would fail loudly instead of silently publishing",
+      "result": "PASS"
+    },
+    {
+      "check": "structural provenance internal future-leak guard",
+      "location": "ai/auditStructuralProvenance.js:552-585",
+      "evidence": "futureLeakViolations is assembled for protected swings, BOS events and source protected swings and throws when non-empty",
+      "result": "PASS"
+    },
+    {
+      "check": "HTF refresh boundary versus evaluation time",
+      "location": "live/dataSource.js:272-292 createHtfBoundaryScheduler",
+      "evidence": "a refresh is only attempted once evaluationTime passes last.closeTime + 4h; appended rows still must satisfy closeTime <= evaluationTime",
+      "result": "PASS"
+    },
+    {
+      "check": "restart / cache restore",
+      "location": "live/4hBiasV3.js:62-64 and bias/4hBiasDecisionStoreV1.js",
+      "evidence": "the decision store key is derived from the candle openTime/closeTime plus factsHash, promptHash, promptVersion and modelId; a restored record is re-validated against a rebuilt identity, so a stale record can never be served for a different candle or different facts",
+      "result": "PASS"
+    },
+    {
+      "check": "prefix invariance of the fact builder",
+      "location": "test/4hBiasV3UnifiedProductionRefactor.test.js test 14",
+      "evidence": "twenty deterministic cutoffs assert that build(candles.slice(0,i+1), at) equals build(candles, at) - the fact set cannot see the future",
+      "result": "PASS"
+    }
+  ],
+  "knownNonCausalityRisks": [
+    {
+      "risk": "look-ahead inside the 2L/2R pivot scan",
+      "status": "MITIGATED",
+      "detail": "detectPivots reads candles[i+right] but discards any pivot whose confirmedAt exceeds evaluationTime; the future candle is used only as a confirmation clock, never as a value"
+    },
+    {
+      "risk": "HTF increment appending a candle from an unverified source",
+      "status": "MITIGATED",
+      "detail": "requireFutures=true (config/live.json) rejects any source !== 'futures' and records DEGRADED instead of appending"
+    }
+  ]
+}

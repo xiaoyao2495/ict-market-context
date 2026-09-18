@@ -1,0 +1,76 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "testPolicy": "read-only audit: existing tests were read and the repository suite was executed once for a baseline record; no test was modified",
+  "TEST_FILE_COUNT": 11,
+  "directlyCovers4hBias": [
+    {
+      "file": "test/4hBiasV3UnifiedProductionRefactor.test.js",
+      "testCaseCount": 41,
+      "covers": ["fact", "causality", "semantic", "live integration", "notification", "failure/restart"],
+      "highlights": [
+        "01-02 DMI14/ADX14 exact frozen parity",
+        "03 normalized spread formula and zero denominator",
+        "04-06 delivery parity with the pre-existing production formula",
+        "07-08 Theil-Sen48 SciPy parity and 48-bar warmup",
+        "09 V3 warmup binding requirement is 120",
+        "10-12 exact fact schema, incomplete candle excluded, futures-only gate",
+        "13 structure parity with the existing causal builder",
+        "14 prefix invariance at twenty cutoffs",
+        "15-16 semantic input exactness and no raw OHLC / EQ / WATCH leakage",
+        "17-22 prompt and output contract",
+        "23-27 cadence, in-flight dedupe, per-symbol isolation, deep immutability",
+        "28-31 failure degradation and presentation states",
+        "32-34 notification coupling",
+        "35-36 WATCH independence and legacy V2 context discard",
+        "37 no legacy runtime imports in the active V3 path",
+        "38-41 data failure, shared identity, synchronous client failure, flat observation log"
+      ]
+    },
+    {
+      "file": "test/4hBiasDecisionFreezeV1.test.js",
+      "testCaseCount": 15,
+      "covers": ["semantic store", "determinism", "failure/restart", "causality"],
+      "highlights": [
+        "02 restart reuse with zero second-process LLM calls",
+        "03 twenty concurrent same-key refreshes -> one LLM call",
+        "04 changed facts create an independent record",
+        "05 prompt/model identity invalidate the cache",
+        "06 persist failure blocks entry",
+        "07/07b/07c corruption fails closed",
+        "08 create-if-absent first-writer-wins",
+        "11 production notification never uses LLM prose",
+        "12 execution gate semantics exact"
+      ]
+    },
+    {
+      "file": "test/realOrderExecutionV1.test.js",
+      "testCaseCount": 26,
+      "covers": ["entry gate", "live integration"],
+      "highlights": [
+        "30-34 biasGate accepts BULLISH/BEARISH STRONG+HIGH and rejects conflict, MODERATE, MEDIUM"
+      ]
+    }
+  ],
+  "indirectlyRelevant": [
+    { "file": "test/structuralProvenance4hAudit.test.js", "testCaseCount": 11, "covers": ["causality of the structure source"] },
+    { "file": "test/deepseek4hBiasAudit.test.js", "testCaseCount": 42, "covers": ["legacy research DeepSeek bias audit harness (raw-candle prompt era)"] },
+    { "file": "test/dailyBiasMssDiagnostic.test.js", "testCaseCount": 5, "covers": ["legacy daily bias / MSS diagnostic"] }
+  ],
+  "legacyBiasTests": [
+    { "file": "test/biasEngine.test.js", "testCaseCount": 25, "covers": ["legacy biasEngine"] },
+    { "file": "test/biasComponents.test.js", "testCaseCount": 20, "covers": ["legacy liquidity/location/structure bias components"] },
+    { "file": "test/deliveryBias.test.js", "testCaseCount": 8, "covers": ["legacy deliveryBias"] },
+    { "file": "test/biasContextAudit.test.js", "testCaseCount": 2, "covers": ["bias context audit helper"] },
+    { "file": "test/biasResponseValidator.test.js", "testCaseCount": 17, "covers": ["legacy response validator"] }
+  ],
+  "fullSuite": {
+    "command": "node test/run.js",
+    "FULL_TEST_FILES": 143,
+    "FULL_TEST_FAILURES": 1,
+    "FULL_TEST_EXIT_CODE": 1,
+    "failingFile": "test/rangeObjectV1.test.js",
+    "failureReason": "Cannot find module '../artifacts/research/luxalgo-length24-oos-v1/dataset.json'",
+    "failureRelationTo4hBias": "none - the file is a tracked test that requires an untracked research artifact which does not exist in a freshly cleaned worktree",
+    "note": "this is a pre-existing repository hygiene defect exposed by the clean baseline, not a 4H bias defect"
+  }
+}

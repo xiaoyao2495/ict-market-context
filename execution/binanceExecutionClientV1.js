@@ -43,6 +43,38 @@ function buildBreakoutEntryParams(plan) {
         triggerPrice: plan.entryTrigger, workingType: plan.entryWorkingType || 'CONTRACT_PRICE',
         clientAlgoId: clientId(plan.symbol, plan.setupId + ':ENTRY', 'ENTRY') };
 }
+
+/**
+ * PRODUCTION BRIDGE REPLACEMENT.
+ *
+ * A reduceOnly protection with an EXPLICIT quantity and closePosition=false. It is the
+ * only order shape that may coexist with a canonical closePosition stop/target: the
+ * real exchange rejects a second same-role closePosition order with -4130, which is why
+ * the old "place the new canonical first" sequence can never be used again.
+ * One-way mode only (reduceOnly is not a hedge-mode concept).
+ */
+function buildBridgeParams(plan, role, quantity, triggerPrice) {
+    return { algoType: 'CONDITIONAL', symbol: plan.symbol,
+        side: plan.direction === 'LONG' ? 'SELL' : 'BUY', positionSide: 'BOTH',
+        type: role === 'SL' ? 'STOP_MARKET' : 'TAKE_PROFIT_MARKET',
+        quantity: quantity, triggerPrice: triggerPrice, workingType: 'MARK_PRICE',
+        reduceOnly: 'true', closePosition: 'false',
+        clientAlgoId: clientId(plan.symbol, plan.tradeId, role + '_BRIDGE') };
+}
+
+/**
+ * TWO_BAR_BREAKOUT_REAL_ORDER_SMOKE_V1 (§18/§25): the local real-order smoke must
+ * live in its own clientAlgoId namespace so it can never collide with - or cancel
+ * - a production order. Everything outside IMC_SMOKE_ is refused, and the id is
+ * length-capped to Binance's 36 character client-id limit.
+ *
+ * Applies to any client id the smoke creates (conditional algo ids and the regular
+ * reduceOnly close id alike).
+ */
+function isSmokeClientAlgoId(value) {
+    var id = String(value === undefined || value === null ? '' : value);
+    return id.length <= 36 && /^IMC_SMOKE_[A-Za-z0-9_:-]{1,26}$/.test(id);
+}
 function validateSmokeOrder(order) {
     if (!order || order.side !== 'BUY' || order.type !== 'LIMIT' || order.timeInForce !== 'GTC' ||
         !order.symbol || !Number.isFinite(Number(order.quantity)) || Number(order.quantity) <= 0 ||
@@ -53,6 +85,13 @@ function validateSmokeOrder(order) {
     }
 }
 function uncertain(error) {
+    if (!error) return false;
+    // A local refusal never reached the exchange, so the order state is certain:
+    // it must not be swallowed by the POST-then-query idempotency path.
+    if (error.code === 'LIVE_TRADING_DISABLED' || error.code === 'BINANCE_CREDENTIALS_MISSING' ||
+            error.code === 'MUTATION_GUARD_BLOCKED') {
+        return false;
+    }
     return !error.response || error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' ||
         (error.response && error.response.status >= 500);
 }
@@ -174,10 +213,78 @@ function createClient(options) {
             return idempotentPost('/fapi/v1/algoOrder', p,
                 function () { return queryAlgo(plan.symbol, null, smokeClientAlgoId); });
         },
-        submitProtection: function (plan, role) { var p = buildProtectionParams(plan, role); return idempotentPost('/fapi/v1/algoOrder', p,
-            function () { return queryAlgo(plan.symbol, null, p.clientAlgoId); }); },
-        placeBreakoutEntry: function (plan) {
+        /**
+         * PRODUCTION bridge protection: reduceOnly + explicit quantity +
+         * closePosition=false, so it can be held at the same time as the canonical
+         * closePosition stop/target. This is the ONLY shape Production may use while a
+         * canonical protection has to be moved.
+         */
+        submitBridgeProtection: function (plan, role, quantity, triggerPrice) {
+            if (['SL', 'TP'].indexOf(role) < 0) {
+                return Promise.reject(Object.assign(new Error('INVALID_BRIDGE_ROLE'),
+                    { code: 'MUTATION_GUARD_BLOCKED' }));
+            }
+            if (!(Number(quantity) > 0) || !(Number(triggerPrice) > 0)) {
+                return Promise.reject(Object.assign(new Error('INVALID_BRIDGE_ORDER'),
+                    { code: 'MUTATION_GUARD_BLOCKED' }));
+            }
+            var p = buildBridgeParams(plan, role, quantity, triggerPrice);
+            return idempotentPost('/fapi/v1/algoOrder', p,
+                function () { return queryAlgo(plan.symbol, null, p.clientAlgoId); });
+        },
+        /**
+         * Production call sites pass two arguments and keep the deterministic
+         * IMC_<symbol>_<role>_<hash> id. The optional third argument is only for
+         * the local fill/protection smoke and must live in IMC_SMOKE_.
+         */
+        submitProtection: function (plan, role, smokeClientAlgoId) {
+            var p = buildProtectionParams(plan, role);
+            if (smokeClientAlgoId !== undefined && smokeClientAlgoId !== null) {
+                if (!isSmokeClientAlgoId(smokeClientAlgoId)) {
+                    return Promise.reject(Object.assign(new Error('INVALID_SMOKE_CLIENT_ALGO_ID'),
+                        { code: 'MUTATION_GUARD_BLOCKED' }));
+                }
+                p.clientAlgoId = String(smokeClientAlgoId);
+            }
+            return idempotentPost('/fapi/v1/algoOrder', p,
+                function () { return queryAlgo(plan.symbol, null, p.clientAlgoId); });
+        },
+        /**
+         * LOCAL SMOKE ONLY - BRIDGE CAPABILITY PROBE.
+         *
+         * Places a reduceOnly protective order with an EXPLICIT quantity and
+         * closePosition=false, so it can coexist with a canonical closePosition
+         * stop instead of colliding with it (Binance -4130). The requirement is
+         * structurally confined to the IMC_SMOKE_ namespace, exactly like
+         * cancelSmokeAlgo, so a production call site can never reach it.
+         */
+        submitSmokeBridgeOrder: function (order) {
+            if (!order || !isSmokeClientAlgoId(order.clientAlgoId) ||
+                    !/^IMC_SMOKE_/.test(String(order.clientAlgoId))) {
+                return Promise.reject(Object.assign(new Error('INVALID_SMOKE_BRIDGE_ID'),
+                    { code: 'MUTATION_GUARD_BLOCKED' }));
+            }
+            var p = { algoType: 'CONDITIONAL', symbol: order.symbol, side: order.side,
+                positionSide: 'BOTH', type: order.type, quantity: order.quantity,
+                triggerPrice: order.triggerPrice, workingType: order.workingType || 'MARK_PRICE',
+                reduceOnly: 'true', closePosition: 'false', clientAlgoId: String(order.clientAlgoId) };
+            return idempotentPost('/fapi/v1/algoOrder', p,
+                function () { return queryAlgo(order.symbol, null, p.clientAlgoId); });
+        },
+        /**
+         * Production call site passes one argument and keeps the deterministic
+         * IMC_<symbol>_ENTRY_<hash> id. The optional second argument is only for
+         * the local real-order smoke and must live in the IMC_SMOKE_ namespace.
+         */
+        placeBreakoutEntry: function (plan, smokeClientAlgoId) {
             var p = buildBreakoutEntryParams(plan);
+            if (smokeClientAlgoId !== undefined && smokeClientAlgoId !== null) {
+                if (!isSmokeClientAlgoId(smokeClientAlgoId)) {
+                    return Promise.reject(Object.assign(new Error('INVALID_SMOKE_CLIENT_ALGO_ID'),
+                        { code: 'MUTATION_GUARD_BLOCKED' }));
+                }
+                p.clientAlgoId = String(smokeClientAlgoId);
+            }
             return idempotentPost('/fapi/v1/algoOrder', p,
                 function () { return queryAlgo(plan.symbol, null, p.clientAlgoId); });
         },
@@ -202,9 +309,38 @@ function createClient(options) {
                 });
             });
         },
-        emergencyClose: function (symbol, direction, quantity, tradeId) {
+        /**
+         * Smoke-only cancel. Structurally unable to cancel anything outside the
+         * IMC_SMOKE_ namespace, which is the §25 "never cancelAll, never touch a
+         * production order" guarantee for the local real-order smoke.
+         */
+        cancelSmokeAlgo: function (symbol, clientAlgoId) {
+            if (!isSmokeClientAlgoId(clientAlgoId) || !/^IMC_SMOKE_/.test(String(clientAlgoId))) {
+                return Promise.reject(Object.assign(new Error('INVALID_SMOKE_ALGO_ID'),
+                    { code: 'MUTATION_GUARD_BLOCKED' }));
+            }
+            return request('DELETE', '/fapi/v1/algoOrder', { clientAlgoId: clientAlgoId }, true, true).then(function () {
+                return queryAlgo(symbol, null, clientAlgoId).then(function (state) {
+                    if (state.algoStatus === 'CANCELED') return state;
+                    return queryAlgo(symbol, null, clientAlgoId);
+                });
+            });
+        },
+        /**
+         * Verified safety close (MARKET reduceOnly). The optional fifth argument is
+         * only for the local smoke, which must keep every id it creates inside the
+         * IMC_SMOKE_ namespace.
+         */
+        emergencyClose: function (symbol, direction, quantity, tradeId, smokeClientOrderId) {
             var p = { symbol: symbol, side: direction === 'LONG' ? 'SELL' : 'BUY', positionSide: 'BOTH', type: 'MARKET',
                 quantity: quantity, reduceOnly: 'true', newClientOrderId: clientId(symbol, tradeId, 'CLOSE') };
+            if (smokeClientOrderId !== undefined && smokeClientOrderId !== null) {
+                if (!isSmokeClientAlgoId(smokeClientOrderId)) {
+                    return Promise.reject(Object.assign(new Error('INVALID_SMOKE_CLIENT_ORDER_ID'),
+                        { code: 'MUTATION_GUARD_BLOCKED' }));
+                }
+                p.newClientOrderId = String(smokeClientOrderId);
+            }
             return idempotentPost('/fapi/v1/order', p, function () { return queryOrder(symbol, null, p.newClientOrderId); });
         },
         // User Data Stream lifecycle uses the current WebSocket API methods in
@@ -215,5 +351,6 @@ function createClient(options) {
 module.exports = { createClient: createClient, clientId: clientId,
     buildEntryParams: buildEntryParams, buildProtectionParams: buildProtectionParams,
     buildBreakoutEntryParams: buildBreakoutEntryParams,
+    isSmokeClientAlgoId: isSmokeClientAlgoId,
     validateSmokeOrder: validateSmokeOrder, operationName: operationName,
     sanitizedParams: sanitizedParams };

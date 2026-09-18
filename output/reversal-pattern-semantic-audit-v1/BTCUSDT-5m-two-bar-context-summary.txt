@@ -1,0 +1,27 @@
+TWO_BAR_REVERSAL_CONTEXT_AUDIT_V1
+
+Symbol: BTCUSDT
+Interval: 5m
+Scope: ONLY_PATTERN=TWO_BAR_REVERSAL (PIN_BAR / THREE_BAR_REVERSAL not audited)
+
+Data window (UTC): 2026-09-16T10:55:00.000Z -> 2026-09-17T10:54:59.999Z
+Data window (UTC+8): 2026-09-16 18:55 -> 2026-09-17 18:54
+Closed candles: 288
+Continuity: PASS
+Future leak audit: PASS
+
+Stage 1 candidates (two-bar prefilter): 84
+Two-Bar CLEAR total: 27
+Bullish Two-Bar CLEAR: 24
+Bearish Two-Bar CLEAR: 3
+
+Preceding opposite-direction context:
+CLEAR: 14
+BORDERLINE: 3
+NOT_TREND: 9
+INSUFFICIENT_CONTEXT: 1
+context LLM_ERROR: 0
+
+CONTEXT_ALIGNED_TWO_BAR_REVERSAL: 14 (bullish 13, bearish 1)
+
+This audit does NOT compute any future outcome (no after-N-bar, MFE, MAE or trigger test).

@@ -1,0 +1,52 @@
+THREE_BAR_REVERSAL_CONTEXT_AUDIT_V1
+
+BTCUSDT 5m
+
+Dataset:
+UTC+8 start: 2026-09-16 18:55
+UTC+8 end: 2026-09-17 18:54
+closed candles: 288
+continuity: PASS
+REUSED_TWO_BAR_CANDLE_SNAPSHOT=true
+(this only means the candles were reused, Two-Bar logic was NOT run)
+
+Three-Bar prefilter:
+Bullish candidates: 40
+Bearish candidates: 30
+Total: 70
+
+Pattern classification:
+Bullish CLEAR: 16
+Bullish BORDERLINE: 10
+Bearish CLEAR: 1
+Bearish BORDERLINE: 15
+stage1 LLM_ERROR: 0
+
+For CLEAR Three-Bar:
+Bullish preceding bearish leg:
+  CLEAR: 7
+  BORDERLINE: 0
+  NOT_TREND: 9
+  INSUFFICIENT_CONTEXT: 0
+Bearish preceding bullish leg:
+  CLEAR: 0
+  BORDERLINE: 0
+  NOT_TREND: 1
+  INSUFFICIENT_CONTEXT: 0
+context LLM_ERROR: 0
+
+Final:
+CONTEXT_ALIGNED_BULLISH_THREE_BAR_REVERSAL: 7
+CONTEXT_ALIGNED_BEARISH_THREE_BAR_REVERSAL: 0
+TOTAL_CONTEXT_ALIGNED: 7
+
+K2 observation (context-aligned only, never a gate):
+Bullish bottom K2 body: BULL=3 BEAR=4 DOJI=0
+Bearish top K2 body: BULL=0 BEAR=0 DOJI=0
+Bullish bottom extreme bar: K1=2 K2=4 K3=1
+Bearish top extreme bar: K1=0 K2=0 K3=0
+
+Future Leak Audit: PASS
+Production Changed: false
+
+This audit does NOT compute any future outcome and does not run any Two-Bar overlap detector.

@@ -1,0 +1,532 @@
+BTCUSDT 5m
+Timezone: UTC+8 / Asia/Shanghai
+Timestamp meaning: 5m candle OPEN TIME
+Scope: TWO_BAR_REVERSAL only (PIN_BAR and THREE_BAR_REVERSAL are not audited)
+
+=== A. TWO_BAR + PRECEDING TREND CLEAR ===
+
+========================================
+BULLISH TWO_BAR
+PRECEDING BEARISH LEG = CLEAR
+========================================
+
+#001
+Confidence: MEDIUM
+
+Leg approx:
+2026-09-16 20:00
+→
+2026-09-16 20:25
+
+K1 BEAR:
+2026-09-16 20:25
+
+K2 BULL:
+2026-09-16 20:30
+
+estimatedLegBars: 5  detectedDirection: BEARISH
+
+Context reason:
+After an early high at bar 5, price made a series of lower highs and lower lows into K1, with the last 5 bars netting -292.3 points (-2.74 ATR) and 6 of 10 bars bearish. The final 4 bars before K1 are all bearish, showing sustained downward progression into K1.
+
+#002
+Confidence: HIGH
+
+Leg approx:
+2026-09-16 20:00
+→
+2026-09-16 20:40
+
+K1 BEAR:
+2026-09-16 20:40
+
+K2 BULL:
+2026-09-16 20:45
+
+estimatedLegBars: 8  detectedDirection: BEARISH
+
+Context reason:
+Price pressed lower from 76275 high to 75751 low with 8 lower highs and 7 lower lows, net move -254.8 (-2.29 ATR), and bearish control continued into K1 (close 75920.4, below prior close). The single bullish bar at position 8 was a small pullback within the sustained downward progression.
+
+#003
+Confidence: HIGH
+
+Leg approx:
+2026-09-16 20:45
+→
+2026-09-16 21:35
+
+K1 BEAR:
+2026-09-16 21:35
+
+K2 BULL:
+2026-09-16 21:40
+
+estimatedLegBars: 10  detectedDirection: BEARISH
+
+Context reason:
+Price pressed lower from 75988.5 to 75551.1 (K1 low), with net move -437.4 (-3.6 ATR), directional efficiency ~0.70, and lower lows/lower highs dominating (6 lower lows vs 3 higher lows). The bearish leg runs directly into K1, which made a new low, before the bullish two-bar reversal.
+
+#004
+Confidence: MEDIUM
+
+Leg approx:
+2026-09-16 22:05
+→
+2026-09-16 22:35
+
+K1 BEAR:
+2026-09-16 22:35
+
+K2 BULL:
+2026-09-16 22:40
+
+estimatedLegBars: 6  detectedDirection: BEARISH
+
+Context reason:
+Price pressed lower from 75834.9 to 75605.1 into K1, with lower highs and lower lows dominating the recent process; the last 5-7 bars show sustained downward progression despite small bullish pullbacks, confirming a clear bearish leg into K1.
+
+#005
+Confidence: HIGH
+
+Leg approx:
+2026-09-17 00:55
+→
+2026-09-17 01:45
+
+K1 BEAR:
+2026-09-17 01:45
+
+K2 BULL:
+2026-09-17 01:50
+
+estimatedLegBars: 10  detectedDirection: BEARISH
+
+Context reason:
+Price pressed lower into K1: net move -302.3 points (-2.34 ATR), 7 lower lows vs 2 higher lows, 6 lower highs vs 3 higher highs, lowest low at the final bar before K1, and last3/last5/last7 net moves all strongly negative. Bullish pullbacks were small and contained, so bearish directional control dominated into K1.
+
+#006
+Confidence: HIGH
+
+Leg approx:
+2026-09-17 05:30
+→
+2026-09-17 06:20
+
+K1 BEAR:
+2026-09-17 06:20
+
+K2 BULL:
+2026-09-17 06:25
+
+estimatedLegBars: 10  detectedDirection: BEARISH
+
+Context reason:
+Price pressed lower from 76031.5 to 75661.9 into K1, with net move -2.75 ATR, lower highs and lower lows dominating, and bearish bars outnumbering bullish; the down leg runs directly into K1.
+
+#007
+Confidence: MEDIUM
+
+Leg approx:
+2026-09-17 05:55
+→
+2026-09-17 06:30
+
+K1 BEAR:
+2026-09-17 06:30
+
+K2 BULL:
+2026-09-17 06:35
+
+estimatedLegBars: 7  detectedDirection: BEARISH
+
+Context reason:
+Price pressed lower from 75995.9 high to 75625.7 low with lower highs and lower lows dominating the recent process into K1; net move -212.4 (-1.68 ATR) over 10 bars shows sustained bearish directional control despite small bullish pullbacks.
+
+#008
+Confidence: HIGH
+
+Leg approx:
+2026-09-17 11:40
+→
+2026-09-17 12:30
+
+K1 BEAR:
+2026-09-17 12:30
+
+K2 BULL:
+2026-09-17 12:35
+
+estimatedLegBars: 10  detectedDirection: BEARISH
+
+Context reason:
+Price pressed steadily lower into K1: 9 of 10 preceding bars bearish, net move -271 (-3.55 ATR), directional efficiency 0.96, 9 lower highs and 9 lower lows, lowest low at the most recent bar. Clear sustained bearish leg running into K1.
+
+#009
+Confidence: HIGH
+
+Leg approx:
+2026-09-17 12:15
+→
+2026-09-17 12:50
+
+K1 BEAR:
+2026-09-17 12:50
+
+K2 BULL:
+2026-09-17 12:55
+
+estimatedLegBars: 7  detectedDirection: BEARISH
+
+Context reason:
+Bars 1-7 show sustained lower highs and lower lows pressing down from 76401.9 to 76146.8, a clear bearish leg running into K1; the last three bullish bars are a small pullback within that down move, not a reversal of control.
+
+#010
+Confidence: HIGH
+
+Leg approx:
+2026-09-17 13:05
+→
+2026-09-17 13:55
+
+K1 BEAR:
+2026-09-17 13:55
+
+K2 BULL:
+2026-09-17 14:00
+
+estimatedLegBars: 10  detectedDirection: BEARISH
+
+Context reason:
+Price pressed lower from 76494.9 high to 76302 low with lower highs and lower lows dominating; net move -108.4 (-1.29 ATR) into K1, and K1 itself continued the bearish leg to a new low, confirming sustained downward directional control into the reversal.
+
+#011
+Confidence: MEDIUM
+
+Leg approx:
+2026-09-17 15:15
+→
+2026-09-17 15:50
+
+K1 BEAR:
+2026-09-17 15:50
+
+K2 BULL:
+2026-09-17 15:55
+
+estimatedLegBars: 7  detectedDirection: BEARISH
+
+Context reason:
+Price made a lower high at bar 1 (76657.7) and then pressed lower, with the lowest low at bar 9 (76439.2) just before K1. The last 7 bars net -63.3 (-0.87 ATR) with 6 lower highs and 6 lower lows, showing sustained bearish progression into K1. Small bullish pullbacks (bars 3, 8) are allowed within the down leg.
+
+#012
+Confidence: HIGH
+
+Leg approx:
+2026-09-17 15:20
+→
+2026-09-17 16:10
+
+K1 BEAR:
+2026-09-17 16:10
+
+K2 BULL:
+2026-09-17 16:15
+
+estimatedLegBars: 10  detectedDirection: BEARISH
+
+Context reason:
+Price pressed lower from 76534 to 76380 into K1, with 6 bearish bars, 7 lower lows, 6 lower highs, and net move of -1.48 ATR, showing sustained bearish directional control into K1.
+
+#013
+Confidence: MEDIUM
+
+Leg approx:
+2026-09-17 17:55
+→
+2026-09-17 18:45
+
+K1 BEAR:
+2026-09-17 18:45
+
+K2 BULL:
+2026-09-17 18:50
+
+estimatedLegBars: 10  detectedDirection: BEARISH
+
+Context reason:
+Price pressed lower from 76506 high to 76233 low into K1, with lower highs and lower lows dominating (6 lower highs, 5 lower lows), net move -2.05 ATR, and bearish control persisting through the final bars before K1.
+
+========================================
+BEARISH TWO_BAR
+PRECEDING BULLISH LEG = CLEAR
+========================================
+
+#001
+Confidence: MEDIUM
+
+Leg approx:
+2026-09-17 01:50
+→
+2026-09-17 02:25
+
+K1 BULL:
+2026-09-17 02:25
+
+K2 BEAR:
+2026-09-17 02:30
+
+estimatedLegBars: 7  detectedDirection: BULLISH
+
+Context reason:
+Price rose from 75340.9 to a high of 76540 over the recent bars, with higher highs and higher lows dominating and bullish bars outnumbering bearish ones, showing a clear upward leg pressing into K1.
+
+=== B. TWO_BAR + PRECEDING TREND BORDERLINE ===
+
+========================================
+BULLISH TWO_BAR
+PRECEDING BEARISH LEG = BORDERLINE
+========================================
+
+#001
+Confidence: LOW
+
+Leg approx:
+2026-09-16 19:00
+→
+2026-09-16 19:20
+
+K1 BEAR:
+2026-09-16 19:20
+
+K2 BULL:
+2026-09-16 19:25
+
+estimatedLegBars: 4  detectedDirection: BEARISH
+
+Context reason:
+Price made lower highs and lower lows from the 76027 high into K1, with net decline and bearish bar count, but the move is small and choppy with alternating bullish bars, so the bearish leg is only borderline clear.
+
+#002
+Confidence: LOW
+
+Leg approx:
+2026-09-17 00:40
+→
+2026-09-17 01:05
+
+K1 BEAR:
+2026-09-17 01:05
+
+K2 BULL:
+2026-09-17 01:10
+
+estimatedLegBars: 5  detectedDirection: BEARISH
+
+Context reason:
+Price fell from 75855 to a low of 75647 over the first six bars, showing a clear bearish leg into the middle of the window. However, the last four bars before K1 (including two bullish closes and a higher low) show price recovering and chopping sideways, so the bearish leg did not cleanly continue into K1; K1 itself is the sharp drop. Directional efficiency is low (0.26) and the recent 5-bar net move is positive, making the preceding bearish context only borderline.
+
+#003
+Confidence: LOW
+
+Leg approx:
+2026-09-17 14:05
+→
+2026-09-17 14:20
+
+K1 BEAR:
+2026-09-17 14:20
+
+K2 BULL:
+2026-09-17 14:25
+
+estimatedLegBars: 3  detectedDirection: BEARISH
+
+Context reason:
+Net move over the 10 preceding bars is bearish (-67.6, -0.82 ATR) with 6 bear vs 4 bull bars, but directional efficiency is very low (0.15) and the last 5 bars show a net bullish move (+76.9), indicating two-way chop rather than a clean sustained bearish leg into K1. The immediate 3 bars before K1 are bearish (-65.1), which provides some downward pressure into K1, but the overall preceding process is choppy and not clearly directional.
+
+========================================
+BEARISH TWO_BAR
+PRECEDING BULLISH LEG = BORDERLINE
+========================================
+
+(none)
+
+=== C. TWO_BAR + NOT_TREND ===
+
+========================================
+TWO_BAR CLEAR
+PRECEDING CONTEXT = NOT_TREND
+========================================
+
+#001
+Confidence: LOW
+
+Leg approx: (not estimated)
+
+K1 BEAR:
+2026-09-16 19:10
+
+K2 BULL:
+2026-09-16 19:15
+
+estimatedLegBars: 0  detectedDirection: UNCLEAR
+
+Context reason:
+only 3 preceding bar(s) available, minimum is 4
+
+#002
+Confidence: HIGH
+
+Leg approx:
+2026-09-16 19:55
+→
+2026-09-16 20:45
+
+K1 BULL:
+2026-09-16 20:45
+
+K2 BEAR:
+2026-09-16 20:50
+
+estimatedLegBars: 10  detectedDirection: BEARISH
+
+Context reason:
+The preceding bars show a clear bearish directional leg: price fell from 76210.2 to 75920.4 over 10 bars, with 7 bearish candles, 8 lower highs, 7 lower lows, and a net move of -289.8 (-2.62 ATR). The expected preceding context for a bearish two-bar reversal is bullish, but the actual context is bearish, so the expected bullish leg is not present.
+
+#003
+Confidence: MEDIUM
+
+Leg approx: (not estimated)
+
+K1 BEAR:
+2026-09-17 00:05
+
+K2 BULL:
+2026-09-17 00:10
+
+estimatedLegBars: 0  detectedDirection: SIDEWAYS
+
+Context reason:
+Preceding bars show two-way chop with no sustained bearish progression into K1; net move is slightly positive, directional efficiency is very low (0.175), and highs/lows are mixed rather than consistently lower.
+
+#004
+Confidence: HIGH
+
+Leg approx:
+2026-09-17 01:40
+→
+2026-09-17 02:30
+
+K1 BEAR:
+2026-09-17 02:30
+
+K2 BULL:
+2026-09-17 02:35
+
+estimatedLegBars: 10  detectedDirection: BULLISH
+
+Context reason:
+The preceding bars show a net upward move of +552 points with 7 bullish vs 3 bearish bars, higher highs and higher lows, and the highest high occurring near the end of the sequence. This is a clear bullish directional leg into K1, not the expected bearish leg.
+
+#005
+Confidence: MEDIUM
+
+Leg approx: (not estimated)
+
+K1 BEAR:
+2026-09-17 03:20
+
+K2 BULL:
+2026-09-17 03:25
+
+estimatedLegBars: 0  detectedDirection: SIDEWAYS
+
+Context reason:
+Preceding 10 bars show two-way chop: net move +87.8 (0.26 ATR), directional efficiency 0.05, equal bull/bear counts, and highs/lows oscillating without sustained lower progression into K1. No clear bearish leg runs into K1.
+
+#006
+Confidence: HIGH
+
+Leg approx: (not estimated)
+
+K1 BEAR:
+2026-09-17 07:25
+
+K2 BULL:
+2026-09-17 07:30
+
+estimatedLegBars: 0  detectedDirection: BULLISH
+
+Context reason:
+The preceding bars show a clear bullish progression into K1: 8 bullish vs 2 bearish bars, higher highs and higher lows, net move +317.8 points, and the highest high at the most recent bar. There is no sustained bearish leg before K1; the expected bearish context is absent.
+
+#007
+Confidence: HIGH
+
+Leg approx:
+2026-09-17 10:25
+→
+2026-09-17 11:15
+
+K1 BEAR:
+2026-09-17 11:15
+
+K2 BULL:
+2026-09-17 11:20
+
+estimatedLegBars: 10  detectedDirection: BULLISH
+
+Context reason:
+Preceding bars show a sustained bullish progression: net move +257.2 (2.46 ATR), 7 bull vs 3 bear bars, higher highs and higher lows dominating, with the highest high near the end. This is a clear bullish leg into K1, opposite to the expected bearish context for a bullish two-bar reversal.
+
+#008
+Confidence: HIGH
+
+Leg approx: (not estimated)
+
+K1 BEAR:
+2026-09-17 13:15
+
+K2 BULL:
+2026-09-17 13:20
+
+estimatedLegBars: 0  detectedDirection: BULLISH
+
+Context reason:
+The preceding bars show a net upward move from 76176.3 to 76437 with higher highs and higher lows dominating (6 higher highs vs 3 lower highs, 5 higher lows vs 3 lower lows). The lowest low occurred early (position 1) and price pressed to higher levels into K1, so the immediate directional leg into K1 is bullish, not bearish. No clear bearish leg precedes the bullish two-bar reversal.
+
+#009
+Confidence: HIGH
+
+Leg approx:
+2026-09-17 15:10
+→
+2026-09-17 16:00
+
+K1 BULL:
+2026-09-17 16:00
+
+K2 BEAR:
+2026-09-17 16:05
+
+estimatedLegBars: 10  detectedDirection: BEARISH
+
+Context reason:
+Preceding bars show a clear bearish leg: net move -72.1 (-1.01 ATR), 7 lower highs and 7 lower lows, lowest low at the most recent bar (position 9), and price pressing to lower lows into K1. This is the opposite of the expected bullish preceding context.
+
+#010
+Confidence: HIGH
+
+Leg approx: (not estimated)
+
+K1 BEAR:
+2026-09-17 16:45
+
+K2 BULL:
+2026-09-17 16:50
+
+estimatedLegBars: 0  detectedDirection: SIDEWAYS
+
+Context reason:
+Preceding bars show two-way chop with net move of only 27 points (0.36 ATR) and directional efficiency of 0.065; price oscillated between 76350 and 76511 with alternating bullish/bearish candles, no sustained downward progression into K1.

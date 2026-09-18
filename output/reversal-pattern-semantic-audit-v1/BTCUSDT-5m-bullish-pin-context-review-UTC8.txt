@@ -1,0 +1,904 @@
+BTCUSDT 5m
+Timezone: UTC+8 / Asia/Shanghai
+Timestamp meaning: 5m candle OPEN TIME
+Scope: BULLISH PIN BAR only (bearish pin, TWO_BAR_REVERSAL and THREE_BAR_REVERSAL are not audited)
+
+=== A. PIN CLEAR + PRECEDING BEARISH LEG CLEAR ===
+
+===================================
+BULLISH PIN
+PRECEDING BEARISH LEG = CLEAR
+===================================
+
+#001
+PIN: 2026-09-16 20:30
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-16 20:00
+→
+2026-09-16 20:30
+
+PIN OHLC:
+O=75910
+H=75988
+L=75751.1
+C=75986
+
+Context reason:
+Price shows sustained lower-price progression into the pin bar: net move -295.2 over 10 bars, directional efficiency 0.715, 6 bear bars vs 4 bull, 7 lower highs and 6 lower lows, with the lowest low at the most recent bar (position 9, 0 bars from end). The last 5 bars are almost entirely bearish (last5NetMove -235.5), confirming a clear downward leg running directly into the pin.
+
+#002
+PIN: 2026-09-16 20:35
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg:
+2026-09-16 20:00
+→
+2026-09-16 20:35
+
+PIN OHLC:
+O=75986
+H=75986
+L=75886.5
+C=75943.5
+
+Context reason:
+From bar 3 high (76275.4) price pressed lower with 7 lower highs and 7 lower lows, net -211 to -254, ending at the lowest low right at the pin bar; sustained bearish progression into the pin.
+
+#003
+PIN: 2026-09-16 21:10
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-16 20:20
+→
+2026-09-16 21:10
+
+PIN OHLC:
+O=75710.3
+H=75764.4
+L=75630.8
+C=75764.4
+
+Context reason:
+Price shows sustained lower-price progression into the pin bar: net move -253.5 (-2.0 ATR), 7 lower highs vs 2 higher highs, 5 lower lows, lowest low at position 8 just before the pin, and the last 3/5/7-bar moves are all strongly negative. Bearish directional control is clear despite minor bullish pullbacks.
+
+#004
+PIN: 2026-09-16 21:45
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-16 21:25
+→
+2026-09-16 21:45
+
+PIN OHLC:
+O=75738
+H=75895.8
+L=75605
+C=75834.9
+
+Context reason:
+Price made a clear lower-price progression into the pin: from the 75989 high it stepped down through lower highs and lower lows, with the lowest low (75537.5) occurring on the bar immediately before the pin. The last three bars before the pin show a sustained bearish push (75618.3 -> 75551.1), confirming bearish directional control running into the pin bar.
+
+#005
+PIN: 2026-09-16 22:10
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-16 21:45
+→
+2026-09-16 22:10
+
+PIN OHLC:
+O=75531.3
+H=75543.8
+L=75386
+C=75537
+
+Context reason:
+Price shows sustained lower-price progression into the pin bar: net move -190 (-1.21 ATR), 7 bear vs 3 bull bars, 7 lower lows, and the lowest low is at the most recent bar (position 9, 0 bars from end). The last 5 bars net -303.6 (-1.93 ATR) with consecutive bearish closes pressing into the pin, confirming a clear bearish leg running up to the pin.
+
+#006
+PIN: 2026-09-17 03:25
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 03:10
+→
+2026-09-17 03:25
+
+PIN OHLC:
+O=75397
+H=75522.9
+L=75216.9
+C=75510.5
+
+Context reason:
+The most recent bars show a clear downward leg into the pin: the last three bars moved -523.1 points (-1.56 ATR) with lower highs and lower lows, and the final two bars are consecutive bearish candles pressing to new lows before the pin bar. Although earlier bars were choppy, the immediate process shows sustained bearish directional control into the pin.
+
+#007
+PIN: 2026-09-17 05:45
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 04:55
+→
+2026-09-17 05:45
+
+PIN OHLC:
+O=75933.1
+H=75943.4
+L=75902.6
+C=75936.8
+
+Context reason:
+Price shows sustained lower-price progression into the pin bar: net move -211.1 (-1.6 ATR), directional efficiency 0.91, 7 bearish vs 3 bullish bars, 8 lower highs and 6 lower lows, with the lowest low at the final bar. Clear bearish leg running into the pin.
+
+#008
+PIN: 2026-09-17 06:05
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 05:15
+→
+2026-09-17 06:05
+
+PIN OHLC:
+O=75712.1
+H=75755.1
+L=75625.7
+C=75724.3
+
+Context reason:
+Price shows sustained lower-price progression into the pin bar: net move -367.4 (-2.76 ATR), directional efficiency 0.75, 7 bearish vs 3 bullish bars, 7 lower highs and 6 lower lows, with the lowest low at the final preceding bar. Clear bearish leg running directly into the pin.
+
+#009
+PIN: 2026-09-17 09:15
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 08:50
+→
+2026-09-17 09:15
+
+PIN OHLC:
+O=76275.7
+H=76362.3
+L=76189.7
+C=76324.9
+
+Context reason:
+From the high at bar 0, price made a sustained series of lower highs and lower lows, with six bearish bars pressing down to the lowest low at bar 7 (76182). The two small bullish bars at bars 8-9 are minor pullbacks within the still-dominant downward progression into the pin bar, which itself probed a new low (76189.7) before closing higher.
+
+#010
+PIN: 2026-09-17 09:55
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg:
+2026-09-17 09:35
+→
+2026-09-17 09:55
+
+PIN OHLC:
+O=76365.7
+H=76367.5
+L=76298.4
+C=76334.8
+
+Context reason:
+The last four bars before the pin show a sustained lower-price progression: successive bearish closes stepping down from 76601.5 to 76365.6, with lower highs and lower lows into the pin bar, indicating a clear bearish leg running into the setup.
+
+#011
+PIN: 2026-09-17 10:00
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 09:35
+→
+2026-09-17 10:00
+
+PIN OHLC:
+O=76334.8
+H=76357.1
+L=76283
+C=76347.1
+
+Context reason:
+The last five bars before the pin show a sustained lower-price progression: consecutive bearish closes stepping down from 76601.5 to 76334.8, with lower highs and lower lows (last5NetMove -234.3, -1.92 ATR). This clear downward leg runs directly into the pin bar.
+
+#012
+PIN: 2026-09-17 10:10
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 09:35
+→
+2026-09-17 10:10
+
+PIN OHLC:
+O=76117.2
+H=76186.9
+L=76072.7
+C=76180.9
+
+Context reason:
+Price made a sustained lower-price progression into the pin bar: net move -350.8 (-2.7 ATR), 7 lower highs and 6 lower lows, with the lowest low at the final preceding bar and the last 5 bars down -398.6 (-3.07 ATR). Clear bearish directional control running into the pin.
+
+#013
+PIN: 2026-09-17 10:20
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg:
+2026-09-17 09:30
+→
+2026-09-17 10:20
+
+PIN OHLC:
+O=76090.1
+H=76093.6
+L=76015
+C=76089.3
+
+Context reason:
+Price shows sustained lower-price progression into the pin bar: net move -511.5 (-4.14 ATR), directional efficiency 0.77, 7 bearish vs 3 bullish bars, 9 lower highs and 7 lower lows, with the lowest low occurring just one bar before the pin. Clear bearish leg running into the pin.
+
+#014
+PIN: 2026-09-17 12:10
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg:
+2026-09-17 11:40
+→
+2026-09-17 12:10
+
+PIN OHLC:
+O=76302.8
+H=76304
+L=76263.4
+C=76283.6
+
+Context reason:
+Price shows sustained lower-price progression into the pin bar: net move -154.6 (-1.9 ATR), directional efficiency 0.81, 7 lower highs and 7 lower lows, with the lowest low at the most recent bar. The down leg runs directly into the pin, confirming clear bearish directional control.
+
+#015
+PIN: 2026-09-17 15:55
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 15:05
+→
+2026-09-17 15:55
+
+PIN OHLC:
+O=76419.4
+H=76434.9
+L=76386
+C=76433.1
+
+Context reason:
+Price shows sustained lower-price progression into the pin bar: net move -176.3 (-2.49 ATR), directional efficiency 0.68, 7 lower highs and 7 lower lows, with the lowest low at the most recent bar. The down leg runs directly into the pin bar.
+
+#016
+PIN: 2026-09-17 17:50
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg:
+2026-09-17 17:35
+→
+2026-09-17 17:50
+
+PIN OHLC:
+O=76535.5
+H=76535.6
+L=76462.4
+C=76506
+
+Context reason:
+The most recent bars show a clear downward progression into the pin bar: the last three bars moved from 76668.5 to 76506 (-133 points, -1.63 ATR), with the lowest low occurring at the final bar and lower highs/lows in the immediate sequence. Although the broader 10-bar window is choppy, the immediate leg running into the pin is distinctly bearish.
+
+#017
+PIN: 2026-09-17 18:45
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg:
+2026-09-17 17:55
+→
+2026-09-17 18:45
+
+PIN OHLC:
+O=76288.7
+H=76299.8
+L=76233.7
+C=76269.7
+
+Context reason:
+Price fell from 76506 to 76288 over the preceding bars with lower highs and lower lows dominating (6 bear vs 4 bull bars, net -149.7, -2.05 ATR), and the bearish progression continued directly into the pin bar's low of 76233.7, showing sustained downward control into the pin.
+
+=== B. PIN CLEAR + PRECEDING BEARISH LEG BORDERLINE ===
+
+===================================
+BULLISH PIN
+PRECEDING BEARISH LEG = BORDERLINE
+===================================
+
+#001
+PIN: 2026-09-17 01:00
+Confidence: LOW
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 00:35
+→
+2026-09-17 01:00
+
+PIN OHLC:
+O=75734.1
+H=75760
+L=75688
+C=75760
+
+Context reason:
+Net move is down (-76.4, -0.65 ATR) with 6 bear vs 4 bull bars, and a clear lower-low progression from bar 2 to bar 6 (75859 -> 75647). However, the last three bars before the pin turned up (last3NetMove +8.3, last5NetMove +18.8), so the down leg ended a few bars before the pin rather than running directly into it, making the bearish context only borderline.
+
+#002
+PIN: 2026-09-17 06:40
+Confidence: LOW
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 05:50
+→
+2026-09-17 06:40
+
+PIN OHLC:
+O=75741.6
+H=75782.7
+L=75686.8
+C=75782.7
+
+Context reason:
+Net move over the 10 preceding bars is -251.8 (-2.03 ATR) with lower lows and lower highs dominating, but directional efficiency is low (0.31) and the last 3-5 bars show choppy two-way action with a slight upward drift into the pin, so the bearish leg is present but not clean.
+
+=== C. PIN CLEAR + NOT_TREND ===
+
+===================================
+BULLISH PIN
+PRECEDING CONTEXT = NOT_TREND
+===================================
+
+#001
+PIN: 2026-09-16 19:45
+Confidence: LOW
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76205.1
+H=76220.7
+L=76114
+C=76197.3
+
+Context reason:
+only 2 preceding bar(s) available, minimum is 4
+
+#002
+PIN: 2026-09-16 20:00
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76210.1
+H=76275.4
+L=76158.4
+C=76256.1
+
+Context reason:
+Preceding bars show net upward progression (75988 to 76210.2, +222.2) with higher lows and higher highs; the move into the pin bar is bullish, not a clear bearish leg.
+
+#003
+PIN: 2026-09-16 22:30
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=75801.2
+H=75802.2
+L=75583.7
+C=75690.1
+
+Context reason:
+Preceding bars show two-way chop: 5 bull and 5 bear bars, net move +63.1 (0.38 ATR), directional efficiency 0.09, and the last 3-5 bars actually moved upward (+276, +270). No sustained downward leg runs into the pin bar.
+
+#004
+PIN: 2026-09-16 22:50
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=75555.1
+H=75626.4
+L=75436
+C=75570.6
+
+Context reason:
+Preceding 10 bars show net move of only +23 (0.13 ATR) with directional efficiency 0.029, alternating bull/bear bars and no sustained lower-price progression into the pin; the recent process is two-way chop rather than a clear bearish leg.
+
+#005
+PIN: 2026-09-16 23:05
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=75679.7
+H=75744
+L=75512.2
+C=75714.7
+
+Context reason:
+Preceding bars show two-way chop with no sustained lower-price progression into the pin; net move over the window is positive and directional efficiency is very low, indicating sideways rather than a clear bearish leg.
+
+#006
+PIN: 2026-09-16 23:30
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=75606.9
+H=75626.7
+L=75526.4
+C=75598.9
+
+Context reason:
+Preceding bars show two-way chop: 7 bullish vs 3 bearish bars, directional efficiency only 0.22, price oscillating between ~75436 and ~75772 with no sustained lower-price progression into the pin. Net move is small and driven by scattered bars, not a clear bearish leg.
+
+#007
+PIN: 2026-09-17 00:15
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=75810.5
+H=75855
+L=75719.2
+C=75855
+
+Context reason:
+Preceding bars show two-way chop with no sustained lower-price progression into the pin; net move over the window is actually upward (+203.4), last5 net move is flat (-6.2), and highs/lows are mixed, so no clear bearish leg runs into the pin.
+
+#008
+PIN: 2026-09-17 01:20
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=75712.8
+H=75725.9
+L=75600.7
+C=75674.8
+
+Context reason:
+Preceding 10 bars show net move of only -7.2 (0.06 ATR) with directional efficiency 0.017, 5 bull vs 5 bear bars, and alternating highs/lows — two-way chop with no sustained downward progression into the pin bar.
+
+#009
+PIN: 2026-09-17 02:00
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 01:45
+→
+2026-09-17 02:00
+
+PIN OHLC:
+O=75747.7
+H=75954.2
+L=75258.6
+C=75823.6
+
+Context reason:
+The preceding process does not show a clear bearish leg into the pin bar. Price made a low at bar 7 (75312.1) then reversed upward with two strong bullish bars (last3NetMove +406.7, ~2.09 ATR) into the pin bar, with the highest high of the window at the final preceding bar. The recent directional control is upward, not downward, so no bearish leg runs into the pin.
+
+#010
+PIN: 2026-09-17 02:25
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=75877.2
+H=76015.2
+L=75613.5
+C=75983.7
+
+Context reason:
+The preceding process is a clear upward progression: net move +454.7 (1.67 ATR), 6 bull vs 4 bear bars, higher highs and higher lows dominating, with the highest high near the end. No sustained downward leg runs into the pin bar; the recent move is actually upward.
+
+#011
+PIN: 2026-09-17 02:35
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=75579.4
+H=75877.7
+L=75025
+C=75761.1
+
+Context reason:
+Preceding bars show two-way chop with no sustained downward progression into the pin; net move over the window is positive and directional efficiency is very low (0.12), indicating sideways/range conditions rather than a clear bearish leg.
+
+#012
+PIN: 2026-09-17 03:10
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=75894.8
+H=75931.1
+L=75694.3
+C=75920.1
+
+Context reason:
+Preceding bars show two-way chop with net move near zero (0.05 ATR), balanced bull/bear counts (5/5), and directional efficiency of 0.009. Price oscillated between 75025 and 76305 without sustained lower-price progression into the pin bar; the last 5 bars net only 3.6 points. No clear bearish leg exists.
+
+#013
+PIN: 2026-09-17 03:35
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=75771.4
+H=75826.8
+L=75606.8
+C=75793.3
+
+Context reason:
+Preceding 10 bars show two-way chop: 5 bull and 5 bear bars, directional efficiency only 0.06, net move -119.5 (0.36 ATR), and the last 3 bars moved +374.7 (1.13 ATR) upward into the pin. No clear sustained bearish leg runs into the pin; the recent process is sideways/upward, not a bearish directional leg.
+
+#014
+PIN: 2026-09-17 04:25
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76226
+H=76234.5
+L=76082.6
+C=76179.9
+
+Context reason:
+The preceding bars show a clear upward progression: net move +432.7 (1.75 ATR), 8 bullish vs 2 bearish bars, higher highs and higher lows dominating, with the highest high near the end. There is no sustained downward leg into the pin bar; the recent process is bullish, not bearish.
+
+#015
+PIN: 2026-09-17 04:30
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76179.9
+H=76222
+L=76096.3
+C=76187.5
+
+Context reason:
+The preceding process is a clear upward progression: net move +239.9 (1.0 ATR), 7 bullish vs 3 bearish bars, higher highs and higher lows dominating, with the highest high near the end. There is no sustained downward leg running into the pin bar; only the final two bars pulled back slightly within an overall bullish advance.
+
+#016
+PIN: 2026-09-17 04:40
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76072.3
+H=76106
+L=75995.6
+C=76090.7
+
+Context reason:
+Preceding 10 bars show net move of only +29.2 (0.13 ATR) with directional efficiency 0.04, alternating bull/bear bars and no sustained lower-price progression into the pin. The recent process is two-way chop, not a clear bearish leg.
+
+#017
+PIN: 2026-09-17 04:50
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76133.9
+H=76139.8
+L=76028.2
+C=76100
+
+Context reason:
+Preceding bars show two-way chop with alternating bull/bear candles, nearly equal bull (6) and bear (4) counts, low directional efficiency (0.18), and net move only -0.5 ATR. No sustained downward progression into the pin; recent bars actually turned up (last3 net +61.6).
+
+#018
+PIN: 2026-09-17 07:35
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76086.4
+H=76121.9
+L=76032.9
+C=76092.4
+
+Context reason:
+The preceding process is a sustained upward move: net +397.8 (3.76 ATR), 7 bull vs 3 bear bars, higher highs and higher lows dominating, with the highest high only 2 bars before the pin. There is no clear downward leg running into the pin bar; the recent direction is bullish, not bearish.
+
+#019
+PIN: 2026-09-17 07:45
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76181.4
+H=76224.2
+L=76122.2
+C=76192.9
+
+Context reason:
+The preceding process is a sustained bullish advance: 9 of 10 bars bullish, net move +534.2 (5.07 ATR), directional efficiency 0.945, with higher highs and higher lows throughout and the highest high at the most recent bar. There is no clear downward leg running into the pin bar; the expected bearish context is absent.
+
+#020
+PIN: 2026-09-17 08:05
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76225.2
+H=76300
+L=76168.2
+C=76300
+
+Context reason:
+The preceding bars show a clear upward progression: net move +211.5 (2.03 ATR), 8 bullish vs 2 bearish bars, higher highs and higher lows dominating, with the highest high at the most recent bar. There is no sustained downward leg into the pin bar; the recent process is bullish, not bearish.
+
+#021
+PIN: 2026-09-17 08:20
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76423
+H=76455.7
+L=76360.9
+C=76446.2
+
+Context reason:
+Preceding bars show sustained upward progression: 8 bullish vs 2 bearish bars, net move +336.5 (3.03 ATR), higher highs and higher lows dominating, with the highest high at the most recent bar. No clear downward leg runs into the pin bar; the context is bullish, not bearish.
+
+#022
+PIN: 2026-09-17 09:40
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76569.1
+H=76610.3
+L=76470.4
+C=76565
+
+Context reason:
+The preceding process is a clear upward move: net +224.9 over 10 bars, 6 bullish vs 4 bearish bars, higher highs and higher lows dominating, with the highest high just 1 bar before the pin. The only bearish bar immediately before the pin is a single-bar pullback within an established bullish leg, not a sustained bearish directional leg into the pin.
+
+#023
+PIN: 2026-09-17 09:45
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76564.9
+H=76565
+L=76429.4
+C=76515.7
+
+Context reason:
+The preceding process is a clear upward progression: price rose from 76182 low to 76749 high with 6 bullish vs 4 bearish bars, net move +263 (2.06 ATR), higher highs and higher lows dominating. The last two bars are minor bearish pullbacks within that uptrend, not a sustained bearish leg into the pin. No clear downward leg exists before the pin bar.
+
+#024
+PIN: 2026-09-17 10:45
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg:
+2026-09-17 10:20
+→
+2026-09-17 10:45
+
+PIN OHLC:
+O=76388
+H=76417
+L=76325.7
+C=76407.7
+
+Context reason:
+The bars immediately preceding the pin show a clear upward progression: the last 5 bars net +298.6 (2.48 ATR) with higher highs and higher lows, and the highest high is at the most recent bar. The earlier down leg ended around bar 5 (lowest low) and price had already turned up well before the pin, so no bearish leg runs into the pin.
+
+#025
+PIN: 2026-09-17 11:10
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76407.4
+H=76407.4
+L=76372.9
+C=76405.2
+
+Context reason:
+Preceding bars show a sustained upward progression: net move +318, 7 bull vs 3 bear bars, higher highs and higher lows, with the highest high at the most recent bar. There is no clear downward leg running into the pin bar; the recent process is bullish, not bearish.
+
+#026
+PIN: 2026-09-17 11:30
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76464.8
+H=76505.4
+L=76406.3
+C=76469.8
+
+Context reason:
+Preceding bars show net upward progression (startClose 76387.9 to endClose 76464.9, +77), higher highs and higher lows dominating (6 higherHighs vs 2 lowerHighs, 6 higherLows vs 3 lowerLows), and the highest high is at the most recent bar. The recent process is bullish, not a clear bearish leg into the pin bar.
+
+#027
+PIN: 2026-09-17 13:05
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76494.8
+H=76494.9
+L=76444.6
+C=76473.1
+
+Context reason:
+The preceding bars show a clear upward progression into the pin bar: net move +235.1 (2.5 ATR), higher highs and higher lows dominate, and the highest high is at the most recent bar. The early bearish bars were reversed by a sustained bullish leg, so no clear bearish leg runs into the pin.
+
+#028
+PIN: 2026-09-17 13:15
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76437
+H=76438.6
+L=76383.6
+C=76415.5
+
+Context reason:
+The preceding process is net bullish (startClose 76176.3 to endClose 76437, +260.7, ~2.9 ATR) with higher highs and higher lows dominating (6 higher highs vs 3 lower highs, 5 higher lows vs 3 lower lows). The lowest low is 8 bars back and the highest high only 2 bars back, so price was pressing upward into the pin, not downward. The last 3 bars dip slightly (-57.9) but that is a minor pullback within an overall upward leg, not a clear bearish directional leg.
+
+#029
+PIN: 2026-09-17 13:30
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BEAR
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76458
+H=76458
+L=76353.6
+C=76438.8
+
+Context reason:
+The preceding bars show two-way chop with alternating bullish and bearish candles, a net upward move of +124.9 points, and directional efficiency of only 0.31. The last 5-7 bars show only a shallow pullback (-15 to -46 points) that does not constitute a clear sustained bearish leg into the pin bar.
+
+#030
+PIN: 2026-09-17 15:20
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76525
+H=76542.5
+L=76500
+C=76534.2
+
+Context reason:
+Preceding bars show two-way chop with net move +70.6 (0.82 ATR) and directional efficiency 0.17; price oscillated between 76419 and 76657 with alternating bullish/bearish bars and no sustained lower-price progression into the pin. The last 3 bars dropped but that is only the immediate bars, not a clear bearish leg.
+
+#031
+PIN: 2026-09-17 16:30
+Confidence: MEDIUM
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76421
+H=76456.2
+L=76375.6
+C=76439.8
+
+Context reason:
+Preceding bars show two-way chop with alternating bullish/bearish candles, balanced bull/bear counts (5/5), very low directional efficiency (0.135), and net move of only -46.7 points (-0.62 ATR). No sustained downward progression into the pin bar; price oscillated in a range with no clear bearish directional control.
+
+#032
+PIN: 2026-09-17 17:30
+Confidence: HIGH
+Pin confidence: HIGH  Pin body: BULL
+
+Estimated leg: (not estimated)
+
+PIN OHLC:
+O=76648.7
+H=76679.8
+L=76607.9
+C=76660.8
+
+Context reason:
+Preceding bars show a clear upward progression: net move +188.6 (2.49 ATR), 7 higher highs vs 2 lower highs, 8 higher lows vs 1 lower low, lowest low at position 0 and highest high near the end. The recent process is bullish, not a bearish leg into the pin bar.

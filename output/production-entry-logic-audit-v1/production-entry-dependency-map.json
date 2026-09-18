@@ -1,0 +1,65 @@
+{
+  "task": "PRODUCTION_ENTRY_LOGIC_AUDIT_V1",
+  "question": "which parts of the production entry chain depend on the 2L/2R (2-left/2-right) pivots",
+  "DIRECT_2L2R_DEPENDENCY": [
+    {
+      "component": "Current Point",
+      "evidence": "liquidity/productionEqualLiquidityV1.js buildEvent() writes metadata.currentPivot = { source: 'ORDINARY_CAUSAL_2X2', price: pivot.price, occurredAt, confirmedAt, sourceIndex }; the pivot is produced by structure/pivotDetector.js via replay/replayState.js incrementalLiquidity"
+    },
+    {
+      "component": "EQ event identity and timing",
+      "evidence": "EQ.occurredAt = pivot occurredAt, EQ.createdAt = EQ.confirmedAt = pivot.confirmedAt (productionEqualLiquidityV1.js:194-198); pivotKey() is built from the pivot fields"
+    },
+    {
+      "component": "EQ price level",
+      "evidence": "buildEvent(): price: pivot.price, and the tolerance comparison Math.abs(pivot.price - anchor.price)"
+    },
+    {
+      "component": "Initial SL",
+      "evidence": "execution/executionRulesV1.js buildEntryPlan line 183 passes base.eqPrice as rawStop, and base.eqPrice comes from event.eqSourceContext.currentPivot.price (line 145-146) - i.e. the 2/2 pivot wick"
+    },
+    {
+      "component": "entry-plan provenance fields",
+      "evidence": "eqOccurredAt / eqConfirmedAt / eqCurrentPoint all read from eqSourceContext.currentPivot (lines 147-150)"
+    },
+    {
+      "component": "confirmed-swing entry cancel rule",
+      "evidence": "realOrderExecutionV1.js onConfirmedSwings() cancels a resting entry when a new SWING_LOW (long) / SWING_HIGH (short) confirms after decisionTime; those swings are the 2/2 pivots"
+    },
+    {
+      "component": "swing registry used by structural provenance",
+      "evidence": "replayState.incrementalLiquidity lines 131-143 add the swing-liquidity objects to state.registry and return newConfirmedSwings to live.js"
+    }
+  ],
+  "INDIRECT_2L2R_DEPENDENCY": [
+    {
+      "component": "WATCH",
+      "evidence": "a WATCH is built only from a newly confirmed EQ event, so its existence and openedAt inherit the 2/2 confirmation time (eqFvgCountWatchV1.js buildWatch: openedAt = liquidity.confirmedAt)"
+    },
+    {
+      "component": "entry trigger timing",
+      "evidence": "the FVG counter only starts consuming raw FVGs with confirmedAt >= watch.openedAt, so the 2/2 confirmation time delays the earliest possible entry trigger"
+    },
+    {
+      "component": "tradeId / EQ-FVG semantic identity",
+      "evidence": "realOrderExecutionV1.tradeIdFor(event) and the semantic decision key both include event.liquidityId / event.watchId, which embed the EQ id derived from the pivot"
+    }
+  ],
+  "INDEPENDENT_OF_2L2R": [
+    { "component": "Entry price", "evidence": "buildEntryPlan line 134: rawEntry = (rawFvg.low + rawFvg.high) / 2 - the FVG midpoint only" },
+    { "component": "FVG definition and count", "evidence": "live/eqFvgCountWatchV1.js rawFvgAt uses only candles[index-2] and candles[index]" },
+    { "component": "Initial TP", "evidence": "executionRulesV1.selectTarget iterates context.dynamicDPoints, i.e. Causal Dynamic-D historical points, not pivots" },
+    { "component": "RR gate", "evidence": "executionRulesV1.geometry only uses entry/stop/target prices" },
+    { "component": "4H bias gate", "evidence": "executionRulesV1.biasGate only reads the 4H bias snapshot" },
+    { "component": "position sizing and exchange filters", "evidence": "executionRulesV1.sizeOrder uses only entry/stop/target plus exchangeInfo rules" },
+    { "component": "order types and protection sequencing", "evidence": "realOrderExecutionV1 / binanceExecutionClientV1 use only the plan" },
+    { "component": "EQ/FVG semantic gate", "evidence": "live/eqFvgAssociationSemanticV1.js consumes the EQ event, the raw FVG and engine state; its facts never read a pivot. Defaults are enabled=true, liveGateEnabled=true, failClosed=true, requiredConfidence=HIGH (config/eqFvgSemanticV1.js)" },
+    { "component": "structural provenance state machine", "evidence": "structure/structuralProvenance5m.js is fed by newConfirmedSwings and writes event-registry events; it does not gate Current Point, EQ, WATCH, entry plan, SL or TP" },
+    { "component": "HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1 filter", "evidence": "productionEqualLiquidityV1.eligibleHistoricalPoints filters the HISTORICAL partner side only; buildEntryPlan lines 151-153 state the current point is deliberately not significance filtered" }
+  ],
+  "boundarySummary": {
+    "directDependents": 7,
+    "indirectDependents": 3,
+    "independentComponents": 10
+  }
+}

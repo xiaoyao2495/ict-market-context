@@ -1,0 +1,50 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "auditType": "READ_ONLY",
+  "baseline": {
+    "BASELINE_HEAD": "0bb830d1fc0ef4f8614efb554b914287a6ae0d7a",
+    "BRANCH": "main",
+    "TRACKED_DIFF_COUNT_AT_START": 0,
+    "STAGED_DIFF_COUNT_AT_START": 0,
+    "UNTRACKED_COUNT_AT_START": 0
+  },
+  "verification": {
+    "FINAL_HEAD": "0bb830d1fc0ef4f8614efb554b914287a6ae0d7a",
+    "HEAD_UNCHANGED": true,
+    "TRACKED_DIFF_COUNT_AT_END": 0,
+    "STAGED_DIFF_COUNT_AT_END": 0,
+    "UNTRACKED_ADDITIONS_AT_END": ["audit-output/4h-bias-current-system-rebase-audit/ (this audit directory only)"],
+    "PRODUCTION_CODE_CHANGED": false,
+    "COMMIT": "NONE",
+    "PUSH": "NONE"
+  },
+  "auditedSourceSha256": [
+    { "file": "scripts/live.js", "sha256": "de6797ecaebf50ea567fac37bb76ad15b8b4a7576ed7db091a3c816660267a84" },
+    { "file": "live/4hBiasV3.js", "sha256": "8fb4fac7cb18d5845045edc31d69c6bc008f69738327de5fea9c74f3358e0729" },
+    { "file": "live/dataSource.js", "sha256": "cf202fa42c7acc29992bcedd80459fac09f49a465969f36167e1cd4fe9d8b2cc" },
+    { "file": "bias/directionalContext/4hBiasFactsV3.js", "sha256": "125ba301fed28f5bdc45da0070814fc9a49fee8192fe4d93c163effa99e6fff1" },
+    { "file": "bias/directionalContext/4hDirectionalMetrics.js", "sha256": "176aee0e6516dd2b800efea45b9b40a77b1cd7e5d0e5ec1744464bc7c0dbad6f" },
+    { "file": "bias/directionalContext/4hDirectionalLegV1.js", "sha256": "6321b2c6ef8eb23ac24b92c4b384736d7001f91d2f999c8f186a59c83d759c5b" },
+    { "file": "bias/directionalContext/theilSen48.js", "sha256": "b930c44ba1a3764d6cef94eeb4202a2c0bf6f04f86d34c03ef9c19a23eb00baf" },
+    { "file": "bias/4hBiasSemanticV3.js", "sha256": "8110cee099ee5b8263e40299c293568f7e30dca3cc34548145e30491a7a9ded6" },
+    { "file": "bias/4hBiasDecisionStoreV1.js", "sha256": "58471529f3199d8596523401016be46743a5482754c09006245b79927ac19136" },
+    { "file": "bias/4hBiasFactRendererV1.js", "sha256": "ac1c4915fc2efac9774ba369cae3a75b61e9d17059d60c73b7770a8775576f55" },
+    { "file": "notify/4hBiasContext.js", "sha256": "16f4d7557ad679c260907fb4d4e02301dcfa503e93667239e087cfa15d446645" },
+    { "file": "notify/eqFvgCountWatchNotificationV1.js", "sha256": "b3e5631c8ed94e3cd9f989e6d3b3d546f614498075a61ea740a3cf453c71ab0e" },
+    { "file": "notify/rangeNotificationV1.js", "sha256": "ce6d322b27d6b5aca9c850c42037e38657bf632d327090b69346484f50d9e41e" },
+    { "file": "execution/executionRulesV1.js", "sha256": "136c504008df34d11b6a95b9047b62452c8926a43f110be984bebe590da130b4" },
+    { "file": "execution/realOrderExecutionV1.js", "sha256": "680d59c39553a3f9aff72607e03bea8a54810c67924ce449f05c8f12a2373968" },
+    { "file": "ai/dailyBiasContext.js", "sha256": "6527bb97ca3bfe651c3bc1952e12ffc45399ee30dff9359ffba640458c53f1ed" },
+    { "file": "ai/auditPivots.js", "sha256": "e15f49f1115cbecdecc7b2f358087c12104a0b5f72f5a599dc64e61b6cdda5fb" },
+    { "file": "ai/auditMarketFacts.js", "sha256": "1ae02fb678c53e7be2eecc4ff76f5b14b542325792a0466d4f497aa4bc0fd862" },
+    { "file": "ai/auditStructuralProvenance.js", "sha256": "8f29ba6c3ac29a887833886459e44ab2f07e670269192359b5ad9e3b809184fd" },
+    { "file": "ai/deepseekClient.js", "sha256": "7566c2aa56623884a780e28473dce6dd8d6db9640e472ac20ca2fe3e1e31e57e" },
+    { "file": "config/productionHistoryRequirementsV1.js", "sha256": "d72dfea264357d511b36b4cf1d9fc2c623ccb0c5cfc3352c80fe0ced73330049" },
+    { "file": "config/live.json", "sha256": "2a97a2fe9fb3592870a049d516d294066e8cdb545ead7fc88c28a5ad801a4253" }
+  ],
+  "auditOutputPath": "audit-output/4h-bias-current-system-rebase-audit/",
+  "auditOutputIsUntracked": true,
+  "modifiedTrackedSource": [],
+  "networkCallsMade": 0,
+  "llmCallsMade": 0
+}

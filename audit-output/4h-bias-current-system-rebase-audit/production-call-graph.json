@@ -1,0 +1,168 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "baselineHead": "0bb830d1fc0ef4f8614efb554b914287a6ae0d7a",
+  "productionEntry": "scripts/live.js",
+  "implementationId": "4H_BIAS_V3",
+  "callGraph": [
+    {
+      "step": 1,
+      "file": "scripts/live.js",
+      "function": "module top-level",
+      "lines": "38-40",
+      "call": "require('../live/4hBiasV3'), require('../bias/4hBiasDecisionStoreV1'), require('../notify/4hBiasContext')",
+      "direction": "OUTBOUND"
+    },
+    {
+      "step": 2,
+      "file": "scripts/live.js",
+      "function": "createRunner (module scope)",
+      "lines": "317-331",
+      "call": "fourHourBiasV3.createService({ symbol, decisionStore, getFourHourCandles, observe, observeDecision })",
+      "direction": "OUTBOUND",
+      "notes": "getFourHourCandles reads runnerData.structureCandles['4h'] (the live HTF array); decision store directory = CONFIG.dataDir + '/4h-bias-decisions-v1'"
+    },
+    {
+      "step": 3,
+      "file": "live/dataSource.js",
+      "function": "fetchHtfIncrement / fetchProductionWindow / createHtfBoundaryScheduler",
+      "lines": "133-142, 272-331",
+      "call": "binanceRest.loadHistory(symbol,'4h',lastCloseTime+1,evaluationTime) and binanceRest.getFuturesKlinesStrict for bootstrap",
+      "direction": "OUTBOUND"
+    },
+    {
+      "step": 4,
+      "file": "scripts/live.js",
+      "function": "doTick",
+      "lines": "983-1013",
+      "call": "dataSource.fetchHtfIncrement(...) then refresh4hBias() then eqAlerts.flush() then gating on htf.ok then dataSource.pollNew5m(...)",
+      "direction": "OUTBOUND"
+    },
+    {
+      "step": 5,
+      "file": "scripts/live.js",
+      "function": "refresh4hBias",
+      "lines": "975-981",
+      "call": "current4hBias.refresh(Date.now()) with a .catch that only logs",
+      "direction": "OUTBOUND"
+    },
+    {
+      "step": 6,
+      "file": "live/4hBiasV3.js",
+      "function": "refresh",
+      "lines": "141-236",
+      "call": "latestFullyClosed -> buildFacts -> semanticContract.buildInput -> identity -> decisionStore.lookup -> requestSemantic (MISS only) -> decisionStore.freeze -> publish",
+      "direction": "INTERNAL"
+    },
+    {
+      "step": 7,
+      "file": "live/4hBiasV3.js",
+      "function": "latestFullyClosed",
+      "lines": "70-76",
+      "call": "filter(c.closed === true && c.closeTime <= evaluationTime), sort desc, take [0]",
+      "direction": "INTERNAL"
+    },
+    {
+      "step": 8,
+      "file": "bias/directionalContext/4hBiasFactsV3.js",
+      "function": "build",
+      "lines": "43-78",
+      "call": "visibleClosed -> assertNative -> leg.calculateAtrWilder(14) -> metrics.priceDelivery(24) -> metrics.dmiAdx(14,14) -> theilSen.slope48 -> dailyBiasContext.buildDailyBiasContext -> structureDirection",
+      "direction": "OUTBOUND"
+    },
+    {
+      "step": 9,
+      "file": "ai/dailyBiasContext.js",
+      "function": "buildDailyBiasContext",
+      "lines": "13-57",
+      "call": "auditPivots.detectPivots(2L/2R, window 120) -> auditMarketFacts.computeMarketFacts -> auditStructuralProvenance.computeStructuralProvenance (replayed for every visible bar)",
+      "direction": "OUTBOUND"
+    },
+    {
+      "step": 10,
+      "file": "live/4hBiasV3.js",
+      "function": "defaultRequestSemantic",
+      "lines": "29-48",
+      "call": "deepseekClient.chat({ systemPrompt, userPrompt, temperature: 0, maxTokens: audit limit }) then JSON.parse then semanticContract.validateOutput",
+      "direction": "OUTBOUND",
+      "notes": "guarded by a strict model equality check against semanticContract.MODEL"
+    },
+    {
+      "step": 11,
+      "file": "ai/deepseekClient.js",
+      "function": "chat",
+      "lines": "47-171",
+      "call": "POST {DEEPSEEK_BASE_URL}/chat/completions with response_format json_object, thinking disabled",
+      "direction": "EXTERNAL_HTTP"
+    },
+    {
+      "step": 12,
+      "file": "scripts/live.js",
+      "function": "executionContext",
+      "lines": "355-373",
+      "call": "returns { bias: current4hBias.getCurrent(), expected4hClosedAt: <latest closed 4h closeTime> }",
+      "direction": "INTERNAL"
+    },
+    {
+      "step": 13,
+      "file": "execution/executionRulesV1.js",
+      "function": "biasGate",
+      "lines": "47-57",
+      "call": "direction alignment + strength === 'STRONG' + confidence === 'HIGH' + bias.closedAt === expectedClosedAt",
+      "direction": "INTERNAL"
+    },
+    {
+      "step": 14,
+      "file": "execution/executionRulesV1.js",
+      "function": "buildEntryPlan",
+      "lines": "131-198",
+      "call": "biasGate(...) at line 180; on failure returns { ok:false, reasonCode } and no order plan",
+      "direction": "INTERNAL"
+    },
+    {
+      "step": 15,
+      "file": "execution/realOrderExecutionV1.js",
+      "function": "onEqFvgWatchEvent (trade admission)",
+      "lines": "295-330",
+      "call": "rules.buildEntryPlan(event, context); !built.ok -> NO_TRADE and no exchange call",
+      "direction": "INTERNAL"
+    },
+    {
+      "step": 16,
+      "file": "scripts/live.js",
+      "function": "sendEqFvgNotification",
+      "lines": "610-626",
+      "call": "notificationMarketContext.attach(event, current4hBias.getCurrent()) -> eqFvgCountWatchNotificationV1.build -> dingTalk.sendText",
+      "direction": "OUTBOUND"
+    },
+    {
+      "step": 17,
+      "file": "scripts/live.js",
+      "function": "sendRangeConfirmation",
+      "lines": "565-580",
+      "call": "notificationMarketContext.attach(event, current4hBias.getCurrent()) -> rangeNotificationV1.buildRangeConfirmationMessage -> dingTalk.sendText",
+      "direction": "OUTBOUND"
+    },
+    {
+      "step": 18,
+      "file": "notify/4hBiasContext.js",
+      "function": "lines",
+      "lines": "9-30",
+      "call": "renders '📊 4H Bias' block from bias.semantic + bias.facts via bias/4hBiasFactRendererV1",
+      "direction": "INTERNAL"
+    }
+  ],
+  "downstreamConsumers": [
+    { "consumer": "execution entry gate", "module": "execution/executionRulesV1.js", "kind": "HARD_GATE" },
+    { "consumer": "real order submission", "module": "execution/realOrderExecutionV1.js", "kind": "INDIRECT_HARD_GATE" },
+    { "consumer": "EQ/FVG WATCH DingTalk notification", "module": "notify/eqFvgCountWatchNotificationV1.js", "kind": "DISPLAY_ONLY" },
+    { "consumer": "Range confirmation DingTalk notification", "module": "notify/rangeNotificationV1.js", "kind": "DISPLAY_ONLY" },
+    { "consumer": "semantic execution preview log", "module": "scripts/live.js semanticExecutionPreview", "kind": "OBSERVABILITY_ONLY" },
+    { "consumer": "per-snapshot observe log", "module": "scripts/live.js observe callback", "kind": "LOG_ONLY" }
+  ],
+  "notConsumers": [
+    "live/eqFvgCountWatchV1.js WATCH state machine (test 35 proves independence)",
+    "notify/executionNotificationV1.js execution alerts (no bias block attached)",
+    "scenario/* (scenarioEngine bias field is a different, replay-side concept)",
+    "notify/watchNotificationPresentationV1.js (not required by scripts/live.js or live/*)"
+  ]
+}

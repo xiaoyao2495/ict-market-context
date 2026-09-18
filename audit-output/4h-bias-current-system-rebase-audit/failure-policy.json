@@ -1,0 +1,126 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "principle": "the bias degrades fail-open for notification context and fail-closed only for the entry gate",
+  "scenarios": [
+    {
+      "scenario": "4H data fetch failure at the service boundary (getFourHourCandles throws)",
+      "location": "live/4hBiasV3.js:141-148",
+      "behaviour": "snapshot(null, 'UNAVAILABLE', ..., errorView('DATA')) is published and replaces the previous current snapshot",
+      "biasStatus": "UNAVAILABLE",
+      "llmCalls": 0,
+      "blocks5mPipeline": false,
+      "blocksEntry": true,
+      "evidence": "test 38"
+    },
+    {
+      "scenario": "no fully closed native 4H candle available",
+      "location": "live/4hBiasV3.js:149-153",
+      "behaviour": "UNAVAILABLE with code NO_FULLY_CLOSED_NATIVE_4H",
+      "biasStatus": "UNAVAILABLE",
+      "llmCalls": 0,
+      "blocks5mPipeline": false,
+      "blocksEntry": true
+    },
+    {
+      "scenario": "deterministic fact calculation failure (INSUFFICIENT_WARMUP, NON_FUTURES_4H_DATA, FOUR_HOUR_DATA_GAP, NON_FINITE_FACT_*, STRUCTURE_FUTURE_CONFIRMATION, ...)",
+      "location": "live/4hBiasV3.js:156-164",
+      "behaviour": "UNAVAILABLE with stage FACT_BUILD and the original error code; no LLM call",
+      "biasStatus": "UNAVAILABLE",
+      "llmCalls": 0,
+      "blocks5mPipeline": false,
+      "blocksEntry": true,
+      "evidence": "test 29"
+    },
+    {
+      "scenario": "decision identity build failure",
+      "location": "live/4hBiasV3.js:167-174",
+      "behaviour": "UNAVAILABLE with stage DECISION_IDENTITY (facts are retained on the snapshot)",
+      "biasStatus": "UNAVAILABLE",
+      "llmCalls": 0,
+      "blocks5mPipeline": false,
+      "blocksEntry": true
+    },
+    {
+      "scenario": "decision store read error (not ENOENT)",
+      "location": "live/4hBiasV3.js:177-186",
+      "behaviour": "UNAVAILABLE with stage DECISION_STORE; emits 4H_BIAS_DECISION_STORE_ERROR",
+      "biasStatus": "UNAVAILABLE",
+      "llmCalls": 0,
+      "blocks5mPipeline": false,
+      "blocksEntry": true
+    },
+    {
+      "scenario": "decision store corrupt record",
+      "location": "live/4hBiasV3.js:177-186",
+      "behaviour": "UNAVAILABLE; emits 4H_BIAS_DECISION_STORE_CORRUPT; the record is never regenerated or overwritten",
+      "biasStatus": "UNAVAILABLE",
+      "llmCalls": 0,
+      "blocks5mPipeline": false,
+      "blocksEntry": true,
+      "evidence": "tests 07, 07b, 07c"
+    },
+    {
+      "scenario": "DeepSeek timeout / network error / empty 200 / non-JSON / schema-invalid response",
+      "location": "live/4hBiasV3.js:198-231",
+      "behaviour": "snapshot(latest.closeTime, 'PARTIAL', factSet.facts, null, errorView('SEMANTIC')) - the deterministic facts are retained and published, semantic is null",
+      "biasStatus": "PARTIAL",
+      "llmCalls": 1,
+      "blocks5mPipeline": false,
+      "blocksEntry": true,
+      "evidence": "test 28"
+    },
+    {
+      "scenario": "DeepSeek client fails synchronously (for example MISSING_API_KEY)",
+      "location": "live/4hBiasV3.js:196-198",
+      "behaviour": "the call is wrapped in Promise.resolve().then(...) so a synchronous throw also degrades to PARTIAL rather than escaping",
+      "biasStatus": "PARTIAL",
+      "blocks5mPipeline": false,
+      "blocksEntry": true,
+      "evidence": "test 40"
+    },
+    {
+      "scenario": "model configuration mismatch (DEEPSEEK_MODEL != semanticContract.MODEL)",
+      "location": "live/4hBiasV3.js:30-32",
+      "behaviour": "rejects with V3_MODEL_CONFIG_MISMATCH, which the catch turns into PARTIAL",
+      "biasStatus": "PARTIAL",
+      "llmCalls": 0,
+      "blocks5mPipeline": false,
+      "blocksEntry": true
+    },
+    {
+      "scenario": "decision store write failure after a successful LLM call",
+      "location": "live/4hBiasV3.js:208-213 and 222-230",
+      "behaviour": "biasFailureStage = DECISION_STORE -> UNAVAILABLE; the ephemeral decision is never published as if it were durable",
+      "biasStatus": "UNAVAILABLE",
+      "blocks5mPipeline": false,
+      "blocksEntry": true,
+      "evidence": "test 06"
+    },
+    {
+      "scenario": "refresh4hBias rejects unexpectedly",
+      "location": "scripts/live.js:975-981",
+      "behaviour": "the error is swallowed and logged with the explicit note '(不影响 EQ/FVG/WATCH/notification)'; the tick continues",
+      "biasStatus": "unchanged previous snapshot",
+      "blocks5mPipeline": false
+    },
+    {
+      "scenario": "HTF incremental fetch failure (1h/4h/1d network error or degraded source)",
+      "location": "scripts/live.js:1004-1013",
+      "behaviour": "if (!htf.ok) { log(...); return; } - the tick returns before dataSource.pollNew5m, so the whole 5m pipeline is paused for that tick",
+      "blocks5mPipeline": true,
+      "nextTickRecovery": "the next tick retries the HTF increment; after recovery the gap is detected and backfilled so Live and Replay stay consistent",
+      "evidence": "comment at scripts/live.js:1005-1007"
+    }
+  ],
+  "HTF_FETCH_FAILURE_BLOCKS_5M_PIPELINE": true,
+  "DEEPSEEK_FAILURE_BLOCKS_5M_PIPELINE": false,
+  "BIAS_FACT_FAILURE_BLOCKS_5M_PIPELINE": false,
+  "keyDistinction": "the 4H CANDLE data pipeline is a shared HTF dependency of the whole 5m tick (and therefore an accidental coupling), while the 4H BIAS semantic decision is deliberately isolated from the 5m pipeline",
+  "fiveMinutePipelineGateDetail": {
+    "file": "scripts/live.js",
+    "function": "doTick",
+    "line": 1008,
+    "code": "if (!htf.ok) { log(symbol + ' HTF 更新异常（' + htf.issues.length + ' 处）——本轮暂停 5m 推进，避免基于 stale HTF 发通知'); return; }",
+    "affectedScope": "per symbol, per tick; pollNew5m is not called, no candle is processed, no EQ/FVG/WATCH state advances and no notification is emitted for that tick"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "DECISION_STORE_ENABLED": true,
+  "module": "bias/4hBiasDecisionStoreV1.js",
+  "storeVersion": "4H_BIAS_DECISION_FREEZE_V1",
+  "decisionKeyVersion": "DECISION_KEY_V1",
+  "directoryInProduction": "CONFIG.dataDir + '/4h-bias-decisions-v1' (config/live.json dataDir = '.live-state')",
+  "directoryPresentInThisCheckout": false,
+  "cacheKey": {
+    "fields": ["version", "symbol", "candle.openTime", "candle.closeTime", "factsHash", "factsVersion", "promptHash", "promptVersion", "modelId"],
+    "factsHash": "sha256(stableSerialize(canonicalFacts)) where canonicalFacts = { symbol, candle{openTime,closeTime}, factsVersion, facts }",
+    "decisionKey": "sha256(stableSerialize(identity))",
+    "fileName": "<decisionKey>.json",
+    "canonicalization": "recursive key sorting, -0 normalised to 0, undefined rejected, non-finite numbers rejected"
+  },
+  "cacheValue": {
+    "recordFields": ["candle", "createdAt", "decision", "decisionKey", "facts", "factsHash", "factsVersion", "modelId", "promptHash", "promptVersion", "symbol", "version"],
+    "decisionFields": ["confidence", "direction", "strength"],
+    "note": "the frozen record deliberately stores only the structured decision triple, never the model prose"
+  },
+  "MISSBehaviour": {
+    "lookup": "ENOENT returns { status: 'MISS' }",
+    "consequence": "the service emits 4H_BIAS_DECISION_CACHE_MISS and calls the LLM exactly once"
+  },
+  "HITBehaviour": {
+    "lookup": "reads the file, then validateRecord() rebuilds the identity from the record and requires an exact match on decisionKey, factsHash and the full decisionKeyFields",
+    "consequence": "emits 4H_BIAS_DECISION_CACHE_HIT with decisionSource FROZEN_STORE and makes ZERO LLM calls",
+    "factsUsed": "the facts stored inside the record, not the freshly computed ones"
+  },
+  "corruptionPolicy": {
+    "behaviour": "any schema, hash or enum mismatch raises BIAS_DECISION_STORE_CORRUPT",
+    "serviceReaction": "the snapshot becomes UNAVAILABLE, no LLM call is made and the corrupt file is never overwritten",
+    "evidence": "tests 07, 07b, 07c"
+  },
+  "writePolicy": {
+    "mechanism": "write a temp file with flag 'wx' and mode 0600, fsync it, then fs.linkSync(temp, destination)",
+    "atomicity": "link is atomic create-if-absent; on EEXIST the existing official record wins and is returned",
+    "rationale": "a later or racing response can never overwrite an already official decision for the same key",
+    "evidence": "test 08 shows the first durable candidate wins across independent store instances"
+  },
+  "SEMANTIC_DECISION_STORE_IMMUTABLE": true,
+  "immutabilityEvidence": [
+    "no unlink/rename/overwrite path exists in the store; freeze() only ever creates",
+    "create-if-absent semantics via linkSync (line 204) with EEXIST handled as 'someone else won'",
+    "validateRecord re-derives the identity on every read, so a hand-edited record is rejected as corruption"
+  ],
+  "SAME_FACTS_REUSE_DECISION": {
+    "value": true,
+    "scope": "identical canonical facts inside a process and across restarts",
+    "evidence": [
+      "test 02: a restart reuses the first durable RAYSOL decision and makes zero second-process LLM calls",
+      "test 02a: MISS transitions to HIT through the durable freeze",
+      "test 03: twenty simultaneous same-key refreshes produce exactly one LLM call",
+      "test 04: changed facts on the same candle create an independent immutable record",
+      "test 05: prompt identity and model identity independently invalidate the cache"
+    ]
+  },
+  "inFlightDeduplication": {
+    "mechanism": "live/4hBiasV3.js holds a Map keyed by decisionKey (line 176, 234)",
+    "effect": "concurrent refreshes for the same key share one promise and one LLM call (test 25)"
+  },
+  "restartReuse": {
+    "factsRecomputed": true,
+    "llmRecalled": false,
+    "explanation": "after a restart the fact set is rebuilt deterministically; the decision key matches the durable record, so the frozen decision is reused"
+  },
+  "siblingStoresUsingTheSamePatternElsewhere": [
+    "semantic/eqFvgAssociationDecisionStoreV1.js",
+    "semantic/turningPointSignificanceDecisionStoreV1.js"
+  ]
+}

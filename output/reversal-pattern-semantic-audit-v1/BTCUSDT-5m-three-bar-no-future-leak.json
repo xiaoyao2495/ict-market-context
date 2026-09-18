@@ -1,0 +1,7 @@
+{
+  "task": "THREE_BAR_REVERSAL_CONTEXT_AUDIT_V1",
+  "rule": "max(input candle closeTime) <= K3.closeTime for every stage-1 and stage-2 payload",
+  "stage1PayloadsChecked": 70,
+  "stage2PayloadsChecked": 17,
+  "FUTURE_LEAK_AUDIT": "PASS"
+}

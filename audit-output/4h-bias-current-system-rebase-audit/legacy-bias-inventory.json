@@ -1,0 +1,95 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "question": "how many different bias implementations exist, and which one is production?",
+  "ACTIVE_BIAS_IMPLEMENTATION_COUNT": 1,
+  "LEGACY_BIAS_IMPLEMENTATION_COUNT": 9,
+  "active": [
+    {
+      "id": "V3_4H_SEMANTIC_BIAS",
+      "version": "4H_BIAS_V3 / 4H_BIAS_FACT_SET_V3 / 4H_BIAS_SEMANTIC_V3 / 4H_BIAS_DECISION_FREEZE_V1",
+      "files": [
+        "live/4hBiasV3.js",
+        "bias/directionalContext/4hBiasFactsV3.js",
+        "bias/4hBiasSemanticV3.js",
+        "bias/4hBiasDecisionStoreV1.js",
+        "bias/4hBiasFactRendererV1.js",
+        "notify/4hBiasContext.js"
+      ],
+      "status": "PRODUCTION_ACTIVE",
+      "evidence": "created in scripts/live.js:317-331 and consumed by the entry gate and both DingTalk emitters"
+    }
+  ],
+  "legacy": [
+    {
+      "id": "V1_BIAS_ENGINE",
+      "files": ["bias/biasEngine.js", "bias/biasScorer.js", "bias/biasExplanation.js", "bias/conflictDetector.js", "bias/deliveryBias.js", "bias/liquidityBias.js", "bias/locationBias.js", "bias/structureBias.js"],
+      "status": "LEGACY_UNUSED",
+      "reachedFrom": "replay/replayEngine.js:34 -> rebuildSnapshot line 103, which is invoked from live/liveEngine.js:102 on the live snapshot cadence",
+      "whyUnused": "its result lands on the snapshot object; no 4H bias consumer, no entry gate and no notification payload reads it",
+      "note": "still executed, so it consumes CPU on the live path and is the most likely source of 'which bias is authoritative?' confusion"
+    },
+    {
+      "id": "V1_DAILY_BIAS_ALIGNMENT",
+      "files": ["bias/dailyBiasAlignment.js"],
+      "status": "UNREFERENCED",
+      "evidence": "no require() anywhere in the repository"
+    },
+    {
+      "id": "V1_RESEARCH_PROMPT_RAW_OHLC",
+      "files": ["ai/ictBiasPrompt.js"],
+      "status": "RESEARCH_ONLY",
+      "outputLabels": ["BULLISH", "BEARISH", "UNCLEAR"],
+      "evidence": "sends 120 raw 4H OHLC candles plus deterministic market facts; required only by scripts/auditDeepSeek4hBias.js and scripts/diagnoseDailyBiasMss.js",
+      "warning": "this is the historical 'LLM looks at raw candles' design; it is NOT the current production architecture and must not be confused with it"
+    },
+    {
+      "id": "V1_BIAS_INSPECTOR_CLI",
+      "files": ["scripts/inspectBias.js"],
+      "status": "LEGACY_UNUSED",
+      "evidence": "requires bias/biasEngine.js at line 29 only"
+    },
+    {
+      "id": "V1_DIRECTIONAL_CONTEXT_FACTS",
+      "files": ["bias/directionalContext/4hDirectionalContextFactsV1.js"],
+      "status": "LEGACY_UNUSED",
+      "evidence": "superseded by 4hBiasFactsV3.js; referenced only from test/4hBiasV3UnifiedProductionRefactor.test.js as a parity reference"
+    },
+    {
+      "id": "V2_RESEARCH_SEMANTIC_CONTRACT",
+      "files": ["research/4hDirectionalContextSemanticContractV1.js", "research/4hDirectionalContextLlmSynthesisV2.js"],
+      "status": "RESEARCH_ONLY",
+      "evidence": "tracked research modules; not required by production; the V2 prompt hash survives in 4H_BIAS_SEMANTIC_V3.LEGACY_V2_PROMPT_HASH so V2 records can never be mistaken for V3"
+    },
+    {
+      "id": "V2_RESEARCH_CONTEXT_ON_WATCH",
+      "files": ["live/eqFvgCountWatchV1.js researchContext4hV2 field"],
+      "status": "REMOVED_FROM_RUNTIME",
+      "evidence": "the field is discarded on restore (test 36) and the source comment at line 131 records that notification-time context now comes from 4H_BIAS_V3"
+    },
+    {
+      "id": "SCENARIO_DRAW_LIQUIDITY_BIAS_FIELDS",
+      "files": ["scenario/scenarioEngine.js", "scenario/scenarioScorer.js", "scenario/invalidationEngine.js", "scenario/scenarioExplanation.js"],
+      "status": "DIFFERENT_CONCEPT",
+      "evidence": "these consume a replay-side bias object (draw/liquidity/location based), not the 4H semantic bias"
+    },
+    {
+      "id": "LEGACY_WATCH_PRESENTATION",
+      "files": ["notify/watchNotificationPresentationV1.js"],
+      "status": "LEGACY_UNUSED",
+      "evidence": "not required by scripts/live.js nor by any live/* or notify/* production module; referenced only from scripts/, artifacts/ and test/"
+    }
+  ],
+  "deletedUntrackedVariantsNotedForCompleteness": {
+    "note": "the worktree cleanup that preceded this audit removed untracked files. The following bias-related files were untracked at that time and are therefore absent from this HEAD:",
+    "files": [
+      "bias/directionalContext/4hDirectionalContextDeepSeekV1.js",
+      "bias/directionalContext/4hDirectionalContextPromptV1.js",
+      "bias/directionalContext/4hDirectionalContextPromptV1_1.js",
+      "test/4hDirectionalContextDeepSeekV1.test.js",
+      "test/4hDirectionalContextFactsV1.test.js",
+      "test/4hDirectionalContextPromptDominanceV1.test.js",
+      "scripts/local/4hDirectionalContextDeepSeekV1.local.js"
+    ],
+    "impactOnThisAudit": "none - none of these were reachable from scripts/live.js, and the production V3 path is fully tracked at HEAD"
+  }
+}

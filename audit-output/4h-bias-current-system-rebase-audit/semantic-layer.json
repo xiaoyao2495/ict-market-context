@@ -1,0 +1,82 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "SEMANTIC_LAYER_ENABLED": true,
+  "provider": {
+    "SEMANTIC_PROVIDER": "DeepSeek (OpenAI-compatible /chat/completions)",
+    "client": "ai/deepseekClient.js chat()",
+    "baseUrlDefault": "https://api.deepseek.com",
+    "baseUrlEnvVar": "DEEPSEEK_BASE_URL",
+    "secretSource": "process.env.DEEPSEEK_API_KEY only (read at call time; never logged, never written to disk)",
+    "secretValuePrintedInAudit": false,
+    "localSecretFiles": [
+      "config/live.local.json (exists? false in this checkout; gitignored, carries DingTalk webhook/secret only)",
+      ".env (exists? true in this checkout; gitignored)"
+    ]
+  },
+  "model": {
+    "MODEL_REQUESTED": "process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash'",
+    "MODEL_PROVIDER_REPORTED": "the model field sent in the request payload is exactly getModel()",
+    "MODEL_ALIAS_NORMALIZATION": "NONE - there is no alias table anywhere",
+    "semanticContractModelConstant": "4hBiasSemanticV3.MODEL = 'deepseek-v4-flash'",
+    "hardEqualityGuard": "live/4hBiasV3.js:30-32 rejects the refresh with V3_MODEL_CONFIG_MISMATCH when getModel() !== semanticContract.MODEL",
+    "modelIdentityEntersDecisionKey": true,
+    "consequenceOfChangingModelEnv": "with a different DEEPSEEK_MODEL value the service never calls the LLM and publishes PARTIAL/UNAVAILABLE rather than silently using another model"
+  },
+  "prompt": {
+    "PROMPT_SOURCE": "bias/4hBiasSemanticV3.js SYSTEM_PROMPT (lines 22-55) + USER_PROMPT_PREFIX (line 57)",
+    "PROMPT_VERSION": "4H_BIAS_SEMANTIC_V3",
+    "PROMPT_HASH": "sha256 of the full prompt template, computed at module load (line 59)",
+    "legacyPromptHashRetained": "4hBiasSemanticV3.LEGACY_V2_PROMPT_HASH is exported so V2-era records can never be mistaken for V3 records",
+    "userPromptContent": "the canonical input object serialized with JSON.stringify(input, null, 2); see INPUT_SCHEMA"
+  },
+  "INPUT_SCHEMA": {
+    "topLevelFields": ["closedAt", "facts", "symbol", "timeframe"],
+    "factsFields": ["adx14", "normalizedDirectionalSpread", "signedEfficiency24", "signedMoveAtr24", "structureDirection", "theilSenSlope48"],
+    "enforcement": "validateInput uses exactKeys() so any extra or missing field raises V3_INPUT_SCHEMA_INVALID / V3_FACT_SCHEMA_INVALID",
+    "typeRules": "symbol string; timeframe must equal '4h'; closedAt finite number; the five numeric facts finite numbers; structureDirection one of UP|DOWN|NEUTRAL"
+  },
+  "OUTPUT_SCHEMA": {
+    "fields": ["confidence", "conflicts", "direction", "strength", "summary"],
+    "enforcement": "validateOutput exactKeys() plus enum checks; summary must be a non-empty string; conflicts must be a string",
+    "errors": ["V3_OUTPUT_SCHEMA_INVALID", "V3_DIRECTION_INVALID", "V3_STRENGTH_INVALID", "V3_CONFIDENCE_INVALID", "V3_SUMMARY_INVALID", "V3_CONFLICTS_INVALID"]
+  },
+  "requestParameters": {
+    "temperature": 0,
+    "temperatureSource": "hard-coded 0 in defaultRequestSemantic; the client would otherwise read DEEPSEEK_TEMPERATURE (default 0)",
+    "max_tokens": "deepseekClient.getAuditCompletionTokenLimit() (AUDIT_COMPLETION_TOKEN_LIMIT constant)",
+    "response_format": "{ type: 'json_object' }",
+    "thinking": "{ type: 'disabled' } (comment records that deepseek-v4-flash thinking mode produced ~22K completion tokens and gateway empty-200 timeouts)",
+    "httpTimeoutMs": 60000,
+    "maxAttempts": "0 in the bias call path (no retry), i.e. a single attempt per MISS"
+  },
+  "inputProvenance": {
+    "SEMANTIC_INPUT": "DETERMINISTIC_FACTS_ONLY",
+    "RAW_4H_CANDLES_SENT_TO_LLM": false,
+    "FUTURE_OUTCOME_SENT_TO_LLM": false,
+    "PNL_OR_TRADE_RESULT_SENT_TO_LLM": false,
+    "FVG_EQL_SWEEP_WATCH_SENT_TO_LLM": false,
+    "ORDER_BOOK_SENT_TO_LLM": false,
+    "evidence": [
+      "buildUserPrompt serializes exactly buildInput(factSet), which is the 4-field object built from factSet",
+      "test 16 asserts the serialized semantic input matches /raw|ohlc|candle|bars6|bars12|EQL|EQH|FVG|WATCH|persistence|transition|kalman/i is absent",
+      "bias/4hBiasFactsV3.js never passes candles into the semantic layer"
+    ]
+  },
+  "promptBehaviouralConstraints": [
+    "sign contributes to Direction, magnitude contributes to Strength",
+    "normalizedDirectionalSpread describes directional dominance",
+    "ADX14 contributes to Strength only and has no direction",
+    "signedMoveAtr24 and signedEfficiency24 are one correlated Delivery family and must not be double-counted",
+    "conflict must be summarized honestly; NO_PRIORITY must not be avoided artificially",
+    "no hard thresholds, no weighted voting, no composite scores",
+    "no future price, next candle, continuation, reversal, outcome or profitability",
+    "no trading advice, entries, targets, WATCH decisions or notification decisions",
+    "no candlestick patterns, bodies, wicks, support/resistance, chart geometry or unseen indicators"
+  ],
+  "deepSeekRole": {
+    "classification": "B - the LLM reads deterministic facts and performs semantic synthesis",
+    "isPredictor": false,
+    "isFormatterOnly": false,
+    "notes": "the prompt explicitly forbids prediction and forbids inventing evidence; the model compresses six deterministic facts into one bias triple plus prose"
+  }
+}

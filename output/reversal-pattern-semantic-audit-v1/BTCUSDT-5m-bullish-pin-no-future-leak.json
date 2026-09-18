@@ -1,0 +1,7 @@
+{
+  "task": "BULLISH_PIN_BAR_CONTEXT_AUDIT_V1",
+  "rule": "max(input candle closeTime) <= Pin.closeTime for every stage-1 and stage-2 payload",
+  "stage1PayloadsChecked": 75,
+  "stage2PayloadsChecked": 51,
+  "FUTURE_LEAK_AUDIT": "PASS"
+}

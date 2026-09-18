@@ -1,0 +1,7 @@
+{
+  "task": "TWO_BAR_REVERSAL_CONTEXT_AUDIT_V1",
+  "rule": "max(input candle closeTime) <= K2.closeTime for every stage-1 and stage-2 payload",
+  "stage1PayloadsChecked": 84,
+  "stage2PayloadsChecked": 27,
+  "FUTURE_LEAK_AUDIT": "PASS"
+}

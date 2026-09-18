@@ -1,0 +1,33 @@
+BULLISH_PIN_BAR_CONTEXT_AUDIT_V1
+
+BTCUSDT 5m
+Closed candles: 288
+Continuity: PASS
+Data window (UTC+8): 2026-09-16 19:35 -> 2026-09-17 19:34
+
+Bullish Pin prefilter candidates: 75
+
+Bullish Pin CLEAR: 51
+Bullish Pin BORDERLINE: 15
+NOT_PATTERN: 9
+stage1 LLM_ERROR: 0
+
+For CLEAR Pin:
+Preceding bearish leg CLEAR: 17
+BORDERLINE: 2
+NOT_TREND: 31
+INSUFFICIENT_CONTEXT: 1
+context LLM_ERROR: 0
+
+CONTEXT_ALIGNED_BULLISH_PIN_BAR: 17
+
+CONTEXT_ALIGNED bullish Pin body colour (observation only, never a gate):
+bull body = 11
+bear body = 6
+doji body = 0
+
+Future Leak Audit: PASS
+Production Changed: false
+
+This audit does NOT compute any future outcome (no post-pin move, pin-high break, R or
+reaction-time statistic).

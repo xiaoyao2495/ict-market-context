@@ -1,0 +1,68 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "source": {
+    "module": "data/binanceRest.js",
+    "bootstrapFunction": "getFuturesKlinesStrict (line 156)",
+    "incrementFunction": "loadHistory (line 317)",
+    "restFallbackFunction": "getKlines (line 140) with /api/v3/klines when useFallback is set",
+    "defaultFuturesHost": "https://fapi.binance.com",
+    "bootstrapPath": "/fapi/v1/klines",
+    "incrementPath": "/fapi/v1/klines",
+    "exchangeInfoPath": "/fapi/v1/exchangeInfo",
+    "closedOnlyGuarantee": "getKlines discards the still-forming candle; only closed === true rows are returned"
+  },
+  "symbol": {
+    "mode": "dynamic (config/live.json symbolsMode = dynamic)",
+    "universe": "live/dynamicContractUniverseV1.js, topN 10, ranked on 4h with rankClosedBars 6, refresh at 00:05 UTC",
+    "note": "each runtime symbol gets its own independent 4hBiasV3 service instance (test 26 proves isolation)"
+  },
+  "interval": "4h",
+  "historyContract": {
+    "configSource": "config/productionHistoryRequirementsV1.js",
+    "requiredClosedBars": 120,
+    "roleDeclaration": "PRODUCTION_REQUIRED",
+    "httpTechnicalAllowanceBars": 2,
+    "requestedLimitPerHttpCall": 122,
+    "requestWindowMs": "122 * 4h",
+    "postFilter": "visibleClosed(): keep closed === true && closeTime <= evaluationTime && source === 'futures', de-duplicate by openTime, then slice(-120)"
+  },
+  "bootstrap": {
+    "function": "live/dataSource.js fetchProductionBootstrap (line 164) / fetchProductionWindow (line 133)",
+    "behavior": "Promise.all over 5m, 4h, 1h, 1d plus exchangeInfo; the 4h leg uses limit 122 and is sliced to 120",
+    "readinessFlag": "analysisHistoryStatus().history4hReady = available4hBars >= 120"
+  },
+  "incrementalRefresh": {
+    "function": "live/dataSource.js fetchHtfIncrement (line 294)",
+    "scheduler": "createHtfBoundaryScheduler (line 272): a fetch is only attempted when evaluationTime >= last.closeTime + 4h, with a 60s retry floor per timeframe",
+    "appendRule": "append only when c.closed === true, c.closeTime <= evaluationTime, requireFutures implies c.source === 'futures', and openTime is not already present (idempotent)"
+  },
+  "continuityAndRetry": {
+    "purityCheck": "checkFuturesPurity fails closed on any non-futures source",
+    "networkFailure": "recorded as { tf, kind: 'NETWORK_ERROR' } in issues and NOT swallowed; the previous HTF snapshot is retained and marked stale",
+    "degradedSource": "recorded as { tf, kind: 'DEGRADED', source } and the candle is never appended",
+    "htfOkFlag": "fetchHtfIncrement resolves { ok: issues.length === 0, issues }"
+  },
+  "cacheBehavior": {
+    "inMemoryOnly": "the 4h array lives in runnerData.structureCandles['4h'] for the process lifetime",
+    "onDisk": "no 4h candle cache is persisted by the bias path; the decision store persists decisions, not candles",
+    "bootstrapRetentionBars": "dataSource.production5mRetentionBars() applies to the 5m tape only"
+  },
+  "networkDependency": {
+    "proxySupport": "binanceRest honors the network configuration in config/network.js and .env",
+    "noNetworkInAudit": true
+  },
+  "fullyClosed4HOnly": {
+    "value": true,
+    "evidence": [
+      "live/4hBiasV3.js latestFullyClosed line 73-75 filters c.closed === true && c.closeTime <= evaluationTime",
+      "bias/directionalContext/4hBiasFactsV3.js visibleClosed line 14-18 applies the same filter",
+      "live/dataSource.js line 314 refuses to append c.closed !== true or closeTime > evaluationTime",
+      "test/4hBiasV3UnifiedProductionRefactor.test.js test 11 asserts the incomplete current 4H candle is excluded"
+    ]
+  },
+  "native4hGuarantee": {
+    "rule": "every candle must have source === 'futures' and closeTime === openTime + 4h - 1, and consecutive openTimes must differ by exactly 4h",
+    "implementation": "bias/directionalContext/4hBiasFactsV3.js assertNative (lines 20-28)",
+    "errors": ["NON_FUTURES_4H_DATA", "NON_NATIVE_4H_CANDLE", "FOUR_HOUR_DATA_GAP"]
+  }
+}

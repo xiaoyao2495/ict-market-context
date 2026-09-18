@@ -1,0 +1,130 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "couplingClasses": {
+    "A": "REPORTING_CONTEXT_ONLY",
+    "B": "WATCH_GATE",
+    "C": "5M_PIPELINE_GATE",
+    "D": "ENTRY_GATE",
+    "E": "REAL_ORDER_GATE",
+    "F": "NOTIFICATION_GATE"
+  },
+  "BIAS_IS_REPORTING_CONTEXT": true,
+  "BIAS_IS_WATCH_GATE": false,
+  "BIAS_IS_ENTRY_GATE": true,
+  "BIAS_IS_REAL_ORDER_GATE": true,
+  "BIAS_IS_NOTIFICATION_GATE": false,
+  "consumers": [
+    {
+      "consumer": "EQ/FVG WATCH DingTalk notification payload",
+      "class": "A REPORTING_CONTEXT_ONLY",
+      "file": "scripts/live.js",
+      "function": "sendEqFvgNotification",
+      "lines": "610-626",
+      "mechanism": "notificationMarketContext.attach(event, current4hBias.getCurrent()) then eqFvgCountWatchNotificationV1.build",
+      "gateEffect": "none - the notification is sent regardless of the bias value; the bias is displayed, never evaluated",
+      "renderLine": "notify/eqFvgCountWatchNotificationV1.js:96"
+    },
+    {
+      "consumer": "Range confirmation DingTalk notification payload",
+      "class": "A REPORTING_CONTEXT_ONLY",
+      "file": "scripts/live.js",
+      "function": "sendRangeConfirmation",
+      "lines": "565-580",
+      "mechanism": "notificationMarketContext.attach(event, current4hBias.getCurrent()) then rangeNotificationV1.buildRangeConfirmationMessage",
+      "gateEffect": "none",
+      "renderLine": "notify/rangeNotificationV1.js:40"
+    },
+    {
+      "consumer": "semantic execution preview (logging only)",
+      "class": "A REPORTING_CONTEXT_ONLY",
+      "file": "scripts/live.js",
+      "function": "semanticExecutionPreview",
+      "lines": "416-427",
+      "mechanism": "runs executionRulesV1.biasGate and reports fourHourGateResult as PASS / BLOCK:<reasonCode>",
+      "gateEffect": "none - the preview only describes what the real gate would decide"
+    },
+    {
+      "consumer": "per-snapshot observation log",
+      "class": "A REPORTING_CONTEXT_ONLY",
+      "file": "live/4hBiasV3.js",
+      "function": "observe callback (wired at scripts/live.js:325-330)",
+      "mechanism": "logs one structured 4H_BIAS_CREATED record per new closed 4H snapshot",
+      "gateEffect": "none"
+    },
+    {
+      "consumer": "entry plan construction",
+      "class": "D ENTRY_GATE",
+      "file": "execution/executionRulesV1.js",
+      "function": "biasGate (47-57) called from buildEntryPlan (line 180)",
+      "condition": "status === 'AVAILABLE' AND bias.closedAt === expected4hClosedAt AND semantic.direction === expected direction AND strength === 'STRONG' AND confidence === 'HIGH'",
+      "failureReasons": ["HTF_UNAVAILABLE", "HTF_NOT_ALIGNED", "HTF_NOT_STRONG", "HTF_NOT_HIGH_CONFIDENCE"],
+      "gateEffect": "hard - a failing gate returns ok:false and no plan is produced"
+    },
+    {
+      "consumer": "real order submission",
+      "class": "E REAL_ORDER_GATE",
+      "file": "execution/realOrderExecutionV1.js",
+      "function": "trade admission (line 309)",
+      "mechanism": "rules.buildEntryPlan(event, context); when !built.ok the trade is recorded as NO_TRADE with the gate reasonCode and no exchange client call happens (line 318)",
+      "gateEffect": "hard - the bias gate is upstream of every order and of the shadow-order path"
+    },
+    {
+      "consumer": "WATCH state machine",
+      "class": "NONE",
+      "file": "live/eqFvgCountWatchV1.js",
+      "evidence": "test 35 asserts that WATCH control output is identical with and without a current4hBias payload; the source comment at line 131 records that V2 research context was discarded and notification-time context now comes from 4H_BIAS_V3",
+      "gateEffect": "none"
+    },
+    {
+      "consumer": "execution alert notifications",
+      "class": "NONE",
+      "file": "notify/executionNotificationV1.js",
+      "evidence": "sendExecutionAlert (scripts/live.js:375-385) builds the message without any bias attach",
+      "gateEffect": "none (the bias has already acted upstream through the entry gate)"
+    },
+    {
+      "consumer": "scenario / draw / liquidity evidence bias fields",
+      "class": "UNRELATED_CONCEPT",
+      "file": "scenario/scenarioEngine.js, stats/watchLiquidityEvidenceV1.js",
+      "evidence": "these 'bias' fields come from the replay-side snapshot (bias/biasEngine.js) and are a different object from the 4H semantic bias",
+      "gateEffect": "not part of the 4H bias system"
+    }
+  ],
+  "downstreamSummary": {
+    "reportingConsumers": 4,
+    "watchGateConsumers": 0,
+    "entryGateConsumers": 1,
+    "realOrderGateConsumers": 1,
+    "notificationGateConsumers": 0
+  },
+  "accidentalCoupling": [
+    {
+      "id": "AC_1_HTF_DATA_SHARED_WITH_5M_TICK",
+      "description": "the same HTF increment call that feeds the bias also gates the whole 5m tick; an unrelated 1h/1d fetch failure pauses bias-irrelevant 5m processing",
+      "location": "scripts/live.js:986-1013",
+      "severity": "HIGH",
+      "impact": "bias data failure and bias semantic failure have opposite blast radii, and 1h/1d failures block the pipeline even though the bias only needs 4h"
+    },
+    {
+      "id": "AC_2_RUNTIME_COUPLED_GETTER",
+      "description": "the bias service is constructed inside the live runner and reads runnerData.structureCandles['4h'] through a closure",
+      "location": "scripts/live.js:317-324",
+      "severity": "MEDIUM",
+      "impact": "a standalone bias tool cannot reuse the service without reproducing or stubbing the runner data structure"
+    },
+    {
+      "id": "AC_3_CONFIG_COUPLED_DECISION_DIRECTORY",
+      "description": "the decision store directory comes from the live CONFIG.dataDir instead of a bias-owned path",
+      "location": "scripts/live.js:319-321",
+      "severity": "LOW",
+      "impact": "a standalone tool must accept a store path explicitly"
+    },
+    {
+      "id": "AC_4_LEGACY_BIAS_ENGINE_RUNS_IN_LIVE_SNAPSHOTS",
+      "description": "replay/replayEngine.js runs bias/biasEngine.js on every live snapshot rebuild, so a legacy bias is computed on the live path even though nothing in the 4H bias system reads it",
+      "location": "live/liveEngine.js:102 -> replay/replayEngine.js:103",
+      "severity": "MEDIUM",
+      "impact": "wasted work and a persistent source of confusion about which bias is authoritative"
+    }
+  ]
+}

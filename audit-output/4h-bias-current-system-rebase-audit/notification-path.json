@@ -1,0 +1,74 @@
+{
+  "task": "4H_BIAS_CURRENT_SYSTEM_REBASE_AUDIT",
+  "transport": {
+    "module": "notify/dingTalk.js",
+    "callSites": [
+      "scripts/live.js:382 sendExecutionAlert",
+      "scripts/live.js:572 sendRangeConfirmation",
+      "scripts/live.js:618 sendEqFvgNotification"
+    ],
+    "biasAttachedCallSites": [
+      "scripts/live.js:566 sendRangeConfirmation",
+      "scripts/live.js:612 sendEqFvgNotification"
+    ],
+    "biasNotAttachedCallSites": [
+      "scripts/live.js:382 sendExecutionAlert (execution alerts carry no bias block)"
+    ],
+    "webhookSource": "config/live.json dingtalk.webhook, optionally overridden by DINGTALK_WEBHOOK or config/live.local.json",
+    "secretSource": "DINGTALK_SECRET or config/live.local.json (never printed in this audit)"
+  },
+  "CURRENT_PRODUCTION_4H_BIAS_PRESENTATION": {
+    "renderer": "notify/4hBiasContext.js lines() lines 9-30",
+    "fields": [
+      { "field": "header", "value": "📊 4H Bias", "source": "literal" },
+      { "field": "Semantic Decision", "value": "literal section header when status is AVAILABLE", "source": "literal" },
+      { "field": "方向 (direction)", "value": "bias.semantic.direction prefixed with 🟢 BULLISH / 🔴 BEARISH / ⚪ NO_PRIORITY", "source": "semantic decision" },
+      { "field": "力度 (strength)", "value": "bias.semantic.strength", "source": "semantic decision" },
+      { "field": "置信 (confidence)", "value": "bias.semantic.confidence", "source": "semantic decision" },
+      { "field": "Deterministic Facts", "value": "literal section header", "source": "literal" },
+      { "field": "normalizedDirectionalSpread", "value": "signed rendering via 4hBiasFactRendererV1", "source": "deterministic facts" },
+      { "field": "ADX14", "value": "unsigned rendering", "source": "deterministic facts" },
+      { "field": "signedMoveAtr24", "value": "signed rendering", "source": "deterministic facts" },
+      { "field": "signedEfficiency24", "value": "signed rendering", "source": "deterministic facts" },
+      { "field": "theilSenSlope48", "value": "signed rendering", "source": "deterministic facts" },
+      { "field": "structureDirection", "value": "UP | DOWN | NEUTRAL", "source": "deterministic facts" }
+    ],
+    "explicitlyNotShown": [
+      "the model summary prose (test 11 asserts the production notification never uses LLM factual prose)",
+      "the model conflicts prose",
+      "the frozen decisionKey / factsHash / model id",
+      "any price, target, action or trade advice"
+    ],
+    "degradedStates": {
+      "PARTIAL_or_no_semantic": ["📊 4H Bias", "语义解析暂不可用"],
+      "UNAVAILABLE": ["📊 4H Bias", "暂不可用"]
+    }
+  },
+  "whereTheBlockAppears": [
+    {
+      "messageType": "EQ/FVG WATCH notification",
+      "builder": "notify/eqFvgCountWatchNotificationV1.js",
+      "position": "after Expected Direction, before the FVG ordinal block (line 96)"
+    },
+    {
+      "messageType": "Range confirmation notification",
+      "builder": "notify/rangeNotificationV1.js",
+      "position": "appended as the final block of the message (line 40)"
+    }
+  ],
+  "BIAS_CHANGE_NOTIFICATION_ENABLED": false,
+  "BIAS_CHANGE_NOTIFICATION_EVIDENCE": [
+    "there is no code path that compares the previous bias direction/strength/confidence with the new one",
+    "live/4hBiasV3.js observe() only emits a structured log record (4H_BIAS_CREATED); it never sends DingTalk",
+    "the only two bias-carrying DingTalk messages are event-driven (a Range confirmation or an EQ/FVG WATCH event), so a bias change alone never produces a message",
+    "searching the repository for a bias-change emitter returns nothing"
+  ],
+  "BIAS_NOTIFICATION_RESTART_DEDUPE": "NOT_APPLICABLE",
+  "restartBehaviour": {
+    "biasRecomputedOnRestart": true,
+    "llmRecalledOnRestart": false,
+    "reason": "the durable decision store returns the frozen record for the same decision key",
+    "duplicateNotificationRisk": "none from the bias itself, because the bias never sends a message; event-driven messages depend on their own delivered/outbox state (EQ/FVG watch outbox and range outbox persisted under .live-state)",
+    "logDuplication": "4H_BIAS_CREATED is logged again after a restart for the same closed candle because lastProcessedClosed4hCloseTime is in-memory only"
+  }
+}
