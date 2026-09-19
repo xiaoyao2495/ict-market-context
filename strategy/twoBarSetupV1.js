@@ -20,6 +20,7 @@ var path = require('path');
 
 var LIB = require('../research/reversalPatternSemanticAuditV1');
 var twoBar = require('./twoBarReversalV1');
+var pathIntegrity = require('./crossSourcePathIntegrityV1');
 var deepseekClient = require('../ai/deepseekClient');
 
 var VERSION = 'TWO_BAR_SETUP_V1';
@@ -168,13 +169,47 @@ function createService(options) {
                 var tolerance = ctx.atrValue * EQ_TOLERANCE_ATR_MULTIPLIER;
                 var partners = twoBar.matchDynamicDPartners(ctx.dynamicDState, currentPoint, tolerance,
                     ctx.currentBarIndex);
+                // CROSS_SOURCE_PATH_INTEGRITY_V1: the tolerance candidates are filtered by the
+                // geometric path between the Dynamic-D anchor and this Two-Bar BEFORE the existing
+                // selector order is applied, so a partner whose boundary was already traded
+                // through can never be selected - while a later, cleaner Dynamic-D endpoint can
+                // still take its place. Order preserved: surviving partners keep the matcher order.
+                var accepted = [];
+                var pathRejected = 0;
+                (partners || []).forEach(function (partner) {
+                    var integrity = pathIntegrity.evaluateCrossSourcePathIntegrity({
+                        twoBar: currentPoint, partner: partner, bars: ctx.candles });
+                    if (integrity.ok === true) { accepted.push(partner); return; }
+                    pathRejected += 1;
+                    observe({ event: 'TWO_BAR_EQ_PATH_REJECTED', symbol: symbol,
+                        twoBarId: currentPoint.id, direction: currentPoint.direction,
+                        partnerId: partner.id, partnerPrice: partner.price,
+                        twoBarExtreme: currentPoint.price, boundary: integrity.boundary,
+                        anchorOccurredAt: integrity.anchorOccurredAt, k1OpenTime: integrity.k1OpenTime,
+                        intermediateBarCount: integrity.intermediateBarCount,
+                        minIntermediateLow: integrity.minIntermediateLow,
+                        maxIntermediateHigh: integrity.maxIntermediateHigh,
+                        violatingBarOpenTime: integrity.violatingBar ? integrity.violatingBar.openTime : null,
+                        violatingLow: integrity.violatingBar ? integrity.violatingBar.low : null,
+                        violatingHigh: integrity.violatingBar ? integrity.violatingBar.high : null,
+                        status: integrity.status, reason: integrity.reason });
+                });
                 if (partners.length === 0) {
                     observe({ event: 'TWO_BAR_EQ_NO_PARTNER', symbol: symbol, twoBarId: currentPoint.id,
                         price: currentPoint.price, tolerance: tolerance });
                     return { status: 'NO_SETUP', reason: 'NO_DYNAMIC_D_EQ_PARTNER', stage: 'EQ',
                         currentPoint: currentPoint };
                 }
-                var setup = twoBar.buildEqSetup(currentPoint, partners, tolerance);
+                if (accepted.length === 0) {
+                    // every tolerance candidate was path-rejected: no EQ pair exists for THIS
+                    // Two-Bar. The Dynamic-D points themselves are NOT invalidated.
+                    observe({ event: 'TWO_BAR_EQ_NO_PARTNER', symbol: symbol, twoBarId: currentPoint.id,
+                        price: currentPoint.price, tolerance: tolerance,
+                        pathRejectedCandidates: pathRejected });
+                    return { status: 'NO_SETUP', reason: 'NO_DYNAMIC_D_EQ_PARTNER', stage: 'EQ',
+                        currentPoint: currentPoint, pathRejectedCandidates: pathRejected };
+                }
+                var setup = twoBar.buildEqSetup(currentPoint, accepted, tolerance);
                 observe({ event: 'TWO_BAR_SETUP_CONFIRMED', symbol: symbol, setupId: setup.id,
                     direction: setup.direction, eqType: setup.type, twoBarId: setup.twoBarId,
                     k1OpenTime: setup.k1OpenTime, k2OpenTime: setup.k2OpenTime,
