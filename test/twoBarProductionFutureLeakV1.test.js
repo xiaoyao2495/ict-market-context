@@ -137,6 +137,8 @@ async function main() {
                 semantic: { direction: 'BULLISH', strength: 'MODERATE', confidence: 'HIGH' } },
             currentContractPrice: 100.0, dynamicDPoints: dynamicDState.recentSurvivalPoints, candles: rows });
         assert.strictEqual(built.ok, true, built.reasonCode);
+        assert.strictEqual(built.plan.setupId, result.setup.id);
+        assert.strictEqual(built.plan.eqId, result.setup.nearestPartnerId);
         assert.strictEqual(built.plan.decisionTime, rows[9].closeTime);
         assert.strictEqual(built.plan.decisionTime >= built.plan.setupConfirmedAt, true);
         assert.strictEqual(built.plan.targetConfirmedAt <= rows[9].closeTime, true);

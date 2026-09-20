@@ -48,6 +48,13 @@ function statusOf(raw) {
 }
 
 function tradeIdFor(plan) { return 'BB_' + String(plan.setupId).replace(/[^A-Za-z0-9]/g, '').slice(-24); }
+function validIdentity(value) {
+    return value !== undefined && value !== null && String(value).trim() !== '';
+}
+function validExecutionPlanIdentity(plan) {
+    return !!plan && validIdentity(plan.setupId) && validIdentity(plan.eqId) &&
+        validIdentity(plan.symbol) && validIdentity(plan.direction);
+}
 
 function createService(options) {
     var opts = options || {};
@@ -126,9 +133,15 @@ function createService(options) {
 
     // ------------------------------------------------------------- entry path
 
-    /** §10 idempotent: one breakout entry per setupId, ever. */
-    function onSetup(plan, ctx) {
-        if (!plan || plan.ok !== true) return Promise.resolve({ status: 'REJECTED_PLAN' });
+    /** §10 idempotent: one breakout entry per consumed EQ identity, ever. */
+    function onSetup(envelope, ctx) {
+        if (!envelope || envelope.ok !== true) return Promise.resolve({ status: 'REJECTED_PLAN' });
+        var plan = envelope.plan;
+        if (!validExecutionPlanIdentity(plan)) {
+            emit('NO_TRADE', null, { reasonCode: 'INVALID_EXECUTION_PLAN_IDENTITY',
+                setupId: plan && plan.setupId, eqId: plan && plan.eqId });
+            return Promise.resolve({ status: 'NO_TRADE', reasonCode: 'INVALID_EXECUTION_PLAN_IDENTITY' });
+        }
         if (halted) {
             emit('NEW_ENTRY_BLOCKED', null, { reasonCode: 'EXECUTION_HALT_ACTIVE', detail: haltReason });
             return Promise.resolve({ status: 'NO_TRADE', reasonCode: 'EXECUTION_HALT_ACTIVE' });
@@ -139,7 +152,8 @@ function createService(options) {
             emit('NO_TRADE', null, { reasonCode: denied });
             return Promise.resolve({ status: 'NO_TRADE', reasonCode: denied });
         }
-        if (!repository.consumeEq(plan.setupId, { symbol: symbol, direction: plan.direction })) {
+        if (!repository.consumeEq(plan.eqId, { symbol: plan.symbol, direction: plan.direction,
+                setupId: plan.setupId })) {
             emit('NO_TRADE', null, { reasonCode: 'SETUP_ALREADY_CONSUMED' });
             return Promise.resolve({ status: 'NO_TRADE', reasonCode: 'SETUP_ALREADY_CONSUMED' });
         }
@@ -149,7 +163,7 @@ function createService(options) {
         }
         var trade = {
             tradeId: tradeIdFor(plan), symbol: symbol, status: 'PENDING_BREAKOUT_SETUP',
-            reasonCode: null, plan: clone(plan.plan), positionQty: 0,
+            reasonCode: null, plan: clone(plan), positionQty: 0,
             entryOrder: null, slOrder: null, tpOrder: null,
             slRevision: 0, tpRevision: 0, positionOpenedAt: null,
             createdAt: Date.now(), updatedAt: Date.now(), alertedEvents: {}
@@ -163,7 +177,7 @@ function createService(options) {
             saveTrade(trade);
             emitOnce('BREAKOUT_ENTRY_SUBMITTED', trade, { shadow: true,
                 reasonCode: 'LIVE_TRADING_DISABLED', entryTrigger: trade.plan.entryTrigger,
-                entryWorkingType: 'CONTRACT_PRICE' });
+                entryWorkingType: 'CONTRACT_PRICE', setupId: trade.plan.setupId, eqId: trade.plan.eqId });
             return Promise.resolve({ status: 'SHADOW_ORDER', trade: trade });
         }
         if (!accountReady) {
@@ -181,7 +195,8 @@ function createService(options) {
             return emitOnce('BREAKOUT_ENTRY_SUBMITTED', trade, {
                 entryTrigger: trade.plan.entryTrigger, entryWorkingType: 'CONTRACT_PRICE',
                 direction: trade.plan.direction, initialSL: trade.plan.initialSL,
-                initialTP: trade.plan.initialTP, initialRR: trade.plan.initialRR });
+                initialTP: trade.plan.initialTP, initialRR: trade.plan.initialRR,
+                setupId: trade.plan.setupId, eqId: trade.plan.eqId });
         }).then(function () { return { status: 'BREAKOUT_ENTRY_PENDING', trade: trade }; })
             .catch(function (error) {
                 if (rateLimitGovernor.isRateLimitError(error)) {

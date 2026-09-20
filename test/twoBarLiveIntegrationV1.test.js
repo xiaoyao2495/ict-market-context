@@ -324,7 +324,8 @@ function liveService(options) {
 }
 
 function seedPlan(direction) {
-    return { setupId: 'SEED_' + direction, symbol: 'BTCUSDT', direction: direction,
+    return { setupId: 'SEED_' + direction, eqId: 'EQ_SEED_' + direction,
+        symbol: 'BTCUSDT', direction: direction,
         eqType: direction === 'LONG' ? 'EQL' : 'EQH',
         entryTrigger: direction === 'LONG' ? 100.9 : 99.0,
         entryWorkingType: 'CONTRACT_PRICE', protectionWorkingType: 'MARK_PRICE',

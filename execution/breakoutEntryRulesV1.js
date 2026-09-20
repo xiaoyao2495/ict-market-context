@@ -149,6 +149,9 @@ function buildBreakoutPlan(setup, context) {
     var plannedEntry = validateRules(rules) ? legalize(raw, rules.tickSize, 'NEAREST') : raw;
     var base = {
         setupId: setup.id,
+        // The consumed EQ is the matched Dynamic-D liquidity identity.  Keep it
+        // distinct from the EqSetup identity used to derive the trade id.
+        eqId: setup.nearestPartnerId,
         symbol: setup.symbol,
         direction: setup.direction,
         eqType: setup.type,
