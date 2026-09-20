@@ -55,6 +55,85 @@ function validExecutionPlanIdentity(plan) {
     return !!plan && validIdentity(plan.setupId) && validIdentity(plan.eqId) &&
         validIdentity(plan.symbol) && validIdentity(plan.direction);
 }
+function ensureExecutionAudit(trade) {
+    trade.executionAudit = trade.executionAudit || {
+        protectionVerifyFailureCount: 0,
+        temporaryExecutionHaltSeen: false,
+        temporaryExecutionHaltCleared: false,
+        protectionEventuallyVerified: false,
+        protectionVerifiedRoles: { SL: false, TP: false },
+        duplicateOrderDetected: false,
+        orphanProtectionDetected: false
+    };
+    return trade.executionAudit;
+}
+function applyExecutionAuditEvent(type, trade, extra) {
+    if (!trade) return false;
+    var audit = ensureExecutionAudit(trade);
+    if (type === 'PROTECTION_VERIFY_FAILED') {
+        audit.protectionVerifyFailureCount = (audit.protectionVerifyFailureCount || 0) + 1;
+        return true;
+    }
+    if (type === 'EXECUTION_HALT' && audit.temporaryExecutionHaltSeen !== true) {
+        audit.temporaryExecutionHaltSeen = true; return true;
+    }
+    if (type === 'EXECUTION_HALT_CLEARED' && audit.temporaryExecutionHaltCleared !== true) {
+        audit.temporaryExecutionHaltCleared = true; return true;
+    }
+    if (type === 'PROTECTION_VERIFIED') {
+        audit.protectionVerifiedRoles = audit.protectionVerifiedRoles || { SL: false, TP: false };
+        var role = extra && extra.role;
+        var changed = false;
+        if ((role === 'SL' || role === 'TP') && audit.protectionVerifiedRoles[role] !== true) {
+            audit.protectionVerifiedRoles[role] = true; changed = true;
+        }
+        if (audit.protectionVerifiedRoles.SL === true && audit.protectionVerifiedRoles.TP === true &&
+                audit.protectionEventuallyVerified !== true) {
+            audit.protectionEventuallyVerified = true; changed = true;
+        }
+        return changed;
+    }
+    if (type === 'ORPHAN_ORDER_FOUND' && audit.orphanProtectionDetected !== true) {
+        audit.orphanProtectionDetected = true; return true;
+    }
+    if ((type === 'BREAKOUT_ENTRY_FILLED' || type === 'BREAKOUT_ENTRY_FILL_RACE_RECOGNIZED') &&
+            extra && num(extra.positionQty) > num(audit.maxFilledQty)) {
+        audit.maxFilledQty = num(extra.positionQty); return true;
+    }
+    return false;
+}
+function closedSummary(trade) {
+    var plan = trade.plan || {};
+    var audit = ensureExecutionAudit(trade);
+    var holdingSeconds = trade.positionOpenedAt && trade.closedAt
+        ? Math.max(0, (trade.closedAt - trade.positionOpenedAt) / 1000) : null;
+    var unresolved = Boolean((trade.slOrder && trade.slOrder.unresolved === true) ||
+        (trade.tpOrder && trade.tpOrder.unresolved === true));
+    return {
+        symbol: trade.symbol, direction: plan.direction, tradeId: trade.tradeId,
+        setupId: plan.setupId, eqId: plan.eqId,
+        setup: { submittedAt: trade.submittedAt || (trade.entryOrder && trade.entryOrder.createdAt) || null,
+            plannedEntry: plan.entryTrigger, initialSL: plan.initialSL,
+            initialTP: plan.initialTP, initialRR: plan.initialRR },
+        entry: { filled: trade.positionOpenedAt !== null && trade.positionOpenedAt !== undefined,
+            fillPrice: null, filledAt: trade.positionOpenedAt || null,
+            qty: audit.maxFilledQty || null, notional: null },
+        protection: { slPlaced: !!trade.slOrder, tpPlaced: !!trade.tpOrder,
+            protectionEventuallyVerified: audit.protectionEventuallyVerified === true,
+            protectionVerifyFailureCount: audit.protectionVerifyFailureCount || 0,
+            temporaryExecutionHaltSeen: audit.temporaryExecutionHaltSeen === true,
+            temporaryExecutionHaltCleared: audit.temporaryExecutionHaltCleared === true },
+        exit: { exitReason: 'UNKNOWN', exitPrice: null, closedAt: trade.closedAt || null,
+            holdingSeconds: holdingSeconds },
+        result: { grossPnl: null, fees: null, netPnl: null, realizedR: null },
+        executionAudit: { duplicateOrderDetected: audit.duplicateOrderDetected === true,
+            orphanProtectionDetected: audit.orphanProtectionDetected === true,
+            unresolvedProtection: unresolved,
+            executionAnomaly: audit.duplicateOrderDetected === true ||
+                audit.orphanProtectionDetected === true || unresolved ||
+                (audit.temporaryExecutionHaltSeen === true && audit.temporaryExecutionHaltCleared !== true) }
+    };
+}
 
 function createService(options) {
     var opts = options || {};
@@ -95,7 +174,9 @@ function createService(options) {
     var cleanupTerminal = {};
 
     function emit(type, trade, extra) {
+        if (applyExecutionAuditEvent(type, trade, extra)) persistTradeSoft(trade, 'EXECUTION_AUDIT_' + type);
         var event = Object.assign({ type: type, symbol: symbol, tradeId: trade && trade.tradeId || null }, extra || {});
+        if (type === 'POSITION_CLOSED' && trade) event.summary = closedSummary(trade);
         observe(clone(event));
         return Promise.resolve(alert(clone(event))).catch(function () {});
     }
@@ -166,7 +247,8 @@ function createService(options) {
             reasonCode: null, plan: clone(plan), positionQty: 0,
             entryOrder: null, slOrder: null, tpOrder: null,
             slRevision: 0, tpRevision: 0, positionOpenedAt: null,
-            createdAt: Date.now(), updatedAt: Date.now(), alertedEvents: {}
+            createdAt: Date.now(), updatedAt: Date.now(), alertedEvents: {},
+            executionAudit: ensureExecutionAudit({})
         };
         repository.putTrade(trade);
         if (!live) {
@@ -174,10 +256,16 @@ function createService(options) {
                 type: 'STOP_MARKET', triggerPrice: trade.plan.entryTrigger,
                 workingType: 'CONTRACT_PRICE', requestedQty: trade.plan.requestedQty };
             trade.status = 'SHADOW_BREAKOUT_PENDING';
+            trade.submittedAt = Date.now();
             saveTrade(trade);
             emitOnce('BREAKOUT_ENTRY_SUBMITTED', trade, { shadow: true,
                 reasonCode: 'LIVE_TRADING_DISABLED', entryTrigger: trade.plan.entryTrigger,
-                entryWorkingType: 'CONTRACT_PRICE', setupId: trade.plan.setupId, eqId: trade.plan.eqId });
+                entryWorkingType: 'CONTRACT_PRICE', setupId: trade.plan.setupId, eqId: trade.plan.eqId,
+                direction: trade.plan.direction, initialSL: trade.plan.initialSL,
+                initialTP: trade.plan.initialTP, initialRR: trade.plan.initialRR,
+                qty: trade.plan.requestedQty,
+                notional: num(trade.plan.requestedQty) * num(trade.plan.entryTrigger),
+                submittedAt: trade.submittedAt });
             return Promise.resolve({ status: 'SHADOW_ORDER', trade: trade });
         }
         if (!accountReady) {
@@ -186,6 +274,7 @@ function createService(options) {
                 .then(function () { return { status: 'EXCHANGE_REJECTED' }; });
         }
         return client.placeBreakoutEntry(trade.plan).then(function (response) {
+            trade.submittedAt = Date.now();
             trade.entryOrder = { role: 'ENTRY', clientOrderId: response && (response.clientAlgoId || response.clientOrderId),
                 algoId: response && response.algoId, status: statusOf(response) || 'NEW', type: 'STOP_MARKET',
                 triggerPrice: trade.plan.entryTrigger, workingType: 'CONTRACT_PRICE',
@@ -196,7 +285,10 @@ function createService(options) {
                 entryTrigger: trade.plan.entryTrigger, entryWorkingType: 'CONTRACT_PRICE',
                 direction: trade.plan.direction, initialSL: trade.plan.initialSL,
                 initialTP: trade.plan.initialTP, initialRR: trade.plan.initialRR,
-                setupId: trade.plan.setupId, eqId: trade.plan.eqId });
+                setupId: trade.plan.setupId, eqId: trade.plan.eqId,
+                qty: trade.plan.requestedQty,
+                notional: num(trade.plan.requestedQty) * num(trade.plan.entryTrigger),
+                submittedAt: trade.submittedAt });
         }).then(function () { return { status: 'BREAKOUT_ENTRY_PENDING', trade: trade }; })
             .catch(function (error) {
                 if (rateLimitGovernor.isRateLimitError(error)) {
@@ -1580,6 +1672,7 @@ function createService(options) {
             return chain.then(function () {
                 if (trade.status !== 'BREAKOUT_ENTRY_CANCELED') {
                     trade.status = 'CLOSED';
+                    trade.closedAt = Date.now();
                     saveTrade(trade);
                     return emitOnce('POSITION_CLOSED', trade);
                 }
@@ -1695,4 +1788,5 @@ function createService(options) {
     };
 }
 
-module.exports = { VERSION: VERSION, createService: createService, tradeIdFor: tradeIdFor };
+module.exports = { VERSION: VERSION, createService: createService, tradeIdFor: tradeIdFor,
+    applyExecutionAuditEvent: applyExecutionAuditEvent, closedSummary: closedSummary };

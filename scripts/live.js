@@ -346,8 +346,7 @@ function createRunner(symbol, options) {
     function sendExecutionAlert(event) {
         log(symbol + ' EXECUTION ' + event.type + ' reason=' + (event.reasonCode || '-') +
             ' tradeId=' + (event.tradeId || '-'));
-        if (event.type === 'NO_TRADE') return Promise.resolve();
-        if (event.type === 'SHADOW_ORDER' && process.env.EXECUTION_SHADOW_DINGTALK_ENABLED !== 'true') return Promise.resolve();
+        if (!executionNotificationV1.shouldNotifyExecutionEvent(event)) return Promise.resolve();
         if (!CONFIG.dingtalk.webhook || CONFIG.dingtalk.webhook.indexOf('YOUR_') !== -1) return Promise.resolve();
         var message = executionNotificationV1.build(event, CONFIG.dingtalk.keyword || '检测');
         return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, message).then(function (response) {

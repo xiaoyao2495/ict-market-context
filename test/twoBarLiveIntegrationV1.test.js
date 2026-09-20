@@ -1060,6 +1060,10 @@ async function main() {
             var trade = tradeOf(run.service, 'BB_SEED');
             assert.strictEqual(trade.slOrder.verified, true);
             assert.strictEqual(trade.tpOrder.verified, true);
+            assert.strictEqual(trade.executionAudit.protectionVerifyFailureCount >= 1, true);
+            assert.strictEqual(trade.executionAudit.temporaryExecutionHaltSeen, true);
+            assert.strictEqual(trade.executionAudit.temporaryExecutionHaltCleared, true);
+            assert.strictEqual(trade.executionAudit.protectionEventuallyVerified, true);
             assert.strictEqual(h.events.filter(function (e) {
                 return e.type === 'EXECUTION_HALT_CLEARED'; }).length, 1, 'cleared exactly once');
             // regression for the snapshot-entry shape bug: an open-order snapshot that
