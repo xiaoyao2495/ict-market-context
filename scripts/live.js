@@ -378,6 +378,13 @@ function createRunner(symbol, options) {
                 var snapshot = engine ? engine.getWindowSnapshot() : [];
                 return snapshot.length ? snapshot[snapshot.length - 1].close : null;
             },
+            // The runtime owner may expose the frozen V1 state reader. Absence or
+            // failure is reporting-only UNAVAILABLE and never blocks execution.
+            getMarketStateSnapshot: function (snapshotAt) {
+                if (!runnerOptions.marketStateMap ||
+                        typeof runnerOptions.marketStateMap.snapshotAt !== 'function') return null;
+                return runnerOptions.marketStateMap.snapshotAt(snapshotAt);
+            },
             getNewTradeAdmission: function () {
                 if (!scanAdmitted) return { admitted: false, reasonCode: 'SYMBOL_NOT_IN_SCAN_UNIVERSE' };
                 if (!analysisReady) return { admitted: false, reasonCode: 'INSUFFICIENT_ANALYSIS_HISTORY' };

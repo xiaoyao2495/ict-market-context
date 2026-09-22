@@ -34,6 +34,21 @@ function shouldNotifyExecutionEvent(event) {
 
 function value(v) { return v === undefined || v === null || v === '' ? 'UNKNOWN' : String(v); }
 function bool(v) { return v === true ? 'true' : v === false ? 'false' : 'UNKNOWN'; }
+function marketStateLines(snapshot) {
+    var s = snapshot || { state: 'UNAVAILABLE', errorCode: 'MARKET_STATE_SNAPSHOT_MISSING',
+        version: 'MARKET_STATE_MAP_V1' };
+    var lines = ['', 'Market State Map:', 'state=' + value(s.state)];
+    if (s.state === 'UNAVAILABLE') lines.push('reason=' + value(s.errorCode));
+    else {
+        lines.push('since=' + value(s.stateSince));
+        if (s.state === 'BULL_TREND' && s.activeProtectedPrice !== null && s.activeProtectedPrice !== undefined)
+            lines.push('protectedLow=' + value(s.activeProtectedPrice));
+        if (s.state === 'BEAR_TREND' && s.activeProtectedPrice !== null && s.activeProtectedPrice !== undefined)
+            lines.push('protectedHigh=' + value(s.activeProtectedPrice));
+    }
+    lines.push('snapshotAt=' + value(s.snapshotAt), 'version=' + value(s.version));
+    return lines;
+}
 function closedLines(summary) {
     var s = summary || {};
     var setup = s.setup || {};
@@ -78,6 +93,7 @@ function build(event, keyword) {
             'initialTP=' + value(event.initialTP), 'initialRR=' + value(event.initialRR),
             'qty=' + value(event.qty), 'notional=' + value(event.notional),
             'submittedAt=' + value(event.submittedAt));
+        lines = lines.concat(marketStateLines(event.marketStateSnapshot));
         return lines.join('\n');
     }
     if (event.tradeId) lines.push('tradeId=' + event.tradeId);
@@ -94,4 +110,5 @@ function build(event, keyword) {
     return lines.join('\n');
 }
 module.exports = { build: build, tpAnchorLines: tpAnchorLines, eqAnchorCountLine: eqAnchorCountLine,
-    shouldNotifyExecutionEvent: shouldNotifyExecutionEvent, closedLines: closedLines };
+    shouldNotifyExecutionEvent: shouldNotifyExecutionEvent, closedLines: closedLines,
+    marketStateLines: marketStateLines };

@@ -21,6 +21,7 @@ var repositoryModule = require('./executionRepositoryV1');
 var streamModule = require('./userDataStreamV1');
 var clientModule = require('./binanceExecutionClientV1');
 var rateLimitGovernor = require('../data/binanceRateLimitGovernorV1');
+var marketStateReporting = require('./marketStateReportingV1');
 
 var VERSION = 'BREAKOUT_EXECUTION_V1';
 // REAL_SMOKE_2 hardening: bound the protection placement attempts per role and
@@ -146,6 +147,7 @@ function createService(options) {
     var streamFactory = opts.streamFactory || streamModule.createStream;
     var getNewTradeAdmission = opts.getNewTradeAdmission || function () { return { admitted: true, reasonCode: null }; };
     var getMarkPrice = opts.getMarkPrice || function () { return null; };
+    var getMarketStateSnapshot = opts.getMarketStateSnapshot || function () { return null; };
     var stream = null;
     var pollTimer = null;
     var queue = Promise.resolve();
@@ -250,6 +252,10 @@ function createService(options) {
             createdAt: Date.now(), updatedAt: Date.now(), alertedEvents: {},
             executionAudit: ensureExecutionAudit({})
         };
+        // Reporting only. Capture exactly once at the authoritative entry decision
+        // time; never recompute this field from fill/notification/current state.
+        trade.marketStateSnapshot = marketStateReporting.capture(getMarketStateSnapshot,
+            trade.plan.decisionTime || trade.plan.setupConfirmedAt || Date.now());
         repository.putTrade(trade);
         if (!live) {
             trade.entryOrder = { role: 'ENTRY', clientOrderId: null, status: 'SHADOW_PENDING',
@@ -265,7 +271,7 @@ function createService(options) {
                 initialTP: trade.plan.initialTP, initialRR: trade.plan.initialRR,
                 qty: trade.plan.requestedQty,
                 notional: num(trade.plan.requestedQty) * num(trade.plan.entryTrigger),
-                submittedAt: trade.submittedAt });
+                submittedAt: trade.submittedAt, marketStateSnapshot: clone(trade.marketStateSnapshot) });
             return Promise.resolve({ status: 'SHADOW_ORDER', trade: trade });
         }
         if (!accountReady) {
@@ -288,7 +294,7 @@ function createService(options) {
                 setupId: trade.plan.setupId, eqId: trade.plan.eqId,
                 qty: trade.plan.requestedQty,
                 notional: num(trade.plan.requestedQty) * num(trade.plan.entryTrigger),
-                submittedAt: trade.submittedAt });
+                submittedAt: trade.submittedAt, marketStateSnapshot: clone(trade.marketStateSnapshot) });
         }).then(function () { return { status: 'BREAKOUT_ENTRY_PENDING', trade: trade }; })
             .catch(function (error) {
                 if (rateLimitGovernor.isRateLimitError(error)) {
