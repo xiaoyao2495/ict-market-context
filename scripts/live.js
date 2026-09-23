@@ -51,6 +51,7 @@ var binanceExecutionClientV1 = require('../execution/binanceExecutionClientV1');
 var realTradeCaseArchiveV1 = require('../execution/realTradeCaseArchiveV1');
 var executionNotificationV1 = require('../notify/executionNotificationV1');
 var dynamicContractUniverseV1 = require('../live/dynamicContractUniverseV1');
+var marketStateMapV1Runtime = require('../marketState/marketStateMapV1Runtime');
 
 var CONFIG = require('../config/live.json');
 var EQ_PRODUCTION_MODEL = productionEqualLiquidityV1.VERSION;
@@ -329,6 +330,29 @@ function createRunner(symbol, options) {
     var executionSymbolRules = null;
     var scanAdmitted = runnerOptions.scanAdmitted !== false;
     var analysisReady = false;
+    var marketStateBootstrapStarted = false;
+
+    function startMarketStateBootstrap() {
+        if (marketStateBootstrapStarted || !runnerOptions.marketStateMap) return;
+        marketStateBootstrapStarted = true;
+        Promise.resolve().then(function () {
+            return typeof runnerOptions.marketStateBootstrapHistory === 'function'
+                ? runnerOptions.marketStateBootstrapHistory()
+                : runnerOptions.marketStateBootstrapHistory;
+        }).then(function (candles) {
+            return runnerOptions.marketStateMap.bootstrap(candles);
+        }).catch(function (error) {
+            // Runtime owns normal diagnostics. This boundary also covers a failed
+            // historical fetch before runtime.bootstrap() can take ownership.
+            if (typeof runnerOptions.marketStateMap.failBootstrap === 'function') {
+                runnerOptions.marketStateMap.failBootstrap(error);
+            } else {
+                log(symbol + ' MARKET_STATE_BOOTSTRAP_FAILED errorCode=' +
+                    (error && error.code || 'MARKET_STATE_BOOTSTRAP_FETCH_FAILED') +
+                    ' detail=' + String(error && error.message || error).slice(0, 500));
+            }
+        });
+    }
 
     function executionContext(decisionTime) {
         var fourHour = runnerData && runnerData.structureCandles && runnerData.structureCandles['4h'] || [];
@@ -539,6 +563,9 @@ function createRunner(symbol, options) {
     }
 
     function initFromHistory(data) {
+        // Reporting-only background bootstrap. Deliberately not awaited: trading
+        // initialization and order recovery remain independent of Market State.
+        startMarketStateBootstrap();
         // Fix 1（11L.3 P0）：requireFutures → 初始化 futures-only fail-closed。
         // 任一 live timeframe（5m/1h/4h/1d）或 exchangeInfo 出现非 futures 源
         // → 初始化失败（throw），不启动该 symbol（不 warmup、不建 engine、不留 interval）。
@@ -738,6 +765,9 @@ function createRunner(symbol, options) {
         var chain = Promise.resolve();
         list.forEach(function (c) {
             chain = chain.then(function () {
+                // Fire-and-queue: Market State must never become an entry/order
+                // dependency. The runtime serializes, deduplicates and logs errors.
+                if (runnerOptions.marketStateMap) runnerOptions.marketStateMap.onClosedCandle(c);
                 return engine.onBar(c, engine.getWindowLength()).then(function (opp) {
                     // TWO_BAR_PRODUCTION_REPLACEMENT_V1: the only NEW ENTRY path.
                     // Lifecycle-only symbols (dropped out of Top5) never start a new
@@ -899,6 +929,11 @@ function createRunner(symbol, options) {
         // pipeline funnel.
         getBreakoutExecutionSnapshot: function () { return execution ? execution.getSnapshot() : null; },
         getTwoBarFunnel: function () { return twoBarPipeline ? twoBarPipeline.funnel() : null; },
+        getMarketStateMapStatus: function () {
+            return runnerOptions.marketStateMap && typeof runnerOptions.marketStateMap.getStatus === 'function'
+                ? runnerOptions.marketStateMap.getStatus()
+                : null;
+        },
         isExecutionHalted: function () { return execution ? execution.isHalted() : false; }
     };
 }
@@ -962,8 +997,20 @@ function main() {
         startingSymbols[sym] = true;
         startSequence = startSequence.then(function () {
             log(sym + ' 加入监控：拉取初始历史（可能命中本地缓存）...');
+            var marketStateMap = marketStateMapV1Runtime.createRuntime({
+                symbol: sym,
+                storeDirectory: path.join(CONFIG.dataDir, sym, 'market-state-map-v1', 'llm-cache'),
+                observe: function (record) {
+                    log(sym + ' ' + record.event + ' ' + JSON.stringify(record));
+                }
+            });
+            var marketStateBootstrapHistory = function () {
+                return dataSource.fetchMarketStateBootstrap5m(sym, Date.now());
+            };
             return productionBootstrap.prepare(sym, Date.now()).then(function (data) {
-                var r = createRunner(sym, { scanAdmitted: !!scanUniverse[sym] });
+                var r = createRunner(sym, { scanAdmitted: !!scanUniverse[sym],
+                    marketStateMap: marketStateMap,
+                    marketStateBootstrapHistory: marketStateBootstrapHistory });
                 // Fix 1（11L.3 P0）：initFromHistory 内部 purity fail-closed（throw）——
                 // 必须初始化成功后才启动轮询循环，失败不留半启动状态
                 return r.initFromHistory(data).then(function () {

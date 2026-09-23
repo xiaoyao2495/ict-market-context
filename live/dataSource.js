@@ -22,6 +22,7 @@ var MIN_ANALYSIS_4H_BARS = productionHistory['4h'].requiredClosedBars;
 var MIN_ANALYSIS_5M_BARS = productionHistory['5m'].requiredClosedBars;
 var DYNAMIC_D_VOLATILITY_BARS = 289;
 var DYNAMIC_D_ACTIVE_LOOKBACK_BARS = 432;
+var MARKET_STATE_BOOTSTRAP_5M_BARS = 2016;
 
 function closedCount(rows) {
     return (rows || []).filter(function (c) { return c && c.closed === true; }).length;
@@ -215,6 +216,23 @@ function production5mRetentionBars() {
     return productionHistory['5m'].requiredClosedBars;
 }
 
+/** Reporting-only Market State startup history; separate from trading-engine retention. */
+function fetchMarketStateBootstrap5m(symbol, evaluationTime, options) {
+    var opts = options || {};
+    var at = Number(evaluationTime === undefined ? Date.now() : evaluationTime);
+    var getHistory = opts.loadHistory || binanceRest.loadHistory;
+    var start = at - (MARKET_STATE_BOOTSTRAP_5M_BARS + HTTP_TECHNICAL_ALLOWANCE_BARS) * BAR_MS;
+    return Promise.resolve(getHistory(symbol, '5m', start, at, { pageLimit: 1500 }))
+        .then(function (rows) {
+            var closed = visibleClosed(rows, at, MARKET_STATE_BOOTSTRAP_5M_BARS);
+            if (closed.length !== MARKET_STATE_BOOTSTRAP_5M_BARS) {
+                var error = new Error('MARKET_STATE_BOOTSTRAP_HISTORY_INSUFFICIENT ' + closed.length + '/' + MARKET_STATE_BOOTSTRAP_5M_BARS);
+                error.code = 'MARKET_STATE_BOOTSTRAP_HISTORY_INSUFFICIENT'; throw error;
+            }
+            return closed;
+        });
+}
+
 /**
  * Fix 4（11L.2）：轮询最新已收盘 5m K（closeTime > lastCloseTime）。
  * 结构化返回以区分 NO_NEW_BAR（正常）/ NETWORK_ERROR（网络失败，不吞错）。
@@ -358,6 +376,7 @@ module.exports = {
     createProductionBootstrapService: createProductionBootstrapService,
     initial5mRetentionBars: initial5mRetentionBars,
     production5mRetentionBars: production5mRetentionBars,
+    fetchMarketStateBootstrap5m: fetchMarketStateBootstrap5m,
     pollNew5m: pollNew5m,
     backfill5m: backfill5m,
     recover5mGap: recover5mGap,
@@ -372,6 +391,7 @@ module.exports = {
     PRODUCTION_HISTORY_REQUIREMENTS: productionHistory,
     MIN_ANALYSIS_4H_BARS: MIN_ANALYSIS_4H_BARS,
     MIN_ANALYSIS_5M_BARS: MIN_ANALYSIS_5M_BARS,
+    MARKET_STATE_BOOTSTRAP_5M_BARS: MARKET_STATE_BOOTSTRAP_5M_BARS,
     DYNAMIC_D_VOLATILITY_BARS: DYNAMIC_D_VOLATILITY_BARS,
     DYNAMIC_D_ACTIVE_LOOKBACK_BARS: DYNAMIC_D_ACTIVE_LOOKBACK_BARS,
     analysisHistoryStatus: analysisHistoryStatus,
