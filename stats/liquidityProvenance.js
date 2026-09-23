@@ -32,6 +32,7 @@
  */
 var thresholds = require('../config/thresholds');
 var narrativeLiquidityV1 = require('../events/sweepNarrativeEligibilityV1');
+var notificationTime = require('../notify/notificationTimeV1');
 
 var DEFAULT_MAX_LOOKBACK_BARS = 48; // 11L.8 定稿：production explainability 窗口
 
@@ -190,10 +191,7 @@ function associateSweeps(opts) {
  */
 function fmtSweepTime(ms) {
     if (typeof ms !== 'number') return null;
-    var d = new Date(ms + 8 * 3600000); // UTC+8
-    function p2(n) { return (n < 10 ? '0' : '') + n; }
-    return p2(d.getUTCMonth() + 1) + '-' + p2(d.getUTCDate()) + ' ' +
-        p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes());
+    return notificationTime.formatNotificationTimeUtc8(ms);
 }
 
 /**

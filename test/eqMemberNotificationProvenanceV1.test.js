@@ -12,7 +12,7 @@ function watch(type,partners){
 }
 function build(w){return presentation.build(w,1,{keyword:'检测',notificationGeneratedAt:100,formatPrice:function(v){return v.toFixed(1);}});}
 
-test('EQH displays current 2/2 and ATR50 historical partners',function(){var s=build(watch('EQH',[partner('A',100.1,Date.parse('2026-08-27T20:05:00Z')),partner('B',99.9,Date.parse('2026-08-27T21:10:00Z'))]));assert.ok(s.includes('EQ 当前点：2/2 @ 100.0'));assert.ok(s.includes('Dynamic D 历史配对：2 个'));assert.ok(s.includes('历史点位：100.1 / 99.9'));assert.ok(s.includes('历史时间（北京时间）：08/28 04:05 / 08/28 05:10'));});
+test('EQH displays current 2/2 and ATR50 historical partners',function(){var s=build(watch('EQH',[partner('A',100.1,Date.parse('2026-08-27T20:05:00Z')),partner('B',99.9,Date.parse('2026-08-27T21:10:00Z'))]));assert.ok(s.includes('EQ 当前点：2/2 @ 100.0'));assert.ok(s.includes('Dynamic D 历史配对：2 个'));assert.ok(s.includes('历史点位：100.1 / 99.9'));assert.ok(s.includes('历史时间（北京时间）：08-28 04:05 (UTC+8) / 08-28 05:10 (UTC+8)'));});
 test('EQL uses the same non-cluster point-in-time wording',function(){var s=build(watch('EQL',[partner('A',90,10)]));assert.ok(s.includes('Dynamic D 历史配对：1 个'));assert.ok(!s.includes('EQ 构成'));assert.ok(!s.includes('成员'));});
 test('partner order stays frozen input order',function(){var s=build(watch('EQH',[partner('A',101,10),partner('B',99,20),partner('C',100,25)]));assert.ok(s.includes('101.0 / 99.0 / 100.0'));});
 test('missing EQ provenance degrades safely',function(){assert.ok(build(watch('EQH')).includes('EQ 配对：信息暂缺'));});

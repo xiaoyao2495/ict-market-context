@@ -2,6 +2,7 @@
 
 var eqSourceContextV1 = require('../live/eqSourceContextV1');
 var biasContext = require('./4hBiasContext');
+var notificationTime = require('./notificationTimeV1');
 
 function fallbackPrice(value) {
     if (value === null || value === undefined) return '-';
@@ -9,8 +10,7 @@ function fallbackPrice(value) {
 }
 
 function fallbackTime(ms) {
-    if (typeof ms !== 'number' || !isFinite(ms)) return '-';
-    return new Date(ms + 8 * 3600000).toISOString().slice(0, 16).replace('T', ' ') + ' (UTC+8)';
+    return notificationTime.formatNotificationTimeUtc8(ms);
 }
 
 function sourceLine(label, source, time, price) {

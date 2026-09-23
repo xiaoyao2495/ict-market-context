@@ -52,6 +52,7 @@ var realTradeCaseArchiveV1 = require('../execution/realTradeCaseArchiveV1');
 var executionNotificationV1 = require('../notify/executionNotificationV1');
 var dynamicContractUniverseV1 = require('../live/dynamicContractUniverseV1');
 var marketStateMapV1Runtime = require('../marketState/marketStateMapV1Runtime');
+var notificationTimeV1 = require('../notify/notificationTimeV1');
 
 var CONFIG = require('../config/live.json');
 var EQ_PRODUCTION_MODEL = productionEqualLiquidityV1.VERSION;
@@ -265,7 +266,8 @@ function buildMessage(opp, symbol, current4hBias) {
     lines.push(
         (opp.formationRangeAtr !== null && opp.formationRangeAtr !== undefined ? 'Delivery: ' + opp.deliveryQuality + ' (' + opp.formationRangeAtr.toFixed(1) + ' ATR)' : 'Delivery: ' + opp.deliveryQuality),
         notifTarget !== null ? 'Near Draw: ' + notifDist.toFixed(2) + '% 距离（target ' + fmtPrice(notifTarget) + '）' : 'Near Draw: -',
-        '通知: ' + fmt(notified) + '（leg 锚 ' + fmt(opp.anchorTime) + '）'
+        '通知: ' + notificationTimeV1.formatNotificationTimeUtc8(notified) +
+            '（leg 锚 ' + notificationTimeV1.formatNotificationTimeUtc8(opp.anchorTime) + '）'
     );
     return lines.join('\n');
 }
@@ -485,7 +487,7 @@ function createRunner(symbol, options) {
         var contextualEvent = notificationMarketContext.attach(event, current4hBias.getCurrent());
         var msg = rangeNotificationV1.buildRangeConfirmationMessage(contextualEvent, {
             exchangeInfo: runnerData && runnerData.raw && runnerData.raw.exchangeInfo,
-            formatTime: fmt,
+            formatTime: notificationTimeV1.formatNotificationTimeUtc8,
             keyword: CONFIG.dingtalk.keyword || '检测'
         });
         return dingTalk.sendText(CONFIG.dingtalk.webhook, CONFIG.dingtalk.secret, msg).then(function (res) {

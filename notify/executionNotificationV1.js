@@ -1,5 +1,7 @@
 'use strict';
 
+var notificationTime = require('./notificationTimeV1');
+
 /**
  * TP anchor significance block (HISTORICAL_TURNING_POINT_SIGNIFICANCE_V1 §57).
  *
@@ -34,19 +36,20 @@ function shouldNotifyExecutionEvent(event) {
 
 function value(v) { return v === undefined || v === null || v === '' ? 'UNKNOWN' : String(v); }
 function bool(v) { return v === true ? 'true' : v === false ? 'false' : 'UNKNOWN'; }
+function time(v) { return notificationTime.formatNotificationTimeUtc8(v); }
 function marketStateLines(snapshot) {
     var s = snapshot || { state: 'UNAVAILABLE', errorCode: 'MARKET_STATE_SNAPSHOT_MISSING',
         version: 'MARKET_STATE_MAP_V1' };
     var lines = ['', 'Market State Map:', 'state=' + value(s.state)];
     if (s.state === 'UNAVAILABLE') lines.push('reason=' + value(s.errorCode));
     else {
-        lines.push('since=' + value(s.stateSince));
+        lines.push('since=' + time(s.stateSince));
         if (s.state === 'BULL_TREND' && s.activeProtectedPrice !== null && s.activeProtectedPrice !== undefined)
             lines.push('protectedLow=' + value(s.activeProtectedPrice));
         if (s.state === 'BEAR_TREND' && s.activeProtectedPrice !== null && s.activeProtectedPrice !== undefined)
             lines.push('protectedHigh=' + value(s.activeProtectedPrice));
     }
-    lines.push('snapshotAt=' + value(s.snapshotAt), 'version=' + value(s.version));
+    lines.push('snapshotAt=' + time(s.snapshotAt), 'version=' + value(s.version));
     return lines;
 }
 function closedLines(summary) {
@@ -60,11 +63,11 @@ function closedLines(summary) {
     return [
         'direction=' + value(s.direction), 'tradeId=' + value(s.tradeId),
         'setupId=' + value(s.setupId), 'eqId=' + value(s.eqId),
-        '', '[SETUP]', 'submittedAt=' + value(setup.submittedAt),
+        '', '[SETUP]', 'submittedAt=' + time(setup.submittedAt),
         'plannedEntry=' + value(setup.plannedEntry), 'initialSL=' + value(setup.initialSL),
         'initialTP=' + value(setup.initialTP), 'initialRR=' + value(setup.initialRR),
         '', '[ENTRY]', 'filled=' + bool(entry.filled), 'fillPrice=' + value(entry.fillPrice),
-        'filledAt=' + value(entry.filledAt), 'qty=' + value(entry.qty), 'notional=' + value(entry.notional),
+        'filledAt=' + time(entry.filledAt), 'qty=' + value(entry.qty), 'notional=' + value(entry.notional),
         '', '[PROTECTION]', 'slPlaced=' + bool(protection.slPlaced),
         'tpPlaced=' + bool(protection.tpPlaced),
         'protectionEventuallyVerified=' + bool(protection.protectionEventuallyVerified),
@@ -72,7 +75,7 @@ function closedLines(summary) {
         'temporaryExecutionHaltSeen=' + bool(protection.temporaryExecutionHaltSeen),
         'temporaryExecutionHaltCleared=' + bool(protection.temporaryExecutionHaltCleared),
         '', '[EXIT]', 'exitReason=' + value(exit.exitReason), 'exitPrice=' + value(exit.exitPrice),
-        'closedAt=' + value(exit.closedAt), 'holdingSeconds=' + value(exit.holdingSeconds),
+        'closedAt=' + time(exit.closedAt), 'holdingSeconds=' + value(exit.holdingSeconds),
         '', '[RESULT]', 'grossPnl=' + value(result.grossPnl), 'fees=' + value(result.fees),
         'netPnl=' + value(result.netPnl), 'realizedR=' + value(result.realizedR),
         '', '[EXECUTION_AUDIT]', 'duplicateOrderDetected=' + bool(audit.duplicateOrderDetected),
@@ -92,7 +95,7 @@ function build(event, keyword) {
             'entry=' + value(event.entryTrigger), 'initialSL=' + value(event.initialSL),
             'initialTP=' + value(event.initialTP), 'initialRR=' + value(event.initialRR),
             'qty=' + value(event.qty), 'notional=' + value(event.notional),
-            'submittedAt=' + value(event.submittedAt));
+            'submittedAt=' + time(event.submittedAt));
         lines = lines.concat(marketStateLines(event.marketStateSnapshot));
         return lines.join('\n');
     }

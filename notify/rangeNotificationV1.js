@@ -1,5 +1,6 @@
 /** Presentation-only formatter for RANGE_OBJECT_V1 confirmations. */
 var biasContext = require('./4hBiasContext');
+var notificationTime = require('./notificationTimeV1');
 function decimalsFromTick(tickSize, fallback) {
     if (tickSize !== null && tickSize !== undefined && Number(tickSize) > 0) {
         var text = Number(tickSize).toFixed(12).replace(/0+$/, '');
@@ -17,7 +18,7 @@ function formatPrice(value, exchangeInfo) {
 
 function buildRangeConfirmationMessage(event, options) {
     var opts = options || {};
-    var fmtTime = opts.formatTime || function (value) { return new Date(value).toISOString(); };
+    var fmtTime = opts.formatTime || notificationTime.formatNotificationTimeUtc8;
     var fmtPrice = opts.formatPrice || function (value) { return formatPrice(value, opts.exchangeInfo); };
     var keyword = opts.keyword ? opts.keyword + ' · ' : '';
     var lines = [

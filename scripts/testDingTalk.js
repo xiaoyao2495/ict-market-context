@@ -19,6 +19,7 @@
 var fs = require('fs');
 var path = require('path');
 var dingTalk = require('../notify/dingTalk');
+var notificationTime = require('../notify/notificationTimeV1');
 var liveConfig = require('../config/live.json');
 
 var webhook = process.env.DINGTALK_WEBHOOK || '';
@@ -46,10 +47,7 @@ if (!webhook || webhook.indexOf('YOUR_ACCESS_TOKEN') !== -1) {
 }
 
 var keyword = (liveConfig.dingtalk && liveConfig.dingtalk.keyword) || '检测';
-var now = new Date(Date.now() + 8 * 3600000); // UTC+8
-function p2(n) { return n < 10 ? '0' + n : String(n); }
-var ts = now.getUTCFullYear() + '-' + p2(now.getUTCMonth() + 1) + '-' + p2(now.getUTCDate()) +
-    ' ' + p2(now.getUTCHours()) + ':' + p2(now.getUTCMinutes()) + ' (UTC+8)';
+var ts = notificationTime.formatNotificationTimeUtc8(Date.now());
 
 var content = [
     '🔴 ' + keyword + ' · 上线自检（非真实机会）',

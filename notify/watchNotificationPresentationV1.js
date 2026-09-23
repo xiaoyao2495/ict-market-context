@@ -21,9 +21,9 @@ var ENUM_ZH = {
     FVG_TOUCHED: 'FVG 已触及', NOTIFIED: '已通知', EXPIRED: '已过期'
 };
 var sweepContextPresentationV1 = require('./sweepContextPresentationV1');
+var notificationTime = require('./notificationTimeV1');
 
 var BEIJING_TIMEZONE = 'Asia/Shanghai';
-var BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
 var SOURCE_ZH = {
     NEW_YORK_HIGH: '纽约时段高点', NEW_YORK_LOW: '纽约时段低点',
     LONDON_HIGH: '伦敦时段高点', LONDON_LOW: '伦敦时段低点',
@@ -101,9 +101,7 @@ function eqPartnerLines(primary, formatter) {
 }
 
 function formatBeijingTime(epochMs) {
-    var value = typeof epochMs === 'number' && isFinite(epochMs) ? epochMs : Date.now();
-    var text = new Date(value + BEIJING_OFFSET_MS).toISOString();
-    return text.slice(5, 10).replace('-', '/') + ' ' + text.slice(11, 16);
+    return notificationTime.formatNotificationTimeUtc8(epochMs);
 }
 
 function evidencePrimary(watch) {

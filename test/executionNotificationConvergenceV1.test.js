@@ -30,10 +30,10 @@ test('submitted notification contains the real execution identities and plan val
     var message = notification.build({ type: 'BREAKOUT_ENTRY_SUBMITTED', symbol: 'BTCUSDT',
         direction: 'LONG', tradeId: 'BB_SETUPA', setupId: 'SETUP_A', eqId: 'EQ_A',
         entryTrigger: 101, initialSL: 98, initialTP: 106, initialRR: 1.5,
-        qty: 0.2, notional: 20.2, submittedAt: 1234 }, '检测');
+        qty: 0.2, notional: 20.2, submittedAt: 1790128807653 }, '检测');
     ['tradeId=BB_SETUPA', 'setupId=SETUP_A', 'eqId=EQ_A', 'entry=101',
         'initialSL=98', 'initialTP=106', 'initialRR=1.5', 'qty=0.2',
-        'notional=20.2', 'submittedAt=1234'].forEach(function (part) { assert.match(message, new RegExp(part)); });
+        'notional=20.2', 'submittedAt=09-23 10:00 \\(UTC\\+8\\)'].forEach(function (part) { assert.match(message, new RegExp(part)); });
     assert.doesNotMatch(message, /undefined|null/);
 });
 
